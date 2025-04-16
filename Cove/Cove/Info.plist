@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>UIAppFonts</key>
+	<array>
+		<string>LibreBodoni-Italic.ttf</string>
+		<string>LibreBodoni-Regular.ttf</string>
+		<string>LibreBodoni-Bold.ttf</string>
+		<string>LibreBodoni-BoldItalic.ttf</string>
+		<string>LibreBodoni-Medium.ttf</string>
+		<string>LibreBodoni-MediumItalic.ttf</string>
+		<string>LibreBodoni-SemiBold.ttf</string>
+		<string>LibreBodoni-SemiBoldItalic.ttf</string>
+		<string>LeagueSpartan-VariableFont_wght.ttf</string>
+		<string>LibreCaslonText-Bold.ttf</string>
+		<string>LibreCaslonText-Italic.ttf</string>
+		<string>LibreCaslonText-Regular.ttf</string>
+	</array>
+</dict>
+</plist>
