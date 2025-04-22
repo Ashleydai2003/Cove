@@ -61,6 +61,7 @@
 **/*.tfvars           # Variable files that may contain secrets
 **/.terraform.lock.hcl # Dependency lock file
 **/.terraform.tfstate.lock.info
+**/.terraform/providers/  # Ignore all provider files
 
 # Temporary Files
 # Files created during development or runtime
