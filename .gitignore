@@ -55,13 +55,16 @@
 # Terraform State and Cache
 # Contains sensitive infrastructure information
 # State files should be stored in remote backend
-**/.terraform/         # Terraform cache directory
-**/*.tfstate          # Terraform state files
-**/*.tfstate.*        # Terraform state backup files
-**/*.tfvars           # Variable files that may contain secrets
-**/.terraform.lock.hcl # Dependency lock file
-**/.terraform.tfstate.lock.info
-**/.terraform/providers/  # Ignore all provider files
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+.terraform.lock.hcl
+.terraform.tfstate.lock.info
+.terraform/providers/
+terraform.tfstate
+terraform.tfstate.backup
+.terraform.lock.hcl
 
 # Temporary Files
 # Files created during development or runtime
@@ -94,9 +97,7 @@
 
 # Prisma
 **/prisma/migrations/
-**/prisma/dev.db 
-# macOS system files
-.DS_Store
+**/prisma/dev.db
 
 # Xcode specific
 *.xcuserstate
