@@ -1,13 +1,6 @@
-//
-//  NamePage.swift
-//  Cove
-//
-//  Created by Ashley Dai on 4/15/25.
-//
-
 import SwiftUI
 
-struct NamePage: View {
+struct NameView: View {
     // private vars for users' names
     @State private var firstName: String = ""
     @State private var lastName: String = ""
@@ -66,7 +59,6 @@ struct NamePage: View {
     }
 }
 
-
 #Preview {
-    NamePage()
-}
+    NameView()
+} 

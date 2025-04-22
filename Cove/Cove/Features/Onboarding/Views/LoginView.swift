@@ -1,13 +1,6 @@
-//
-//  ContentView.swift
-//  Cove
-//
-//  Created by Ashley Dai on 4/14/25.
-//
-
 import SwiftUI
 
-struct Login: View {
+struct LoginView: View {
     var body: some View {
         ZStack {
             // For background
@@ -63,5 +56,5 @@ struct SignOnButton: View {
 }
 
 #Preview {
-    Login()
-}
+    LoginView()
+} 
