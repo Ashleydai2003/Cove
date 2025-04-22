@@ -1,0 +1,27 @@
+// /Backend/prisma/schema.prisma
+// This file contains the Prisma schema, learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Configure the Prisma Client generator
+generator client {
+  provider = "prisma-client-js"
+  // Generate TypeScript types
+  previewFeatures = []
+  output = "../node_modules/.prisma/client"
+  binaryTargets = ["native", "rhel-openssl-1.0.x"]
+}
+
+// Configure the database connection
+datasource db {
+  provider = "postgresql"
+  // The connection URL will be provided via environment variable
+  url = env("DATABASE_URL")
+}
+
+// Preliminary User model
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  phone     String   @unique
+  age       Int
+  createdAt DateTime @default(now())
+} 
