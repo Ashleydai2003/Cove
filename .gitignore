@@ -95,3 +95,12 @@
 # Prisma
 **/prisma/migrations/
 **/prisma/dev.db 
+# macOS system files
+.DS_Store
+
+# Xcode specific
+*.xcuserstate
+*.xcuserdata/
+DerivedData/
+build/
+.DS_Store

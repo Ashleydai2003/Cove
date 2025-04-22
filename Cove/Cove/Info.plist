@@ -4,14 +4,8 @@
 <dict>
 	<key>UIAppFonts</key>
 	<array>
-		<string>LibreBodoni-Italic.ttf</string>
-		<string>LibreBodoni-Regular.ttf</string>
-		<string>LibreBodoni-Bold.ttf</string>
-		<string>LibreBodoni-BoldItalic.ttf</string>
-		<string>LibreBodoni-Medium.ttf</string>
-		<string>LibreBodoni-MediumItalic.ttf</string>
-		<string>LibreBodoni-SemiBold.ttf</string>
-		<string>LibreBodoni-SemiBoldItalic.ttf</string>
+		<string>LibreBodoni-Italic-VariableFont_wght.ttf</string>
+		<string>LibreBodoni-VariableFont_wght.ttf</string>
 		<string>LeagueSpartan-VariableFont_wght.ttf</string>
 		<string>LibreCaslonText-Bold.ttf</string>
 		<string>LibreCaslonText-Italic.ttf</string>

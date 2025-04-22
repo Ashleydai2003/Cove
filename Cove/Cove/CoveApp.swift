@@ -8,10 +8,30 @@
 import SwiftUI
 
 @main
-struct CoveApp: App {
+struct MyApp: App {
+    @AppStorage("hasCompletedOnboarding") var hasCompletedOnboarding = false
+    
+    init() {
+            // For development: always reset onboarding status
+            UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
+        
+            for family in UIFont.familyNames {
+                print("Font family: \(family)")
+                for name in UIFont.fontNames(forFamilyName: family) {
+                    print("   \(name)")
+                }
+        }
+
+        }
+
     var body: some Scene {
         WindowGroup {
-            Login()
+            if hasCompletedOnboarding {
+                LandingView()
+            } else {
+                OnboardingFlow()
+            }
         }
     }
 }
+
