@@ -4,8 +4,6 @@
 //
 //  Created by Ashley Dai on 3/6/25.
 //
-
-import Testing
 @testable import Cove
 
 struct CoveTests {
