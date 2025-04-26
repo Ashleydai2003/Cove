@@ -51,11 +51,11 @@
 		C44B02DD2DADAFAF00AFF42B = {
 			isa = PBXGroup;
 			children = (
-				3C20248F2DBCA75D00D78C65 /* Assets */,
+				3C2023F52DBCA34500D78C65 /* CoveApp.swift */,
 				3C2024772DBCA74500D78C65 /* Views */,
+				3C20248F2DBCA75D00D78C65 /* Assets */,
 				3C20242E2DBCA3E300D78C65 /* Info.plist */,
 				3C2024122DBCA36300D78C65 /* Util */,
-				3C2023F52DBCA34500D78C65 /* CoveApp.swift */,
 				C44B02E72DADAFAF00AFF42B /* Products */,
 			);
 			sourceTree = "<group>";
