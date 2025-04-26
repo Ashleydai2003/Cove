@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		3C29BAAE2DBC90B700C73EC3 /* Inject in Frameworks */ = {isa = PBXBuildFile; productRef = 3C29BAAD2DBC90B700C73EC3 /* Inject */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		C44B02E62DADAFAF00AFF42B /* Cove.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Cove.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -36,6 +40,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3C29BAAE2DBC90B700C73EC3 /* Inject in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -78,6 +83,7 @@
 			);
 			name = Cove;
 			packageProductDependencies = (
+				3C29BAAD2DBC90B700C73EC3 /* Inject */,
 			);
 			productName = Cove;
 			productReference = C44B02E62DADAFAF00AFF42B /* Cove.app */;
@@ -107,6 +113,9 @@
 			);
 			mainGroup = C44B02DD2DADAFAF00AFF42B;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				3C29BAAC2DBC90B700C73EC3 /* XCRemoteSwiftPackageReference "Inject" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = C44B02E72DADAFAF00AFF42B /* Products */;
 			projectDirPath = "";
@@ -280,6 +289,10 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
+				"OTHER_LDFLAGS[sdk=iphonesimulator*]" = (
+					"-Xlinker",
+					"-interposable",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = co.cs194W.Cove;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -339,6 +352,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		3C29BAAC2DBC90B700C73EC3 /* XCRemoteSwiftPackageReference "Inject" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/krzysztofzablocki/Inject.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.5.2;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		3C29BAAD2DBC90B700C73EC3 /* Inject */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3C29BAAC2DBC90B700C73EC3 /* XCRemoteSwiftPackageReference "Inject" */;
+			productName = Inject;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = C44B02DE2DADAFAF00AFF42B /* Project object */;
 }
