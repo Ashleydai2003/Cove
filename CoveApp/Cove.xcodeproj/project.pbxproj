@@ -53,6 +53,16 @@
 			path = SupportingFiles;
 			sourceTree = "<group>";
 		};
+		3C2024F22DBCACA300D78C65 /* CoveTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = CoveTests;
+			sourceTree = "<group>";
+		};
+		3C2024F62DBCACAD00D78C65 /* CoveUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = CoveUITests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -70,6 +80,8 @@
 		C44B02DD2DADAFAF00AFF42B = {
 			isa = PBXGroup;
 			children = (
+				3C2024F62DBCACAD00D78C65 /* CoveUITests */,
+				3C2024F22DBCACA300D78C65 /* CoveTests */,
 				3C2024B42DBCA93800D78C65 /* SupportingFiles */,
 				3C2024B02DBCA92B00D78C65 /* Utilities */,
 				3C2024AC2DBCA92500D78C65 /* App */,
@@ -108,6 +120,8 @@
 				3C2024AC2DBCA92500D78C65 /* App */,
 				3C2024B02DBCA92B00D78C65 /* Utilities */,
 				3C2024B42DBCA93800D78C65 /* SupportingFiles */,
+				3C2024F22DBCACA300D78C65 /* CoveTests */,
+				3C2024F62DBCACAD00D78C65 /* CoveUITests */,
 			);
 			name = Cove;
 			packageProductDependencies = (
