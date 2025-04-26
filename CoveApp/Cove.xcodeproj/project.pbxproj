@@ -14,6 +14,16 @@
 		C44B02E62DADAFAF00AFF42B /* Cove.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Cove.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		3C2024F02DBCAAAF00D78C65 /* Exceptions for "SupportingFiles" folder in "Cove" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = C44B02E52DADAFAF00AFF42B /* Cove */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		3C2024772DBCA74500D78C65 /* Views */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
@@ -37,6 +47,9 @@
 		};
 		3C2024B42DBCA93800D78C65 /* SupportingFiles */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				3C2024F02DBCAAAF00D78C65 /* Exceptions for "SupportingFiles" folder in "Cove" target */,
+			);
 			path = SupportingFiles;
 			sourceTree = "<group>";
 		};
@@ -293,7 +306,7 @@
 				DEVELOPMENT_TEAM = 9L4RA2CN39;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Cove/Info.plist;
+				INFOPLIST_FILE = "$(SRCROOT)/SupportingFiles/Info.plist";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -326,7 +339,7 @@
 				DEVELOPMENT_TEAM = 9L4RA2CN39;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Cove/Info.plist;
+				INFOPLIST_FILE = "$(SRCROOT)/SupportingFiles/Info.plist";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
