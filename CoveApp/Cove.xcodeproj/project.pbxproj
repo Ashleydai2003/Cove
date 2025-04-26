@@ -7,30 +7,48 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		3C2023F42DBCA33500D78C65 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3C2023F32DBCA33500D78C65 /* Assets.xcassets */; };
+		3C2023F62DBCA34500D78C65 /* CoveApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C2023F52DBCA34500D78C65 /* CoveApp.swift */; };
+		3C20242F2DBCA3E300D78C65 /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3C20242E2DBCA3E300D78C65 /* Info.plist */; };
 		3C29BAAE2DBC90B700C73EC3 /* Inject in Frameworks */ = {isa = PBXBuildFile; productRef = 3C29BAAD2DBC90B700C73EC3 /* Inject */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		3C2023F32DBCA33500D78C65 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		3C2023F52DBCA34500D78C65 /* CoveApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoveApp.swift; sourceTree = "<group>"; };
+		3C20242E2DBCA3E300D78C65 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		C44B02E62DADAFAF00AFF42B /* Cove.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Cove.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		3F6C16C22DB6DCFE005E9B17 /* Exceptions for "Cove" folder in "Cove" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = C44B02E52DADAFAF00AFF42B /* Cove */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		C44B02E82DADAFAF00AFF42B /* Cove */ = {
+		3C2023EF2DBCA32C00D78C65 /* Assets */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				3F6C16C22DB6DCFE005E9B17 /* Exceptions for "Cove" folder in "Cove" target */,
-			);
-			path = Cove;
+			path = Assets;
+			sourceTree = "<group>";
+		};
+		3C2023FF2DBCA34F00D78C65 /* Features */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Features;
+			sourceTree = "<group>";
+		};
+		3C2024062DBCA35800D78C65 /* Main */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Main;
+			sourceTree = "<group>";
+		};
+		3C20240C2DBCA35D00D78C65 /* Resources */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		3C2024122DBCA36300D78C65 /* Util */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Util;
+			sourceTree = "<group>";
+		};
+		3C2024212DBCA3DA00D78C65 /* Fonts */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Fonts;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -50,7 +68,15 @@
 		C44B02DD2DADAFAF00AFF42B = {
 			isa = PBXGroup;
 			children = (
-				C44B02E82DADAFAF00AFF42B /* Cove */,
+				3C20242E2DBCA3E300D78C65 /* Info.plist */,
+				3C2024212DBCA3DA00D78C65 /* Fonts */,
+				3C2024122DBCA36300D78C65 /* Util */,
+				3C20240C2DBCA35D00D78C65 /* Resources */,
+				3C2024062DBCA35800D78C65 /* Main */,
+				3C2023FF2DBCA34F00D78C65 /* Features */,
+				3C2023F52DBCA34500D78C65 /* CoveApp.swift */,
+				3C2023F32DBCA33500D78C65 /* Assets.xcassets */,
+				3C2023EF2DBCA32C00D78C65 /* Assets */,
 				C44B02E72DADAFAF00AFF42B /* Products */,
 			);
 			sourceTree = "<group>";
@@ -79,7 +105,12 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				C44B02E82DADAFAF00AFF42B /* Cove */,
+				3C2023EF2DBCA32C00D78C65 /* Assets */,
+				3C2023FF2DBCA34F00D78C65 /* Features */,
+				3C2024062DBCA35800D78C65 /* Main */,
+				3C20240C2DBCA35D00D78C65 /* Resources */,
+				3C2024122DBCA36300D78C65 /* Util */,
+				3C2024212DBCA3DA00D78C65 /* Fonts */,
 			);
 			name = Cove;
 			packageProductDependencies = (
@@ -131,6 +162,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3C20242F2DBCA3E300D78C65 /* Info.plist in Resources */,
+				3C2023F42DBCA33500D78C65 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -141,6 +174,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3C2023F62DBCA34500D78C65 /* CoveApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
