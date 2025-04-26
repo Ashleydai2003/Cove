@@ -9,7 +9,7 @@ import SwiftUI
 
 @main
 struct MyApp: App {
-    @AppStorage("hasCompletedOnboarding") var hasCompletedOnboarding = false
+    @AppStorage("hasCompletedOnboarding") var hasCompletedOnboarding = true
     
     init() {
             // For Injection (hot reloading)
@@ -31,11 +31,12 @@ struct MyApp: App {
 
     var body: some Scene {
         WindowGroup {
-            if hasCompletedOnboarding {
-                LandingView()
-            } else {
-                OnboardingFlow()
-            }
+            TmpView()
+            // if hasCompletedOnboarding {
+            //     LandingView()
+            // } else {
+            //     OnboardingFlow()
+            // }
         }
     }
 }

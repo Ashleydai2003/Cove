@@ -7,10 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		3C2025352DBCC2BE00D78C65 /* TmpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C2025342DBCC2BE00D78C65 /* TmpView.swift */; };
 		3C29BAAE2DBC90B700C73EC3 /* Inject in Frameworks */ = {isa = PBXBuildFile; productRef = 3C29BAAD2DBC90B700C73EC3 /* Inject */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		3C2025342DBCC2BE00D78C65 /* TmpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TmpView.swift; sourceTree = "<group>"; };
 		C44B02E62DADAFAF00AFF42B /* Cove.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Cove.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -53,16 +55,6 @@
 			path = SupportingFiles;
 			sourceTree = "<group>";
 		};
-		3C2024F22DBCACA300D78C65 /* CoveTests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = CoveTests;
-			sourceTree = "<group>";
-		};
-		3C2024F62DBCACAD00D78C65 /* CoveUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = CoveUITests;
-			sourceTree = "<group>";
-		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -80,8 +72,7 @@
 		C44B02DD2DADAFAF00AFF42B = {
 			isa = PBXGroup;
 			children = (
-				3C2024F62DBCACAD00D78C65 /* CoveUITests */,
-				3C2024F22DBCACA300D78C65 /* CoveTests */,
+				3C2025342DBCC2BE00D78C65 /* TmpView.swift */,
 				3C2024B42DBCA93800D78C65 /* SupportingFiles */,
 				3C2024B02DBCA92B00D78C65 /* Utilities */,
 				3C2024AC2DBCA92500D78C65 /* App */,
@@ -120,8 +111,6 @@
 				3C2024AC2DBCA92500D78C65 /* App */,
 				3C2024B02DBCA92B00D78C65 /* Utilities */,
 				3C2024B42DBCA93800D78C65 /* SupportingFiles */,
-				3C2024F22DBCACA300D78C65 /* CoveTests */,
-				3C2024F62DBCACAD00D78C65 /* CoveUITests */,
 			);
 			name = Cove;
 			packageProductDependencies = (
@@ -183,6 +172,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3C2025352DBCC2BE00D78C65 /* TmpView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -318,6 +308,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 9L4RA2CN39;
+				EMIT_FRONTEND_COMMAND_LINES = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "$(SRCROOT)/SupportingFiles/Info.plist";
@@ -351,6 +342,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 9L4RA2CN39;
+				EMIT_FRONTEND_COMMAND_LINES = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "$(SRCROOT)/SupportingFiles/Info.plist";
