@@ -8,7 +8,7 @@
 import SwiftUI
 
 enum Colors {
-    static let primary = Color("PrimaryColor")
-    static let primaryDark = Color("PrimaryDarkColor")
+    static let primary = Color("CovePrimaryColor")
+    static let primaryDark = Color("CovePrimaryDarkColor")
 }
 
