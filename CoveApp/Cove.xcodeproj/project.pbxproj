@@ -9,22 +9,14 @@
 /* Begin PBXBuildFile section */
 		3C2025352DBCC2BE00D78C65 /* TmpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C2025342DBCC2BE00D78C65 /* TmpView.swift */; };
 		3C29BAAE2DBC90B700C73EC3 /* Inject in Frameworks */ = {isa = PBXBuildFile; productRef = 3C29BAAD2DBC90B700C73EC3 /* Inject */; };
+		3CFAEF792DBDCA4700148161 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 3CFAEF782DBDCA4700148161 /* FirebaseAnalytics */; };
+		3CFAEF7B2DBDCA4700148161 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 3CFAEF7A2DBDCA4700148161 /* FirebaseAuth */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		3C2025342DBCC2BE00D78C65 /* TmpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TmpView.swift; sourceTree = "<group>"; };
 		C44B02E62DADAFAF00AFF42B /* Cove.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Cove.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
-
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		3C2024F02DBCAAAF00D78C65 /* Exceptions for "SupportingFiles" folder in "Cove" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = C44B02E52DADAFAF00AFF42B /* Cove */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		3C2024772DBCA74500D78C65 /* Views */ = {
@@ -47,11 +39,8 @@
 			path = Utilities;
 			sourceTree = "<group>";
 		};
-		3C2024B42DBCA93800D78C65 /* SupportingFiles */ = {
+		3CFAEF742DBDC7CA00148161 /* SupportingFiles */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				3C2024F02DBCAAAF00D78C65 /* Exceptions for "SupportingFiles" folder in "Cove" target */,
-			);
 			path = SupportingFiles;
 			sourceTree = "<group>";
 		};
@@ -62,6 +51,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3CFAEF792DBDCA4700148161 /* FirebaseAnalytics in Frameworks */,
+				3CFAEF7B2DBDCA4700148161 /* FirebaseAuth in Frameworks */,
 				3C29BAAE2DBC90B700C73EC3 /* Inject in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -72,8 +63,8 @@
 		C44B02DD2DADAFAF00AFF42B = {
 			isa = PBXGroup;
 			children = (
+				3CFAEF742DBDC7CA00148161 /* SupportingFiles */,
 				3C2025342DBCC2BE00D78C65 /* TmpView.swift */,
-				3C2024B42DBCA93800D78C65 /* SupportingFiles */,
 				3C2024B02DBCA92B00D78C65 /* Utilities */,
 				3C2024AC2DBCA92500D78C65 /* App */,
 				3C2024772DBCA74500D78C65 /* Views */,
@@ -110,11 +101,13 @@
 				3C20248F2DBCA75D00D78C65 /* Assets */,
 				3C2024AC2DBCA92500D78C65 /* App */,
 				3C2024B02DBCA92B00D78C65 /* Utilities */,
-				3C2024B42DBCA93800D78C65 /* SupportingFiles */,
+				3CFAEF742DBDC7CA00148161 /* SupportingFiles */,
 			);
 			name = Cove;
 			packageProductDependencies = (
 				3C29BAAD2DBC90B700C73EC3 /* Inject */,
+				3CFAEF782DBDCA4700148161 /* FirebaseAnalytics */,
+				3CFAEF7A2DBDCA4700148161 /* FirebaseAuth */,
 			);
 			productName = Cove;
 			productReference = C44B02E62DADAFAF00AFF42B /* Cove.app */;
@@ -146,6 +139,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				3C29BAAC2DBC90B700C73EC3 /* XCRemoteSwiftPackageReference "Inject" */,
+				3CFAEF772DBDCA4700148161 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = C44B02E72DADAFAF00AFF42B /* Products */;
@@ -396,6 +390,14 @@
 				minimumVersion = 1.5.2;
 			};
 		};
+		3CFAEF772DBDCA4700148161 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 11.12.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -403,6 +405,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 3C29BAAC2DBC90B700C73EC3 /* XCRemoteSwiftPackageReference "Inject" */;
 			productName = Inject;
+		};
+		3CFAEF782DBDCA4700148161 /* FirebaseAnalytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3CFAEF772DBDCA4700148161 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAnalytics;
+		};
+		3CFAEF7A2DBDCA4700148161 /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3CFAEF772DBDCA4700148161 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
