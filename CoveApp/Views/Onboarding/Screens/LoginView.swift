@@ -1,57 +1,77 @@
 import SwiftUI
 
 struct LoginView: View {
+    
+    @EnvironmentObject var onboardingViewModel: OnboardingViewModel
+    
     var body: some View {
         ZStack {
             // For background
-            Image("login_background")
-                .resizable()
-                .scaledToFill()
-                .scaledToFill()
-                .overlay(Color.white.opacity(0.4))
-                .frame(minWidth: 0, maxWidth: .infinity)
-                .ignoresSafeArea()
-                
+            OnboardingBackgroundView(imageName: "login_background")
+                .opacity(0.6)
             
             VStack {
                 Text("cove")
-                    // to offset build in padding of custom font
+                    .font(.LibreBodoni(size: 125))
+                    .foregroundColor(Colors.primary)
                     .frame(height: 70)
-                    .clipped()
-                    .font(.LibreBodoni(size: 100))
-                    .foregroundColor(Color(hex: "#8E413A"))
-                    .padding(.top, 70.0)
+                    .padding(.top, 100)
+                
                 Text("plug back into community.")
                     .font(.LibreBodoni(size: 18))
                 
                 // to create space in middle
                 Spacer()
                 
-                SignOnButton(text: "let's go")
+                SignOnButton(text: "let's go") {
+                    onboardingViewModel.path.append(.enterPhoneNumber)
+                }
+                .padding(.bottom)
                      
-                Text("By signing up you agree to our Terms and Conditions. See how we use your data in our Privacy Policy.")
+                Text(attributedString)
                     .multilineTextAlignment(.center)
-                    .padding()
-                    .padding(.horizontal)
-                    .font(.LeagueSpartan(size:15)
-                    )
+                    .foregroundStyle(Color.white)
+                    .padding([.horizontal, .vertical])
+                    .font(.LeagueSpartan(size:15))
             }
         }
+    }
+    
+    var attributedString: AttributedString {
+        var string = AttributedString("By tapping ‘Get Started’ you agree to our Terms and Conditions. Learn how we process you data in our Privacy Policy.")
+        string.foregroundColor = Color.white
+        
+        if let termsServiceRange = string.range(of: "Terms and Conditions") {
+            string[termsServiceRange].underlineStyle = .single
+            string[termsServiceRange].link = URL(string: "")
+        }
+        
+        if let privacyPolicyRange = string.range(of: "Privacy Policy") {
+            string[privacyPolicyRange].underlineStyle = .single
+            string[privacyPolicyRange].link = URL(string: "")
+        }
+        
+        return string
     }
 }
 
 struct SignOnButton: View {
     let text: String
+    var action: () -> Void
     
     var body: some View {
-        Text(text)
-            .font(.LibreBodoni(size: 25))
-            .frame(maxWidth: .infinity)
-            .frame(height: 30)
-            .padding()
-            .background(Color(.white))
-            .cornerRadius(16.99)
-            .padding(.horizontal)
+        Button {
+            action()
+        } label: {
+            Text(text)
+                .font(.LibreBodoni(size: 25))
+                .frame(maxWidth: .infinity, minHeight: 30, maxHeight: 30)
+                .padding()
+                .foregroundStyle(Colors.k292929)
+                .background(Color.white)
+                .cornerRadius(16.99)
+                .padding(.horizontal, 50)
+        }
     }
 }
 
