@@ -8,14 +8,11 @@ import Combine
 
 struct UserPhoneNumberView: View {
     
-    @EnvironmentObject var onboardingViewModel: OnboardingViewModel
+    @EnvironmentObject var appController: AppController
     
     @State private var presentSheet = false
-    @State private var mobileNumber = ""
     @State private var searchCountry: String = ""
     @FocusState private var isFocused: Bool
-    
-    @State private var country: Country = Country(id: "0235", name: "USA", flag: "🇺🇸", code: "US", dial_code: "+1", pattern: "### ### ####", limit: 17)
     
     let counrties: [Country] = Bundle.main.decode("CountryList.json")
     
@@ -29,7 +26,7 @@ struct UserPhoneNumberView: View {
                 VStack {
                     
                     VStack(alignment: .leading, spacing: 5) {
-                        Text("what’s your phone \nnumber?")
+                        Text("what's your phone \nnumber?")
                             .foregroundStyle(Colors.primaryDark)
                             .font(.LibreBodoni(size: 40))
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -47,7 +44,7 @@ struct UserPhoneNumberView: View {
                                 presentSheet = true
                             } label: {
                                 HStack {
-                                    Text(country.flag)
+                                    Text(appController.selectedCountry.flag)
                                         .foregroundStyle(Color.black)
                                         .font(.LibreBodoni(size: 30))
                                     
@@ -65,17 +62,17 @@ struct UserPhoneNumberView: View {
                         
                         VStack(spacing: 2) {
                             HStack {
-                                Text(country.dial_code)
+                                Text(appController.selectedCountry.dial_code)
                                     .foregroundStyle(Color.black)
                                     .font(.LibreCaslon(size: 25))
                                 
-                                TextField(country.pattern, text: $mobileNumber)
+                                TextField(appController.selectedCountry.pattern, text: $appController.phoneNumber)
                                     .font(.LibreCaslon(size: 25))
                                     .foregroundStyle(Color.black)
                                     .keyboardType(.numberPad)
                                     .focused($isFocused)
-                                    .onReceive(Just(mobileNumber)) { _ in
-                                        applyPatternOnNumbers(&mobileNumber, pattern: country.pattern, replacementCharacter: "#")
+                                    .onChange(of: appController.phoneNumber) { _, newValue in
+                                        appController.phoneNumber = appController.formatPhoneNumber(newValue, pattern: appController.selectedCountry.pattern)
                                     }
                             }
                             
@@ -95,7 +92,7 @@ struct UserPhoneNumberView: View {
                             .frame(width: 52, height: 52)
                             .padding(.init(top: 0, leading: 0, bottom: 60, trailing: 20))
                             .onTapGesture {
-                                onboardingViewModel.path.append(.optVerify)
+                                appController.path.append(.otpVerify)
                             }
                     }
                 }
@@ -114,7 +111,7 @@ struct UserPhoneNumberView: View {
                 NavigationView {
                     List(filteredResorts) { country in
                         Button {
-                            self.country = country
+                            appController.selectedCountry = country
                             presentSheet = false
                             searchCountry = ""
                         } label: {
@@ -144,21 +141,6 @@ struct UserPhoneNumberView: View {
         } else {
             return counrties.filter { $0.name.localizedCaseInsensitiveContains(searchCountry) }
         }
-    }
-    
-    func applyPatternOnNumbers(_ stringvar: inout String, pattern: String, replacementCharacter: Character) {
-        var pureNumber = stringvar.replacingOccurrences( of: "[^0-9]", with: "", options: .regularExpression)
-        for index in 0 ..< pattern.count {
-            guard index < pureNumber.count else {
-                stringvar = pureNumber
-                return
-            }
-            let stringIndex = String.Index(utf16Offset: index, in: pattern)
-            let patternCharacter = pattern[stringIndex]
-            guard patternCharacter != replacementCharacter else { continue }
-            pureNumber.insert(patternCharacter, at: stringIndex)
-        }
-        stringvar = pureNumber
     }
 }
 

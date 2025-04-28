@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Foundation
 
 // Translate hex to valid SwiftUI color representation
 

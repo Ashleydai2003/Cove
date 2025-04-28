@@ -7,16 +7,16 @@ import SwiftUI
 
 struct OnboardingFlow: View {
     
-    @StateObject private var viewModel = OnboardingViewModel()
+    @EnvironmentObject var appController: AppController
 
     var body: some View {
-        NavigationStack(path: $viewModel.path) {
+        NavigationStack(path: $appController.path) {
             LoginView()
                 .navigationDestination(for: OnboardingRoute.self) { route in
                     switch route {
                     case .enterPhoneNumber:
                         UserPhoneNumberView()
-                    case .optVerify:
+                    case .otpVerify:
                         OtpVerifyView()
                     case .userDetails:
                         NamePageView()
@@ -27,7 +27,6 @@ struct OnboardingFlow: View {
                     }
                 }
         }
-        .environmentObject(viewModel)
         .ignoresSafeArea(.keyboard)
     }
 }
