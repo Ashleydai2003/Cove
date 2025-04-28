@@ -11,6 +11,9 @@ import SwiftUI
 struct MyApp: App {
     @AppStorage("hasCompletedOnboarding") var hasCompletedOnboarding = true
     
+    // firebase delegate
+    @UIApplicationDelegateAdaptor(FirebaseSetup.self) var firebase_delegate
+    
     init() {
             // For Injection (hot reloading)
             // Note flags -Xlinker -interposable under Other Linker Flags are for Injection
