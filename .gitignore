@@ -105,3 +105,5 @@ terraform.tfstate.backup
 DerivedData/
 build/
 .DS_Store
+buildServer.json
+.vscode/launch.json
