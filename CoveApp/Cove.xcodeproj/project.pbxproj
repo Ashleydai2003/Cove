@@ -18,6 +18,16 @@
 		C44B02E62DADAFAF00AFF42B /* Cove.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Cove.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		3CFAEFBD2DC03EE700148161 /* Exceptions for "SupportingFiles" folder in "Cove" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = C44B02E52DADAFAF00AFF42B /* Cove */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		3C2024772DBCA74500D78C65 /* Views */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
@@ -41,6 +51,9 @@
 		};
 		3CFAEF742DBDC7CA00148161 /* SupportingFiles */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				3CFAEFBD2DC03EE700148161 /* Exceptions for "SupportingFiles" folder in "Cove" target */,
+			);
 			path = SupportingFiles;
 			sourceTree = "<group>";
 		};
