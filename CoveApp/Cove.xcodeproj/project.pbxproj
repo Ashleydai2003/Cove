@@ -22,7 +22,7 @@
 		3CFAEFBD2DC03EE700148161 /* Exceptions for "SupportingFiles" folder in "Cove" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				"GoogleService-Info.plist",
+				Info.plist,
 			);
 			target = C44B02E52DADAFAF00AFF42B /* Cove */;
 		};
