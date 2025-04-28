@@ -74,4 +74,5 @@ struct NamePageView: View {
 
 #Preview {
     NamePageView()
+        .environmentObject(AppController.shared)
 } 

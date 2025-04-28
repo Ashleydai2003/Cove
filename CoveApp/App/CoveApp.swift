@@ -13,7 +13,7 @@ struct CoveApp: App {
     @UIApplicationDelegateAdaptor(FirebaseSetup.self) var firebase_delegate
     
     /// Shared app controller instance
-    @StateObject private var appController = AppController.shared
+    private let appController = AppController.shared
     
     init() {
             // For Injection (hot reloading)

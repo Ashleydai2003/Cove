@@ -146,4 +146,5 @@ struct UserPhoneNumberView: View {
 
 #Preview {
     UserPhoneNumberView()
+        .environmentObject(AppController.shared)
 }
