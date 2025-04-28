@@ -77,4 +77,5 @@ struct SignOnButton: View {
 
 #Preview {
     LoginView()
+        .environmentObject(AppController.shared)
 } 

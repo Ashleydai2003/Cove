@@ -111,4 +111,5 @@ struct OtpVerifyView: View {
 
 #Preview {
     OtpVerifyView()
+        .environmentObject(AppController.shared)
 }

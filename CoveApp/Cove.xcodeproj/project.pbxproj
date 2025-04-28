@@ -41,6 +41,9 @@
 		};
 		3CFAEF742DBDC7CA00148161 /* SupportingFiles */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				C4DF28162DC039A500AD39CB /* Exceptions for "SupportingFiles" folder in "Cove" target */,
+			);
 			path = SupportingFiles;
 			sourceTree = "<group>";
 		};
@@ -304,8 +307,15 @@
 				DEVELOPMENT_TEAM = 9L4RA2CN39;
 				EMIT_FRONTEND_COMMAND_LINES = YES;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "$(SRCROOT)/SupportingFiles/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Cove;
+				INFOPLIST_KEY_CFBundleIdentifier = "$(PRODUCT_BUNDLE_IDENTIFIER)";
+				INFOPLIST_KEY_CFBundleInfoDictionaryVersion = "6.0";
+				INFOPLIST_KEY_CFBundleName = "$(PRODUCT_NAME)";
+				INFOPLIST_KEY_CFBundlePackageType = "$(PRODUCT_BUNDLE_PACKAGE_TYPE)";
+				INFOPLIST_KEY_CFBundleShortVersionString = "1.0";
+				INFOPLIST_KEY_CFBundleVersion = "1";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -342,8 +352,15 @@
 				DEVELOPMENT_TEAM = 9L4RA2CN39;
 				EMIT_FRONTEND_COMMAND_LINES = YES;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "$(SRCROOT)/SupportingFiles/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Cove;
+				INFOPLIST_KEY_CFBundleIdentifier = "$(PRODUCT_BUNDLE_IDENTIFIER)";
+				INFOPLIST_KEY_CFBundleInfoDictionaryVersion = 6.0;
+				INFOPLIST_KEY_CFBundleName = "$(PRODUCT_NAME)";
+				INFOPLIST_KEY_CFBundlePackageType = "$(PRODUCT_BUNDLE_PACKAGE_TYPE)";
+				INFOPLIST_KEY_CFBundleShortVersionString = 1.0;
+				INFOPLIST_KEY_CFBundleVersion = 1;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
