@@ -7,7 +7,7 @@ import SwiftUI
 
 struct OtpVerifyView: View {
     
-    @EnvironmentObject var onboardingViewModel: OnboardingViewModel
+    @EnvironmentObject var appController: AppController
     
     @State private var otp: [String] = Array(repeating: "", count: 5)
     @FocusState private var focusedIndex: Int?
@@ -22,7 +22,7 @@ struct OtpVerifyView: View {
                     
                     HStack {
                         Button {
-                            onboardingViewModel.path.removeLast()
+                            appController.path.removeLast()
                         } label: {
                             Images.backArrow
                         }
@@ -42,7 +42,7 @@ struct OtpVerifyView: View {
                                 .font(.LeagueSpartan(size: 15))
                             
                             Button {
-                                onboardingViewModel.path.removeLast()
+                                appController.path.removeLast()
                             } label: {
                                 Text("edit number")
                                     .foregroundStyle(Colors.k171719)
@@ -73,7 +73,7 @@ struct OtpVerifyView: View {
                                         
                                         let enteredAllCode = otp.allSatisfy { !$0.isEmpty }
                                         if enteredAllCode {
-                                            onboardingViewModel.path.append(.userDetails)
+                                            appController.path.append(.userDetails)
                                         }
                                     }
                                 

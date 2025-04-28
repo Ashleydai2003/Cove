@@ -7,15 +7,6 @@
 
 import SwiftUI
 
-enum OnboardingRoute: Hashable {
-    case finished
-}
-
 final class OnboardingViewModel: ObservableObject {
-    @AppStorage("hasCompletedOnboarding") var hasCompletedOnboarding = false
-    @Published var path: [OnboardingRoute] = []
-
-    func completeOnboarding() {
-        hasCompletedOnboarding = true
-    }
+    // This class is now empty as all functionality has been moved to AppController
 }
