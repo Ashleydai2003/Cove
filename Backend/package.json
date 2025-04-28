@@ -12,7 +12,10 @@
   "dependencies": {
     "@aws-sdk/client-secrets-manager": "^3.525.0",
     "@prisma/client": "^6.6.0",
-    "pg": "^8.11.3"
+    "pg": "^8.11.3",
+    "firebase-admin": "^12.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "@types/jsonwebtoken": "^9.0.5"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.130",
