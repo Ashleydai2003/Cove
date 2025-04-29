@@ -17,7 +17,7 @@ struct WelcomeScreen: View {
                 .font(Fonts.libreBodoni(size: 28))
 
             Button("Get Started") {
-                viewModel.completeOnboarding()
+                viewModel.path.append(.personality)
             }
             .buttonStyle(.borderedProminent)
         }

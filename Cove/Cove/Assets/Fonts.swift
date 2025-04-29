@@ -12,4 +12,7 @@ enum Fonts {
     static func libreBodoni(size: CGFloat) -> Font {
         Font.custom("LibreBodoni-Regular", size: size)
     }
+    static func leagueSpartan(size: CGFloat) -> Font {
+        Font.custom("LeagueSpartan-Regular", size: size)
+    }
 }

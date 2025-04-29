@@ -8,6 +8,9 @@
 import SwiftUI
 
 enum OnboardingRoute: Hashable {
+    case personality
+    case profilePic
+    case mutuals
     case finished
 }
 
