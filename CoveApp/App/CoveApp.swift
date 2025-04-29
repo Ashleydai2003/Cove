@@ -6,40 +6,39 @@
 //
 
 import SwiftUI
+import UIKit
 
 @main
-struct MyApp: App {
-    @AppStorage("hasCompletedOnboarding") var hasCompletedOnboarding = true
-    
+struct CoveApp: App {
     // firebase delegate
     @UIApplicationDelegateAdaptor(FirebaseSetup.self) var firebase_delegate
     
+    /// Shared app controller instance
+    private let appController = AppController.shared
+    
     init() {
-            // For Injection (hot reloading)
-            // Note flags -Xlinker -interposable under Other Linker Flags are for Injection
-            #if DEBUG
-            Bundle(path: "/Applications/InjectionIII.app/Contents/Resources/iOSInjection.bundle")?.load()
-            #endif
-            // For development: always reset onboarding status
-            UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
+        // For Injection (hot reloading)
+        // Note flags -Xlinker -interposable under Other Linker Flags are for Injection
+        #if DEBUG
+        Bundle(path: "/Applications/InjectionIII.app/Contents/Resources/iOSInjection.bundle")?.load()
+        #endif
         
-            for family in UIFont.familyNames {
-                print("Font family: \(family)")
-                for name in UIFont.fontNames(forFamilyName: family) {
-                    print("   \(name)")
-                }
+        // For development: always reset onboarding status
+        UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
+        
+        // Print available fonts for debugging
+        for family in UIFont.familyNames {
+            print("Font family: \(family)")
+            for name in UIFont.fontNames(forFamilyName: family) {
+                print("   \(name)")
+            }
         }
-
-        }
-
+    }
+    
     var body: some Scene {
         WindowGroup {
-            TmpView()
-            // if hasCompletedOnboarding {
-            //     LandingView()
-            // } else {
-            //     OnboardingFlow()
-            // }
+            OnboardingFlow()
+                .environmentObject(appController)
         }
     }
 }
