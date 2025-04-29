@@ -4,6 +4,7 @@
 <dict>
 	<key>UIAppFonts</key>
 	<array>
+		<string>LeagueSpartan-VariableFont_wght.ttf</string>
 		<string>LibreBodoni-Italic-VariableFont_wght.ttf</string>
 		<string>LibreBodoni-VariableFont_wght.ttf</string>
 	</array>

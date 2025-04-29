@@ -15,10 +15,17 @@ struct OnboardingFlow: View {
             WelcomeScreen(viewModel: viewModel)
                 .navigationDestination(for: OnboardingRoute.self) { route in
                     switch route {
+                    case .personality:
+                        HobbiesPersonality(viewModel: viewModel)
+                    case .profilePic:
+                        PersonalizeProfile(viewModel: viewModel)
+                    case .mutuals:
+                        Mutuals(viewModel: viewModel)
                     case .finished:
-                        EmptyView() // Placeholder
+                        EmptyView()
                     }
                 }
         }
     }
 }
+
