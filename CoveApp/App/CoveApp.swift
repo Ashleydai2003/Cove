@@ -9,11 +9,12 @@ import SwiftUI
 import UIKit
 
 @main
-struct MyApp: App {
-    @AppStorage("hasCompletedOnboarding") var hasCompletedOnboarding = false
-    
+struct CoveApp: App {
     // firebase delegate
     @UIApplicationDelegateAdaptor(FirebaseSetup.self) var firebase_delegate
+    
+    /// Shared app controller instance
+    private let appController = AppController.shared
     
     init() {
         // For Injection (hot reloading)
@@ -25,6 +26,7 @@ struct MyApp: App {
         // For development: always reset onboarding status
         UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
         
+        // Print available fonts for debugging
         for family in UIFont.familyNames {
             print("Font family: \(family)")
             for name in UIFont.fontNames(forFamilyName: family) {
@@ -32,15 +34,11 @@ struct MyApp: App {
             }
         }
     }
-
+    
     var body: some Scene {
         WindowGroup {
-            if !hasCompletedOnboarding {
-                OnboardingFlow()
-            } else {
-                // TODO: Add your main app view here
-                Text("Main App")
-            }
+            OnboardingFlow()
+                .environmentObject(appController)
         }
     }
 }
