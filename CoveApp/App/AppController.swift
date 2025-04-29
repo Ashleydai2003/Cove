@@ -39,18 +39,33 @@ class AppController: ObservableObject {
     ///   - pattern: Format pattern (e.g., "### ### ####")
     /// - Returns: Formatted phone number string
     func formatPhoneNumber(_ number: String, pattern: String) -> String {
-        let replacementCharacter: Character = "#"
-        var result = ""
-        var numberIndex = number.startIndex
+        // Input validation
+        guard !number.isEmpty else { return "" }
         
+        // Remove all non-digit characters
+        let cleanNumber = number.filter { $0.isNumber }
+        
+        // Get the maximum number of digits allowed by the pattern
+        let maxDigits = pattern.filter { $0 == "#" }.count
+        
+        // Truncate the number if it exceeds the pattern's limit
+        let truncatedNumber = String(cleanNumber.prefix(maxDigits))
+        
+        var result = ""
+        var numberIndex = truncatedNumber.startIndex
+        
+        // Iterate through the pattern
         for patternChar in pattern {
-            if patternChar == replacementCharacter {
-                if numberIndex < number.endIndex {
-                    result.append(number[numberIndex])
-                    numberIndex = number.index(after: numberIndex)
+            if patternChar == "#" {
+                if numberIndex < truncatedNumber.endIndex {
+                    result.append(truncatedNumber[numberIndex])
+                    numberIndex = truncatedNumber.index(after: numberIndex)
                 }
             } else {
-                result.append(patternChar)
+                // Only add the separator if we have more digits to come
+                if numberIndex < truncatedNumber.endIndex {
+                    result.append(patternChar)
+                }
             }
         }
         
@@ -63,8 +78,63 @@ class AppController: ObservableObject {
     ///   - pattern: Required format pattern
     /// - Returns: Boolean indicating if the number is valid
     func isValidPhoneNumber(_ number: String, pattern: String) -> Bool {
+        // Input validation
+        guard !number.isEmpty else { return false }
+        
         let cleanNumber = number.filter { $0.isNumber }
-        return cleanNumber.count == pattern.filter { $0 == "#" }.count
+        let requiredDigits = pattern.filter { $0 == "#" }.count
+        
+        let isValid = cleanNumber.count == requiredDigits
+        
+        // If the number is valid, store it
+        if isValid {
+            storePhoneNumber()
+        }
+        
+        return isValid
+    }
+    
+    /// Returns the full phone number in E.164 format (e.g., +14155552671)
+    func getFullPhoneNumber() -> String {
+        // Remove all non-digit characters from the local number
+        let cleanLocalNumber = phoneNumber.filter { $0.isNumber }
+        
+        // Combine country code and local number
+        let countryCode = selectedCountry.dial_code.replacingOccurrences(of: "+", with: "")
+        return "+" + countryCode + cleanLocalNumber
+    }
+    
+    /// Stores the phone number in a standardized format
+    func storePhoneNumber() {
+        // Get the full phone number in E.164 format
+        let fullNumber = getFullPhoneNumber()
+        
+        // Store the full number in UserDefaults
+        UserDefaults.standard.set(fullNumber, forKey: "storedPhoneNumber")
+    }
+    
+    /// Handles authentication failure by resetting relevant state
+    func handleAuthFailure() {
+        // Clear the stored phone number
+        UserDefaults.standard.removeObject(forKey: "storedPhoneNumber")
+        
+        // Reset the phone number input
+        phoneNumber = ""
+        
+        // Reset the navigation path to the phone number entry screen
+        path = [.enterPhoneNumber]
+    }
+    
+    /// Resets the controller to its initial state
+    func reset() {
+        // Clear all stored data
+        UserDefaults.standard.removeObject(forKey: "storedPhoneNumber")
+        hasCompletedOnboarding = false
+        
+        // Reset all published properties
+        phoneNumber = ""
+        selectedCountry = Country(id: "0235", name: "USA", flag: "🇺🇸", code: "US", dial_code: "+1", pattern: "### ### ####", limit: 17)
+        path = []
     }
     
     func completeOnboarding() {
