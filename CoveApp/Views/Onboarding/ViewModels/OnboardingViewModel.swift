@@ -8,6 +8,10 @@
 import SwiftUI
 
 enum OnboardingRoute: Hashable {
+    case enterPhoneNumber
+    case optVerify
+    case userDetails
+    case birthdate
     case finished
 }
 
