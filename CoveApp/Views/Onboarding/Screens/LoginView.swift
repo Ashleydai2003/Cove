@@ -2,7 +2,7 @@ import SwiftUI
 
 struct LoginView: View {
     
-    @EnvironmentObject var onboardingViewModel: OnboardingViewModel
+    @EnvironmentObject var appController: AppController
     
     var body: some View {
         ZStack {
@@ -24,7 +24,7 @@ struct LoginView: View {
                 Spacer()
                 
                 SignOnButton(text: "let's go") {
-                    onboardingViewModel.path.append(.enterPhoneNumber)
+                    appController.path.append(.enterPhoneNumber)
                 }
                 .padding(.bottom)
                      
@@ -38,7 +38,7 @@ struct LoginView: View {
     }
     
     var attributedString: AttributedString {
-        var string = AttributedString("By tapping ‘Get Started’ you agree to our Terms and Conditions. Learn how we process you data in our Privacy Policy.")
+        var string = AttributedString("By tapping 'Get Started' you agree to our Terms and Conditions. Learn how we process you data in our Privacy Policy.")
         string.foregroundColor = Color.white
         
         if let termsServiceRange = string.range(of: "Terms and Conditions") {
@@ -77,4 +77,5 @@ struct SignOnButton: View {
 
 #Preview {
     LoginView()
+        .environmentObject(AppController.shared)
 } 

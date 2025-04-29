@@ -7,7 +7,7 @@ import SwiftUI
 
 struct BirthdateView: View {
     
-    @EnvironmentObject var onboardingViewModel: OnboardingViewModel
+    @EnvironmentObject var appController: AppController
     
     @State private var date: String = ""
     @State private var month: String = ""
@@ -23,7 +23,7 @@ struct BirthdateView: View {
                 VStack {
                     HStack {
                         Button {
-                            onboardingViewModel.path.removeLast()
+                            appController.path.removeLast()
                         } label: {
                             Images.backArrow
                         }
@@ -33,7 +33,7 @@ struct BirthdateView: View {
                     
                     VStack(alignment: .leading) {
                         
-                        Text("when’s your \nbirthday?")
+                        Text("when's your \nbirthday?")
                             .foregroundStyle(Colors.primaryDark)
                             .font(.LibreBodoni(size: 40))
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -111,7 +111,7 @@ struct BirthdateView: View {
                             .frame(width: 52, height: 52)
                             .padding(.init(top: 0, leading: 0, bottom: 60, trailing: 20))
                             .onTapGesture {
-                                onboardingViewModel.completeOnboarding()
+                                appController.completeOnboarding()
                             }
                     }
                 }

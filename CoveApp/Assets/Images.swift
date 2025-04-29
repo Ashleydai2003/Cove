@@ -8,9 +8,11 @@
 import SwiftUI
 
 enum Images {
+    // tmp for now
+    static let smily = Image("smily")
     static let backArrow = Image("backArrow")
     static let downArrowSolid = Image("down-arrow-solid")
     static let lineDiagonal = Image("line-diagonal")
-    static let smily = Image("smily")
+    static let loginBackground = Image("login_background")
 }
 
