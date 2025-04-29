@@ -7,7 +7,7 @@ import SwiftUI
 
 struct OtpVerifyView: View {
     
-    @EnvironmentObject var onboardingViewModel: OnboardingViewModel
+    @EnvironmentObject var appController: AppController
     
     @State private var otp: [String] = Array(repeating: "", count: 5)
     @FocusState private var focusedIndex: Int?
@@ -22,7 +22,7 @@ struct OtpVerifyView: View {
                     
                     HStack {
                         Button {
-                            onboardingViewModel.path.removeLast()
+                            appController.path.removeLast()
                         } label: {
                             Images.backArrow
                         }
@@ -38,14 +38,14 @@ struct OtpVerifyView: View {
                         
                         HStack(spacing: 0) {
                             Text("sent to +1 (344) 343-3434 | ")
-                                .foregroundStyle(Colors.k6F6F73)
+                                .foregroundStyle(Colors.primaryDark)
                                 .font(.LeagueSpartan(size: 15))
                             
                             Button {
-                                onboardingViewModel.path.removeLast()
+                                appController.path.removeLast()
                             } label: {
                                 Text("edit number")
-                                    .foregroundStyle(Colors.k171719)
+                                    .foregroundStyle(Colors.primaryDark)
                                     .font(.LeagueSpartan(size: 15))
                             }
                         }
@@ -73,7 +73,7 @@ struct OtpVerifyView: View {
                                         
                                         let enteredAllCode = otp.allSatisfy { !$0.isEmpty }
                                         if enteredAllCode {
-                                            onboardingViewModel.path.append(.userDetails)
+                                            appController.path.append(.userDetails)
                                         }
                                     }
                                 
@@ -92,7 +92,7 @@ struct OtpVerifyView: View {
                             
                         } label: {
                             Text("resend code")
-                                .foregroundStyle(Colors.k262627)
+                                .foregroundStyle(Colors.primaryDark)
                                 .font(.LeagueSpartan(size: 15))
                         }
                     }
@@ -111,4 +111,5 @@ struct OtpVerifyView: View {
 
 #Preview {
     OtpVerifyView()
+        .environmentObject(AppController.shared)
 }

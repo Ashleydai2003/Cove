@@ -2,7 +2,7 @@ import SwiftUI
 
 struct NamePageView: View {
     
-    @EnvironmentObject var onboardingViewModel: OnboardingViewModel
+    @EnvironmentObject var appController: AppController
     
     @State private var firstName: String = ""
     @State private var lastName: String = ""
@@ -24,7 +24,6 @@ struct NamePageView: View {
                         
                         Text("only your first name will be displayed.")
                             .font(.LeagueSpartan(size: 15))
-                            .foregroundColor(Colors.k6F6F73)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .padding(.top, 40)
@@ -60,7 +59,7 @@ struct NamePageView: View {
                             .frame(width: 52, height: 52)
                             .padding(.init(top: 0, leading: 0, bottom: 60, trailing: 20))
                             .onTapGesture {
-                                onboardingViewModel.path.append(.birthdate)
+                                appController.path.append(.birthdate)
                             }
                     }
                 }
@@ -74,4 +73,5 @@ struct NamePageView: View {
 
 #Preview {
     NamePageView()
+        .environmentObject(AppController.shared)
 } 
