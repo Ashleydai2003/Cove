@@ -34,12 +34,7 @@ struct MyApp: App {
 
     var body: some Scene {
         WindowGroup {
-            TmpView()
-            // if hasCompletedOnboarding {
-            //     LandingView()
-            // } else {
-            //     OnboardingFlow()
-            // }
+            NameView()
         }
     }
 }
