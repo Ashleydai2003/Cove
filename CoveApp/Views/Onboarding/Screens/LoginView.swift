@@ -67,7 +67,7 @@ struct SignOnButton: View {
                 .font(.LibreBodoni(size: 25))
                 .frame(maxWidth: .infinity, minHeight: 30, maxHeight: 30)
                 .padding()
-                .foregroundStyle(Colors.k292929)
+                .foregroundStyle(Color.white)
                 .background(Color.white)
                 .cornerRadius(16.99)
                 .padding(.horizontal, 50)
