@@ -39,7 +39,7 @@ struct BirthdateView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                         
                         Text("only your age will be displayed on your profile")
-                            .foregroundStyle(Colors.k6F6F73)
+                            .foregroundStyle(Colors.primaryDark)
                             .font(.LeagueSpartan(size: 15))
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }

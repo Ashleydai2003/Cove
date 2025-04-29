@@ -24,7 +24,6 @@ struct NamePageView: View {
                         
                         Text("only your first name will be displayed.")
                             .font(.LeagueSpartan(size: 15))
-                            .foregroundColor(Colors.k6F6F73)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .padding(.top, 40)

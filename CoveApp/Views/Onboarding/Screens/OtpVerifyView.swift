@@ -38,14 +38,14 @@ struct OtpVerifyView: View {
                         
                         HStack(spacing: 0) {
                             Text("sent to +1 (344) 343-3434 | ")
-                                .foregroundStyle(Colors.k6F6F73)
+                                .foregroundStyle(Colors.primaryDark)
                                 .font(.LeagueSpartan(size: 15))
                             
                             Button {
                                 appController.path.removeLast()
                             } label: {
                                 Text("edit number")
-                                    .foregroundStyle(Colors.k171719)
+                                    .foregroundStyle(Colors.primaryDark)
                                     .font(.LeagueSpartan(size: 15))
                             }
                         }
@@ -92,7 +92,7 @@ struct OtpVerifyView: View {
                             
                         } label: {
                             Text("resend code")
-                                .foregroundStyle(Colors.k262627)
+                                .foregroundStyle(Colors.primaryDark)
                                 .font(.LeagueSpartan(size: 15))
                         }
                     }
