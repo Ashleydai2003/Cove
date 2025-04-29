@@ -51,6 +51,7 @@ resource "aws_lambda_function" "my_lambda" {
       DB_USER     = aws_db_instance.postgres.username
       DB_NAME     = aws_db_instance.postgres.db_name
       RDS_MASTER_SECRET_ARN = aws_db_instance.postgres.master_user_secret[0].secret_arn
+      FIREBASE_SECRET_ARN = data.aws_secretsmanager_secret.firebase_credentials.arn
     }
   }
   
