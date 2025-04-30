@@ -14,14 +14,6 @@ struct OnboardingFlow: View {
             LoginView()
                 .navigationDestination(for: OnboardingRoute.self) { route in
                     switch route {
-<<<<<<< HEAD:Cove/Cove/Features/Onboarding/OnboardingFlow.swift
-                    case .personality:
-                        HobbiesPersonality(viewModel: viewModel)
-                    case .profilePic:
-                        PersonalizeProfile(viewModel: viewModel)
-                    case .mutuals:
-                        Mutuals(viewModel: viewModel)
-=======
                     case .enterPhoneNumber:
                         UserPhoneNumberView()
                     case .otpVerify:
@@ -30,7 +22,12 @@ struct OnboardingFlow: View {
                         NamePageView()
                     case .birthdate:
                         BirthdateView()
->>>>>>> main:CoveApp/Views/Onboarding/Flows/OnboardingFlow.swift
+                    case .bio:
+                        BioView()
+                    case .profilePics:
+                        ProfilePicView()
+                    case .mutuals:
+                        MutualsView()
                     case .finished:
                         EmptyView()
                     }
