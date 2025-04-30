@@ -111,7 +111,7 @@ struct BirthdateView: View {
                             .frame(width: 52, height: 52)
                             .padding(.init(top: 0, leading: 0, bottom: 60, trailing: 20))
                             .onTapGesture {
-                                appController.completeOnboarding()
+                                appController.path.append(.bio)
                             }
                     }
                 }

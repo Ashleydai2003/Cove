@@ -13,6 +13,9 @@ enum OnboardingRoute: Hashable {
     case otpVerify
     case userDetails
     case birthdate
+    case bio
+    case profilePics
+    case mutuals
     case finished
 }
 
