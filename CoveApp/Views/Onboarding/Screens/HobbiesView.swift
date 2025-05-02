@@ -1,20 +1,38 @@
 import SwiftUI
 import Inject
 
+/// View for collecting user's hobbies during onboarding
+/// Features a searchable grid of hobby categories with selectable buttons
+/// Allows users to add custom hobbies that don't exist in the predefined list
 struct HobbiesView: View {
+    // MARK: - Environment & State Properties
+    
+    /// App controller for managing navigation and shared state
     @EnvironmentObject var appController: AppController
+    
+    /// Tracks which hobbies are currently selected
     @State private var selectedButtons: Set<String> = []
+    
+    /// Current search text for filtering hobbies
     @State private var searchText: String = ""
+    
+    /// Stores custom hobbies added by the user
     @State private var customHobbies: [(String, String)] = []
+    
+    /// Enables hot reloading during development
     @ObserveInjection var inject
     
-    // Define grid layout
+    // MARK: - Layout Configuration
+    
+    /// Grid layout configuration for hobby buttons
     private let columns = [
         GridItem(.flexible(), spacing: 12),
         GridItem(.flexible(), spacing: 12)
     ]
     
-    // Organized categories of hobbies with emojis
+    // MARK: - Data Models
+    
+    /// Predefined categories of hobbies with their associated activities and emojis
     private let hobbyCategories: [(String, [(String, String)])] = [
         ("Sports & Fitness 🏃‍♀️", [
             ("Soccer Teams", "⚽️"),
@@ -98,7 +116,10 @@ struct HobbiesView: View {
         ])
     ]
     
-    // Filtered categories based on search
+    // MARK: - Computed Properties
+    
+    /// Filters categories and hobbies based on search text
+    /// Returns only categories that have matching hobbies
     private var filteredCategories: [(String, [(String, String)])] {
         if searchText.isEmpty {
             return hobbyCategories
@@ -117,18 +138,23 @@ struct HobbiesView: View {
         }
     }
     
-    // Check if search text matches any existing hobby
+    /// Checks if the current search text matches any existing hobby
     private var isExistingHobby: Bool {
         let allHobbies = hobbyCategories.flatMap { $0.1 }
         return allHobbies.contains { $0.0.lowercased() == searchText.lowercased() }
     }
     
+    // MARK: - View Body
+    
     var body: some View {
         ZStack {
+            // Background
             Color.white
                 .ignoresSafeArea()
             
+            // Main content container
             VStack(spacing: 0) {
+                // Back button
                 HStack {
                     Button {
                         appController.path.removeLast()
@@ -139,7 +165,7 @@ struct HobbiesView: View {
                 }
                 .padding(.top, 10)
                 
-                // Content
+                // Header section
                 VStack(alignment: .leading, spacing: 10) {
                     Text("what are your favorite social pass times?")
                         .foregroundStyle(Colors.primary)
@@ -158,8 +184,9 @@ struct HobbiesView: View {
                 .padding(.top, 20)
                 .padding(.bottom, 20)
                 
-                // Search bar
+                // Search section
                 VStack(spacing: 8) {
+                    // Search bar
                     HStack {
                         Image(systemName: "magnifyingglass")
                             .foregroundColor(.gray)
@@ -198,9 +225,10 @@ struct HobbiesView: View {
                 .padding(.horizontal)
                 .padding(.bottom, 20)
                 
-                // Grid of buttons
+                // Hobbies grid
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 24) {
+                        // Predefined categories
                         ForEach(filteredCategories, id: \.0) { category in
                             VStack(alignment: .leading, spacing: 12) {
                                 Text(category.0)
@@ -282,6 +310,7 @@ struct HobbiesView: View {
                 
                 Spacer()
                 
+                // Navigation helper
                 HStack {
                     Spacer()
                     Images.smily
@@ -301,6 +330,7 @@ struct HobbiesView: View {
     }
 }
 
+// MARK: - Preview
 #Preview {
     HobbiesView()
         .environmentObject(AppController.shared)
