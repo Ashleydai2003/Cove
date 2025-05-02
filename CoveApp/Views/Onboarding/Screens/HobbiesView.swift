@@ -4,6 +4,7 @@ import Inject
 struct HobbiesView: View {
     @EnvironmentObject var appController: AppController
     @State private var selectedButtons: Set<String> = []
+    @State private var searchText: String = ""
     @ObserveInjection var inject
     
     // Define grid layout
@@ -25,7 +26,14 @@ struct HobbiesView: View {
             ("Swimming Clubs", "🏊‍♀️"),
             ("Running Groups", "🏃‍♀️"),
             ("Volleyball Teams", "🏐"),
-            ("Spin Classes", "🚴‍♀️")
+            ("Spin Classes", "🚴‍♀️"),
+            ("Boxing Clubs", "🥊"),
+            ("CrossFit Groups", "💪"),
+            ("Dance Fitness", "💃"),
+            ("Beach Volleyball", "🏖️"),
+            ("Ultimate Frisbee", "🥏"),
+            ("Pickleball Clubs", "🏓"),
+            ("Golf Leagues", "⛳️")
         ]),
         ("Creative Pursuits 🎨", [
             ("Art Museums", "🖼️"),
@@ -36,7 +44,16 @@ struct HobbiesView: View {
             ("Cooking Classes", "👨‍🍳"),
             ("Craft Workshops", "✂️"),
             ("Writing Circles", "✍️"),
-            ("Film Clubs", "🎬")
+            ("Film Clubs", "🎬"),
+            ("Photography Walks", "📸"),
+            ("Painting Classes", "🎨"),
+            ("Sculpture Workshops", "🗿"),
+            ("Jewelry Making", "💍"),
+            ("Glass Blowing", "🔥"),
+            ("Digital Art Clubs", "🖥️"),
+            ("Street Art Tours", "🎯"),
+            ("Fashion Design", "👗"),
+            ("Woodworking", "🪚")
         ]),
         ("Entertainment 🎉", [
             ("Cocktail Bars", "🍸"),
@@ -46,7 +63,17 @@ struct HobbiesView: View {
             ("Karaoke Nights", "🎤"),
             ("Escape Rooms", "🔐"),
             ("Bowling Leagues", "🎳"),
-            ("Live Music Venues", "🎸")
+            ("Live Music Venues", "🎸"),
+            ("Jazz Clubs", "🎺"),
+            ("Rooftop Bars", "🌆"),
+            ("Beer Gardens", "🍺"),
+            ("Game Nights", "🎲"),
+            ("Dance Clubs", "💃"),
+            ("Piano Bars", "🎹"),
+            ("Magic Shows", "🎩"),
+            ("Burlesque Shows", "✨"),
+            ("Improv Classes", "🎭"),
+            ("Casino Nights", "🎰")
         ]),
         ("Social Activities 🌟", [
             ("Book Clubs", "📚"),
@@ -54,8 +81,40 @@ struct HobbiesView: View {
             ("Founders Groups", "💻"),
             ("Chess Clubs", "♟️"),
             ("Volunteer Groups", "🤝"),
+            ("Language Exchange", "🗣️"),
+            ("Food Tours", "🍽️"),
+            ("Coffee Meetups", "☕️"),
+            ("Tech Meetups", "💻"),
+            ("Gardening Clubs", "🌱"),
+            ("Cultural Events", "🎪"),
+            ("Philosophy Clubs", "🤔"),
+            ("Astronomy Groups", "🔭"),
+            ("Hiking Meetups", "🥾"),
+            ("Wine & Paint", "🎨"),
+            ("Cooking Classes", "👨‍🍳"),
+            ("Board Game Nights", "🎲"),
+            ("Trivia Teams", "🧠")
         ])
     ]
+    
+    // Filtered categories based on search
+    private var filteredCategories: [(String, [(String, String)])] {
+        if searchText.isEmpty {
+            return hobbyCategories
+        }
+        
+        return hobbyCategories.compactMap { category in
+            let filteredHobbies = category.1.filter { hobby in
+                hobby.0.lowercased().contains(searchText.lowercased())
+            }
+            
+            if filteredHobbies.isEmpty {
+                return nil
+            }
+            
+            return (category.0, filteredHobbies)
+        }
+    }
     
     var body: some View {
         ZStack {
@@ -91,12 +150,32 @@ struct HobbiesView: View {
                 }
                 .padding(.top, 20)
                 .padding(.bottom, 20)
-                .enableInjection()
+                
+                // Search bar
+                HStack {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(.gray)
+                    TextField("Search activities...", text: $searchText)
+                        .font(.LeagueSpartan(size: 14))
+                    if !searchText.isEmpty {
+                        Button(action: {
+                            searchText = ""
+                        }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(.gray)
+                        }
+                    }
+                }
+                .padding(8)
+                .background(Color.gray.opacity(0.1))
+                .cornerRadius(10)
+                .padding(.horizontal)
+                .padding(.bottom, 20)
                 
                 // Grid of buttons
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 24) {
-                        ForEach(hobbyCategories, id: \.0) { category in
+                        ForEach(filteredCategories, id: \.0) { category in
                             VStack(alignment: .leading, spacing: 12) {
                                 Text(category.0)
                                     .font(.LeagueSpartan(size: 16))
