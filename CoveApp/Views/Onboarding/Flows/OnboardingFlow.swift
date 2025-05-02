@@ -22,6 +22,12 @@ struct OnboardingFlow: View {
                         NamePageView()
                     case .birthdate:
                         BirthdateView()
+                    case .bio:
+                        BioView()
+                    case .profilePics:
+                        ProfilePicView()
+                    case .mutuals:
+                        MutualsView()
                     case .finished:
                         EmptyView()
                     }
@@ -44,3 +50,4 @@ struct OnboardingBackgroundView: View {
             .ignoresSafeArea()
     }
 }
+
