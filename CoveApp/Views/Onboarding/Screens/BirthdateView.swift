@@ -228,7 +228,7 @@ struct BirthdateView: View {
         // If we get here, the date is valid
         errorMessage = ""
         // Navigate to next screen
-        appController.path.append(OnboardingRoute.bio)
+        appController.path.append(OnboardingRoute.hobbies)
     }
 }
 
