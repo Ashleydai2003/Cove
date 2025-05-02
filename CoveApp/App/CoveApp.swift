@@ -37,8 +37,7 @@ struct CoveApp: App {
     
     var body: some Scene {
         WindowGroup {
-            // OnboardingFlow()
-            BirthdateView()
+            OnboardingFlow()
                 .environmentObject(appController)
         }
     }

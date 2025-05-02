@@ -76,14 +76,6 @@ struct BioView: View {
                 }
                 .padding(.horizontal, 20)
                 .safeAreaPadding()
-                .toolbar {
-                    ToolbarItemGroup(placement: .keyboard) {
-                        Spacer()
-                        Button("Done") {
-                            isFocused = false
-                        }
-                    }
-                }
             }
         }
         .navigationBarBackButtonHidden()
