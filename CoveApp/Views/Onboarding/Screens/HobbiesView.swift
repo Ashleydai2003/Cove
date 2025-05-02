@@ -5,6 +5,7 @@ struct HobbiesView: View {
     @EnvironmentObject var appController: AppController
     @State private var selectedButtons: Set<String> = []
     @State private var searchText: String = ""
+    @State private var customHobbies: [(String, String)] = []
     @ObserveInjection var inject
     
     // Define grid layout
@@ -116,6 +117,12 @@ struct HobbiesView: View {
         }
     }
     
+    // Check if search text matches any existing hobby
+    private var isExistingHobby: Bool {
+        let allHobbies = hobbyCategories.flatMap { $0.1 }
+        return allHobbies.contains { $0.0.lowercased() == searchText.lowercased() }
+    }
+    
     var body: some View {
         ZStack {
             Color.white
@@ -152,23 +159,42 @@ struct HobbiesView: View {
                 .padding(.bottom, 20)
                 
                 // Search bar
-                HStack {
-                    Image(systemName: "magnifyingglass")
-                        .foregroundColor(.gray)
-                    TextField("Search activities...", text: $searchText)
-                        .font(.LeagueSpartan(size: 14))
-                    if !searchText.isEmpty {
+                VStack(spacing: 8) {
+                    HStack {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundColor(.gray)
+                        TextField("Search activities...", text: $searchText)
+                            .font(.LeagueSpartan(size: 14))
+                        if !searchText.isEmpty {
+                            Button(action: {
+                                searchText = ""
+                            }) {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundColor(.gray)
+                            }
+                        }
+                    }
+                    .padding(8)
+                    .background(Color.gray.opacity(0.1))
+                    .cornerRadius(10)
+                    
+                    // Add custom hobby button
+                    if !searchText.isEmpty && !isExistingHobby {
                         Button(action: {
+                            customHobbies.append((searchText, "✨"))
+                            selectedButtons.insert(searchText)
                             searchText = ""
                         }) {
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundColor(.gray)
+                            HStack {
+                                Text("Add '\(searchText)' as a hobby")
+                                    .font(.LeagueSpartan(size: 14))
+                                Image(systemName: "plus.circle.fill")
+                            }
+                            .foregroundColor(Colors.primary)
+                            .padding(.vertical, 4)
                         }
                     }
                 }
-                .padding(8)
-                .background(Color.gray.opacity(0.1))
-                .cornerRadius(10)
                 .padding(.horizontal)
                 .padding(.bottom, 20)
                 
@@ -184,6 +210,45 @@ struct HobbiesView: View {
                                 
                                 LazyVGrid(columns: columns, spacing: 12) {
                                     ForEach(category.1, id: \.0) { hobby in
+                                        Button(action: {
+                                            if selectedButtons.contains(hobby.0) {
+                                                selectedButtons.remove(hobby.0)
+                                            } else {
+                                                selectedButtons.insert(hobby.0)
+                                            }
+                                        }) {
+                                            ZStack {
+                                                Image(selectedButtons.contains(hobby.0) ? "buttonRed" : "buttonWhite")
+                                                    .resizable()
+                                                    .aspectRatio(contentMode: .fit)
+                                                
+                                                HStack(spacing: 4) {
+                                                    Text(hobby.1)
+                                                    Text(hobby.0.lowercased())
+                                                }
+                                                .foregroundColor(selectedButtons.contains(hobby.0) ? .white : .black)
+                                                .font(.LeagueSpartan(size: 14))
+                                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                                .multilineTextAlignment(.center)
+                                            }
+                                            .frame(height: 48)
+                                        }
+                                    }
+                                }
+                                .padding(.horizontal)
+                            }
+                        }
+                        
+                        // Custom hobbies section
+                        if !customHobbies.isEmpty {
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text("Custom Hobbies ✨")
+                                    .font(.LeagueSpartan(size: 16))
+                                    .foregroundStyle(Colors.primary)
+                                    .padding(.horizontal)
+                                
+                                LazyVGrid(columns: columns, spacing: 12) {
+                                    ForEach(customHobbies, id: \.0) { hobby in
                                         Button(action: {
                                             if selectedButtons.contains(hobby.0) {
                                                 selectedButtons.remove(hobby.0)
