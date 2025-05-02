@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// View for collecting user's first and last name during onboarding
 /// Handles name input validation and navigation to birthdate screen
@@ -11,6 +12,7 @@ struct NamePageView: View {
     /// User's first and last name input fields
     @State private var firstName: String = ""
     @State private var lastName: String = ""
+    @FocusState private var isFirstNameFocused: Bool
 
     // MARK: - View Body
     
@@ -37,6 +39,15 @@ struct NamePageView: View {
                     TextField("first name", text: $firstName)
                         .font(.LibreCaslon(size: 25))
                         .padding(.horizontal, 10)
+                        .focused($isFirstNameFocused)
+                        .onChange(of: firstName) { newValue in
+                            if !newValue.isEmpty {
+                                let filtered = newValue.filter { $0.isLetter || $0 == "-" }
+                                if filtered != newValue {
+                                    firstName = filtered
+                                }
+                            }
+                        }
                     
                     Divider()
                         .frame(height: 2)
@@ -47,6 +58,14 @@ struct NamePageView: View {
                         .font(.LibreCaslon(size: 25))
                         .padding(.top)
                         .padding(.horizontal, 10)
+                        .onChange(of: lastName) { newValue in
+                            if !newValue.isEmpty {
+                                let filtered = newValue.filter { $0.isLetter || $0 == "-" }
+                                if filtered != newValue {
+                                    lastName = filtered
+                                }
+                            }
+                        }
                     
                     Divider()
                         .frame(height: 2)
@@ -72,6 +91,9 @@ struct NamePageView: View {
             .safeAreaPadding()
         }
         .navigationBarBackButtonHidden()
+        .onAppear {
+            isFirstNameFocused = true
+        }
     }
 }
 
