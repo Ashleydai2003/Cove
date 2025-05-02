@@ -3,6 +3,8 @@
 //  Cove
 //
 
+// TODO: allow backspace when field is empty
+
 import SwiftUI
 
 /// View for handling OTP (One-Time Password) verification during user onboarding
