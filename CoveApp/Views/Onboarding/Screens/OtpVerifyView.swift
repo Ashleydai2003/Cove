@@ -16,12 +16,31 @@ struct OtpVerifyView: View {
     @EnvironmentObject var appController: AppController
     
     /// Array to store individual digits of the OTP
-    /// Initialized with 5 empty strings for each digit position
-    @State private var otp: [String] = Array(repeating: "", count: 5)
+    /// Initialized with 6 empty strings for each digit position
+    @State private var otp: [String] = Array(repeating: "", count: 6)
     
     /// Tracks which OTP input field is currently focused
     /// Used for automatic field advancement and keyboard management
     @FocusState private var focusedIndex: Int?
+    
+    /// Tracks whether the OTP verification process is in progress
+    @State private var isVerifying = false
+    
+    /// Tracks whether an error should be shown
+    @State private var showError = false
+    
+    // Custom input accessory view for keyboard
+    private var keyboardAccessoryView: some View {
+        HStack {
+            Spacer()
+            Button("Done") {
+                focusedIndex = nil
+            }
+            .padding(.trailing, 16)
+            .padding(.vertical, 8)
+        }
+        .background(Color(.systemGray6))
+    }
     
     // MARK: - Computed Properties
     
@@ -42,6 +61,8 @@ struct OtpVerifyView: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack {
+                OnboardingBackgroundView(imageName: "otp_background")
+                    .opacity(0.4)
                 
                 VStack {
                     // MARK: - Navigation Header
@@ -92,25 +113,30 @@ struct OtpVerifyView: View {
                                     .autocorrectionDisabled()
                                     .submitLabel(.done)
                                     .focused($focusedIndex, equals: index)
-                                    // Add this modifier to prevent unwanted input
                                     .textContentType(.oneTimeCode)
+                                    .toolbar {
+                                        ToolbarItem(placement: .keyboard) {
+                                            keyboardAccessoryView
+                                        }
+                                    }
                                     .onChange(of: otp[index]) { oldValue, newValue in
-                                        // Only proceed if the new value is either empty or a single number
-                                        if newValue.isEmpty || (newValue.count == 1 && newValue.first?.isNumber == true) {
-                                            // Keep the value as is
-                                            if !newValue.isEmpty && index < 4 {
-                                                focusedIndex = index + 1  // Move to next field
-                                            } else if newValue.isEmpty && index > 0 {
-                                                focusedIndex = index - 1  // Move to previous field
-                                            }
-                                        } else {
-                                            // Revert to old value if invalid input
-                                            otp[index] = oldValue
+                                        // Handle input changes
+                                        if newValue.count > 1 {
+                                            otp[index] = String(newValue.prefix(1))
                                         }
                                         
-                                        // Check if all fields are filled and navigate if complete
-                                        let enteredAllCode = otp.allSatisfy { !$0.isEmpty }
-                                        if enteredAllCode {
+                                        // Move to next field if a digit is entered
+                                        if !newValue.isEmpty && index < otp.count - 1 {
+                                            focusedIndex = index + 1
+                                        }
+                                        
+                                        // Move to previous field if backspace is pressed
+                                        if newValue.isEmpty && index > 0 {
+                                            focusedIndex = index - 1
+                                        }
+                                        
+                                        // Verify if all digits are entered
+                                        if otp.allSatisfy({ !$0.isEmpty }) {
                                             verifyOTP()
                                         }
                                     }
@@ -128,7 +154,7 @@ struct OtpVerifyView: View {
                     HStack {
                         Spacer()
                         Button {
-                            // TODO: Implement resend code functionality
+                            resendCode()
                         } label: {
                             Text("resend code")
                                 .foregroundStyle(Colors.primaryDark)
@@ -153,6 +179,29 @@ struct OtpVerifyView: View {
         // Focus on the first input field when the view appears
         .onAppear {
             focusedIndex = 0
+        }
+    }
+    
+    private func verifyOTP() {
+        guard !isVerifying else { return }
+        isVerifying = true
+        
+        let code = otp.joined()
+        appController.verifyOTP(code) { success in
+            isVerifying = false
+            if success {
+                appController.path.append(.userDetails)
+            } else {
+                showError = true
+            }
+        }
+    }
+    
+    private func resendCode() {
+        appController.sendVerificationCode { success in
+            if !success {
+                showError = true
+            }
         }
     }
 }
