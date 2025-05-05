@@ -190,7 +190,7 @@ struct HobbiesView: View {
                     HStack {
                         Image(systemName: "magnifyingglass")
                             .foregroundColor(.gray)
-                        TextField("Search activities...", text: $searchText)
+                        TextField("Search or add activities...", text: $searchText)
                             .font(.LeagueSpartan(size: 14))
                         if !searchText.isEmpty {
                             Button(action: {
