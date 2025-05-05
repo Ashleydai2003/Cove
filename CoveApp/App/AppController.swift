@@ -159,22 +159,25 @@ class AppController: ObservableObject {
     /// Sends verification code to the provided phone number
     func sendVerificationCode(completion: @escaping (Bool) -> Void) {
         let fullPhoneNumber = getFullPhoneNumber()
-        print("Attempting to send verification code to: \(fullPhoneNumber)")
+        print("📱 Attempting to send verification code to: \(fullPhoneNumber)")
         
-        PhoneAuthProvider.provider().verifyPhoneNumber(phoneNumber, uiDelegate: nil) { verificationID, error in
+        PhoneAuthProvider.provider().verifyPhoneNumber(fullPhoneNumber, uiDelegate: nil) { [weak self] verificationID, error in
             DispatchQueue.main.async {
                 if let error = error {
-                    print("Firebase Auth Error: \(error.localizedDescription)")
-                    print("Error details: \(error)")
+                    print("❌ Firebase Auth Error: \(error.localizedDescription)")
+                    print("❌ Error details: \(error)")
+                    self?.errorMessage = error.localizedDescription
                     completion(false)
                     return
                 }
                 
                 if let verificationID = verificationID {
-                    print("Successfully received verification ID")
+                    print("✅ Successfully received verification ID")
+                    self?.verificationID = verificationID
                     completion(true)
                 } else {
-                    print("Failed to get verification ID - no error but no ID received")
+                    print("❌ Failed to get verification ID - no error but no ID received")
+                    self?.errorMessage = "Failed to get verification ID"
                     completion(false)
                 }
             }
@@ -193,18 +196,20 @@ class AppController: ObservableObject {
         Auth.auth().signIn(with: credential) { [weak self] authResult, error in
             DispatchQueue.main.async {
                 if let error = error {
-                    print("Firebase Auth Error: \(error.localizedDescription)")
-                    print("Error details: \(error)")
+                    print("❌ Firebase Auth Error: \(error.localizedDescription)")
+                    print("❌ Error details: \(error)")
                     self?.errorMessage = error.localizedDescription
                     completion(false)
                     return
                 }
                 
                 if authResult != nil {
-                    print("Successfully verified OTP and signed in")
+                    print("✅ Successfully verified OTP and signed in")
+                    // TODO: Remove this!!!
+                    print("✅ User ID: \(authResult?.user.uid ?? "unknown")")
                     completion(true)
                 } else {
-                    print("Failed to verify OTP - no error but no auth result")
+                    print("❌ Failed to verify OTP - no error but no auth result")
                     self?.errorMessage = "Failed to verify OTP"
                     completion(false)
                 }
