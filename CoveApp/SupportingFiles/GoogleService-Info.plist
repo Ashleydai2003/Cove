@@ -9,7 +9,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>co.coveapp.Cove</string>
+	<string>co.coveapp.CoveApp</string>
 	<key>PROJECT_ID</key>
 	<string>cove-40d9f</string>
 	<key>STORAGE_BUCKET</key>
@@ -25,6 +25,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:15922367119:ios:87437d7954ac65092fbefa</string>
+	<string>1:15922367119:ios:0aa94616ee1f8ee42fbefa</string>
 </dict>
 </plist>
