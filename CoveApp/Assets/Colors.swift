@@ -15,5 +15,7 @@ enum Colors {
     static let k6F6F73 = Color(hex: "6F6F73")
     static let k171719 = Color(hex: "171719")
     static let k262627 = Color(hex: "262627")
+    static let faf8f4 = Color(hex: "FAF8F4")
+    static let f3f3f3 = Color(hex: "F3F3F3")
 }
 

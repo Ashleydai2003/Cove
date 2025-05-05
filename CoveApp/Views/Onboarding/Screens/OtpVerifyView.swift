@@ -3,28 +3,48 @@
 //  Cove
 //
 
+// TODO: allow backspace when field is empty
+
 import SwiftUI
 
+/// View for handling OTP (One-Time Password) verification during user onboarding
+/// Manages a 5-digit verification code input with automatic field advancement
 struct OtpVerifyView: View {
+    // MARK: - Properties
     
-    // Environment object to access shared app controller
+    /// App controller for managing navigation and shared state
     @EnvironmentObject var appController: AppController
     
-    // State variables for managing OTP verification
-    @State private var otp: [String] = Array(repeating: "", count: 5) // Array to store individual OTP digits
-    @FocusState private var focusedIndex: Int? // Tracks which OTP digit field is focused
-    @State private var isVerifying = false // Indicates verification process status
-    @State private var showError = false // Controls error alert visibility
+    /// Array to store individual digits of the OTP
+    /// Initialized with 5 empty strings for each digit position
+    @State private var otp: [String] = Array(repeating: "", count: 5)
+    
+    /// Tracks which OTP input field is currently focused
+    /// Used for automatic field advancement and keyboard management
+    @FocusState private var focusedIndex: Int?
+    
+    // MARK: - Computed Properties
+    
+    /// Formats the phone number with hyphens for display
+    private var formattedPhoneNumber: String {
+        let digits = appController.phoneNumber.filter { $0.isNumber }
+        if digits.count == 10 {
+            let areaCode = String(digits.prefix(3))
+            let middle = String(digits[digits.index(digits.startIndex, offsetBy: 3)..<digits.index(digits.startIndex, offsetBy: 6)])
+            let last = String(digits.suffix(4))
+            return "\(areaCode)-\(middle)-\(last)"
+        }
+        return appController.phoneNumber
+    }
+    
+    // MARK: - View Body
     
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                // Background image with reduced opacity
-                OnboardingBackgroundView(imageName: "otp_background")
-                    .opacity(0.4)
                 
                 VStack {
-                    // Back button to return to phone number entry
+                    // MARK: - Navigation Header
                     HStack {
                         Button {
                             appController.path.removeLast()
@@ -35,16 +55,16 @@ struct OtpVerifyView: View {
                     }
                     .padding(.top, 10)
                     
-                    // Title and phone number display section
+                    // MARK: - Title and Phone Number Section
                     VStack(alignment: .leading) {
                         Text("enter your \nverification code")
                             .foregroundStyle(Colors.primaryDark)
                             .font(.LibreBodoni(size: 40))
                             .frame(maxWidth: .infinity, alignment: .leading)
                         
-                        // Display phone number with edit option
+                        // Phone number display with edit option
                         HStack(spacing: 0) {
-                            Text("sent to \(appController.getFullPhoneNumber()) | ")
+                            Text("sent to \(formattedPhoneNumber) | ")
                                 .foregroundStyle(Colors.primaryDark)
                                 .font(.LeagueSpartan(size: 15))
                             
@@ -59,7 +79,7 @@ struct OtpVerifyView: View {
                     }
                     .padding(.top, 40)
                     
-                    // OTP input fields
+                    // MARK: - OTP Input Fields
                     HStack(spacing: 10) {
                         ForEach(0..<otp.count, id: \.self) { index in
                             VStack {
@@ -72,24 +92,30 @@ struct OtpVerifyView: View {
                                     .autocorrectionDisabled()
                                     .submitLabel(.done)
                                     .focused($focusedIndex, equals: index)
+                                    // Add this modifier to prevent unwanted input
+                                    .textContentType(.oneTimeCode)
                                     .onChange(of: otp[index]) { oldValue, newValue in
-                                        // Handle OTP input changes
-                                        if newValue.count > 1 {
-                                            otp[index] = String(newValue.prefix(1))
-                                        }
-                                        if !newValue.isEmpty && index < 5 {
-                                            focusedIndex = index + 1
-                                        } else if newValue.isEmpty && index > 0 {
-                                            focusedIndex = index - 1
+                                        // Only proceed if the new value is either empty or a single number
+                                        if newValue.isEmpty || (newValue.count == 1 && newValue.first?.isNumber == true) {
+                                            // Keep the value as is
+                                            if !newValue.isEmpty && index < 4 {
+                                                focusedIndex = index + 1  // Move to next field
+                                            } else if newValue.isEmpty && index > 0 {
+                                                focusedIndex = index - 1  // Move to previous field
+                                            }
+                                        } else {
+                                            // Revert to old value if invalid input
+                                            otp[index] = oldValue
                                         }
                                         
-                                        // Auto-verify when all digits are entered
+                                        // Check if all fields are filled and navigate if complete
                                         let enteredAllCode = otp.allSatisfy { !$0.isEmpty }
                                         if enteredAllCode {
                                             verifyOTP()
                                         }
                                     }
                                 
+                                // Bottom divider for each input field
                                 Divider()
                                     .frame(height: 2)
                                     .background(Color.black.opacity(0.58))
@@ -98,11 +124,11 @@ struct OtpVerifyView: View {
                     }
                     .padding(.top, 50)
                     
-                    // Resend code button
+                    // MARK: - Resend Code Button
                     HStack {
                         Spacer()
                         Button {
-                            resendCode()
+                            // TODO: Implement resend code functionality
                         } label: {
                             Text("resend code")
                                 .foregroundStyle(Colors.primaryDark)
@@ -123,45 +149,15 @@ struct OtpVerifyView: View {
                 }
             }
         }
-        .navigationBarBackButtonHidden()
-        // Send verification code when view appears
+        .navigationBarBackButtonHidden()  // Hide default back button to prevent accidental navigation
+        // Focus on the first input field when the view appears
         .onAppear {
-            sendVerificationCode()
+            focusedIndex = 0
         }
-    }
-    
-    // Sends a new verification code to the phone number
-    private func sendVerificationCode() {
-        isVerifying = true
-        appController.sendVerificationCode { success in
-            isVerifying = false
-            if !success {
-                showError = true
-            }
-        }
-    }
-    
-    // Verifies the entered OTP code
-    private func verifyOTP() {
-        let code = otp.joined()
-        isVerifying = true
-        
-        appController.verifyOTP(code) { success in
-            isVerifying = false
-            if success {
-                appController.path.append(.userDetails)
-            } else {
-                showError = true
-            }
-        }
-    }
-    
-    // Resends the verification code
-    private func resendCode() {
-        sendVerificationCode()
     }
 }
 
+// MARK: - Preview
 #Preview {
     OtpVerifyView()
         .environmentObject(AppController.shared)
