@@ -17,6 +17,7 @@ enum OnboardingRoute: Hashable {
     case bio
     case profilePics
     case mutuals
+    case pluggingYouIn
     case finished
 }
 
@@ -143,5 +144,6 @@ class AppController: ObservableObject {
     
     func completeOnboarding() {
         hasCompletedOnboarding = true
+        path.append(.pluggingYouIn)
     }
 }
