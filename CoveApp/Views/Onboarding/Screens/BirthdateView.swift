@@ -14,6 +14,19 @@ struct BirthdateView: View {
     @State private var year: String = ""
     @FocusState private var isFocused: Bool
     
+    // Custom input accessory view for keyboard
+    private var keyboardAccessoryView: some View {
+        HStack {
+            Spacer()
+            Button("Done") {
+                isFocused = false
+            }
+            .padding(.trailing, 16)
+            .padding(.vertical, 8)
+        }
+        .background(Color(.systemGray6))
+    }
+    
     var body: some View {
         GeometryReader { geometry in
             ZStack {
@@ -54,9 +67,17 @@ struct BirthdateView: View {
                                 .foregroundStyle(Color.black)
                                 .multilineTextAlignment(.center)
                                 .font(.LibreCaslon(size: 24))
+                                .textInputAutocapitalization(.never)
+                                .autocorrectionDisabled()
+                                .submitLabel(.done)
                                 .focused($isFocused)
                                 .onChange(of: month) { oldValue, newValue in
                                     validateMonth(newValue, oldValue: oldValue)
+                                }
+                                .toolbar {
+                                    ToolbarItem(placement: .keyboard) {
+                                        keyboardAccessoryView
+                                    }
                                 }
                             
                             Divider()
@@ -72,9 +93,17 @@ struct BirthdateView: View {
                                 .foregroundStyle(Color.black)
                                 .multilineTextAlignment(.center)
                                 .font(.LibreCaslon(size: 24))
+                                .textInputAutocapitalization(.never)
+                                .autocorrectionDisabled()
+                                .submitLabel(.done)
                                 .focused($isFocused)
                                 .onChange(of: date) { oldValue, newValue in
                                     validateDate(newValue, oldValue: oldValue)
+                                }
+                                .toolbar {
+                                    ToolbarItem(placement: .keyboard) {
+                                        keyboardAccessoryView
+                                    }
                                 }
                             
                             Divider()
@@ -90,8 +119,15 @@ struct BirthdateView: View {
                                 .foregroundStyle(Color.black)
                                 .multilineTextAlignment(.center)
                                 .font(.LibreCaslon(size: 24))
+                                .textInputAutocapitalization(.never)
+                                .autocorrectionDisabled()
+                                .submitLabel(.done)
                                 .focused($isFocused)
-                            
+                                .toolbar {
+                                    ToolbarItem(placement: .keyboard) {
+                                        keyboardAccessoryView
+                                    }
+                                }
                             
                             Divider()
                                 .frame(height: 2)
@@ -117,14 +153,6 @@ struct BirthdateView: View {
                 }
                 .padding(.horizontal, 20)
                 .safeAreaPadding()
-                .toolbar {
-                    ToolbarItemGroup(placement: .keyboard) {
-                        Spacer()
-                        Button("Done") {
-                            isFocused = false // Dismiss keyboard
-                        }
-                    }
-                }
             }
         }
         .navigationBarBackButtonHidden()
