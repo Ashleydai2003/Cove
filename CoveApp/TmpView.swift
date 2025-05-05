@@ -1,3 +1,6 @@
+// EXAMPLE OF HOW TO USE INJECT
+// DON'T DELETE THIS FILE FOR NOW :)
+
 import SwiftUI
 import Inject        // 1️⃣ make sure the Inject package is imported
 
