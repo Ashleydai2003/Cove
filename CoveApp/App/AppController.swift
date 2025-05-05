@@ -205,8 +205,6 @@ class AppController: ObservableObject {
                 
                 if authResult != nil {
                     print("✅ Successfully verified OTP and signed in")
-                    // TODO: Remove this!!!
-                    print("✅ User ID: \(authResult?.user.uid ?? "unknown")")
                     completion(true)
                 } else {
                     print("❌ Failed to verify OTP - no error but no auth result")
