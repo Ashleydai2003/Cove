@@ -5,28 +5,45 @@
 
 import SwiftUI
 import Combine
+import Inject
 
+/// View for collecting and validating user's phone number during onboarding
+/// Handles country selection, phone number formatting, and navigation to OTP verification
 struct UserPhoneNumberView: View {
+    @ObserveInjection var redraw
     
+    // MARK: - Environment & State Properties
+    
+    /// App controller for managing navigation and shared state
     @EnvironmentObject var appController: AppController
     
+    /// UI State
     @State private var presentSheet = false
     @State private var searchCountry: String = ""
     @FocusState private var isFocused: Bool
+    @State private var hasNavigated: Bool = false
     
+    /// Data
     let counrties: [Country] = Bundle.main.decode("CountryList.json")
     
+    // MARK: - Helper Methods
+    
+    /// Validates if the phone number matches the expected length for the selected country
+    private func checkPhoneNumberCompletion(_ number: String) -> Bool {
+        let digitsOnly = number.filter { $0.isNumber }
+        let expectedLength = appController.selectedCountry.pattern.filter { $0 == "#" }.count
+        return digitsOnly.count == expectedLength
+    }
+    
+    // MARK: - Main View Body
+    
     var body: some View {
-        GeometryReader { geometry in
+        GeometryReader { _ in
             ZStack {
-                // For background
-                OnboardingBackgroundView(imageName: "phoneNumber_background")
-                    .opacity(0.4)
-                
                 VStack {
-                    
+                    // MARK: - Header Section
                     VStack(alignment: .leading, spacing: 5) {
-                        Text("what's your phone \nnumber?")
+                        Text("what's your phone number?")
                             .foregroundStyle(Colors.primaryDark)
                             .font(.LibreBodoni(size: 40))
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -37,76 +54,56 @@ struct UserPhoneNumberView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .padding(.top, 40)
+                    .enableInjection()
                     
+                    // MARK: - Phone Number Input Section
                     HStack(alignment: .lastTextBaseline, spacing: 16) {
-                        VStack(spacing: 2) {
-                            Button {
-                                presentSheet = true
-                            } label: {
-                                HStack {
-                                    Text(appController.selectedCountry.flag)
-                                        .foregroundStyle(Color.black)
-                                        .font(.LibreBodoni(size: 30))
-                                    
-                                    Images.downArrowSolid
-                                        .resizable()
-                                        .frame(width: 19, height: 14)
-                                }
+                        // Country Selection Button
+                        Button {
+                            presentSheet = true
+                        } label: {
+                            HStack {
+                                Text(appController.selectedCountry.flag)
+                                    .foregroundStyle(Color.black)
+                                    .font(.LibreBodoni(size: 30))
+                                
+                                Images.downArrowSolid
+                                    .resizable()
+                                    .frame(width: 19, height: 14)
                             }
-                            
-                            Divider()
-                                .frame(height: 2)
-                                .background(Color.black.opacity(0.58))
                         }
                         .frame(width: 66)
                         
-                        VStack(spacing: 2) {
-                            HStack {
-                                Text(appController.selectedCountry.dial_code)
-                                    .foregroundStyle(Color.black)
-                                    .font(.LibreCaslon(size: 25))
-                                
-                                TextField(appController.selectedCountry.pattern, text: $appController.phoneNumber)
-                                    .font(.LibreCaslon(size: 25))
-                                    .foregroundStyle(Color.black)
-                                    .keyboardType(.numberPad)
-                                    .focused($isFocused)
-                                    .onChange(of: appController.phoneNumber) { _, newValue in
-                                        appController.phoneNumber = appController.formatPhoneNumber(newValue, pattern: appController.selectedCountry.pattern)
-                                    }
-                            }
+                        // Phone Number Input Field
+                        HStack {
+                            Text(appController.selectedCountry.dial_code)
+                                .foregroundStyle(Color.black)
+                                .font(.LibreCaslon(size: 25))
                             
-                            Divider()
-                                .frame(height: 2)
-                                .background(Color.black.opacity(0.58))
+                            TextField(appController.selectedCountry.pattern, text: $appController.phoneNumber)
+                                .font(.LibreCaslon(size: 25))
+                                .foregroundStyle(Color.black)
+                                .keyboardType(.numberPad)
+                                .focused($isFocused)
+                                .onChange(of: appController.phoneNumber) { _, newValue in
+                                    let formattedNumber = appController.formatPhoneNumber(newValue, pattern: appController.selectedCountry.pattern)
+                                    appController.phoneNumber = formattedNumber
+                                    if checkPhoneNumberCompletion(formattedNumber) && !hasNavigated {
+                                        hasNavigated = true
+                                        appController.path.append(.otpVerify)
+                                    }
+                                }
                         }
                     }
                     .padding(.top, 85)
                     
                     Spacer()
-                    
-                    HStack {
-                        Spacer()
-                        Images.smily
-                            .resizable()
-                            .frame(width: 52, height: 52)
-                            .padding(.init(top: 0, leading: 0, bottom: 60, trailing: 20))
-                            .onTapGesture {
-                                appController.path.append(.otpVerify)
-                            }
-                    }
                 }
                 .padding(.horizontal, 20)
                 .safeAreaPadding()
-                .toolbar {
-                    ToolbarItemGroup(placement: .keyboard) {
-                        Spacer()
-                        Button("Done") {
-                            isFocused = false // Dismiss keyboard
-                        }
-                    }
-                }
             }
+            
+            // MARK: - Country Selection Sheet
             .sheet(isPresented: $presentSheet) {
                 NavigationView {
                     List(filteredResorts) { country in
@@ -133,8 +130,17 @@ struct UserPhoneNumberView: View {
             }
         }
         .navigationBarBackButtonHidden()
+        .onDisappear {
+            hasNavigated = false
+        }
+        .onAppear {
+            isFocused = true
+        }
     }
     
+    // MARK: - Computed Properties
+    
+    /// Filters countries based on search input
     var filteredResorts: [Country] {
         if searchCountry.isEmpty {
             return counrties
@@ -144,6 +150,7 @@ struct UserPhoneNumberView: View {
     }
 }
 
+// MARK: - Preview
 #Preview {
     UserPhoneNumberView()
         .environmentObject(AppController.shared)
