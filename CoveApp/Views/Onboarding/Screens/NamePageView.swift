@@ -40,7 +40,7 @@ struct NamePageView: View {
                         .font(.LibreCaslon(size: 25))
                         .padding(.horizontal, 10)
                         .focused($isFirstNameFocused)
-                        .onChange(of: firstName) { newValue in
+                        .onChange(of: firstName) { oldValue, newValue in
                             if !newValue.isEmpty {
                                 let filtered = newValue.filter { $0.isLetter || $0 == "-" }
                                 if filtered != newValue {
@@ -58,7 +58,7 @@ struct NamePageView: View {
                         .font(.LibreCaslon(size: 25))
                         .padding(.top)
                         .padding(.horizontal, 10)
-                        .onChange(of: lastName) { newValue in
+                        .onChange(of: lastName) { oldValue, newValue in
                             if !newValue.isEmpty {
                                 let filtered = newValue.filter { $0.isLetter || $0 == "-" }
                                 if filtered != newValue {

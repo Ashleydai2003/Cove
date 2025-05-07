@@ -18,10 +18,30 @@
 	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
 	<key>CFBundleShortVersionString</key>
 	<string>1.0</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>app-1-15922367119-ios-0aa94616ee1f8ee42fbefa</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleVersion</key>
 	<string>1</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>UIAppFonts</key>
+	<array>
+		<string>LibreBodoni-Italic-VariableFont_wght.ttf</string>
+		<string>LibreBodoni-VariableFont_wght.ttf</string>
+		<string>LeagueSpartan-VariableFont_wght.ttf</string>
+		<string>LibreCaslonText-Bold.ttf</string>
+		<string>LibreCaslonText-Italic.ttf</string>
+		<string>LibreCaslonText-Regular.ttf</string>
+	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -29,6 +49,11 @@
 	</dict>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>remote-notification</string>
+	</array>
 	<key>UILaunchScreen</key>
 	<dict/>
 	<key>UIRequiredDeviceCapabilities</key>
@@ -47,15 +72,6 @@
 		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
-	<key>UIAppFonts</key>
-	<array>
-		<string>LibreBodoni-Italic-VariableFont_wght.ttf</string>
-		<string>LibreBodoni-VariableFont_wght.ttf</string>
-		<string>LeagueSpartan-VariableFont_wght.ttf</string>
-		<string>LibreCaslonText-Bold.ttf</string>
-		<string>LibreCaslonText-Italic.ttf</string>
-		<string>LibreCaslonText-Regular.ttf</string>
 	</array>
 </dict>
 </plist>

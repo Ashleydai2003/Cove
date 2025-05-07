@@ -3,17 +3,17 @@
 <plist version="1.0">
 <dict>
 	<key>API_KEY</key>
-	<string>AIzaSyAMga2tVr8Xk8avET4xCSX3OWygkYGEqu0</string>
+	<string>AIzaSyAJewLDzGsnrHYGJHKsNPOmkz_AHGp9X8I</string>
 	<key>GCM_SENDER_ID</key>
-	<string>988832706213</string>
+	<string>15922367119</string>
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>co.cs194W.Cove</string>
+	<string>co.coveapp.CoveApp</string>
 	<key>PROJECT_ID</key>
-	<string>cove-2ce5c</string>
+	<string>cove-40d9f</string>
 	<key>STORAGE_BUCKET</key>
-	<string>cove-2ce5c.firebasestorage.app</string>
+	<string>cove-40d9f.firebasestorage.app</string>
 	<key>IS_ADS_ENABLED</key>
 	<false></false>
 	<key>IS_ANALYTICS_ENABLED</key>
@@ -25,6 +25,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:988832706213:ios:0f98ea90ec67162076674c</string>
+	<string>1:15922367119:ios:0aa94616ee1f8ee42fbefa</string>
 </dict>
 </plist>
