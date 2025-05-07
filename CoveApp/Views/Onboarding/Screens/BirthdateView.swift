@@ -220,6 +220,8 @@ struct BirthdateView: View {
         dateComponents.month = monthInt
         dateComponents.day = dayInt
         
+        
+        // TODO: See Xcode Warning
         guard let calendar = Calendar.current.date(from: dateComponents) else {
             errorMessage = "enter a valid birthdate"
             return

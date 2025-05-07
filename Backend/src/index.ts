@@ -18,30 +18,6 @@ export const handler = async (
     const secretsManager = new SecretsManagerClient({
       region: 'us-west-1'
     });
-    
-    /*
-    // Get Firebase credentials from Secrets Manager
-    console.log('Retrieving Firebase credentials from Secrets Manager...');
-    const firebaseResponse = await secretsManager.send(
-      new GetSecretValueCommand({
-        SecretId: process.env.FIREBASE_SECRET_ARN
-      })
-    );
-    const firebaseCredentials = JSON.parse(firebaseResponse.SecretString || '{}');
-    
-    // Set Firebase environment variables
-    process.env.FIREBASE_PROJECT_ID = firebaseCredentials.project_id;
-    process.env.FIREBASE_CLIENT_EMAIL = firebaseCredentials.client_email;
-    process.env.FIREBASE_PRIVATE_KEY = firebaseCredentials.private_key;
-
-    console.log('Successfully retrieved Firebase credentials');
-
-    // Authenticate request
-    const authResult = await authMiddleware(event);
-    if (authResult.statusCode === 401) {
-      return authResult;
-    }
-    */
    
     // Get database credentials
     console.log('Retrieving database password from Secrets Manager...');
