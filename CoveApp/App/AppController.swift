@@ -161,6 +161,10 @@ class AppController: ObservableObject {
         let fullPhoneNumber = getFullPhoneNumber()
         print("📱 Attempting to send verification code to: \(fullPhoneNumber)")
         
+        // Disable reCAPTCHA verification
+        // TODO: REMOVE THIS AFTER GETTING TOKEN FOR TESTING!!!!
+        Auth.auth().settings?.isAppVerificationDisabledForTesting = true
+        
         PhoneAuthProvider.provider().verifyPhoneNumber(fullPhoneNumber, uiDelegate: nil) { [weak self] verificationID, error in
             DispatchQueue.main.async {
                 if let error = error {
@@ -203,9 +207,30 @@ class AppController: ObservableObject {
                     return
                 }
                 
-                if authResult != nil {
+                if let user = authResult?.user {
                     print("✅ Successfully verified OTP and signed in")
-                    completion(true)
+                    // Get the ID token
+                    user.getIDToken { token, error in
+                        if let error = error {
+                            print("❌ Error getting ID token: \(error.localizedDescription)")
+                            self?.errorMessage = "Failed to get ID token"
+                            completion(false)
+                            return
+                        }
+                        
+                        if let token = token {
+                            print("✅ Successfully got ID token")
+                            // TODO: REMOVE THIS AFTER GETTING TOKEN FOR TESTING!!!!
+                            print("🔑 TOKEN VALUE: \(token)")
+                            // Store the token for future API calls
+                            UserDefaults.standard.set(token, forKey: "firebase_id_token")
+                            completion(true)
+                        } else {
+                            print("❌ No ID token received")
+                            self?.errorMessage = "Failed to get ID token"
+                            completion(false)
+                        }
+                    }
                 } else {
                     print("❌ Failed to verify OTP - no error but no auth result")
                     self?.errorMessage = "Failed to verify OTP"
