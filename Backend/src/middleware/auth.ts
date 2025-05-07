@@ -1,10 +1,15 @@
-import { APIGatewayProxyEvent } from 'aws-lambda';
+import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import * as admin from 'firebase-admin';
 import { initializeFirebase } from './firebase.ts'; // Import the init function
 
 // Auth API request like this:
 // First, authenticate the request
 // const authResult = await authMiddleware(event);
+
+// Define the type for an authenticated event
+type AuthenticatedEvent = APIGatewayProxyEvent & {
+  user: admin.auth.DecodedIdToken;
+};
 
 /**
  * Verifies a Firebase ID token from the request headers
@@ -24,6 +29,11 @@ export const verifyFirebaseToken = async (event: APIGatewayProxyEvent) => {
     
     if (!authHeader) {
       throw new Error('No authorization header');
+    }
+
+    // Validate Bearer token format
+    if (!authHeader.startsWith('Bearer ')) {
+      throw new Error('Invalid authorization format. Must be "Bearer <token>"');
     }
 
     // Extract the token from the Bearer scheme
@@ -51,9 +61,9 @@ export const verifyFirebaseToken = async (event: APIGatewayProxyEvent) => {
  * - If invalid: Returns a 401 Unauthorized response
  * 
  * @param {APIGatewayProxyEvent} event - The AWS Lambda API Gateway event
- * @returns {Promise<Object>} The modified event with user info or an error response
+ * @returns {Promise<APIGatewayProxyResult | AuthenticatedEvent>} The modified event with user info or an error response
  */
-export const authMiddleware = async (event: APIGatewayProxyEvent) => {
+export const authMiddleware = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult | AuthenticatedEvent> => {
   try {
     // Verify the token and get user information
     const decodedToken = await verifyFirebaseToken(event);
