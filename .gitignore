@@ -28,7 +28,6 @@
 **/docker-compose.override.yml
 **/.docker/
 **/docker-compose.*.yml
-!**/docker-compose.yml
 
 # IDE and Editor Files
 # Configuration files specific to development environments
