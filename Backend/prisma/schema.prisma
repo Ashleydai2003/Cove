@@ -17,11 +17,12 @@ datasource db {
   url = env("DATABASE_URL")
 }
 
-// Preliminary User model
+// User model with Firebase authentication
 model User {
-  id        Int      @id @default(autoincrement())
-  name      String
-  phone     String   @unique
-  age       Int
-  createdAt DateTime @default(now())
+  id          String      @id // Using Firebase UID as ID
+  name        String?
+  phone       String   @unique
+  age         Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 } 
