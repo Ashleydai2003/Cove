@@ -8,7 +8,7 @@
     "build": "rm -rf dist && prisma generate && esbuild ./src --bundle --platform=node --target=node18 --outfile=dist/index.js --format=cjs && cd dist && cp -r ../node_modules/.prisma . && cp ../node_modules/prisma/build/index.js prisma.js && zip -r index.zip index.js .prisma prisma.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "NODE_OPTIONS='--max-old-space-size=4096' NODE_ENV=production ts-node src/scripts/migrate.ts",
-    "prisma:dev": "NODE_OPTIONS='--max-old-space-size=4096' NODE_ENV=production ts-node src/scripts/migrate-dev.ts",
+    "prisma:dev": "read -p 'Enter migration name: ' migration_name && NODE_ENV=development ts-node src/scripts/migrate-dev.ts \"$migration_name\"",
     "prisma:migrate:dev": "NODE_OPTIONS='--max-old-space-size=4096' NODE_ENV=development ts-node src/scripts/migrate.t"
   },
   "dependencies": {
