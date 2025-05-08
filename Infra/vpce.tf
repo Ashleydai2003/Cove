@@ -19,7 +19,10 @@ resource "aws_security_group" "vpce_sg" {
     from_port       = 443
     to_port         = 443
     protocol        = "tcp"
-    security_groups = [aws_security_group.lambda_sg.id]
+    security_groups = [
+      aws_security_group.lambda_sg.id,
+      aws_security_group.migration_sg.id  # Add EC2 migration security group
+    ]
   }
 
   # Allow all outbound traffic
