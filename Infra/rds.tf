@@ -14,15 +14,18 @@
 # Define the security group for our RDS instance
 resource "aws_security_group" "rds_sg" {
   name        = "rds_sg"
-  description = "Allow inbound traffic on port 5432 (PostgreSQL) from Lambda only"
+  description = "Allow inbound traffic on port 5432 (PostgreSQL) from Lambda and EC2 migration instance"
   vpc_id      = aws_vpc.main_vpc.id
   
-  # Inbound rules: Only allow access from Lambda security group on port 5432
+  # Inbound rules: Allow access from Lambda security group and EC2 migration instance on port 5432
   ingress {
     from_port       = 5432
     to_port         = 5432
     protocol        = "tcp"
-    security_groups = [aws_security_group.lambda_sg.id]  # Allow access from Lambda security group
+    security_groups = [
+      aws_security_group.lambda_sg.id,  # Allow access from Lambda security group
+      aws_security_group.migration_sg.id # Allow access from EC2 migration instance
+    ]
   }
 
   # Outbound rules: Allow all outbound traffic
@@ -31,6 +34,14 @@ resource "aws_security_group" "rds_sg" {
     to_port     = 0
     protocol    = "-1"  # All traffic
     cidr_blocks = ["0.0.0.0/0"]  # Allow all outbound traffic
+  }
+  
+  lifecycle {
+    ignore_changes = [
+      # Ignore changes to the security group name and description
+      name,
+      description,
+    ]
   }
   
   tags = merge(local.common_tags, {
