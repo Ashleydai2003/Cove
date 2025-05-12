@@ -8,6 +8,7 @@ import SwiftUI
 import FirebaseCore
 import FirebaseAuth
 import UserNotifications
+import IQKeyboardManagerSwift
 
 class FirebaseSetup: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication,
@@ -21,6 +22,9 @@ class FirebaseSetup: NSObject, UIApplicationDelegate {
             print("Error configuring Firebase: \(error)")
             return false
         }
+        
+        // Enable IQKeyboardManager to prevent issues of keyboard sliding up
+        IQKeyboardManager.shared.enable = true
         
         // Request notification permissions
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
