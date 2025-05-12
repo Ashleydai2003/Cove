@@ -11,6 +11,7 @@
 		3C29BAAE2DBC90B700C73EC3 /* Inject in Frameworks */ = {isa = PBXBuildFile; productRef = 3C29BAAD2DBC90B700C73EC3 /* Inject */; };
 		3CFAEF792DBDCA4700148161 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 3CFAEF782DBDCA4700148161 /* FirebaseAnalytics */; };
 		3CFAEF7B2DBDCA4700148161 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 3CFAEF7A2DBDCA4700148161 /* FirebaseAuth */; };
+		EC736BC02DCEEC5C003F3FFA /* IQKeyboardManagerSwift in Frameworks */ = {isa = PBXBuildFile; productRef = EC736BBF2DCEEC5C003F3FFA /* IQKeyboardManagerSwift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -66,6 +67,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				3CFAEF792DBDCA4700148161 /* FirebaseAnalytics in Frameworks */,
+				EC736BC02DCEEC5C003F3FFA /* IQKeyboardManagerSwift in Frameworks */,
 				3CFAEF7B2DBDCA4700148161 /* FirebaseAuth in Frameworks */,
 				3C29BAAE2DBC90B700C73EC3 /* Inject in Frameworks */,
 			);
@@ -123,6 +125,7 @@
 				3C29BAAD2DBC90B700C73EC3 /* Inject */,
 				3CFAEF782DBDCA4700148161 /* FirebaseAnalytics */,
 				3CFAEF7A2DBDCA4700148161 /* FirebaseAuth */,
+				EC736BBF2DCEEC5C003F3FFA /* IQKeyboardManagerSwift */,
 			);
 			productName = Cove;
 			productReference = C44B02E62DADAFAF00AFF42B /* Cove.app */;
@@ -155,6 +158,7 @@
 			packageReferences = (
 				3C29BAAC2DBC90B700C73EC3 /* XCRemoteSwiftPackageReference "Inject" */,
 				3CFAEF772DBDCA4700148161 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				EC736BBE2DCEEC5C003F3FFA /* XCRemoteSwiftPackageReference "IQKeyboardManager" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = C44B02E72DADAFAF00AFF42B /* Products */;
@@ -336,6 +340,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -379,6 +384,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -438,6 +444,14 @@
 				minimumVersion = 11.12.0;
 			};
 		};
+		EC736BBE2DCEEC5C003F3FFA /* XCRemoteSwiftPackageReference "IQKeyboardManager" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/hackiftekhar/IQKeyboardManager.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 6.5.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -455,6 +469,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 3CFAEF772DBDCA4700148161 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseAuth;
+		};
+		EC736BBF2DCEEC5C003F3FFA /* IQKeyboardManagerSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EC736BBE2DCEEC5C003F3FFA /* XCRemoteSwiftPackageReference "IQKeyboardManager" */;
+			productName = IQKeyboardManagerSwift;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
