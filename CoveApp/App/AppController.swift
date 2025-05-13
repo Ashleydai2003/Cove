@@ -28,6 +28,10 @@ class AppController: ObservableObject {
     /// Singleton instance for global access
     static let shared = AppController()
     
+    /// API base URL and login path
+    private let apiBaseURL = "https://api.coveapp.co"
+    private let apiLoginPath = "/login"
+    
     /// Currently entered phone number
     @Published var phoneNumber: String = ""
     @Published var selectedCountry: Country = Country(id: "0235", name: "USA", flag: "🇺🇸", code: "US", dial_code: "+1", pattern: "### ### ####", limit: 17)
@@ -224,7 +228,22 @@ class AppController: ObservableObject {
                             print("🔑 TOKEN VALUE: \(token)")
                             // Store the token for future API calls
                             UserDefaults.standard.set(token, forKey: "firebase_id_token")
-                            completion(true)
+                            
+                            // Make login request to backend
+                            self?.makeLoginRequest(token: token) { success in
+                                if success {
+                                    // If user is new, start onboarding
+                                    if UserDefaults.standard.bool(forKey: "is_new_user") {
+                                        self?.path = [.userDetails]
+                                    } else {
+                                        // TODO: hasCompletedOnboarding seems not elegant, we should just get back
+                                        // from the api what path we should be on and continue from there
+                                        self?.path = [.finished]
+                                        self?.hasCompletedOnboarding = true
+                                    }
+                                }
+                                completion(success)
+                            }
                         } else {
                             print("❌ No ID token received")
                             self?.errorMessage = "Failed to get ID token"
@@ -239,4 +258,66 @@ class AppController: ObservableObject {
             }
         }
     }
+    
+    /// Makes a login request to the backend API
+    /// - Parameters:
+    ///   - token: Firebase ID token
+    ///   - completion: Callback with success status
+    private func makeLoginRequest(token: String, completion: @escaping (Bool) -> Void) {
+        // Create request parameters
+        let parameters: [String: String] = [
+            "phoneNumber": getFullPhoneNumber()
+        ]
+        
+        // Make the request using NetworkManager with explicit type
+        NetworkManager.shared.post(
+            endpoint: apiLoginPath,
+            token: token,
+            parameters: parameters
+        ) { [weak self] (result: Result<LoginResponse, NetworkError>) in
+            switch result { 
+            case .success(let loginResponse):
+                print("✅ Successfully logged in to backend")
+                
+                // Store user info in UserDefaults
+                UserDefaults.standard.set(loginResponse.user.uid, forKey: "user_id")
+                UserDefaults.standard.set(loginResponse.user.isNewUser, forKey: "is_new_user")
+                
+                // TODO: Handle onboarding progress 
+              
+                // Current simple onboarding flow based on isNewUser
+                if loginResponse.user.isNewUser {
+                    self?.path = [.userDetails]
+                } else {
+                    self?.hasCompletedOnboarding = true
+                }
+                
+                completion(true)
+                
+            case .failure(let error):
+                print("❌ Backend login error: \(error.localizedDescription)")
+                self?.errorMessage = error.localizedDescription
+                completion(false)
+            }
+        }
+    }
+    
+    /// Response model for login API
+    struct LoginResponse: Decodable {
+        let message: String
+        let user: UserInfo
+    }
+    
+    /// User info model from login response
+    struct UserInfo: Decodable {
+        let uid: String
+        let isNewUser: Bool
+    }
+    
+    // /// Onboarding progress model
+    // private struct OnboardingProgress: Codable {
+    //     let currentStep: String
+    //     let completedSteps: [String]
+    //     let hasCompletedOnboarding: Bool
+    // }
 }

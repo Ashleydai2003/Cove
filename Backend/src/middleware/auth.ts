@@ -1,6 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import * as admin from 'firebase-admin';
-import { initializeFirebase } from './firebase.ts'; // Import the init function
+import { initializeFirebase } from './firebase'; // Import the init function
 
 // Auth API request like this:
 // First, authenticate the request
