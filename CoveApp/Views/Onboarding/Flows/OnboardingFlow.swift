@@ -31,7 +31,7 @@ struct OnboardingFlow: View {
                     case .mutuals:
                         MutualsView()
                     case .finished:
-                        EmptyView()
+                        PluggingInView()
                     }
                 }
         }

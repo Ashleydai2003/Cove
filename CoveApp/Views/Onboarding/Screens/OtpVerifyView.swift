@@ -189,9 +189,7 @@ struct OtpVerifyView: View {
         let code = otp.joined()
         appController.verifyOTP(code) { success in
             isVerifying = false
-            if success {
-                appController.path.append(.userDetails)
-            } else {
+            if !success {
                 showError = true
             }
         }

@@ -52,4 +52,17 @@ resource "aws_vpc_endpoint" "secretsmanager" {
   tags = merge(local.common_tags, {
     Name = "secretsmanager-endpoint"
   })
+}
+
+# VPC Endpoint for S3
+# This endpoint allows the Lambda function to access S3 without going through the public internet
+resource "aws_vpc_endpoint" "s3" {
+  vpc_id            = aws_vpc.main_vpc.id
+  service_name      = "com.amazonaws.${var.aws_region}.s3"
+  vpc_endpoint_type = "Gateway"
+  route_table_ids   = [aws_route_table.private.id]
+
+  tags = merge(local.common_tags, {
+    Name = "s3-endpoint"
+  })
 } 
