@@ -23,6 +23,7 @@ model User {
   name        String?
   phone       String   @unique
   age         Int?
+  onboarding  Boolean 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 } 
