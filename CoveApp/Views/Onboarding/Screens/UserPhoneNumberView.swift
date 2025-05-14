@@ -23,6 +23,7 @@ struct UserPhoneNumberView: View {
     @FocusState private var isFocused: Bool
     @State private var isVerifying = false
     @State private var showError = false
+    @State private var userPhone = UserPhoneNumber(number: "",country: Country(id: "0235", name: "USA", flag: "🇺🇸", code: "US", dial_code: "+1", pattern: "### ### ####", limit: 17))
     
     // MARK: - Constants
     
@@ -62,7 +63,7 @@ struct UserPhoneNumberView: View {
     /// Validates if the phone number matches the expected length for the selected country
     private func checkPhoneNumberCompletion(_ number: String) -> Bool {
         let digitsOnly = number.filter { $0.isNumber }
-        let expectedLength = appController.selectedCountry.pattern.filter { $0 == "#" }.count
+        let expectedLength = userPhone.country.pattern.filter { $0 == "#" }.count
         return digitsOnly.count == expectedLength
     }
     
@@ -101,7 +102,7 @@ struct UserPhoneNumberView: View {
             NavigationView {
                 List(filteredResorts) { country in
                     Button {
-                        appController.selectedCountry = country
+                        userPhone.country = country
                         presentSheet = false
                         searchCountry = ""
                     } label: {
@@ -151,7 +152,7 @@ struct UserPhoneNumberView: View {
             presentSheet = true
         } label: {
             HStack {
-                Text(appController.selectedCountry.flag)
+                Text(userPhone.country.flag)
                     .foregroundStyle(Color.black)
                     .font(.LibreBodoni(size: Constants.countryFlagFontSize))
                 
@@ -167,11 +168,11 @@ struct UserPhoneNumberView: View {
     // Phone Number Input Field
     var phoneNumberInputField: some View {
         HStack {
-            Text(appController.selectedCountry.dial_code)
+            Text(userPhone.country.dial_code)
                 .foregroundStyle(Color.black)
                 .font(.LibreCaslon(size: Constants.phoneInputFontSize))
             
-            TextField(appController.selectedCountry.pattern, text: $appController.phoneNumber)
+            TextField(userPhone.country.pattern, text: $userPhone.number)
                 .font(.LibreCaslon(size: Constants.phoneInputFontSize))
                 .foregroundStyle(Color.black)
                 .keyboardType(.numberPad)
@@ -182,9 +183,9 @@ struct UserPhoneNumberView: View {
                         keyboardAccessoryView
                     }
                 }
-                .onChange(of: appController.phoneNumber) { _, newValue in
-                    let formattedNumber = appController.formatPhoneNumber(newValue, pattern: appController.selectedCountry.pattern)
-                    appController.phoneNumber = formattedNumber
+                .onChange(of: userPhone.number) { _, newValue in
+                    let formattedNumber = userPhone.formatPhoneNumber(newValue, pattern: userPhone.country.pattern)
+                    userPhone.number = formattedNumber
                     
                     // Send verification code when number is complete
                     if checkPhoneNumberCompletion(formattedNumber) && !isVerifying {
@@ -207,7 +208,7 @@ struct UserPhoneNumberView: View {
                                 bottom: Constants.smileyBottomPadding, 
                                 trailing: Constants.smileyTrailingPadding))
                 .onTapGesture {
-                    if appController.isValidPhoneNumber(appController.phoneNumber, pattern: appController.selectedCountry.pattern) {
+                    if userPhone.isValidPhoneNumber(userPhone.number, pattern: userPhone.country.pattern) {
                         appController.path.append(.otpVerify)
                     }
                 }
@@ -229,7 +230,7 @@ struct UserPhoneNumberView: View {
         guard !isVerifying else { return }
         isVerifying = true
         
-        appController.sendVerificationCode { success in
+        userPhone.sendVerificationCode { success in
             isVerifying = false
             if !success {
                 showError = true
