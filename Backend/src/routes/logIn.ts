@@ -41,16 +41,14 @@ export const handleLogin = async (event: APIGatewayProxyEvent): Promise<APIGatew
       }
     });
 
-    let isNewUser = false;
-
     // Step 6: Create user if they don't exist
     if (!dbUser) {
       console.log('Creating new user in database');
-      isNewUser = true;
       dbUser = await prisma.user.create({
         data: {
-          id: user.uid, // Using Firebase UID as the database ID
-          phone: user.phone_number || '' // Provide empty string as fallback
+          id: user.uid,
+          phone: user.phone_number || '',
+          onboarding: true,
         }
       });
 
@@ -70,16 +68,14 @@ export const handleLogin = async (event: APIGatewayProxyEvent): Promise<APIGatew
       }
     }
 
-    // Step 7: Return user info with onboarding status
+    // Step 7: Return user info
     return {
       statusCode: 200,
       body: JSON.stringify({
-        message: isNewUser ? 'New user created' : 'Existing user found',
+        message: 'User authenticated successfully',
         user: {
           uid: user.uid,
-          isNewUser,
-          // If new user, frontend should start onboarding
-          // If existing user, frontend should show normal app
+          onboarding: user.onboarding
         }
       })
     };
