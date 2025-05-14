@@ -6,6 +6,7 @@ struct LoginView: View {
     /// AppController environment object used for navigation and app state management
     @EnvironmentObject var appController: AppController
     
+    // MARK: - Main View Body
     var body: some View {
         ZStack {
             // Background image with reduced opacity for better text visibility
@@ -13,7 +14,7 @@ struct LoginView: View {
                 .opacity(0.6)
             
             VStack {
-                // App logo/title with custom font and styling
+                // MARK: - App logo and tagline
                 Text("cove")
                     .font(.LibreBodoni(size: 125))
                     .foregroundColor(Colors.primaryDark)
@@ -27,7 +28,8 @@ struct LoginView: View {
                 // Flexible space to push content to top and bottom
                 Spacer()
                 
-                // Main call-to-action button that initiates the sign-in flow
+                // MARK: - Main call-to-action button
+                // Initiates the sign-in flow
                 SignOnButton(text: "let's go") {
                     appController.path.append(.enterPhoneNumber)
                 }
@@ -45,6 +47,7 @@ struct LoginView: View {
     
     /// Creates an attributed string for the terms and privacy notice
     /// Includes interactive links for Terms & Conditions and Privacy Policy
+    // TODO: Add links to Terms and Privacy Policy
     var attributedString: AttributedString {
         var string = AttributedString("By tapping 'Get Started' you agree to our Terms and Conditions. Learn how we process you data in our Privacy Policy.")
         string.foregroundColor = .white
@@ -61,6 +64,7 @@ struct LoginView: View {
     }
 }
 
+// MARK: - SignOnButton
 /// Reusable button component for sign-on actions
 /// Features a consistent style with custom text and action
 struct SignOnButton: View {

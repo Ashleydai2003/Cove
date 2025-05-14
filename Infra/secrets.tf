@@ -1,36 +1,32 @@
 # Infra/secrets.tf
-# This file sets up the secrets manager and defines secrets for db credentials
+# This file sets up the secrets manager and defines secrets for db credentials and Firebase
 
 # Key components:
-# - Eventually firebase creds
+# - Grants lambda access to firebase admin
 
-# Using RDS's built-in Secrets Manager integration to manage the database password
-# The password is stored securely and accessed by the Lambda function
-
-# Firebase service account credentials
-resource "aws_secretsmanager_secret" "firebase_credentials" {
-  name        = "firebase-service-account"
-  description = "Firebase service account credentials for backend authentication"
-  
-  tags = local.common_tags
+# Reference the existing Firebase credentials secret
+data "aws_secretsmanager_secret" "firebase_credentials" {
+  name = "firebaseSDK"
 }
 
 # Grant Lambda access to the Firebase secret
 resource "aws_secretsmanager_secret_policy" "firebase_secret_policy" {
-  secret_arn = aws_secretsmanager_secret.firebase_credentials.arn
+  secret_arn = data.aws_secretsmanager_secret.firebase_credentials.arn
   
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
+        Sid    = "AllowLambdaAccess"
         Action = [
-          "secretsmanager:GetSecretValue"
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret"
         ]
         Effect   = "Allow"
         Principal = {
           AWS = aws_iam_role.lambda_role.arn
         }
-        Resource = "*"
+        Resource = data.aws_secretsmanager_secret.firebase_credentials.arn
       }
     ]
   })
