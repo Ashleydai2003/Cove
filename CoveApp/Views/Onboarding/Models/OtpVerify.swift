@@ -84,6 +84,18 @@ struct OtpVerify {
         AppController.shared.path = [.enterPhoneNumber]
     }
     
+    /// Response model for login API
+    struct LoginResponse: Decodable {
+        let message: String
+        let user: UserInfo
+    }
+    
+    /// User info model from login response
+    struct UserInfo: Decodable {
+        let uid: String
+        let onboarding: Bool
+    }
+    
     /// Makes a login request to the backend API
     /// - Parameters:
     ///   - token: Firebase ID token
@@ -106,10 +118,9 @@ struct OtpVerify {
                 
                 // Store user info in UserDefaults
                 UserDefaults.standard.set(loginResponse.user.uid, forKey: "user_id")
-                UserDefaults.standard.set(loginResponse.user.isNewUser, forKey: "is_new_user")
                 
                 // Update onboarding state
-                if loginResponse.user.isNewUser {
+                if loginResponse.user.onboarding {
                     AppController.shared.path = [.userDetails]
                 } else {
                     AppController.shared.path = [.finished]
@@ -124,17 +135,5 @@ struct OtpVerify {
                 completion(false)
             }
         }
-    }
-    
-    /// Response model for login API
-    struct LoginResponse: Decodable {
-        let message: String
-        let user: UserInfo
-    }
-    
-    /// User info model from login response
-    struct UserInfo: Decodable {
-        let uid: String
-        let isNewUser: Bool
     }
 } 

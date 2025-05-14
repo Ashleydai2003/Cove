@@ -39,8 +39,4 @@ class AppController: ObservableObject {
     
     /// Private initializer to enforce singleton pattern
     private init() {}
-
-    func completeOnboarding() {
-        hasCompletedOnboarding = true
-    }
 }

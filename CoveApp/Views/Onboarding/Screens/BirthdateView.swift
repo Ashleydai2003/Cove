@@ -220,16 +220,18 @@ struct BirthdateView: View {
         dateComponents.month = monthInt
         dateComponents.day = dayInt
         
-        
-        // TODO: See Xcode Warning
-        guard let calendar = Calendar.current.date(from: dateComponents) else {
+        // Convert DateComponents to Date
+        guard let birthDate = Calendar.current.date(from: dateComponents) else {
             errorMessage = "enter a valid birthdate"
             return
         }
         
         // If we get here, the date is valid
         errorMessage = ""
-        // Navigate to next screen
+
+        // TODO: We should still use the smiley as the next button 
+        // Store the Date object in UserDefaults
+        Onboarding.storeBirthdate(birthDate: birthDate)
         appController.path.append(OnboardingRoute.hobbies)
     }
 }
