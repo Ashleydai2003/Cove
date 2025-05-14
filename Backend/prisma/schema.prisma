@@ -23,7 +23,13 @@ model User {
   name        String?
   phone       String   @unique
   age         Int?
-  onboarding  Boolean 
+  birthday    DateTime? 
+  interests   String[]?
+  latitude    Float?
+  longitude   Float?
+  onboarding  Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 } 
+
+// NEW: birthday, interests, latitude, longitude
