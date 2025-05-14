@@ -33,7 +33,7 @@ struct OnboardingFlow: View {
                     case .pluggingYouIn:
                         PluggingYouIn()
                     case .finished:
-                        Tmp()
+                        PluggingInView()
                     }
                 }
         }
