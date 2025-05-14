@@ -75,7 +75,7 @@ export const handleLogin = async (event: APIGatewayProxyEvent): Promise<APIGatew
         message: 'User authenticated successfully',
         user: {
           uid: user.uid,
-          onboarding: user.onboarding
+          onboarding: dbUser.onboarding
         }
       })
     };
