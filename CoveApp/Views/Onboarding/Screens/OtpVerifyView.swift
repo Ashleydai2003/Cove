@@ -46,14 +46,15 @@ struct OtpVerifyView: View {
     
     /// Formats the phone number with hyphens for display
     private var formattedPhoneNumber: String {
-        let digits = appController.phoneNumber.filter { $0.isNumber }
+        let phoneNumber = UserDefaults.standard.string(forKey: "UserPhoneNumber") ?? ""
+        let digits = phoneNumber.filter { $0.isNumber }
         if digits.count == 10 {
             let areaCode = String(digits.prefix(3))
             let middle = String(digits[digits.index(digits.startIndex, offsetBy: 3)..<digits.index(digits.startIndex, offsetBy: 6)])
             let last = String(digits.suffix(4))
             return "\(areaCode)-\(middle)-\(last)"
         }
-        return appController.phoneNumber
+        return phoneNumber
     }
     
     // MARK: - View Body
@@ -187,7 +188,7 @@ struct OtpVerifyView: View {
         isVerifying = true
         
         let code = otp.joined()
-        appController.verifyOTP(code) { success in
+        OtpVerify.verifyOTP(code) { success in
             isVerifying = false
             if !success {
                 showError = true
@@ -196,8 +197,16 @@ struct OtpVerifyView: View {
     }
     
     private func resendCode() {
-        appController.sendVerificationCode { success in
+        guard let phoneNumber = UserDefaults.standard.string(forKey: "UserPhoneNumber") else {
+            appController.errorMessage = "No phone number found"
+            showError = true
+            return
+        }
+        
+        let userPhone = UserPhoneNumber(number: phoneNumber, country: Country(id: "0235", name: "USA", flag: "🇺🇸", code: "US", dial_code: "+1", pattern: "### ### ####", limit: 17))
+        userPhone.sendVerificationCode { success in
             if !success {
+                appController.errorMessage = "Failed to resend verification code"
                 showError = true
             }
         }
