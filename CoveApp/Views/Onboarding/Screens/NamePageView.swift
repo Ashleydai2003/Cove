@@ -83,6 +83,9 @@ struct NamePageView: View {
                         .frame(width: 52, height: 52)
                         .padding(.init(top: 0, leading: 0, bottom: 60, trailing: 20))
                         .onTapGesture {
+                            // TODO: Strip whitespace from first and last name
+                            // TODO: Maybe make a dedicated struct for onboarding functions
+                            Onboarding.storeName(firstName: firstName, lastName: lastName)
                             appController.path.append(.birthdate)
                         }
                 }

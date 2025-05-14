@@ -91,7 +91,7 @@ struct OtpVerifyView: View {
                                 .font(.LeagueSpartan(size: 15))
                             
                             Button {
-                                appController.path.removeLast()
+                                OtpVerify.handleAuthFailure()
                             } label: {
                                 Text("edit number")
                                     .foregroundStyle(Colors.primaryDark)
