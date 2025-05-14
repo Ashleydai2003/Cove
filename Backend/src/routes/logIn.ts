@@ -3,6 +3,9 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { authMiddleware } from '../middleware/auth';
 import { initializeDatabase } from '../config/database';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+
+const s3Client = new S3Client({ region: process.env.AWS_REGION });
 
 export const handleLogin = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
@@ -38,30 +41,41 @@ export const handleLogin = async (event: APIGatewayProxyEvent): Promise<APIGatew
       }
     });
 
-    let isNewUser = false;
-
     // Step 6: Create user if they don't exist
     if (!dbUser) {
       console.log('Creating new user in database');
-      isNewUser = true;
       dbUser = await prisma.user.create({
         data: {
-          id: user.uid, // Using Firebase UID as the database ID
-          phone: user.phone_number || '' // Provide empty string as fallback
+          id: user.uid,
+          phone: user.phone_number || '',
+          onboarding: true,
         }
       });
+
+      // Create user's S3 prefix
+      try {
+        const bucketName = process.env.USER_IMAGE_BUCKET_NAME;
+        const command = new PutObjectCommand({
+          Bucket: bucketName,
+          Key: `${user.uid}/`, // Create a folder-like prefix
+          Body: '' // Empty body since we just want to create the prefix
+        });
+        await s3Client.send(command);
+        console.log(`Created S3 prefix for user ${user.uid}`);
+      } catch (s3Error) {
+        console.error('Error creating S3 prefix:', s3Error);
+        // Don't fail the login if S3 prefix creation fails
+      }
     }
 
-    // Step 7: Return user info with onboarding status
+    // Step 7: Return user info
     return {
       statusCode: 200,
       body: JSON.stringify({
-        message: isNewUser ? 'New user created' : 'Existing user found',
+        message: 'User authenticated successfully',
         user: {
           uid: user.uid,
-          isNewUser,
-          // If new user, frontend should start onboarding
-          // If existing user, frontend should show normal app
+          onboarding: user.onboarding
         }
       })
     };
