@@ -22,6 +22,12 @@ struct OnboardingFlow: View {
                         NamePageView()
                     case .birthdate:
                         BirthdateView()
+                    case .userLocation:
+                        UserLocationView()
+                    case .almaMater:
+                        AlmaMaterView()
+                    case .moreAboutYou:
+                        MoreAboutYouView()
                     case .hobbies:
                         HobbiesView()
                     case .bio:
