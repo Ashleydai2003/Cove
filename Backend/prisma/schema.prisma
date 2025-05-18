@@ -1,0 +1,29 @@
+// /Backend/prisma/schema.prisma
+// This file contains the Prisma schema, learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Configure the Prisma Client generator
+generator client {
+  provider = "prisma-client-js"
+  // Generate TypeScript types
+  previewFeatures = []
+  output = "../node_modules/.prisma/client"
+  binaryTargets = ["native", "rhel-openssl-1.0.x"]
+}
+
+// Configure the database connection
+datasource db {
+  provider = "postgresql"
+  // The connection URL will be provided via environment variable
+  url = env("DATABASE_URL")
+}
+
+// User model with Firebase authentication
+model User {
+  id          String      @id // Using Firebase UID as ID
+  name        String?
+  phone       String   @unique
+  age         Int?
+  onboarding  Boolean 
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+} 

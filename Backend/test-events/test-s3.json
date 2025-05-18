@@ -1,0 +1,7 @@
+{
+  "path": "/test-s3",
+  "httpMethod": "GET",
+  "headers": {
+    "Content-Type": "application/json"
+  }
+} 
