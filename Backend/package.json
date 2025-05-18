@@ -1,0 +1,39 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "Backend for the application",
+  "main": "src/index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "rm -rf dist && prisma generate && esbuild ./src --bundle --platform=node --target=node18 --outfile=dist/index.js --format=cjs && cd dist && cp -r ../node_modules/.prisma . && cp ../node_modules/prisma/build/index.js prisma.js && zip -r index.zip index.js .prisma prisma.js",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "NODE_OPTIONS='--max-old-space-size=4096' NODE_ENV=production ts-node src/scripts/migrate.ts",
+    "prisma:dev": "read -p 'Enter migration name: ' migration_name && NODE_ENV=production ts-node src/scripts/migrate-dev.ts \"$migration_name\"",
+    "prisma:migrate:dev": "NODE_OPTIONS='--max-old-space-size=4096' NODE_ENV=development ts-node src/scripts/migrate.t"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@aws-sdk/client-secrets-manager": "^3.525.0",
+    "@aws-sdk/client-s3": "^3.525.0",
+    "@prisma/client": "^6.6.0",
+    "@types/aws-sdk": "^2.7.0",
+    "@types/dotenv": "^6.1.1",
+    "@types/jsonwebtoken": "^9.0.5",
+    "aws-sdk": "^2.1564.0",
+    "dotenv": "^16.5.0",
+    "firebase-admin": "^12.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.11.3"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.130",
+    "@types/node": "^22.15.12",
+    "@types/pg": "^8.10.9",
+    "esbuild": "^0.25.2",
+    "prisma": "^6.6.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}

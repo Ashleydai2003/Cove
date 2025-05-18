@@ -1,0 +1,13 @@
+{
+  "path": "/login",
+  "httpMethod": "POST",
+  "headers": {
+    "Authorization": "Bearer Firebase ID Token From Frontend"
+  },
+  "queryStringParameters": null,
+  "pathParameters": null,
+  "body": {
+    "phoneNumber": "+15555555555"
+  },
+  "isBase64Encoded": false
+} 
