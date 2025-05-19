@@ -52,7 +52,12 @@ struct MutualsView: View {
 
                     // Contacts button
                     Button(action: {
-                        appController.completeOnboarding()
+                        // TODO: actually do contact syncing 
+                        Onboarding.completeOnboarding()
+                        if !AppController.shared.hasCompletedOnboarding {
+                            // TODO:Show error message
+                            print("Onboarding process incomplete")
+                        }
                     }) {
                         Text("choose friends from contacts")
                             .font(.LibreBodoni(size: 16))

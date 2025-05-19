@@ -20,7 +20,6 @@ enum OnboardingRoute: Hashable {
     case bio
     case profilePics
     case mutuals
-    case pluggingYouIn
     case finished
 }
 
@@ -43,9 +42,4 @@ class AppController: ObservableObject {
     
     /// Private initializer to enforce singleton pattern
     private init() {}
-
-    func completeOnboarding() {
-        hasCompletedOnboarding = true
-        path.append(.pluggingYouIn)
-    }
 }
