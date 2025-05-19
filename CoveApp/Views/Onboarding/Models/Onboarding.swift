@@ -83,27 +83,5 @@ class Onboarding {
         ]
         
         // TODO: BACKEND API INCOMPLETE, DO NOT CALL THIS ENDPOINT RIGHT NOW
-        
-        NetworkManager.shared.post(
-            endpoint: apiOnboardPath,
-            token: token,
-            parameters: parameters
-        ) { (result: Result<OnboardResponse, NetworkError>) in
-            switch result { 
-            case .success(let response):
-                print("✅ Successfully completed onboarding")
-                
-                // Update onboarding state
-                AppController.shared.path = [.finished]
-                AppController.shared.hasCompletedOnboarding = true
-                
-                completion(true)
-                
-            case .failure(let error):
-                print("❌ Backend onboarding error: \(error.localizedDescription)")
-                AppController.shared.errorMessage = error.localizedDescription
-                completion(false)
-            }
-        }
     }
 }

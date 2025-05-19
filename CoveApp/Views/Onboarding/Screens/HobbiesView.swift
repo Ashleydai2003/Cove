@@ -318,6 +318,7 @@ struct HobbiesView: View {
                         .frame(width: 52, height: 52)
                         .padding(.init(top: 0, leading: 0, bottom: 20, trailing: 20))
                         .onTapGesture {
+                            Onboarding.storeHobbies(hobbies: selectedButtons)
                             appController.path.append(.bio)
                         }
                 }
