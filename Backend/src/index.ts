@@ -5,7 +5,7 @@
 
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 import { authMiddleware } from './middleware/auth';
-import { handleProfile, handleLogin, handleTestDatabase, handleTestS3 } from './routes';
+import { handleProfile, handleLogin, handleTestDatabase, handleTestS3, handleOnboard } from './routes';
 
 export const handler = async (
   event: APIGatewayProxyEvent,
@@ -25,6 +25,8 @@ export const handler = async (
         return handleTestDatabase(event);
       case '/test-s3':
         return handleTestS3(event);
+      case '/onboard':
+        return handleOnboard(event);
       default:
         return {
           statusCode: 404,
