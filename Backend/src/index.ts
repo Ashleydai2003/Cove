@@ -4,7 +4,7 @@
 // Currently, it is just a placeholder hello world function
 
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
-import { handleProfile, handleLogin, handleTestDatabase, handleTestS3, handleOnboard, handleUserImage } from './routes';
+import { handleProfile, handleLogin, handleTestDatabase, handleTestS3, handleOnboard, handleUserImage, handleContacts } from './routes';
 
 export const handler = async (
   event: APIGatewayProxyEvent,
@@ -28,6 +28,8 @@ export const handler = async (
         return handleOnboard(event);
       case '/userImage':
         return handleUserImage(event);
+      case '/contacts':
+        return handleContacts(event);
       default:
         return {
           statusCode: 404,
