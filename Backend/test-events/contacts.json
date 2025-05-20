@@ -1,0 +1,9 @@
+{
+  "httpMethod": "POST",
+  "path": "/contacts",
+  "body": "{\"phoneNumbers\": [\"+1234567890\", \"+13333333333\", \"+15555555555\"]}",
+  "headers": {
+    "Authorization": "Bearer test-token",
+    "Content-Type": "application/json"
+  }
+} 
