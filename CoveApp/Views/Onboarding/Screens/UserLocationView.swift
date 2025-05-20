@@ -128,6 +128,8 @@ struct UserLocationView: View {
                     .frame(width: 52, height: 52)
                     .padding(.bottom, 20)
                     .onTapGesture {
+                        // MARK: - Store location
+                        Onboarding.storeLocation(latitude: viewModel.selectedCoordinate?.latitude ?? 0, longitude: viewModel.selectedCoordinate?.longitude ?? 0)
                         appController.path.append(.almaMater)
                     }
             }

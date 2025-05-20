@@ -17,5 +17,9 @@ enum Images {
     
     static let skyscrapers = Image("skyscrapers")
     static let moreInfo = Image("more-info")
+    static let profilePlaceholder = Image("profile-placeholder")
+    static let pencilEdit = Image("pencil-edit")
+    static let profileActivity1 = Image("profile-activity-1")
+    static let profileActivity2 = Image("profile-activity-2")
 }
 
