@@ -5,3 +5,4 @@ export { handleTestDatabase } from './test-database';
 export { handleTestS3 } from './test-s3';
 export { handleOnboard } from './onboard';
 export { handleUserImage } from './userImage';
+export { handleContacts } from './contacts'

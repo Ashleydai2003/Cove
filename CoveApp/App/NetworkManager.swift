@@ -12,6 +12,85 @@ class NetworkManager {
     /// Private initializer to enforce singleton pattern
     private init() {}
     
+    /// Makes a GET request to the specified endpoint
+    /// - Parameters:
+    ///   - endpoint: API endpoint path (e.g., "/profile")
+    ///   - parameters: Query parameters to append to the URL
+    ///   - completion: Callback with the decoded response or error
+    func get<T: Decodable>(
+        endpoint: String,
+        parameters: [String: Any]? = nil,
+        completion: @escaping (Result<T, NetworkError>) -> Void
+    ) {
+        // Get current Firebase token
+        Auth.auth().currentUser?.getIDToken { token, error in
+            if let error = error {
+                completion(.failure(.authError(error)))
+                return
+            }
+            
+            guard let token = token else {
+                completion(.failure(.missingToken))
+                return
+            }
+            
+            // Create base URL
+            var urlComponents = URLComponents(string: "\(self.apiBaseURL)\(endpoint)")
+            
+            // Add query parameters if provided
+            if let parameters = parameters {
+                urlComponents?.queryItems = parameters.map { key, value in
+                    URLQueryItem(name: key, value: String(describing: value))
+                }
+            }
+            
+            // Create URL
+            guard let url = urlComponents?.url else {
+                completion(.failure(.invalidURL))
+                return
+            }
+            
+            // Create request
+            var request = URLRequest(url: url)
+            request.httpMethod = "GET"
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            
+            // Make the request
+            let task = URLSession.shared.dataTask(with: request) { data, response, error in
+                DispatchQueue.main.async {
+                    if let error = error {
+                        completion(.failure(.networkError(error)))
+                        return
+                    }
+                    
+                    guard let httpResponse = response as? HTTPURLResponse else {
+                        completion(.failure(.invalidResponse))
+                        return
+                    }
+                    
+                    guard (200...299).contains(httpResponse.statusCode) else {
+                        completion(.failure(.serverError(httpResponse.statusCode)))
+                        return
+                    }
+                    
+                    guard let data = data else {
+                        completion(.failure(.noData))
+                        return
+                    }
+                    
+                    do {
+                        let decodedResponse = try JSONDecoder().decode(T.self, from: data)
+                        completion(.success(decodedResponse))
+                    } catch {
+                        completion(.failure(.decodingError(error)))
+                    }
+                }
+            }
+            
+            task.resume()
+        }
+    }
+    
     /// Makes a POST request to the specified endpoint
     /// - Parameters:
     ///   - endpoint: API endpoint path (e.g., "/login")
