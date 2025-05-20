@@ -30,36 +30,12 @@ struct OtpVerify {
                 
                 if let user = authResult?.user {
                     print("✅ Successfully verified OTP and signed in")
-                    // Get the ID token
-                    user.getIDToken { token, error in
-                        if let error = error {
-                            print("❌ Error getting ID token: \(error.localizedDescription)")
-                            AppController.shared.errorMessage = "Failed to get ID token"
-                            completion(false)
-                            return
-                        }
-                        
-                        if let token = token {
-                            print("✅ Successfully got ID token")
-                            // TODO: REMOVE THIS AFTER GETTING TOKEN FOR TESTING!!!!
-                            print("🔑 TOKEN VALUE: \(token)")
+                    // Make login request to backend
+                    makeLoginRequest { success in
+                        if success {
                             completion(true)
-                            
-                            // Store the token for future API calls
-                            UserDefaults.standard.set(token, forKey: "firebase_id_token")
-                            
-                            // Make login request to backend
-                            self.makeLoginRequest(token: token) { success in
-                                if success {
-                                    completion(true)
-                                } else {
-                                    AppController.shared.errorMessage = "Failed to login to backend"
-                                    completion(false)
-                                }
-                            }
                         } else {
-                            print("❌ No ID token received")
-                            AppController.shared.errorMessage = "Failed to get ID token"
+                            AppController.shared.errorMessage = "Failed to login to backend"
                             completion(false)
                         }
                     }
@@ -98,9 +74,8 @@ struct OtpVerify {
     
     /// Makes a login request to the backend API
     /// - Parameters:
-    ///   - token: Firebase ID token
     ///   - completion: Callback with success status
-    private static func makeLoginRequest(token: String, completion: @escaping (Bool) -> Void) {
+    private static func makeLoginRequest(completion: @escaping (Bool) -> Void) {
         // Create request parameters
         let parameters: [String: String] = [
             "phoneNumber": UserDefaults.standard.string(forKey: "UserPhoneNumber") ?? ""
@@ -109,30 +84,31 @@ struct OtpVerify {
         // Make the request using NetworkManager with explicit type
         NetworkManager.shared.post(
             endpoint: apiLoginPath,
-            token: token,
             parameters: parameters
         ) { (result: Result<LoginResponse, NetworkError>) in
-            switch result { 
-            case .success(let loginResponse):
-                print("✅ Successfully logged in to backend")
-                
-                // Store user info in UserDefaults
-                UserDefaults.standard.set(loginResponse.user.uid, forKey: "user_id")
-                
-                // Update onboarding state
-                if loginResponse.user.onboarding {
-                    AppController.shared.path = [.userDetails]
-                } else {
-                    AppController.shared.path = [.finished]
-                    AppController.shared.hasCompletedOnboarding = true
+            DispatchQueue.main.async {
+                switch result { 
+                case .success(let loginResponse):
+                    print("✅ Successfully logged in to backend")
+                    
+                    // Store user info in UserDefaults
+                    UserDefaults.standard.set(loginResponse.user.uid, forKey: "user_id")
+                    
+                    // Update onboarding state
+                    if loginResponse.user.onboarding {
+                        AppController.shared.path = [.userDetails]
+                    } else {
+                        AppController.shared.path = [.finished]
+                        AppController.shared.hasCompletedOnboarding = true
+                    }
+                    
+                    completion(true)
+                    
+                case .failure(let error):
+                    print("❌ Backend login error: \(error.localizedDescription)")
+                    AppController.shared.errorMessage = error.localizedDescription
+                    completion(false)
                 }
-                
-                completion(true)
-                
-            case .failure(let error):
-                print("❌ Backend login error: \(error.localizedDescription)")
-                AppController.shared.errorMessage = error.localizedDescription
-                completion(false)
             }
         }
     }

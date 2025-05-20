@@ -26,7 +26,7 @@ export const handler = async (
         return handleTestS3(event);
       case '/onboard':
         return handleOnboard(event);
-      case '/user-image':
+      case '/userImage':
         return handleUserImage(event);
       default:
         return {

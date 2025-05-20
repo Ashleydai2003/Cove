@@ -54,25 +54,21 @@ export const handleUserImage = async (event: APIGatewayProxyEvent): Promise<APIG
     // Step 5: Initialize database connection
     const prisma = await initializeDatabase();
 
-    // Step 6: Upload image to S3
+    // Step 6: Create UserImage record first to get the auto-generated ID
+    const userImage = await prisma.userImage.create({
+      data: {
+        userId: user.uid
+      }
+    });
+
+    // Step 7: Upload image to S3 using the auto-generated ID
     const bucketName = process.env.USER_IMAGE_BUCKET_NAME;
     if (!bucketName) {
       throw new Error('USER_IMAGE_BUCKET_NAME environment variable is not set');
     }
 
-    // Generate a unique key for the image
-    const imageId = crypto.randomUUID();
-    
-    // Step 7: Create UserImage record
-    const userImage = await prisma.userImage.create({
-      data: {
-        id: imageId,
-        userId: user.uid
-      }
-    });
-
     const s3Key = `${user.uid}/${userImage.id}.jpg`;
-    
+
     // Convert base64 to buffer
     const imageBuffer = Buffer.from(base64Image, 'base64');
 
