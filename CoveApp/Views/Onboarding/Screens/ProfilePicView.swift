@@ -93,6 +93,8 @@ struct ProfilePicView: View {
                             .frame(width: 52, height: 52)
                             .padding(.init(top: 0, leading: 0, bottom: 0, trailing: 20))
                             .onTapGesture {
+                                // MARK: - Upload profile pics
+                                // TODO: make upload profile pics request api
                                 appController.path.append(.mutuals)
                             }
                     }

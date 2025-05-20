@@ -89,6 +89,9 @@ struct AlmaMaterView: View {
                     .frame(width: 52, height: 52)
                     .padding(.bottom, 20)
                     .onTapGesture {
+                        // MARK: - Store alma mater
+                        // TODO: can consider using university IDs instead of names
+                        Onboarding.storeAlmaMater(almaMater: searchUniversity)
                         appController.path.append(.moreAboutYou)
                     }
             }

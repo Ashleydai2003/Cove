@@ -38,6 +38,8 @@ struct OnboardingFlow: View {
                         MutualsView()
                     case .finished:
                         PluggingYouIn()
+                    case .profile:
+                        ProfileView()
                     }
                 }
         }

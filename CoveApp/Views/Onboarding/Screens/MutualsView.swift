@@ -10,6 +10,7 @@ import SwiftUI
 struct MutualsView: View {
     @EnvironmentObject var appController: AppController
     @State private var bio: String = ""
+    @State private var showError = false
 
     var body: some View {
         GeometryReader { geometry in
@@ -53,10 +54,10 @@ struct MutualsView: View {
                     // Contacts button
                     Button(action: {
                         // TODO: actually do contact syncing 
-                        Onboarding.completeOnboarding()
-                        if !AppController.shared.hasCompletedOnboarding {
-                            // TODO:Show error message
-                            print("Onboarding process incomplete")
+                        Onboarding.completeOnboarding { success in
+                            if !success {
+                                showError = true
+                            }
                         }
                     }) {
                         Text("choose friends from contacts")
@@ -75,6 +76,11 @@ struct MutualsView: View {
             }
         }
         .navigationBarBackButtonHidden()
+        .alert("Error", isPresented: $showError) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(appController.errorMessage)
+        }
     }
 }
 
