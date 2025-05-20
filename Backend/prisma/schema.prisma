@@ -21,7 +21,7 @@ datasource db {
 model User {
   id              String      @id // Using Firebase UID as ID
   name            String?
-  phone           String   @unique
+  phone           String      @unique
   age             Int?
   birthday        DateTime? 
   interests       String[]
@@ -32,9 +32,24 @@ model User {
   workLocation    String?
   relationStatus  String?
   sexuality       String?
-  onboarding      Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  onboarding      Boolean     @default(true)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  profilePhotoID  String?     @unique
+  profilePhoto    UserImage?  @relation("ProfilePhoto", fields: [profilePhotoID], references: [id])
+  photos          UserImage[] @relation("UserPhotos")
 } 
 
-// NEW: birthday, interests, latitude, longitude
+// User Image model 
+// Document how to use the @relation somewhere 
+model UserImage {
+  id            String    @id @default(cuid())
+  user          User      @relation("UserPhotos", fields: [userId], references: [id])
+  userId        String
+  createdAt     DateTime  @default(now())
+  profileUser   User?     @relation("ProfilePhoto")
+}
+
+// In the future:
+// events: id,	host_id, name, etc 
+// eventPhotos: id, eventID, 
