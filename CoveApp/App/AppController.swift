@@ -21,6 +21,7 @@ enum OnboardingRoute: Hashable {
     case profilePics
     case mutuals
     case finished
+    case profile
 }
 
 /// AppController: Manages shared application state and business logic
