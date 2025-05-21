@@ -69,7 +69,7 @@ export const handleLogin = async (event: APIGatewayProxyEvent): Promise<APIGatew
     }
 
     // Step 7: Return user info
-    return {
+    const response = {
       statusCode: 200,
       body: JSON.stringify({
         message: 'User authenticated successfully',
@@ -79,14 +79,18 @@ export const handleLogin = async (event: APIGatewayProxyEvent): Promise<APIGatew
         }
       })
     };
+    console.log('Login response:', response);
+    return response;
   } catch (error) {
     console.error('User route error:', error);
-    return {
+    const errorResponse = {
       statusCode: 500,
       body: JSON.stringify({
         message: 'Error processing user request',
         error: error instanceof Error ? error.message : 'Unknown error'
       })
     };
+    console.log('Login error response:', errorResponse);
+    return errorResponse;
   }
 }; 

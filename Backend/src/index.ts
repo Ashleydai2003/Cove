@@ -31,9 +31,45 @@ export const handler = async (
       case '/contacts':
         return handleContacts(event);
       default:
+        // Handle common web standard files
+        switch (event.path) {
+          case '/robots.txt':
+            console.log('Robots.txt request');
+            return {
+              statusCode: 200,
+              headers: {
+                'Content-Type': 'text/plain'
+              },
+              body: 'User-agent: *\nDisallow: /'
+            };
+          case '/favicon.ico':
+          case '/apple-touch-icon-precomposed.png':
+          case '/apple-touch-icon.png':
+            console.log('Favicon/icon request:', event.path);
+            return {
+              statusCode: 204, // No content
+              body: ''
+            };
+        }
+
+        // Check if the request is for a static asset
+        if (event.path.match(/\.(png|jpg|jpeg|gif|ico|svg)$/i)) {
+          console.log('Static asset request:', event.path);
+          return {
+            statusCode: 404,
+            body: JSON.stringify({ 
+              message: 'Static asset not found',
+              path: event.path
+            })
+          };
+        }
+        
         return {
           statusCode: 404,
-          body: JSON.stringify({ message: 'Not Found' })
+          body: JSON.stringify({ 
+            message: 'Not Found',
+            path: event.path
+          })
         };
     }
   } catch (error) {

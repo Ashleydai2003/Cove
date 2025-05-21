@@ -104,6 +104,7 @@ struct UserPhoneNumber {
                     print("✅ Successfully received verification ID")
                     // Store the full phone number in UserDefaults
                     UserDefaults.standard.set(getFullPhoneNumber(), forKey: "UserPhoneNumber")
+                    print("✅ UserDefault set: \(UserDefaults.standard.string(forKey: "UserPhoneNumber") ?? "N/A")")
                     // Store the verification ID in UserDefaults
                     UserDefaults.standard.set(verificationID, forKey: "verification_id")
                     completion(true)
