@@ -119,20 +119,24 @@ export const handleOnboard = async (event: APIGatewayProxyEvent): Promise<APIGat
     console.log('Onboarding complete for user:', user.uid);
 
     // Step 8: Return success message
-    return {
+    const response = {
       statusCode: 200,
       body: JSON.stringify({
         message: 'User onboarding completed successfully'
       })
     };
+    console.log('Onboarding response:', response);
+    return response;
   } catch (error) {
     console.error('Onboarding route error:', error);
-    return {
+    const errorResponse = {
       statusCode: 500,
       body: JSON.stringify({
         message: 'Error processing onboarding request',
         error: error instanceof Error ? error.message : 'Unknown error'
       })
     };
+    console.log('Onboarding error response:', errorResponse);
+    return errorResponse;
   }
 };

@@ -96,20 +96,24 @@ export const handleUserImage = async (event: APIGatewayProxyEvent): Promise<APIG
     console.log('Image upload complete for user:', user.uid);
 
     // Step 9: Return success message
-    return {
+    const response = {
       statusCode: 200,
       body: JSON.stringify({
         message: 'Image uploaded successfully'
       })
     };
+    console.log('UserImage response:', response);
+    return response;
   } catch (error) {
     console.error('Image upload route error:', error);
-    return {
+    const errorResponse = {
       statusCode: 500,
       body: JSON.stringify({
         message: 'Error processing image upload request',
         error: error instanceof Error ? error.message : 'Unknown error'
       })
     };
+    console.log('UserImage error response:', errorResponse);
+    return errorResponse;
   }
 }; 

@@ -110,20 +110,24 @@ export const handleContacts = async (event: APIGatewayProxyEvent): Promise<APIGa
     );
 
     // Return list of matching contacts
-    return {
+    const response = {
       statusCode: 200,
       body: JSON.stringify({
         contacts
       })
     };
+    console.log('Contacts response:', response);
+    return response;
   } catch (error) {
     console.error('Contacts route error:', error);
-    return {
+    const errorResponse = {
       statusCode: 500,
       body: JSON.stringify({
         message: 'Error processing contacts request',
         error: error instanceof Error ? error.message : 'Unknown error'
       })
     };
+    console.log('Contacts error response:', errorResponse);
+    return errorResponse;
   }
 }; 
