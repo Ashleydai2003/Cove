@@ -51,7 +51,7 @@ struct OtpVerify {
     /// Handles authentication failure by resetting relevant state
     static func handleAuthFailure() {
         // Clear the stored phone number
-        printf(("User Default Removed!"))
+        print(("User Default Removed!"))
         UserDefaults.standard.removeObject(forKey: "UserPhoneNumber")
         
         // Clear the stored verification ID
