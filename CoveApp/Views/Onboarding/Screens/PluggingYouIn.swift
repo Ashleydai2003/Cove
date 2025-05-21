@@ -47,7 +47,7 @@ struct PluggingYouIn: View {
                                         
                                         // Navigate to next screen after all animations
                                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
-                                            appController.path.append(.profile)
+                                            appController.path.append(.profilenb)
                                         }
                                     }
                                 }

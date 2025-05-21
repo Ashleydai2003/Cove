@@ -22,17 +22,26 @@ class NetworkManager {
         parameters: [String: Any]? = nil,
         completion: @escaping (Result<T, NetworkError>) -> Void
     ) {
+        print("🌐 GET Request - Endpoint: \(endpoint)")
+        if let params = parameters {
+            print("📝 Query Parameters: \(params)")
+        }
+        
         // Get current Firebase token
         Auth.auth().currentUser?.getIDToken { token, error in
             if let error = error {
+                print("❌ Auth Error: \(error.localizedDescription)")
                 completion(.failure(.authError(error)))
                 return
             }
             
             guard let token = token else {
+                print("❌ Missing Auth Token")
                 completion(.failure(.missingToken))
                 return
             }
+            
+            print("🔑 Auth Token received")
             
             // Create base URL
             var urlComponents = URLComponents(string: "\(self.apiBaseURL)\(endpoint)")
@@ -46,42 +55,57 @@ class NetworkManager {
             
             // Create URL
             guard let url = urlComponents?.url else {
+                print("❌ Invalid URL: \(self.apiBaseURL)\(endpoint)")
                 completion(.failure(.invalidURL))
                 return
             }
+            
+            print("🔗 Request URL: \(url.absoluteString)")
             
             // Create request
             var request = URLRequest(url: url)
             request.httpMethod = "GET"
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
             
+            print("📤 Sending GET request...")
+            
             // Make the request
             let task = URLSession.shared.dataTask(with: request) { data, response, error in
                 DispatchQueue.main.async {
                     if let error = error {
+                        print("❌ Network Error: \(error.localizedDescription)")
                         completion(.failure(.networkError(error)))
                         return
                     }
                     
                     guard let httpResponse = response as? HTTPURLResponse else {
+                        print("❌ Invalid Response: No HTTP response")
                         completion(.failure(.invalidResponse))
                         return
                     }
                     
+                    print("📥 Response Status: \(httpResponse.statusCode)")
+                    
                     guard (200...299).contains(httpResponse.statusCode) else {
+                        print("❌ Server Error: \(httpResponse.statusCode)")
                         completion(.failure(.serverError(httpResponse.statusCode)))
                         return
                     }
                     
                     guard let data = data else {
+                        print("❌ No Data Received")
                         completion(.failure(.noData))
                         return
                     }
                     
+                    print("📦 Received Data: \(String(data: data, encoding: .utf8) ?? "Unable to decode data")")
+                    
                     do {
                         let decodedResponse = try JSONDecoder().decode(T.self, from: data)
+                        print("✅ Successfully decoded response")
                         completion(.success(decodedResponse))
                     } catch {
+                        print("❌ Decoding Error: \(error.localizedDescription)")
                         completion(.failure(.decodingError(error)))
                     }
                 }
@@ -101,30 +125,35 @@ class NetworkManager {
         parameters: [String: Any],
         completion: @escaping (Result<T, NetworkError>) -> Void
     ) {
+        print("🌐 POST Request - Endpoint: \(endpoint)")
+        print("📝 Request Body: \(parameters)")
+        
         // Get current Firebase token
         Auth.auth().currentUser?.getIDToken { token, error in
             if let error = error {
+                print("❌ Auth Error: \(error.localizedDescription)")
                 completion(.failure(.authError(error)))
                 return
             }
             
             guard let token = token else {
+                print("❌ Missing Auth Token")
                 completion(.failure(.missingToken))
                 return
             }
             
+            print("🔑 Auth Token received")
+            
             // Create URL
             guard let url = URL(string: "\(self.apiBaseURL)\(endpoint)") else {
+                print("❌ Invalid URL: \(self.apiBaseURL)\(endpoint)")
                 completion(.failure(.invalidURL))
                 return
             }
-
-            // Print token for testing
-            // TODO: REMOVE THIS LATER PLEASE
-            print("Token: \(token)")
+            
+            print("🔗 Request URL: \(url.absoluteString)")
             
             // Create request
-            // TODO: Might change this later to be more general for unauthenticated requests
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
@@ -133,38 +162,52 @@ class NetworkManager {
             // Create request body
             do {
                 request.httpBody = try JSONSerialization.data(withJSONObject: parameters)
+                print("📦 Request Body: \(String(data: request.httpBody!, encoding: .utf8) ?? "Unable to decode body")")
             } catch {
+                print("❌ Encoding Error: \(error.localizedDescription)")
                 completion(.failure(.encodingError(error)))
                 return
             }
+            
+            print("📤 Sending POST request...")
             
             // Make the request
             let task = URLSession.shared.dataTask(with: request) { data, response, error in
                 DispatchQueue.main.async {
                     if let error = error {
+                        print("❌ Network Error: \(error.localizedDescription)")
                         completion(.failure(.networkError(error)))
                         return
                     }
                     
                     guard let httpResponse = response as? HTTPURLResponse else {
+                        print("❌ Invalid Response: No HTTP response")
                         completion(.failure(.invalidResponse))
                         return
                     }
                     
+                    print("📥 Response Status: \(httpResponse.statusCode)")
+                    
                     guard (200...299).contains(httpResponse.statusCode) else {
+                        print("❌ Server Error: \(httpResponse.statusCode)")
                         completion(.failure(.serverError(httpResponse.statusCode)))
                         return
                     }
                     
                     guard let data = data else {
+                        print("❌ No Data Received")
                         completion(.failure(.noData))
                         return
                     }
                     
+                    print("📦 Received Data: \(String(data: data, encoding: .utf8) ?? "Unable to decode data")")
+                    
                     do {
                         let decodedResponse = try JSONDecoder().decode(T.self, from: data)
+                        print("✅ Successfully decoded response")
                         completion(.success(decodedResponse))
                     } catch {
+                        print("❌ Decoding Error: \(error.localizedDescription)")
                         completion(.failure(.decodingError(error)))
                     }
                 }
