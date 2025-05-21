@@ -86,7 +86,7 @@ export const handleProfile = async (event: APIGatewayProxyEvent): Promise<APIGat
     // Step 7: Return user profile with photo URLs
     // TODO: if user is private and the authenticated user is not the target user, 
     // only return name, bio, and profile picture + maybe other information 
-    return {
+    const response = {
       statusCode: 200,
       body: JSON.stringify({
         profile: {
@@ -107,14 +107,18 @@ export const handleProfile = async (event: APIGatewayProxyEvent): Promise<APIGat
         }
       })
     };
+    console.log('Profile response:', response);
+    return response;
   } catch (error) {
     console.error('Profile route error:', error);
-    return {
+    const errorResponse = {
       statusCode: 500,
       body: JSON.stringify({
         message: 'Error processing profile request',
         error: error instanceof Error ? error.message : 'Unknown error'
       })
     };
+    console.log('Profile error response:', errorResponse);
+    return errorResponse;
   }
 }; 
