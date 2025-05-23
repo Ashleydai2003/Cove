@@ -95,7 +95,9 @@ struct MutualsView: View {
                             HStack {
                                 Text(c.name)
                                 Spacer()
-                                Text(c.phone).font(.caption).foregroundColor(.gray)
+                                Text(c.phone)
+                                    .font(.caption)
+                                    .foregroundColor(.gray)
                                 if selectedLocalIDs.contains(c.id) {
                                     Image(systemName: "checkmark").foregroundColor(.blue)
                                 }
@@ -139,7 +141,24 @@ struct MutualsView: View {
                                         .font(.caption)
                                         .foregroundColor(.gray)
                                 }
+
+                                Spacer()
+
+                                // Add Friend button (non-functional for now)
+                                Button(action: {
+                                    // TODO: Implement add friend action
+                                }) {
+                                    Text("Add Friend")
+                                        .font(.LeagueSpartan(size: 14))
+                                        .padding(.vertical, 6)
+                                        .padding(.horizontal, 12)
+                                        .background(Color.blue)
+                                        .foregroundColor(.white)
+                                        .cornerRadius(8)
+                                }
+                                .buttonStyle(BorderlessButtonStyle())
                             }
+                            .padding(.vertical, 4)
                         }
                         .navigationTitle("Matches")
                         .toolbar {
@@ -224,7 +243,6 @@ struct MutualsView: View {
     }
 }
 
-// Preview
 #Preview {
     MutualsView()
         .environmentObject(AppController.shared)
