@@ -2,8 +2,6 @@
 //  ImagePicker.swift
 //  Cove
 //
-//  Created by Sheng Moua on 5/15/25.
-//
 
 
 import SwiftUI
