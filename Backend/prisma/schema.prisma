@@ -33,6 +33,7 @@ model User {
   relationStatus  String?
   sexuality       String?
   onboarding      Boolean     @default(true)
+  verified        Boolean     @default(false)  // IMPORTANT: in MVP, only verified users can create Coves
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
   profilePhotoID  String?     @unique
