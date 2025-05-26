@@ -106,7 +106,7 @@ class Onboarding {
 
     static func completeOnboarding(completion: @escaping (Bool) -> Void) {
         if isOnboardingComplete() {
-            AppController.shared.path = [.finished]
+            AppController.shared.path = [.pluggingIn]
             makeOnboardingCompleteRequest { success in
                 if success {
                     AppController.shared.hasCompletedOnboarding = true

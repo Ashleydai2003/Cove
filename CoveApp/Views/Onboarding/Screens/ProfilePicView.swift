@@ -11,15 +11,72 @@ struct ProfilePicView: View {
     // MARK: – Image state
     @State private var mainImage: UIImage?
     @State private var extraImages: [UIImage?] = [nil, nil]
+    @State private var processingImage: PickerType?
+    @State private var uploadMessages: [PickerType: String] = [:]
+
+    // MARK: - Loading View Component
+    private struct LoadingImageView: View {
+        let isCircle: Bool
+        let size: CGSize
+        let message: String?
+        
+        var body: some View {
+            ZStack {
+                if isCircle {
+                    Circle()
+                        .fill(Colors.f3f3f3)
+                        .frame(width: size.width, height: size.height)
+                        .overlay(Circle().stroke(Color.black, lineWidth: 0.5))
+                } else {
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(Colors.f3f3f3)
+                        .frame(width: size.width, height: size.height)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(Color.black, lineWidth: 0.5)
+                        )
+                }
+                if let message = message {
+                    Text(message)
+                        .font(.LeagueSpartan(size: 12))
+                        .foregroundStyle(.black)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 8)
+                } else {
+                    ProgressView()
+                }
+            }
+        }
+    }
 
     // Which picker is active
     @State private var showingPickerFor: PickerType?
-    enum PickerType: Identifiable {
+    enum PickerType: Identifiable, Hashable {
         case main, extra(Int)
         var id: Int {
             switch self {
             case .main: return -1
             case .extra(let idx): return idx
+            }
+        }
+        
+        func hash(into hasher: inout Hasher) {
+            switch self {
+            case .main:
+                hasher.combine(-1)
+            case .extra(let idx):
+                hasher.combine(idx)
+            }
+        }
+        
+        static func == (lhs: PickerType, rhs: PickerType) -> Bool {
+            switch (lhs, rhs) {
+            case (.main, .main):
+                return true
+            case (.extra(let l), .extra(let r)):
+                return l == r
+            default:
+                return false
             }
         }
     }
@@ -63,7 +120,11 @@ struct ProfilePicView: View {
                         Button {
                             showingPickerFor = .main
                         } label: {
-                            if let img = mainImage {
+                            if processingImage == .main {
+                                LoadingImageView(isCircle: true, size: CGSize(width: 160, height: 160), message: nil)
+                            } else if let message = uploadMessages[.main] {
+                                LoadingImageView(isCircle: true, size: CGSize(width: 160, height: 160), message: message)
+                            } else if let img = mainImage {
                                 Image(uiImage: img)
                                     .resizable()
                                     .scaledToFill()
@@ -88,7 +149,11 @@ struct ProfilePicView: View {
                                 Button {
                                     showingPickerFor = .extra(idx)
                                 } label: {
-                                    if let img = extraImages[idx] {
+                                    if processingImage == .extra(idx) {
+                                        LoadingImageView(isCircle: false, size: CGSize(width: 150, height: 250), message: nil)
+                                    } else if let message = uploadMessages[.extra(idx)] {
+                                        LoadingImageView(isCircle: false, size: CGSize(width: 150, height: 250), message: message)
+                                    } else if let img = extraImages[idx] {
                                         Image(uiImage: img)
                                             .resizable()
                                             .scaledToFill()
@@ -130,22 +195,6 @@ struct ProfilePicView: View {
                                 appController.path.append(.mutuals)
                             }
                     }
-
-                    // Upload status
-                    if isUploading {
-                        HStack {
-                            ProgressView()
-                            Text("Uploading…")
-                                .font(.LeagueSpartan(size: 12))
-                                .foregroundStyle(.black)
-                        }
-                        .padding(.top, 10)
-                    } else if let msg = uploadMessage {
-                        Text(msg)
-                            .font(.LeagueSpartan(size: 12))
-                            .foregroundStyle(.black)
-                            .padding(.top, 10)
-                    }
                 }
                 .safeAreaPadding()
             }
@@ -154,14 +203,28 @@ struct ProfilePicView: View {
             }
             // iOS 17 two‐param onChange
             .onChange(of: mainImage) { old, new in
-                if let img = new { uploadImage(img, isProfile: true) }
+                if let img = new {
+                    processingImage = .main
+                    uploadMessages.removeValue(forKey: .main)
+                    // Simulate a small delay to show loading state
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        processingImage = nil
+                        uploadImage(img, isProfile: true)
+                    }
+                }
             }
             .onChange(of: extraImages) { old, new in
                 for (idx, img) in new.enumerated() {
                     // only upload newly set images
                     if img != old[idx], let ui = img {
-                        let isProfile = false
-                        uploadImage(ui, isProfile: isProfile)
+                        processingImage = .extra(idx)
+                        uploadMessages.removeValue(forKey: .extra(idx))
+                        // Simulate a small delay to show loading state
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            processingImage = nil
+                            let isProfile = false
+                            uploadImage(ui, isProfile: isProfile)
+                        }
                     }
                 }
             }
@@ -178,18 +241,30 @@ struct ProfilePicView: View {
         }
     }
 
+    /// Uploads an image to the server.
+    /// - Note: Image processing and network upload are performed on a background thread to maintain UI responsiveness.
+    /// UI updates are automatically dispatched back to the main thread.
+    /// - Parameters:
+    ///   - uiImage: The image to upload
+    ///   - isProfile: Whether this is the main profile picture
     private func uploadImage(_ uiImage: UIImage, isProfile: Bool) {
-        guard let data = uiImage.jpegData(compressionQuality: 0.8) else { return }
-        isUploading = true
-        uploadMessage = nil
-
-        UserImage.upload(imageData: data, isProfilePic: isProfile) { result in
-            isUploading = false
-            switch result {
-            case .success(let resp):
-                uploadMessage = resp.message
-            case .failure(let err):
-                uploadMessage = "Upload error: \(err.localizedDescription)"
+        let pickerType: PickerType = isProfile ? .main : .extra(extraImages.firstIndex(where: { $0 == uiImage }) ?? 0)
+        
+        // Move image processing to background thread to prevent UI blocking
+        DispatchQueue.global(qos: .userInitiated).async {
+            guard let data = uiImage.jpegData(compressionQuality: 0.8) else { return }
+            
+            // Network upload also happens on background thread
+            UserImage.upload(imageData: data, isProfilePic: isProfile) { result in
+                // Update UI state on main thread to ensure thread safety
+                DispatchQueue.main.async {
+                    switch result {
+                    case .success(let resp):
+                        uploadMessages[pickerType] = resp.message
+                    case .failure(let err):
+                        uploadMessages[pickerType] = "Upload error: \(err.localizedDescription)"
+                    }
+                }
             }
         }
     }
