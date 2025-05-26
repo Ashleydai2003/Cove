@@ -93,101 +93,6 @@ private struct ContactRow: View {
     }
 }
 
-
-// MARK: - Row for each existing user 
-private struct MatchedUserRow: View {
-    let user: ContactMatcher.MatchedUser
-    
-    var body: some View {
-        HStack {
-            AsyncImage(url: user.profilePhotoUrl) { img in
-                img.resizable().clipShape(Circle())
-            } placeholder: {
-                Circle().fill(Color.gray.opacity(0.3))
-            }
-            .frame(width: 44, height: 44)
-
-            VStack(alignment: .leading) {
-                Text(user.name)
-                Text(user.phone)
-                    .font(.caption)
-                    .foregroundColor(.gray)
-            }
-
-            Spacer()
-
-            Button(action: {
-                // TODO: Implement add friend action
-            }) {
-                Text("Add Friend")
-                    .font(.LeagueSpartan(size: 14))
-                    .padding(.vertical, 6)
-                    .padding(.horizontal, 12)
-                    .background(Color.blue)
-                    .foregroundColor(.white)
-                    .cornerRadius(8)
-            }
-            .buttonStyle(BorderlessButtonStyle())
-        }
-        .padding(.vertical, 4)
-    }
-}
-
-// MARK: - View for when no matches are found
-private struct NoMatchesView: View {
-    let onDismiss: () -> Void
-    let isLoading: Bool
-    @Binding var showError: Bool
-    
-    var body: some View {
-        ZStack {
-            VStack(spacing: 20) {
-                Text("Your Friends are not on Cove yet!")
-                    .font(.LibreBodoni(size: 24))
-                    .foregroundStyle(Colors.primaryDark)
-                    .multilineTextAlignment(.center)
-                
-                Text("Send them an Invite?")
-                    .font(.LeagueSpartan(size: 16))
-                    .foregroundStyle(.black)
-                
-                Button(action: {
-                    // TODO: Implement invite action
-                    // on success, finish the onboarding flow
-                    // TODO: also on dismiss, we should finish the onboarding flow
-                    // or have a finished button 
-                    Onboarding.completeOnboarding { success in
-                        if !success {
-                            showError = true
-                        }
-                    }
-                }) {
-                    Text("Send Invite")
-                        .font(.LeagueSpartan(size: 16))
-                        .foregroundStyle(.white)
-                        .padding(.vertical, 12)
-                        .padding(.horizontal, 24)
-                        .background(Colors.primaryDark)
-                        .cornerRadius(8)
-                }
-            }
-            .padding()
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Done", action: onDismiss)
-                }
-            }
-            
-            if isLoading {
-                Color.black.opacity(0.25).ignoresSafeArea()
-                ProgressView()
-                    .padding()
-                    .background(Color.white.cornerRadius(10))
-            }
-        }
-    }
-}
-
 // MARK: - Main View
 struct MutualsView: View {
     @EnvironmentObject var appController: AppController
@@ -223,7 +128,6 @@ struct MutualsView: View {
                         Onboarding.completeOnboarding { success in
                             if !success {
                                 showError = true
-                                errorMessage = "Failed to complete onboarding"
                             }
                         }
                     }
@@ -244,25 +148,13 @@ struct MutualsView: View {
             }
         }
         .sheet(isPresented: $showSheet) {
-            NavigationView {
-                if showingNoMatches {
-                    NoMatchesView(
-                        onDismiss: { showSheet = false },
-                        isLoading: isLoading,
-                        showError: $showError
-                    )
-                } else {
-                    List(serverMatches) { user in
-                        MatchedUserRow(user: user)
-                    }
-                    .navigationTitle("add friends on cove!")
-                    .toolbar {
-                        ToolbarItem(placement: .cancellationAction) {
-                            Button("Done") { showSheet = false }
-                        }
-                    }
-                }
-            }
+            AddFriendsSheet(
+                serverMatches: serverMatches,
+                showingNoMatches: showingNoMatches,
+                isLoading: isLoading,
+                onDismiss: { showSheet = false },
+                showError: $showError
+            )
         }
         .alert("Error", isPresented: $showError) {
             Button("OK", role: .cancel) { }
