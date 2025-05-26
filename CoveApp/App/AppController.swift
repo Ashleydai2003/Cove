@@ -20,7 +20,7 @@ enum OnboardingRoute: Hashable {
     case bio
     case profilePics
     case mutuals
-    case finished
+    case pluggingIn
     case profile
 }
 
