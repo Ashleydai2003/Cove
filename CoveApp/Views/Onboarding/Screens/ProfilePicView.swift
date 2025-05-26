@@ -13,6 +13,7 @@ struct ProfilePicView: View {
     @State private var extraImages: [UIImage?] = [nil, nil]
     @State private var processingImage: PickerType?
     @State private var uploadMessages: [PickerType: String] = [:]
+    @State private var isProcessing = false
 
     // MARK: - Loading View Component
     private struct LoadingImageView: View {
@@ -190,8 +191,6 @@ struct ProfilePicView: View {
                             .frame(width: 52, height: 52)
                             .padding(.trailing, 20)
                             .onTapGesture {
-                                // MARK: - Upload profile pics
-                                // TODO: make upload profile pics request api
                                 appController.path.append(.mutuals)
                             }
                     }
@@ -209,21 +208,20 @@ struct ProfilePicView: View {
                     // Simulate a small delay to show loading state
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                         processingImage = nil
-                        uploadImage(img, isProfile: true)
+                        Onboarding.storeProfilePic(img)
                     }
                 }
             }
             .onChange(of: extraImages) { old, new in
                 for (idx, img) in new.enumerated() {
-                    // only upload newly set images
+                    // only process newly set images
                     if img != old[idx], let ui = img {
                         processingImage = .extra(idx)
                         uploadMessages.removeValue(forKey: .extra(idx))
                         // Simulate a small delay to show loading state
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                             processingImage = nil
-                            let isProfile = false
-                            uploadImage(ui, isProfile: isProfile)
+                            Onboarding.storeExtraPic(ui, at: idx)
                         }
                     }
                 }

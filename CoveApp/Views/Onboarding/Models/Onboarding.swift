@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftUI
 
 class Onboarding {
     // MARK: - Properties
@@ -20,6 +21,8 @@ class Onboarding {
     private static var userWorkLocation: String?
     private static var userRelationStatus: String?
     private static var userInterestedInto: String?
+    private static var profilePic: UIImage?
+    private static var extraPics: [UIImage] = []
 
     private static let apiBaseURL = "https://api.coveapp.co"
     private static let apiOnboardPath = "/onboard"
@@ -55,6 +58,37 @@ class Onboarding {
         userWorkLocation = workLocation
         userRelationStatus = relationStatus
         userInterestedInto = interestedInto
+    }
+    
+    // MARK: - Image Storage
+    static func storeProfilePic(_ image: UIImage) {
+        profilePic = image
+    }
+    
+    static func storeExtraPic(_ image: UIImage, at index: Int) {
+        if index >= extraPics.count {
+            extraPics.append(image)
+        } else {
+            extraPics[index] = image
+        }
+        // Ensure we only keep 2 extra pics
+        if extraPics.count > 2 {
+            extraPics = Array(extraPics.prefix(2))
+        }
+    }
+    
+    static func clearImages() {
+        profilePic = nil
+        extraPics.removeAll()
+    }
+    
+    static func getAllImages() -> [(UIImage, Bool)] {
+        var images: [(UIImage, Bool)] = []
+        if let profile = profilePic {
+            images.append((profile, true))
+        }
+        images.append(contentsOf: extraPics.map { ($0, false) })
+        return images
     }
     
     // MARK: - Getters
@@ -106,14 +140,55 @@ class Onboarding {
 
     static func completeOnboarding(completion: @escaping (Bool) -> Void) {
         if isOnboardingComplete() {
+            // Show loading screen immediately
             AppController.shared.path = [.pluggingIn]
-            makeOnboardingCompleteRequest { success in
-                if success {
-                    AppController.shared.hasCompletedOnboarding = true
-                    // TODO: navigate to home page
-                    AppController.shared.path = [.profile]
+            
+            // Move all heavy operations to background
+            DispatchQueue.global(qos: .userInitiated).async {
+                // First upload all images
+                let group = DispatchGroup()
+                var uploadError: Error?
+                
+                for (image, isProfilePic) in getAllImages() {
+                    group.enter()
+                    guard let data = image.jpegData(compressionQuality: 0.8) else {
+                        group.leave()
+                        continue
+                    }
+                    
+                    UserImage.upload(imageData: data, isProfilePic: isProfilePic) { result in
+                        switch result {
+                        case .success:
+                            break
+                        case .failure(let error):
+                            uploadError = error
+                        }
+                        group.leave()
+                    }
                 }
-                completion(success)
+                
+                group.wait() // Wait for all uploads to complete
+                
+                // Check for upload errors
+                if let error = uploadError {
+                    DispatchQueue.main.async {
+                        AppController.shared.errorMessage = "Failed to upload images: \(error.localizedDescription)"
+                        completion(false)
+                    }
+                    return
+                }
+                
+                // Then complete onboarding
+                makeOnboardingCompleteRequest { success in
+                    DispatchQueue.main.async {
+                        if success {
+                            AppController.shared.hasCompletedOnboarding = true
+                            clearImages() // Clear stored images after successful upload
+                            AppController.shared.path = [.profile]
+                        }
+                        completion(success)
+                    }
+                }
             }
         } else {
             AppController.shared.errorMessage = "Onboarding process incomplete"
@@ -157,8 +232,6 @@ class Onboarding {
             switch result {
             case .success(let response):
                 print("Onboarding complete: \(response.message)")
-                // Update onboarding state
-                AppController.shared.hasCompletedOnboarding = true
                 completion(true)
             case .failure(let error):
                 AppController.shared.errorMessage = "Onboarding failed: \(error.localizedDescription)"
