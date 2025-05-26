@@ -88,7 +88,7 @@ struct OtpVerify {
             parameters: parameters
         ) { (result: Result<LoginResponse, NetworkError>) in
             DispatchQueue.main.async {
-                switch result { 
+                switch result {
                 case .success(let loginResponse):
                     print("✅ Successfully logged in to backend")
                     
@@ -113,4 +113,4 @@ struct OtpVerify {
             }
         }
     }
-} 
+}
