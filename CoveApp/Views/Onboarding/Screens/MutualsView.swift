@@ -37,20 +37,31 @@ private struct HeaderView: View {
 private struct ContactsButton: View {
     let action: () -> Void
     let isLoading: Bool
+    let onSkip: () -> Void
     
     var body: some View {
-        Button(action: action) {
-            Text("choose friends from contacts")
-                .font(.LibreBodoni(size: 16))
-                .foregroundStyle(.black)
-                .padding()
-                .frame(maxWidth: .infinity)
-                .background(Color.white)
-                .cornerRadius(15)
-                .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 4)
+        VStack(spacing: 16) {
+            Button(action: action) {
+                Text("choose friends from contacts")
+                    .font(.LibreBodoni(size: 16))
+                    .foregroundStyle(.black)
+                    .padding()
+                    .frame(maxWidth: .infinity)
+                    .background(Color.white)
+                    .cornerRadius(15)
+                    .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 4)
+            }
+            .disabled(isLoading)
+            
+            Button(action: onSkip) {
+                Text("skip")
+                    .font(.LeagueSpartan(size: 14))
+                    .foregroundStyle(Colors.primaryDark)
+                    .underline()
+            }
+            .disabled(isLoading)
         }
         .padding(.bottom, 40)
-        .disabled(isLoading)
     }
 }
 
@@ -204,7 +215,19 @@ struct MutualsView: View {
                 
                 HeaderView()
                 Spacer()
-                ContactsButton(action: processAllContacts, isLoading: isLoading)
+                ContactsButton(
+                    action: processAllContacts,
+                    isLoading: isLoading,
+                    onSkip: {
+                        // complete onboarding without adding any friends or syncing contacts
+                        Onboarding.completeOnboarding { success in
+                            if !success {
+                                showError = true
+                                errorMessage = "Failed to complete onboarding"
+                            }
+                        }
+                    }
+                )
             }
             .padding(.horizontal, 20)
             .safeAreaPadding()
