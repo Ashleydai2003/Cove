@@ -99,7 +99,7 @@ struct OtpVerify {
                     if loginResponse.user.onboarding {
                         AppController.shared.path = [.userDetails]
                     } else {
-                        AppController.shared.path = [.finished]
+                        AppController.shared.path = [.pluggingIn]
                         AppController.shared.hasCompletedOnboarding = true
                     }
                     
