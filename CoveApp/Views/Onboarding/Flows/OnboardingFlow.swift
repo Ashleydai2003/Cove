@@ -11,7 +11,7 @@ struct OnboardingFlow: View {
 
     var body: some View {
         NavigationStack(path: $appController.path) {
-            NamePageView()
+            MutualsView()
                 .navigationDestination(for: OnboardingRoute.self) { route in
                     switch route {
                     case .enterPhoneNumber:
