@@ -8,6 +8,9 @@ import SwiftUI
 // MARK: - Row for each existing user 
 private struct MatchedUserRow: View {
     let user: ContactMatcher.MatchedUser
+    @State private var requestSent = false
+    @State private var showError = false
+    @State private var errorMessage = ""
     
     var body: some View {
         HStack {
@@ -18,28 +21,49 @@ private struct MatchedUserRow: View {
             }
             .frame(maxWidth: 80, maxHeight: 80)
 
-            VStack(alignment: .leading) {
-                Text(user.name)
-                    .font(.LibreBodoni(size: 16))
-            }
-            .padding(.leading, 16)
+            Text(user.name)
+                .frame(maxWidth: 150, alignment: .leading)
+                .font(.LibreBodoni(size: 16))
+                .padding(.leading, 15)
 
             Spacer()
 
             Button(action: {
-                // TODO: Implement add friend action
+                sendFriendRequest(userId: user.id)
             }) {
-                Text("request")
+                Text(requestSent ? "requested" : "request")
                     .font(.LibreBodoni(size: 14))
                     .padding(.vertical, 6)
                     .padding(.horizontal, 30)
-                    .background(Colors.primaryDark)
+                    .background(requestSent ? Color.gray : Colors.primaryDark)
                     .foregroundColor(.white)
                     .cornerRadius(12)
             }
             .buttonStyle(BorderlessButtonStyle())
+            .disabled(requestSent)
         }
         .padding(.vertical, 4)
+        .alert("Error", isPresented: $showError) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(errorMessage)
+        }
+    }
+    
+    private func sendFriendRequest(userId: String) {
+        NetworkManager.shared.post(
+            endpoint: "/send-friend-request", 
+            parameters: ["toUserId": userId]) { (result: Result<FriendRequestResponse, NetworkError>) in
+                switch result {
+                case .success(let response):
+                    requestSent = true
+                    print("✅ Friend request sent successfully: \(response.message)")
+                    
+                case .failure(let error):
+                    errorMessage = "Failed to send friend request"
+                    showError = true
+                }
+            }
     }
 }
 
@@ -52,12 +76,12 @@ private struct NoMatchesView: View {
     var body: some View {
         ZStack {
             VStack(spacing: 20) {
-                Text("Your Friends are not on Cove yet!")
+                Text("your friends are not on cove yet!")
                     .font(.LibreBodoni(size: 24))
                     .foregroundStyle(Colors.primaryDark)
                     .multilineTextAlignment(.center)
                 
-                Text("Send them an Invite?")
+                Text("send them an invite?")
                     .font(.LeagueSpartan(size: 16))
                     .foregroundStyle(.black)
                 
@@ -72,7 +96,7 @@ private struct NoMatchesView: View {
                         }
                     }
                 }) {
-                    Text("Send Invite")
+                    Text("send invite")
                         .font(.LeagueSpartan(size: 16))
                         .foregroundStyle(.white)
                         .padding(.vertical, 12)
@@ -98,6 +122,13 @@ private struct NoMatchesView: View {
     }
 }
 
+// MARK: - Response model for friend request
+private struct FriendRequestResponse: Decodable {
+    let message: String
+    let requestId: String?
+}
+
+// MARK: - Main view
 struct AddFriendsSheet: View {
     let serverMatches: [ContactMatcher.MatchedUser]
     let showingNoMatches: Bool
@@ -128,7 +159,7 @@ struct AddFriendsSheet: View {
                                 MatchedUserRow(user: user)
                             }
                         }
-                        .padding(.horizontal, 40)
+                        .padding(.horizontal, 30)
                     }
                 }
             }
