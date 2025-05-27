@@ -48,7 +48,7 @@ export const handleLogin = async (event: APIGatewayProxyEvent): Promise<APIGatew
         data: {
           id: user.uid,
           phone: user.phone_number || '',
-          onboarding: true,
+          onboarding: true
         }
       });
 
