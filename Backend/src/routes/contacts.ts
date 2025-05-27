@@ -10,6 +10,7 @@ const s3Client = new S3Client({ region: process.env.AWS_REGION });
 /**
  * Handles GET requests to find users by their phone numbers
  * Returns basic profile info (name, photo) for matching users
+ * Excludes the requesting user from results
  * 
  * Query Parameters:
  * - phoneNumbers: Comma-separated list of phone numbers to look up
@@ -39,6 +40,9 @@ export const handleContacts = async (event: APIGatewayProxyEvent): Promise<APIGa
       return authResult;
     }
 
+    // Get the authenticated user's ID
+    const requestingUserId = authResult.user.uid;
+
     // Step 2: Parse phone numbers from request body
     if (!event.body) {
       return {
@@ -62,12 +66,15 @@ export const handleContacts = async (event: APIGatewayProxyEvent): Promise<APIGa
     // Step 3: Initialize database connection
     const prisma = await initializeDatabase();
 
-    // Find all users with matching phone numbers
+    // Find all users with matching phone numbers, excluding the requesting user
     // Include their profile photo information
     const users = await prisma.user.findMany({
       where: {
         phone: {
           in: phoneNumbers
+        },
+        id: {
+          not: requestingUserId // Exclude the requesting user
         }
       },
       include: {
