@@ -25,6 +25,7 @@ class Onboarding {
     private static var profilePic: UIImage?
     private static var extraPics: [UIImage] = []
     private static var pendingFriendRequests: [String] = []
+    private static var adminCove: String?
     
     private static let apiBaseURL = "https://api.coveapp.co"
     private static let apiOnboardPath = "/onboard"
@@ -61,6 +62,14 @@ class Onboarding {
         userRelationStatus = relationStatus
         userInterestedInto = interestedInto
         userGender = gender
+    }
+
+    static func setAdminCove(adminCove: String) -> Void {
+        self.adminCove = adminCove
+    }
+
+    static func getAdminCove() -> String? {
+        return adminCove
     }
     
     // MARK: - Friend Requests 
