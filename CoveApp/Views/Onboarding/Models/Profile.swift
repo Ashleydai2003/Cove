@@ -4,8 +4,10 @@ struct Profile: Decodable {
     let name: String
     let phone: String
     let onboarding: Bool
+    let id: String
+    let userId: String
     let age: Int?
-    let birthdate: Date?
+    let birthdate: String?
     let interests: [String]
     let latitude: Double?
     let longitude: Double?
@@ -22,6 +24,19 @@ struct Profile: Decodable {
         let id: String
         let url: URL
         let isProfilePic: Bool
+    }
+    
+    func calculateAge() -> Int? {
+        guard let birthdateString = birthdate else { return nil }
+        
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        
+        guard let birthdate = dateFormatter.date(from: birthdateString) else { return nil }
+        
+        let calendar = Calendar.current
+        let ageComponents = calendar.dateComponents([.year], from: birthdate, to: Date())
+        return ageComponents.year
     }
 }
 
