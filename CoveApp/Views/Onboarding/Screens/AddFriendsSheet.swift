@@ -18,11 +18,10 @@ private struct MatchedUserRow: View {
             }
             .frame(maxWidth: 80, maxHeight: 80)
 
-            VStack(alignment: .leading) {
-                Text(user.name)
-                    .font(.LibreBodoni(size: 16))
-            }
-            .padding(.leading, 16)
+            Text(user.name)
+                .frame(maxWidth: 150, alignment: .leading)
+                .font(.LibreBodoni(size: 16))
+                .padding(.leading, 15)
 
             Spacer()
 
@@ -52,12 +51,12 @@ private struct NoMatchesView: View {
     var body: some View {
         ZStack {
             VStack(spacing: 20) {
-                Text("Your Friends are not on Cove yet!")
+                Text("your friends are not on cove yet!")
                     .font(.LibreBodoni(size: 24))
                     .foregroundStyle(Colors.primaryDark)
                     .multilineTextAlignment(.center)
                 
-                Text("Send them an Invite?")
+                Text("send them an invite?")
                     .font(.LeagueSpartan(size: 16))
                     .foregroundStyle(.black)
                 
@@ -72,7 +71,7 @@ private struct NoMatchesView: View {
                         }
                     }
                 }) {
-                    Text("Send Invite")
+                    Text("send invite")
                         .font(.LeagueSpartan(size: 16))
                         .foregroundStyle(.white)
                         .padding(.vertical, 12)
@@ -128,7 +127,7 @@ struct AddFriendsSheet: View {
                                 MatchedUserRow(user: user)
                             }
                         }
-                        .padding(.horizontal, 40)
+                        .padding(.horizontal, 30)
                     }
                 }
             }

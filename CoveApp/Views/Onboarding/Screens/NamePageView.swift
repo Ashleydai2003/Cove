@@ -40,11 +40,15 @@ struct NamePageView: View {
                         .font(.LibreCaslon(size: 25))
                         .padding(.horizontal, 10)
                         .focused($isFirstNameFocused)
+                        .autocorrectionDisabled()
                         .onChange(of: firstName) { oldValue, newValue in
                             if !newValue.isEmpty {
+                                // First filter to only allow letters and hyphens
                                 let filtered = newValue.filter { $0.isLetter || $0 == "-" }
-                                if filtered != newValue {
-                                    firstName = filtered
+                                // Then convert to lowercase
+                                let lowercase = filtered.lowercased()
+                                if lowercase != newValue {
+                                    firstName = lowercase
                                 }
                             }
                         }
@@ -58,11 +62,15 @@ struct NamePageView: View {
                         .font(.LibreCaslon(size: 25))
                         .padding(.top)
                         .padding(.horizontal, 10)
+                        .autocorrectionDisabled()
                         .onChange(of: lastName) { oldValue, newValue in
                             if !newValue.isEmpty {
+                                // First filter to only allow letters and hyphens
                                 let filtered = newValue.filter { $0.isLetter || $0 == "-" }
-                                if filtered != newValue {
-                                    lastName = filtered
+                                // Then convert to lowercase
+                                let lowercase = filtered.lowercased()
+                                if lowercase != newValue {
+                                    lastName = lowercase
                                 }
                             }
                         }
