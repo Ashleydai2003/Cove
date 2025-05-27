@@ -4,7 +4,7 @@
 // Currently, it is just a placeholder hello world function
 
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
-import { handleProfile, handleLogin, handleTestDatabase, handleTestS3, handleOnboard, handleUserImage, handleContacts } from './routes';
+import { handleProfile, handleLogin, handleTestDatabase, handleTestS3, handleOnboard, handleUserImage, handleContacts, handleCreateEvent, handleCreateCove } from './routes';
 
 export const handler = async (
   event: APIGatewayProxyEvent,
@@ -57,7 +57,7 @@ export const handler = async (
         }
 
         // Check if the request is for a static asset
-        if (event.path.match(/\.(png|jpg|jpeg|gif|ico|svg)$/i)) {
+        if (event.path && event.path.match(/\.(png|jpg|jpeg|gif|ico|svg)$/i)) {
           console.log('Static asset request:', event.path);
           return {
             statusCode: 404,
