@@ -29,18 +29,22 @@ private struct MatchedUserRow: View {
             Spacer()
 
             Button(action: {
-                sendFriendRequest(userId: user.id)
+                if requestSent {
+                    Onboarding.removeFriendRequest(userId: user.id)
+                } else {
+                    Onboarding.addFriendRequest(userId: user.id)
+                }
+                requestSent.toggle()
             }) {
-                Text(requestSent ? "requested" : "request")
+                Text(requestSent ? "unrequest" : "request")
                     .font(.LibreBodoni(size: 14))
+                    .frame(maxWidth: 100)
                     .padding(.vertical, 6)
-                    .padding(.horizontal, 30)
                     .background(requestSent ? Color.gray : Colors.primaryDark)
                     .foregroundColor(.white)
                     .cornerRadius(12)
             }
             .buttonStyle(BorderlessButtonStyle())
-            .disabled(requestSent)
         }
         .padding(.vertical, 4)
         .alert("Error", isPresented: $showError) {
@@ -48,22 +52,6 @@ private struct MatchedUserRow: View {
         } message: {
             Text(errorMessage)
         }
-    }
-    
-    private func sendFriendRequest(userId: String) {
-        NetworkManager.shared.post(
-            endpoint: "/send-friend-request", 
-            parameters: ["toUserId": userId]) { (result: Result<FriendRequestResponse, NetworkError>) in
-                switch result {
-                case .success(let response):
-                    requestSent = true
-                    print("✅ Friend request sent successfully: \(response.message)")
-                    
-                case .failure(let error):
-                    errorMessage = "Failed to send friend request"
-                    showError = true
-                }
-            }
     }
 }
 
@@ -142,7 +130,10 @@ struct AddFriendsSheet: View {
             
             if showingNoMatches {
                 NoMatchesView(
-                    onDismiss: onDismiss,
+                    onDismiss: {
+                        Onboarding.clearPendingFriendRequests()
+                        onDismiss()
+                    },
                     isLoading: isLoading,
                     showError: $showError
                 )
@@ -160,6 +151,31 @@ struct AddFriendsSheet: View {
                             }
                         }
                         .padding(.horizontal, 30)
+                    }
+                    
+                    Button(action: {
+                        Onboarding.completeOnboarding { success in
+                            if !success {
+                                showError = true
+                            }
+                        }
+                    }) {
+                        Text("done")
+                            .font(.LeagueSpartan(size: 16))
+                            .foregroundStyle(.white)
+                            .padding(.vertical, 12)
+                            .padding(.horizontal, 24)
+                            .background(Colors.primaryDark)
+                            .cornerRadius(8)
+                    }
+                    .padding(.bottom, 30)
+                }
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Done", action: {
+                            Onboarding.clearPendingFriendRequests()
+                            onDismiss()
+                        })
                     }
                 }
             }
