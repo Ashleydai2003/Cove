@@ -82,6 +82,21 @@ export const handleOnboard = async (event: APIGatewayProxyEvent): Promise<APIGat
       sexuality
     } = JSON.parse(event.body);
 
+    // Validate numeric fields
+    if (latitude && typeof latitude !== 'number') {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ message: 'Latitude must be a number' })
+      };
+    }
+
+    if (longitude && typeof longitude !== 'number') {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ message: 'Longitude must be a number' })
+      };
+    }
+
     console.log('Received onboarding data:', {
       name,
       birthdate,
@@ -103,16 +118,21 @@ export const handleOnboard = async (event: APIGatewayProxyEvent): Promise<APIGat
       },
       data: {
         name: name || null,
-        birthday: birthdate ? new Date(birthdate) : null,
-        interests: hobbies || [],
-        latitude: latitude || null,
-        longitude: longitude || null,
         onboarding: false, // Mark onboarding as complete
-        almaMater: almaMater || null,
-        job: job || null,
-        workLocation: workLocation || null,
-        relationStatus: relationStatus || null,
-        sexuality: sexuality || null
+        profile: {
+          create: {
+            birthdate: birthdate ? new Date(birthdate) : null,
+            interests: hobbies || [],
+            latitude: latitude || null,
+            longitude: longitude || null,
+            almaMater: almaMater || null,
+            job: job || null,
+            workLocation: workLocation || null,
+            relationStatus: relationStatus || null,
+            sexuality: sexuality || null,
+            bio: bio || null
+          }
+        }
       }
     });
 

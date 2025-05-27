@@ -30,6 +30,10 @@ export const handler = async (
         return handleUserImage(event);
       case '/contacts':
         return handleContacts(event);
+      case '/create-event':
+        return handleCreateEvent(event);
+      case '/create-cove':
+        return handleCreateCove(event);
       default:
         // Handle common web standard files
         switch (event.path) {

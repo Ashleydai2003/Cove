@@ -17,25 +17,32 @@ datasource db {
   url = env("DATABASE_URL")
 }
 
+// Prisma Enum for RSVPs 
+enum RSVPStatus {
+  GOING
+  MAYBE
+  NOT_GOING
+}
+
+enum MemberRole {
+  MEMBER
+  ADMIN
+}
+
 // User model with Firebase authentication
+// authentication, verification, app status
 model User {
   id              String      @id // Using Firebase UID as ID
   name            String?
   phone           String      @unique
-  age             Int?
-  birthday        DateTime? 
-  interests       String[]
-  latitude        Float?
-  longitude       Float?
-  almaMater       String?
-  job             String?
-  workLocation    String?
-  relationStatus  String?
-  sexuality       String?
   onboarding      Boolean     @default(true)
   verified        Boolean     @default(false)  // IMPORTANT: in MVP, only verified users can create Coves
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
+
+  // Relations
+  profile         UserProfile? @relation(fields: [profileId], references: [id])
+  profileId       String?     @unique
   profilePhotoID  String?     @unique
   profilePhoto    UserImage?  @relation("ProfilePhoto", fields: [profilePhotoID], references: [id])
   photos          UserImage[] @relation("UserPhotos")
@@ -44,6 +51,25 @@ model User {
   createdEvents   Event[]     @relation("CreatedEvents")
   eventRSVPs      EventRSVP[]
 } 
+
+// UserProfile Model
+// Optional, user-controlled, descriptive
+model UserProfile {
+  id             String   @id @default(cuid())
+  user           User     @relation(fields: [userId], references: [id])
+  userId         String   @unique
+  age            Int?
+  birthdate       DateTime? 
+  interests      String[]
+  latitude       Float?
+  longitude      Float?
+  almaMater      String?
+  job            String?
+  workLocation   String?
+  relationStatus String?
+  sexuality      String?
+  bio            String?
+}
 
 // User Image model 
 // Document how to use the @relation somewhere 
@@ -73,13 +99,13 @@ model Cove {
 
 // Cove Member model for managing member permissions
 model CoveMember {
-  id        String   @id @default(cuid())
+  id        String     @id @default(cuid())
   coveId    String
   userId    String
-  role      String   @default("MEMBER") // Can be "MEMBER" or "ADMIN"
-  joinedAt  DateTime @default(now())
-  cove      Cove     @relation(fields: [coveId], references: [id])
-  user      User     @relation(fields: [userId], references: [id])
+  role      MemberRole @default(MEMBER)
+  joinedAt  DateTime   @default(now())
+  cove      Cove       @relation(fields: [coveId], references: [id])
+  user      User       @relation(fields: [userId], references: [id])
 
   @@unique([coveId, userId])
 }
@@ -95,8 +121,8 @@ model Event {
   updatedAt   DateTime    @updatedAt
   coveId      String
   cove        Cove        @relation(fields: [coveId], references: [id])
-  creatorId   String      // ID of the user who created the event
-  createdBy   User        @relation("CreatedEvents", fields: [creatorId], references: [id])
+  hostId      String      // ID of the user who is hosting the event
+  hostedBy    User        @relation("CreatedEvents", fields: [hostId], references: [id])
   rsvps       EventRSVP[]
   coverPhotoID String?    @unique
   coverPhoto  EventImage? @relation("EventCoverPhoto", fields: [coverPhotoID], references: [id])
@@ -107,7 +133,7 @@ model EventRSVP {
   id        String   @id @default(cuid())
   eventId   String
   userId    String
-  status    String   @default("GOING") // Can be "GOING", "MAYBE", "NOT_GOING"
+  status    RSVPStatus   @default("GOING") // Can be "GOING", "MAYBE", "NOT_GOING"
   createdAt DateTime @default(now())
   event     Event    @relation(fields: [eventId], references: [id])
   user      User     @relation(fields: [userId], references: [id])
