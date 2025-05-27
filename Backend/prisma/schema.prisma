@@ -189,3 +189,15 @@ model EventImage {
   createdAt     DateTime  @default(now())
   coverEvent    Event?    @relation("EventCoverPhoto")
 }
+
+// Admin allowlist model (modifiable by super admin)
+model AdminPhoneAllowlist {
+  id          String    @id @default(cuid())
+  phoneNumber String    @unique
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  addedBy     String    // ID of the super admin who added this number
+  isActive    Boolean   @default(false) // Indicates whether this admin has completed their signup process
+
+  @@map("admin_phone_allowlist")
+}
