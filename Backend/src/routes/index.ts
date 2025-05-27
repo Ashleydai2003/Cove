@@ -8,4 +8,4 @@ export { handleUserImage } from './userImage';
 export { handleContacts } from './contacts';
 export { handleCreateEvent } from './event';
 export { handleCreateCove } from './cove';
-export { handleSendFriendRequest } from './friend';
+export { handleSendFriendRequest, handleResolveFriendRequest } from './friend';
