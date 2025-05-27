@@ -1,0 +1,8 @@
+{
+  "httpMethod": "POST",
+  "path": "/resolve-friend-request",
+  "headers": {
+    "Authorization": "Bearer test-token"
+  },
+  "body": "{\"requestId\": \"test-request-id\", \"accept\": false}"
+} 

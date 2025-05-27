@@ -23,7 +23,8 @@ class Onboarding {
     private static var userInterestedInto: String?
     private static var profilePic: UIImage?
     private static var extraPics: [UIImage] = []
-
+    private static var pendingFriendRequests: [String] = []
+    
     private static let apiBaseURL = "https://api.coveapp.co"
     private static let apiOnboardPath = "/onboard"
     
@@ -60,6 +61,45 @@ class Onboarding {
         userInterestedInto = interestedInto
     }
     
+    // MARK: - Friend Requests 
+    static func addFriendRequest(userId: String) {
+        pendingFriendRequests.append(userId)
+    }
+    
+    static func removeFriendRequest(userId: String) {
+        pendingFriendRequests.removeAll { $0 == userId }
+    }
+    
+    static func clearPendingFriendRequests() {
+        pendingFriendRequests.removeAll()
+    }
+    
+    static func sendPendingFriendRequests(completion: @escaping (Bool) -> Void) {
+        guard !pendingFriendRequests.isEmpty else {
+            completion(true)
+            return
+        }
+        
+        print("📱 Sending friend requests to: \(pendingFriendRequests)")
+        
+        NetworkManager.shared.post(
+            endpoint: "/send-friend-request",
+            parameters: ["toUserIds": pendingFriendRequests]
+        ) { (result: Result<FriendRequestResponse, NetworkError>) in
+            switch result {
+            case .success(let response):
+                print("✅ Friend requests sent successfully: \(response.message)")
+                pendingFriendRequests.removeAll()
+                completion(true)
+                
+            case .failure(let error):
+                print("❌ Failed to send friend requests: \(error)")
+                completion(false)
+            }
+        }
+    } 
+
+
     // MARK: - Image Storage
     static func storeProfilePic(_ image: UIImage) {
         profilePic = image
@@ -140,6 +180,7 @@ class Onboarding {
 
     static func completeOnboarding(completion: @escaping (Bool) -> Void) {
         if isOnboardingComplete() {
+            print("📱 Starting onboarding completion")
             // Show loading screen immediately
             AppController.shared.path = [.pluggingIn]
             
@@ -152,6 +193,7 @@ class Onboarding {
                 for (image, isProfilePic) in getAllImages() {
                     group.enter()
                     guard let data = image.jpegData(compressionQuality: 0.8) else {
+                        print("❌ Failed to convert image to JPEG data")
                         group.leave()
                         continue
                     }
@@ -159,8 +201,10 @@ class Onboarding {
                     UserImage.upload(imageData: data, isProfilePic: isProfilePic) { result in
                         switch result {
                         case .success:
+                            print("✅ Image uploaded successfully")
                             break
                         case .failure(let error):
+                            print("❌ Image upload failed: \(error)")
                             uploadError = error
                         }
                         group.leave()
@@ -171,6 +215,7 @@ class Onboarding {
                 
                 // Check for upload errors
                 if let error = uploadError {
+                    print("❌ Upload error occurred: \(error)")
                     DispatchQueue.main.async {
                         AppController.shared.errorMessage = "Failed to upload images: \(error.localizedDescription)"
                         completion(false)
@@ -178,28 +223,64 @@ class Onboarding {
                     return
                 }
                 
+                print("📱 Images uploaded successfully, proceeding with onboarding completion")
+                
                 // Then complete onboarding
                 makeOnboardingCompleteRequest { success in
-                    DispatchQueue.main.async {
-                        if success {
-                            AppController.shared.hasCompletedOnboarding = true
-                            clearImages() // Clear stored images after successful upload
-                            AppController.shared.path = [.profile]
+                    print("📱 Onboarding completion result: \(success)")
+                    if success {
+                        // Send friend requests if any
+                        if !pendingFriendRequests.isEmpty {
+                            print("📱 About to send friend requests: \(pendingFriendRequests)")
+                            sendPendingFriendRequests { friendRequestSuccess in
+                                print("📱 Friend request result: \(friendRequestSuccess)")
+                                DispatchQueue.main.async {
+                                    if friendRequestSuccess {
+                                        print("✅ All operations completed successfully")
+                                        AppController.shared.hasCompletedOnboarding = true
+                                        clearImages() // Clear stored images after successful upload
+                                        AppController.shared.path = [.profile]
+                                    } else {
+                                        print("❌ Friend request sending failed")
+                                        AppController.shared.errorMessage = "Failed to send friend requests"
+                                    }
+                                    completion(friendRequestSuccess)
+                                }
+                            }
+                        } else {
+                            print("📱 No friend requests to send")
+                            DispatchQueue.main.async {
+                                print("✅ Onboarding completed without friend requests")
+                                AppController.shared.hasCompletedOnboarding = true
+                                clearImages() // Clear stored images after successful upload
+                                AppController.shared.path = [.profile]
+                                completion(true)
+                            }
                         }
-                        completion(success)
+                    } else {
+                        print("❌ Onboarding completion failed")
+                        DispatchQueue.main.async {
+                            completion(false)
+                        }
                     }
                 }
             }
         } else {
+            print("❌ Onboarding incomplete, missing required fields")
             AppController.shared.errorMessage = "Onboarding process incomplete"
             AppController.shared.path = [.mutuals]
             completion(false)
         }
     }
 
-    /// Response model for onboard API
+    // MARK: - Response Models
     struct OnboardResponse: Decodable {
         let message: String
+    }
+    
+    struct FriendRequestResponse: Decodable {
+        let message: String
+        let requestIds: [String]?
     }
 
     private static func makeOnboardingCompleteRequest(completion: @escaping (Bool) -> Void) {
