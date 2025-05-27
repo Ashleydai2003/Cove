@@ -4,6 +4,7 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { authMiddleware } from '../middleware/auth';
 import { initializeDatabase } from '../config/database';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { getAuth } from 'firebase-admin/auth';
 
 const s3Client = new S3Client({ region: process.env.AWS_REGION });
 
@@ -31,8 +32,28 @@ export const handleLogin = async (event: APIGatewayProxyEvent): Promise<APIGatew
     const user = authResult.user;
     console.log('Authenticated user:', user.uid);
 
+    // Step 3.5: Get verified phone number from Firebase
+    const firebaseUser = await getAuth().getUser(user.uid);
+    const verifiedPhoneNumber = firebaseUser.phoneNumber;
+    
+    if (!verifiedPhoneNumber) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          message: 'No verified phone number found for this user'
+        })
+      };
+    }
+
     // Step 4: Initialize database connection
     const prisma = await initializeDatabase();
+
+    // Step 4.5: Check if phone number is in admin allowlist
+    const adminAllowlist = await prisma.adminPhoneAllowlist.findUnique({
+      where: {
+        phoneNumber: verifiedPhoneNumber
+      }
+    });
 
     // Step 5: Check if user exists in database
     let dbUser = await prisma.user.findUnique({
@@ -47,8 +68,9 @@ export const handleLogin = async (event: APIGatewayProxyEvent): Promise<APIGatew
       dbUser = await prisma.user.create({
         data: {
           id: user.uid,
-          phone: user.phone_number || '',
-          onboarding: true
+          phone: verifiedPhoneNumber,
+          onboarding: true,
+          verified: adminAllowlist ? true : false // Set verified status based on allowlist
         }
       });
 
@@ -74,8 +96,10 @@ export const handleLogin = async (event: APIGatewayProxyEvent): Promise<APIGatew
       body: JSON.stringify({
         message: 'User authenticated successfully',
         user: {
-          uid: user.uid,
-          onboarding: dbUser.onboarding
+          uid: dbUser.id,
+          onboarding: dbUser.onboarding,
+          verified: dbUser.verified,
+          cove: adminAllowlist?.cove ?? null
         }
       })
     };

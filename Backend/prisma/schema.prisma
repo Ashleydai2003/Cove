@@ -198,6 +198,7 @@ model AdminPhoneAllowlist {
   updatedAt   DateTime  @updatedAt
   addedBy     String    // ID of the super admin who added this number
   isActive    Boolean   @default(false) // Indicates whether this admin has completed their signup process
+  cove        String?
 
   @@map("admin_phone_allowlist")
 }

@@ -71,6 +71,8 @@ struct OtpVerify {
     struct UserInfo: Decodable {
         let uid: String
         let onboarding: Bool
+        let verified: Bool
+        let cove: String?
     }
     
     /// Makes a login request to the backend API
@@ -97,9 +99,15 @@ struct OtpVerify {
                     
                     // Update onboarding state
                     if loginResponse.user.onboarding {
-                        AppController.shared.path = [.userDetails]
+                        if !loginResponse.user.verified {
+                            print("✅ User is verified")
+                            AppController.shared.path.append(.adminVerify)
+                            Onboarding.setAdminCove(adminCove: loginResponse.user.cove ?? "create new cove!")
+                        } else {
+                            AppController.shared.path.append(.userDetails)
+                        }
                     } else {
-                        AppController.shared.path = [.pluggingIn]
+                        AppController.shared.path.append(.pluggingIn)
                         AppController.shared.hasCompletedOnboarding = true
                     }
                     
