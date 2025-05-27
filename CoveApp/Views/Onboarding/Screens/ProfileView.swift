@@ -11,16 +11,22 @@ struct ProfileView: View {
     /// App controller for managing navigation and app state
     @EnvironmentObject var appController: AppController
     
-    /// State variables for bio
-    @State private var bio: String = "just moved to san francisco and looking to reconnect with people from stanford!"
-    @State private var lookingInto: String = "looking for even more drinks."
+    /// State variables for profile data
+    @State private var name: String = UserDefaults.standard.string(forKey: "user_name") ?? ""
+    @State private var bio: String = UserDefaults.standard.string(forKey: "user_bio") ?? ""
+    @State private var lookingInto: String = UserDefaults.standard.string(forKey: "user_sexuality") ?? ""
+    @State private var interests: [String] = UserDefaults.standard.stringArray(forKey: "user_interests") ?? []
+    @State private var relationStatus: String = UserDefaults.standard.string(forKey: "user_relation_status") ?? ""
+    @State private var job: String = UserDefaults.standard.string(forKey: "user_job") ?? ""
+    @State private var workLocation: String = UserDefaults.standard.string(forKey: "user_work_location") ?? ""
+    @State private var almaMater: String = UserDefaults.standard.string(forKey: "user_alma_mater") ?? ""
+    @State private var latitude: Double = UserDefaults.standard.double(forKey: "user_latitude")
+    @State private var longitude: Double = UserDefaults.standard.double(forKey: "user_longitude")
+    @State private var gender: String = UserDefaults.standard.string(forKey: "user_gender") ?? ""
 
     /// Allow to edit user profile or not
     /// When view other user profile, hide edit icons
     @State private var allowProfileEdit: Bool = true
-    
-    /// Users preference categories
-    private let categories: [String] = ["going out for drinks", "going out for drinks 2", "going out for drinks 3"]
     
     /// Grid layout configuration for hobby buttons
     private let columns = [
@@ -76,33 +82,33 @@ struct ProfileView: View {
                             }
                         }
                         
-                        Text("angela")
+                        Text(name)
                             .font(.LibreBodoniMedium(size: 35))
                             .foregroundColor(Colors.primaryDark)
                         
                         VStack(alignment: .leading) {
                             HStack(spacing: 10) {
                                 Image("location-pin")
-                                
-                                Text("pacific heights, san francisco")
+                                // TODO: translate coordinates to location
+                                Text("\(workLocation)")
                                     .font(.LibreBodoniBold(size: 14))
                                     .foregroundColor(Colors.primaryDark)
                             }
                             
                             HStack(spacing: 10) {
-                                Text("21")
+                                Text("21") // TODO: Calculate age from birthdate
                                     .font(.LibreBodoniBold(size: 20))
                                     .foregroundColor(Colors.primaryDark)
                                 
                                 Image("more-info")
                                 
-                                Text("woman")
+                                Text(gender) // TODO: Get from profile
                                     .font(.LibreBodoniBold(size: 14))
                                     .foregroundColor(Colors.primaryDark)
                                 
                                 Image("person-fill")
                                 
-                                Text("single")
+                                Text(relationStatus)
                                     .font(.LibreBodoniBold(size: 14))
                                     .foregroundColor(Colors.primaryDark)
                             }
@@ -111,7 +117,7 @@ struct ProfileView: View {
                                 Image(systemName: "briefcase")
                                     .foregroundStyle(Colors.k6B6B6B)
                                 
-                                Text("consulting @ putnam")
+                                Text("\(job) @ \(workLocation)")
                                     .font(.LibreBodoniBold(size: 14))
                                     .foregroundColor(Colors.primaryDark)
                             }
@@ -168,8 +174,7 @@ struct ProfileView: View {
                         
                         HStack(alignment: .center, spacing: 16) {
                             LazyVGrid(columns: columns, spacing: 12) {
-                                ForEach(categories, id: \.self) { hobby in
-                                    
+                                ForEach(interests, id: \.self) { hobby in
                                     Button(action: {
                                         
                                     }) {
@@ -188,7 +193,6 @@ struct ProfileView: View {
                                     }
                                 }
                             }
-                            .frame(maxWidth: .infinity)
                             
                             if allowProfileEdit {
                                 Button {
@@ -220,8 +224,6 @@ struct ProfileView: View {
                                 .fill(Color.white)
                         )
                         .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
- 
-                        
                     }
                     .padding()
                 }

@@ -21,6 +21,7 @@ class Onboarding {
     private static var userWorkLocation: String?
     private static var userRelationStatus: String?
     private static var userInterestedInto: String?
+    private static var userGender: String?
     private static var profilePic: UIImage?
     private static var extraPics: [UIImage] = []
     private static var pendingFriendRequests: [String] = []
@@ -54,11 +55,12 @@ class Onboarding {
         userAlmaMater = almaMater
     }
 
-    static func storeMoreAboutYou(job: String, workLocation: String, relationStatus: String, interestedInto: String) -> Void {
+    static func storeMoreAboutYou(job: String, workLocation: String, relationStatus: String, interestedInto: String, gender: String) -> Void {
         userJob = job
         userWorkLocation = workLocation
         userRelationStatus = relationStatus
         userInterestedInto = interestedInto
+        userGender = gender
     }
     
     // MARK: - Friend Requests 
@@ -303,7 +305,8 @@ class Onboarding {
             "job": userJob ?? "",
             "workLocation": userWorkLocation ?? "",
             "relationStatus": userRelationStatus ?? "",
-            "sexuality": userInterestedInto ?? ""
+            "sexuality": userInterestedInto ?? "",
+            "gender": userGender ?? ""
         ]
         
         NetworkManager.shared.post(
