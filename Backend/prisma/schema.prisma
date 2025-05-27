@@ -33,11 +33,16 @@ model User {
   relationStatus  String?
   sexuality       String?
   onboarding      Boolean     @default(true)
+  verified        Boolean     @default(false)  // IMPORTANT: in MVP, only verified users can create Coves
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
   profilePhotoID  String?     @unique
   profilePhoto    UserImage?  @relation("ProfilePhoto", fields: [profilePhotoID], references: [id])
   photos          UserImage[] @relation("UserPhotos")
+  createdCoves    Cove[]      @relation("CreatedCoves")
+  coveMemberships CoveMember[]
+  createdEvents   Event[]     @relation("CreatedEvents")
+  eventRSVPs      EventRSVP[]
 } 
 
 // User Image model 
@@ -50,6 +55,78 @@ model UserImage {
   profileUser   User?     @relation("ProfilePhoto")
 }
 
-// In the future:
-// events: id,	host_id, name, etc 
-// eventPhotos: id, eventID, 
+// Cove model for groups
+model Cove {
+  id          String      @id @default(cuid())
+  name        String
+  description String?
+  location    String     // City name for now
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  creatorId   String      // ID of the user who created the cove
+  createdBy   User        @relation("CreatedCoves", fields: [creatorId], references: [id])
+  members     CoveMember[]
+  events      Event[]
+  coverPhotoID String?    @unique
+  coverPhoto  CoveImage?  @relation("CoveCoverPhoto", fields: [coverPhotoID], references: [id])
+}
+
+// Cove Member model for managing member permissions
+model CoveMember {
+  id        String   @id @default(cuid())
+  coveId    String
+  userId    String
+  role      String   @default("MEMBER") // Can be "MEMBER" or "ADMIN"
+  joinedAt  DateTime @default(now())
+  cove      Cove     @relation(fields: [coveId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([coveId, userId])
+}
+
+// Event model for cove events
+model Event {
+  id          String      @id @default(cuid())
+  name        String
+  description String?
+  date        DateTime
+  location    String
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  coveId      String
+  cove        Cove        @relation(fields: [coveId], references: [id])
+  creatorId   String      // ID of the user who created the event
+  createdBy   User        @relation("CreatedEvents", fields: [creatorId], references: [id])
+  rsvps       EventRSVP[]
+  coverPhotoID String?    @unique
+  coverPhoto  EventImage? @relation("EventCoverPhoto", fields: [coverPhotoID], references: [id])
+}
+
+// Event RSVP model for tracking attendees
+model EventRSVP {
+  id        String   @id @default(cuid())
+  eventId   String
+  userId    String
+  status    String   @default("GOING") // Can be "GOING", "MAYBE", "NOT_GOING"
+  createdAt DateTime @default(now())
+  event     Event    @relation(fields: [eventId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([eventId, userId])
+}
+
+// Cove Image model for storing cove photos
+model CoveImage {
+  id            String    @id @default(cuid())
+  coveId        String
+  createdAt     DateTime  @default(now())
+  coverCove     Cove?     @relation("CoveCoverPhoto")
+}
+
+// Event Image model for storing event photos
+model EventImage {
+  id            String    @id @default(cuid())
+  eventId       String
+  createdAt     DateTime  @default(now())
+  coverEvent    Event?    @relation("EventCoverPhoto")
+}
