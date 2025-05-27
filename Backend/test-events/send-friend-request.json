@@ -4,6 +4,6 @@
   "headers": {
     "Authorization": "Bearer test-token"
   },
-  "body": "{\"toUserId\":\"test-user-id-2\"}",
+  "body": "{\"toUserIds\":[\"rVlfUnfbUXeM2rgoXi3HsAk8dvt1\"]}",
   "isBase64Encoded": false
 } 

@@ -4,7 +4,7 @@
 // Currently, it is just a placeholder hello world function
 
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
-import { handleProfile, handleLogin, handleTestDatabase, handleTestS3, handleOnboard, handleUserImage, handleContacts, handleCreateEvent, handleCreateCove, handleSendFriendRequest } from './routes';
+import { handleProfile, handleLogin, handleTestDatabase, handleTestS3, handleOnboard, handleUserImage, handleContacts, handleCreateEvent, handleCreateCove, handleSendFriendRequest, handleResolveFriendRequest } from './routes';
 
 export const handler = async (
   event: APIGatewayProxyEvent,
@@ -36,6 +36,8 @@ export const handler = async (
         return handleCreateCove(event);
       case '/send-friend-request':
         return handleSendFriendRequest(event);
+      case '/resolve-friend-request':
+        return handleResolveFriendRequest(event);
       default:
         // Handle common web standard files
         switch (event.path) {
