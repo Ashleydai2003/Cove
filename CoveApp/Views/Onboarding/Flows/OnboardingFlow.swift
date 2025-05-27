@@ -11,13 +11,15 @@ struct OnboardingFlow: View {
 
     var body: some View {
         NavigationStack(path: $appController.path) {
-            LoginView()
+            AdminVerifyView()
                 .navigationDestination(for: OnboardingRoute.self) { route in
                     switch route {
                     case .enterPhoneNumber:
                         UserPhoneNumberView()
                     case .otpVerify:
                         OtpVerifyView()
+                    case .adminVerify:
+                        AdminVerifyView()
                     case .userDetails:
                         NamePageView()
                     case .birthdate:
