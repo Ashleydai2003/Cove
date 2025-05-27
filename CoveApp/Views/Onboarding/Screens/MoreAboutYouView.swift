@@ -162,7 +162,7 @@ struct MoreAboutYouView: View {
                     .padding(.bottom, 20)
                     .onTapGesture {
                         // MARK: - Store more about you
-                        Onboarding.storeMoreAboutYou(job: job, workLocation: workLocation, relationStatus: relationStatus, interestedInto: interestedInto)
+                        Onboarding.storeMoreAboutYou(job: job, workLocation: workLocation, relationStatus: relationStatus, interestedInto: interestedInto, gender: gender)
                         appController.path.append(.hobbies)
                     }
             }

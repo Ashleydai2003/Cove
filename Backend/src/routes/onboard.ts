@@ -79,7 +79,8 @@ export const handleOnboard = async (event: APIGatewayProxyEvent): Promise<APIGat
       job,
       workLocation,
       relationStatus,
-      sexuality
+      sexuality,
+      gender
     } = JSON.parse(event.body);
 
     // Validate numeric fields
@@ -108,7 +109,8 @@ export const handleOnboard = async (event: APIGatewayProxyEvent): Promise<APIGat
       job,
       workLocation,
       relationStatus,
-      sexuality
+      sexuality,
+      gender
     });
 
     // Step 7: Update user information
@@ -130,6 +132,7 @@ export const handleOnboard = async (event: APIGatewayProxyEvent): Promise<APIGat
             workLocation: workLocation || null,
             relationStatus: relationStatus || null,
             sexuality: sexuality || null,
+            gender: gender || null,
             bio: bio || null
           }
         }
