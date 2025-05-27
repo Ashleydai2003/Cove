@@ -4,14 +4,214 @@
 //
 
 import SwiftUI
+import CoreLocation
 
+// MARK: - Profile Header Component
+struct ProfileText: View {
+    let text: String
+    let isPlaceholder: Bool
+    
+    var body: some View {
+        Text(text.lowercased())
+            .font(.LibreBodoni(size: 15))
+            .foregroundColor(isPlaceholder ? Colors.k6F6F73 : Colors.primaryDark)
+    }
+}
+
+struct ProfileHeader: View {
+    let name: String
+    let workLocation: String
+    let gender: String
+    let relationStatus: String
+    let job: String
+    let profileImage: UIImage?
+    let age: Int?
+    let address: String
+    
+    var body: some View {
+        VStack(spacing: 10) {
+            if let image = profileImage {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(maxWidth: 200, maxHeight: 200)
+                    .clipShape(Circle())
+            } else {
+                Images.profilePlaceholder
+                    .resizable()
+                    .scaledToFill()
+                    .frame(maxWidth: 200, maxHeight: 200)
+                    .clipShape(Circle())
+            }
+            
+            Text(name.lowercased())
+                .font(.LibreBodoniMedium(size: 35))
+                .foregroundColor(Colors.primaryDark)
+            
+            VStack(alignment: .leading, spacing: 10) {
+                ProfileText(
+                    text: address.isEmpty ? "add your location" : address,
+                    isPlaceholder: address.isEmpty
+                ).frame(maxWidth: .infinity, alignment: .center)
+                
+                HStack() {
+                    Text(age.map(String.init) ?? "21")
+                        .font(.LibreBodoni(size: 20))
+                        .foregroundColor(Colors.primaryDark)
+                    
+                    Spacer()
+                    
+                    Image("more-info")
+                    
+                    ProfileText(
+                        text: gender.isEmpty ? "add gender" : gender,
+                        isPlaceholder: gender.isEmpty
+                    )
+                    
+                    Spacer()
+                    
+                    Image("person-fill")
+                    
+                    ProfileText(
+                        text: relationStatus.isEmpty ? "add status" : relationStatus,
+                        isPlaceholder: relationStatus.isEmpty
+                    )
+                }.padding(.horizontal, 5)
+                
+                HStack() {
+                    Image(systemName: "briefcase")
+                        .foregroundStyle(Colors.k6B6B6B)
+                    
+                    if job.isEmpty || workLocation.isEmpty {
+                        ProfileText(text: "add your work", isPlaceholder: true)
+                    } else {
+                        ProfileText(text: "\(job) @ \(workLocation)", isPlaceholder: false)
+                    }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Bio Component
+struct BioSection: View {
+    let bio: String
+    
+    var body: some View {
+        VStack(alignment: .center, spacing: 16) {
+            HStack {
+                Text(bio.isEmpty ? "add your bio" : bio.lowercased())
+                    .font(.LeagueSpartan(size: 14))
+                    .foregroundStyle(bio.isEmpty ? Colors.k6F6F73 : Colors.k6F6F73)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, minHeight: 50, maxHeight: .infinity, alignment: .leading)
+                    .padding()
+            }
+            .background(
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(Color.white)
+                    .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
+            )
+        }
+        .padding()
+    }
+}
+
+// MARK: - Interests Component
+struct InterestsSection: View {
+    let interests: [String]
+    let columns = [
+        GridItem(.flexible(), spacing: 12),
+        GridItem(.flexible(), spacing: 12)
+    ]
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("past times")
+                .font(.LibreBodoni(size: 18))
+                .foregroundColor(Colors.primaryDark)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            
+            if interests.isEmpty {
+                ZStack {
+                    Image("buttonWhite")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                    
+                    Text("whoops! add your passtimes!")
+                        .font(.LeagueSpartan(size: 14))
+                        .foregroundColor(Colors.k6F6F73)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .multilineTextAlignment(.center)
+                        .padding(.bottom, 5)
+                }
+            } else {
+                LazyVGrid(columns: columns, spacing: 12) {
+                    ForEach(interests, id: \.self) { hobby in
+                        ZStack {
+                            Image("buttonWhite")
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                            
+                            Text(hobby.lowercased())
+                                .font(.LeagueSpartan(size: 14))
+                                .foregroundColor(Colors.k6F6F73)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                .multilineTextAlignment(.center)
+                                .padding(.bottom, 5)
+                        }
+                    }
+                }
+            }
+        }
+        .padding()
+    }
+}
+
+// MARK: - Extra Photo Component
+struct ExtraPhotoView: View {
+    let image: UIImage?
+    
+    var body: some View {
+        if let image = image {
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFill()
+                .frame(maxWidth: AppConstants.SystemSize.width*0.8)
+        } else {
+            Images.profileActivity1
+                .resizable()
+                .scaledToFill()
+                .frame(maxWidth: AppConstants.SystemSize.width*0.8)
+        }
+    }
+}
+
+// MARK: - Location Helper
+func getLocationName(latitude: Double, longitude: Double) async -> String {
+    let geocoder = CLGeocoder()
+    let location = CLLocation(latitude: latitude, longitude: longitude)
+    
+    do {
+        let placemarks = try await geocoder.reverseGeocodeLocation(location)
+        if let placemark = placemarks.first {
+            let city = placemark.locality ?? ""
+            let state = placemark.administrativeArea ?? ""
+            return "\(city), \(state)"
+        }
+    } catch {
+        print("Geocoding error: \(error.localizedDescription)")
+    }
+    return ""
+}
+
+// MARK: - Main Profile View
 struct ProfileView: View {
-    // MARK: - Properties
-    
-    /// App controller for managing navigation and app state
     @EnvironmentObject var appController: AppController
+    @State private var isEditing = false
+    @State private var address: String = ""
     
-    /// State variables for profile data
+    // State variables for profile data
     @State private var name: String = UserDefaults.standard.string(forKey: "user_name") ?? ""
     @State private var bio: String = UserDefaults.standard.string(forKey: "user_bio") ?? ""
     @State private var lookingInto: String = UserDefaults.standard.string(forKey: "user_sexuality") ?? ""
@@ -23,16 +223,34 @@ struct ProfileView: View {
     @State private var latitude: Double = UserDefaults.standard.double(forKey: "user_latitude")
     @State private var longitude: Double = UserDefaults.standard.double(forKey: "user_longitude")
     @State private var gender: String = UserDefaults.standard.string(forKey: "user_gender") ?? ""
-
-    /// Allow to edit user profile or not
-    /// When view other user profile, hide edit icons
-    @State private var allowProfileEdit: Bool = true
+    @State private var birthdate: String? = UserDefaults.standard.string(forKey: "user_birthdate")
+    @State private var profileImage: UIImage? = {
+        if let imageData = UserDefaults.standard.data(forKey: "user_profile_image") {
+            return UIImage(data: imageData)
+        }
+        return nil
+    }()
+    @State private var extraImages: [UIImage?] = {
+        var images: [UIImage?] = []
+        for i in 0...1 {
+            if let imageData = UserDefaults.standard.data(forKey: "user_extra_image_\(i)") {
+                images.append(UIImage(data: imageData))
+            } else {
+                images.append(nil)
+            }
+        }
+        return images
+    }()
     
-    /// Grid layout configuration for hobby buttons
-    private let columns = [
-        GridItem(.flexible(), spacing: 12),
-        GridItem(.flexible(), spacing: 12)
-    ]
+    private var age: Int? {
+        guard let birthdateString = birthdate else { return nil }
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        guard let birthdate = dateFormatter.date(from: birthdateString) else { return nil }
+        let calendar = Calendar.current
+        let ageComponents = calendar.dateComponents([.year], from: birthdate, to: Date())
+        return ageComponents.year
+    }
     
     var body: some View {
         ZStack {
@@ -46,193 +264,59 @@ struct ProfileView: View {
                     } label: {
                         Images.backArrow
                     }
-
+                    
                     Spacer()
                     
                     Text("cove")
                         .font(.LibreBodoni(size: 70))
                         .foregroundColor(Colors.primaryDark)
-                        .frame(height: 20)
-                        .padding(.trailing, 16)
+                        .frame(maxHeight: 20)
                     
                     Spacer()
+                    
+                    Button {
+                        isEditing.toggle()
+                    } label: {
+                        Image(systemName: "pencil")
+                            .foregroundColor(Colors.primaryDark)
+                            .font(.system(size: 20))
+                    }
                 }
-                .padding(.top, 10)
-                
-                Spacer().frame(height: 20)
-                
+                .padding(.vertical, 20)
+
                 ScrollView(.vertical, showsIndicators: false) {
-                    VStack(spacing: 10) {
-                        ZStack(alignment: .bottomTrailing) {
-                            Images.profilePlaceholder
-                                .resizable()
-                                .scaledToFill()
-                                .frame(width: 200, height: 200)
-                                .clipShape(Circle())
-                            
-                            if allowProfileEdit {
-                                Button {
-                                    //TODO: Update profile photo action
-                                } label: {
-                                    Images.pencilEdit
-                                        .resizable()
-                                        .frame(width: 24, height: 24)
-                                        .background(Color.white)
-                                }
-                            }
-                        }
+                    VStack(spacing: 20) {
+                        ProfileHeader(
+                            name: name,
+                            workLocation: workLocation,
+                            gender: gender,
+                            relationStatus: relationStatus,
+                            job: job,
+                            profileImage: profileImage,
+                            age: age,
+                            address: address
+                        ).frame(maxWidth: 270)
                         
-                        Text(name)
-                            .font(.LibreBodoniMedium(size: 35))
-                            .foregroundColor(Colors.primaryDark)
+                        ExtraPhotoView(image: extraImages[0])
                         
-                        VStack(alignment: .leading) {
-                            HStack(spacing: 10) {
-                                Image("location-pin")
-                                // TODO: translate coordinates to location
-                                Text("\(workLocation)")
-                                    .font(.LibreBodoniBold(size: 14))
-                                    .foregroundColor(Colors.primaryDark)
-                            }
-                            
-                            HStack(spacing: 10) {
-                                Text("21") // TODO: Calculate age from birthdate
-                                    .font(.LibreBodoniBold(size: 20))
-                                    .foregroundColor(Colors.primaryDark)
-                                
-                                Image("more-info")
-                                
-                                Text(gender) // TODO: Get from profile
-                                    .font(.LibreBodoniBold(size: 14))
-                                    .foregroundColor(Colors.primaryDark)
-                                
-                                Image("person-fill")
-                                
-                                Text(relationStatus)
-                                    .font(.LibreBodoniBold(size: 14))
-                                    .foregroundColor(Colors.primaryDark)
-                            }
-                            
-                            HStack(spacing: 10) {
-                                Image(systemName: "briefcase")
-                                    .foregroundStyle(Colors.k6B6B6B)
-                                
-                                Text("\(job) @ \(workLocation)")
-                                    .font(.LibreBodoniBold(size: 14))
-                                    .foregroundColor(Colors.primaryDark)
-                            }
-                        }
+                        BioSection(bio: bio)
+                        
+                        ExtraPhotoView(image: extraImages[1])
+                        
+                        InterestsSection(interests: interests)
                     }
-                    
-                    VStack(alignment: .center, spacing: 16) {
-                        HStack(alignment: .bottom, spacing: 5) {
-                            Images.profileActivity1
-                            
-                            if allowProfileEdit {
-                                Button {
-                                    //TODO: Edit button action
-                                } label: {
-                                    Images.pencilEdit
-                                        .resizable()
-                                        .frame(width: 24, height: 24)
-                                        .background(Color.white)
-                                }
-                            }
-                        }
-                        
-                        HStack {
-                            TextEditor(text: $bio)
-                                .scrollContentBackground(.hidden)
-                                .font(.LeagueSpartan(size: 14))
-                                .foregroundStyle(Colors.k6F6F73)
-                                .multilineTextAlignment(.leading)
-                                .frame(maxWidth: .infinity, minHeight: 50, maxHeight: .infinity, alignment: .leading)
-                                .disabled(!allowProfileEdit)
-                                .padding()
-                        }
-                        .background(
-                            RoundedRectangle(cornerRadius: 10)
-                                .fill(Color.white)
-                                .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
-                        )
-                    }
-                    .padding()
-                    
-                    HStack(alignment: .bottom, spacing: 5) {
-                        Images.profileActivity2
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: AppConstants.SystemSize.width*0.8)
-                    }
-                    
-                    VStack(alignment: .leading, spacing: 16) {
-                        
-                        Text("past times")
-                            .font(.LibreBodoniBold(size: 18))
-                            .foregroundColor(Colors.primaryDark)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        
-                        HStack(alignment: .center, spacing: 16) {
-                            LazyVGrid(columns: columns, spacing: 12) {
-                                ForEach(interests, id: \.self) { hobby in
-                                    Button(action: {
-                                        
-                                    }) {
-                                        ZStack {
-                                            Image("buttonWhite")
-                                                .resizable()
-                                                .aspectRatio(contentMode: .fit)
-                                            
-                                            Text(hobby)
-                                                .font(.LeagueSpartan(size: 14))
-                                                .foregroundColor(Colors.k6F6F73)
-                                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                                .multilineTextAlignment(.center)
-                                                .padding(.bottom, 5)
-                                        }
-                                    }
-                                }
-                            }
-                            
-                            if allowProfileEdit {
-                                Button {
-                                    //TODO: Edit button action
-                                } label: {
-                                    Images.pencilEdit
-                                        .resizable()
-                                        .frame(width: 24, height: 24)
-                                        .background(Color.white)
-                                }
-                            }
-                        }
-                        
-                        Text("looking to...")
-                            .font(.LibreBodoniBold(size: 18))
-                            .foregroundColor(Colors.primaryDark)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        
-                        VStack {
-                            Text(lookingInto)
-                                .font(.LeagueSpartan(size: 14))
-                                .foregroundStyle(Colors.primaryDark)
-                                .multilineTextAlignment(.leading)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding()
-                        }
-                        .background(
-                            RoundedRectangle(cornerRadius: 25)
-                                .fill(Color.white)
-                        )
-                        .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
-                    }
-                    .padding()
+                    .padding(.vertical, 20)
                 }
             }
             .padding(.horizontal, 20)
         }
-        .navigationBarBackButtonHidden()  // Hide default back button to prevent accidental navigation
+        .navigationBarBackButtonHidden()
+        .task {
+            if latitude != 0 && longitude != 0 {
+                address = await getLocationName(latitude: latitude, longitude: longitude)
+            }
+        }
     }
-    
 }
 
 #Preview {

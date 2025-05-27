@@ -107,7 +107,7 @@ struct OtpVerifyView: View {
                             VStack {
                                 TextField("", text: $otp[index])
                                     .keyboardType(.numberPad)
-                                    .foregroundStyle(Color.black)
+                                    .foregroundStyle(isVerifying ? Colors.k6F6F73 : Color.black)
                                     .multilineTextAlignment(.center)
                                     .font(.LibreCaslon(size: 40))
                                     .textInputAutocapitalization(.never)
@@ -115,6 +115,7 @@ struct OtpVerifyView: View {
                                     .submitLabel(.done)
                                     .focused($focusedIndex, equals: index)
                                     .textContentType(.oneTimeCode)
+                                    .disabled(isVerifying)
                                     .toolbar {
                                         ToolbarItem(placement: .keyboard) {
                                             keyboardAccessoryView
@@ -145,11 +146,18 @@ struct OtpVerifyView: View {
                                 // Bottom divider for each input field
                                 Divider()
                                     .frame(height: 2)
-                                    .background(Color.black.opacity(0.58))
+                                    .background(isVerifying ? Colors.k6F6F73 : Color.black.opacity(0.58))
                             }
                         }
                     }
                     .padding(.top, 50)
+                    
+                    // MARK: - Loading Indicator
+                    if isVerifying {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle())
+                            .padding(.top, 20)
+                    }
                     
                     // MARK: - Resend Code Button
                     HStack {
@@ -161,6 +169,7 @@ struct OtpVerifyView: View {
                                 .foregroundStyle(Colors.primaryDark)
                                 .font(.LeagueSpartan(size: 15))
                         }
+                        .disabled(isVerifying)
                     }
                     .padding(.top, 5)
                     
@@ -186,6 +195,7 @@ struct OtpVerifyView: View {
     private func verifyOTP() {
         guard !isVerifying else { return }
         isVerifying = true
+        focusedIndex = nil // Dismiss keyboard
         
         let code = otp.joined()
         OtpVerify.verifyOTP(code) { success in

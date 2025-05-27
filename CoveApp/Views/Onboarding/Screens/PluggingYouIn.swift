@@ -91,6 +91,22 @@ struct PluggingYouIn: View {
                 UserDefaults.standard.set(response.profile.latitude, forKey: "user_latitude")
                 UserDefaults.standard.set(response.profile.longitude, forKey: "user_longitude")
                 UserDefaults.standard.set(response.profile.gender, forKey: "user_gender")
+                UserDefaults.standard.set(response.profile.id, forKey: "user_id")
+                UserDefaults.standard.set(response.profile.userId, forKey: "user_firebase_id")
+                
+                // Store all photos
+                let nonProfilePhotos = response.profile.photos.filter { !$0.isProfilePic }
+                for (index, photo) in response.profile.photos.enumerated() {
+                    URLSession.shared.dataTask(with: photo.url) { data, response, error in
+                        if let imageData = data {
+                            if photo.isProfilePic {
+                                UserDefaults.standard.set(imageData, forKey: "user_profile_image")
+                            } else if index < 3 { // Only store up to 2 additional photos
+                                UserDefaults.standard.set(imageData, forKey: "user_extra_image_\(index)")
+                            }
+                        }
+                    }.resume()
+                }
                 
             case .failure(let error):
                 errorMessage = "Failed to fetch profile: \(error.localizedDescription)"
