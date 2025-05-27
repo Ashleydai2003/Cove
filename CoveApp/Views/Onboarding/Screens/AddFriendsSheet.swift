@@ -8,6 +8,9 @@ import SwiftUI
 // MARK: - Row for each existing user 
 private struct MatchedUserRow: View {
     let user: ContactMatcher.MatchedUser
+    @State private var requestSent = false
+    @State private var showError = false
+    @State private var errorMessage = ""
     
     var body: some View {
         HStack {
@@ -26,19 +29,41 @@ private struct MatchedUserRow: View {
             Spacer()
 
             Button(action: {
-                // TODO: Implement add friend action
+                sendFriendRequest(userId: user.id)
             }) {
-                Text("request")
+                Text(requestSent ? "requested" : "request")
                     .font(.LibreBodoni(size: 14))
                     .padding(.vertical, 6)
                     .padding(.horizontal, 30)
-                    .background(Colors.primaryDark)
+                    .background(requestSent ? Color.gray : Colors.primaryDark)
                     .foregroundColor(.white)
                     .cornerRadius(12)
             }
             .buttonStyle(BorderlessButtonStyle())
+            .disabled(requestSent)
         }
         .padding(.vertical, 4)
+        .alert("Error", isPresented: $showError) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(errorMessage)
+        }
+    }
+    
+    private func sendFriendRequest(userId: String) {
+        NetworkManager.shared.post(
+            endpoint: "/send-friend-request", 
+            parameters: ["toUserId": userId]) { (result: Result<FriendRequestResponse, NetworkError>) in
+                switch result {
+                case .success(let response):
+                    requestSent = true
+                    print("✅ Friend request sent successfully: \(response.message)")
+                    
+                case .failure(let error):
+                    errorMessage = "Failed to send friend request"
+                    showError = true
+                }
+            }
     }
 }
 
@@ -97,6 +122,13 @@ private struct NoMatchesView: View {
     }
 }
 
+// MARK: - Response model for friend request
+private struct FriendRequestResponse: Decodable {
+    let message: String
+    let requestId: String?
+}
+
+// MARK: - Main view
 struct AddFriendsSheet: View {
     let serverMatches: [ContactMatcher.MatchedUser]
     let showingNoMatches: Bool

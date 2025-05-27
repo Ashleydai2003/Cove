@@ -49,6 +49,14 @@ model User {
   coveMemberships CoveMember[]
   createdEvents   Event[]     @relation("CreatedEvents")
   eventRSVPs      EventRSVP[]
+
+  // Friendship relations
+  friendships1   Friendship[] @relation("FriendshipUser1")
+  friendships2   Friendship[] @relation("FriendshipUser2")
+
+  // Friend requests sent and received
+  sentFriendRequests     FriendRequest[] @relation("SentRequests")
+  receivedFriendRequests FriendRequest[] @relation("ReceivedRequests")
 } 
 
 // UserProfile Model
@@ -68,6 +76,31 @@ model UserProfile {
   relationStatus String?
   sexuality      String?
   bio            String?
+}
+
+model Friendship {
+  id        String   @id @default(cuid())
+  user1Id   String
+  user2Id   String
+  createdAt DateTime @default(now())
+
+  user1     User     @relation("FriendshipUser1", fields: [user1Id], references: [id])
+  user2     User     @relation("FriendshipUser2", fields: [user2Id], references: [id])
+
+  @@unique([user1Id, user2Id])
+  @@index([user2Id, user1Id]) // For reverse lookups
+}
+
+model FriendRequest {
+  id         String   @id @default(cuid())
+  fromUserId String
+  toUserId   String
+  createdAt  DateTime @default(now())
+
+  fromUser   User     @relation("SentRequests", fields: [fromUserId], references: [id])
+  toUser     User     @relation("ReceivedRequests", fields: [toUserId], references: [id])
+
+  @@unique([fromUserId, toUserId])
 }
 
 // User Image model 
