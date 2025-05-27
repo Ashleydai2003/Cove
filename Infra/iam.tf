@@ -227,5 +227,71 @@ resource "aws_iam_role_policy_attachment" "lambda_s3_access" {
   policy_arn = aws_iam_policy.s3_user_images_policy.arn
 }
 
+# IAM policy for cove images S3 bucket
+resource "aws_iam_policy" "s3_cove_images_policy" {
+  name        = "cove-s3-cove-images-policy"
+  description = "Policy for accessing cove images S3 bucket"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject",
+          "s3:ListBucket"
+        ]
+        Resource = [
+          aws_s3_bucket.cove_images.arn,
+          "${aws_s3_bucket.cove_images.arn}/*"
+        ]
+      }
+    ]
+  })
+
+  tags = local.common_tags
+}
+
+# IAM policy for event images S3 bucket
+resource "aws_iam_policy" "s3_event_images_policy" {
+  name        = "cove-s3-event-images-policy"
+  description = "Policy for accessing event images S3 bucket"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject",
+          "s3:ListBucket"
+        ]
+        Resource = [
+          aws_s3_bucket.event_images.arn,
+          "${aws_s3_bucket.event_images.arn}/*"
+        ]
+      }
+    ]
+  })
+
+  tags = local.common_tags
+}
+
+# Attach Cove images policy to Lambda role
+resource "aws_iam_role_policy_attachment" "lambda_cove_images_access" {
+  role       = aws_iam_role.lambda_role.name
+  policy_arn = aws_iam_policy.s3_cove_images_policy.arn
+}
+
+# Attach Event images policy to Lambda role
+resource "aws_iam_role_policy_attachment" "lambda_event_images_access" {
+  role       = aws_iam_role.lambda_role.name
+  policy_arn = aws_iam_policy.s3_event_images_policy.arn
+}
+
 # Retrieves the current AWS account ID for use in constructing ARNs
 data "aws_caller_identity" "current" {}
