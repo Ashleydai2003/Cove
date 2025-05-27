@@ -133,7 +133,7 @@ model EventRSVP {
   id        String   @id @default(cuid())
   eventId   String
   userId    String
-  status    RSVPStatus   @default("GOING") // Can be "GOING", "MAYBE", "NOT_GOING"
+  status    RSVPStatus   @default(GOING) // Can be "GOING", "MAYBE", "NOT_GOING"
   createdAt DateTime @default(now())
   event     Event    @relation(fields: [eventId], references: [id])
   user      User     @relation(fields: [userId], references: [id])
