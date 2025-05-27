@@ -40,12 +40,13 @@ export const handleProfile = async (event: APIGatewayProxyEvent): Promise<APIGat
     // Step 4: Initialize database connection
     const prisma = await initializeDatabase();
 
-    // Step 5: Get user profile with all photos
+    // Step 5: Get user profile
     const userProfile = await prisma.user.findUnique({
       where: {
         id: targetUserId
       },
       include: {
+        profile: true,
         photos: true
       }
     });
@@ -78,7 +79,7 @@ export const handleProfile = async (event: APIGatewayProxyEvent): Promise<APIGat
         return {
           id: photo.id,
           url: await getSignedUrl(s3Client, command, { expiresIn: 3600 }),
-          isProfilePic: photo.isProfilePic
+          isProfilePic: photo.id === userProfile.profilePhotoID
         };
       })
     );
@@ -92,17 +93,8 @@ export const handleProfile = async (event: APIGatewayProxyEvent): Promise<APIGat
         profile: {
           name: userProfile.name,
           phone: userProfile.phone,
-          age: userProfile.age,
-          birthday: userProfile.birthday,
-          interests: userProfile.interests,
-          latitude: userProfile.latitude,
-          longitude: userProfile.longitude,
-          almaMater: userProfile.almaMater,
-          job: userProfile.job,
-          workLocation: userProfile.workLocation,
-          relationStatus: userProfile.relationStatus,
-          sexuality: userProfile.sexuality,
           onboarding: userProfile.onboarding,
+          ...userProfile.profile, // Include all profile fields
           photos: photoUrls
         }
       })

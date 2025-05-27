@@ -12,10 +12,10 @@ const s3Client = new S3Client({ region: process.env.AWS_REGION });
 // 2. User must be either the cove creator or an admin
 // 3. Name, date, location, and coveId are required
 // 4. Optional cover photo will be uploaded to S3
-export const handleCreateEvent = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+export const handleCreateEvent = async (request: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
     // Validate request method - only POST is allowed
-    if (event.httpMethod !== 'POST') {
+    if (request.httpMethod !== 'POST') {
       return {
         statusCode: 405,
         body: JSON.stringify({
@@ -25,7 +25,7 @@ export const handleCreateEvent = async (event: APIGatewayProxyEvent): Promise<AP
     }
 
     // Authenticate the request using Firebase
-    const authResult = await authMiddleware(event);
+    const authResult = await authMiddleware(request);
     
     // If auth failed, return the error response
     if ('statusCode' in authResult) {
@@ -37,7 +37,7 @@ export const handleCreateEvent = async (event: APIGatewayProxyEvent): Promise<AP
     console.log('Authenticated user:', user.uid);
 
     // Parse and validate request body
-    if (!event.body) {
+    if (!request.body) {
       return {
         statusCode: 400,
         body: JSON.stringify({
@@ -54,7 +54,7 @@ export const handleCreateEvent = async (event: APIGatewayProxyEvent): Promise<AP
       location,
       coverPhoto,
       coveId 
-    } = JSON.parse(event.body);
+    } = JSON.parse(request.body);
 
     // Validate all required fields are present
     if (!name || !date || !coveId || !location) {
@@ -106,14 +106,14 @@ export const handleCreateEvent = async (event: APIGatewayProxyEvent): Promise<AP
     }
 
     // Create the event in the database
-    const event = await prisma.event.create({
+    const newEvent = await prisma.event.create({
       data: {
         name,
         description: description || null,
         date: new Date(date),
         location,
         coveId,
-        creatorId: user.uid,
+        hostId: user.uid,
       }
     });
 
@@ -122,7 +122,7 @@ export const handleCreateEvent = async (event: APIGatewayProxyEvent): Promise<AP
       // Create a record for the cover photo in the database
       const eventImage = await prisma.eventImage.create({
         data: {
-          eventId: event.id
+          eventId: newEvent.id
         }
       });
 
@@ -133,7 +133,7 @@ export const handleCreateEvent = async (event: APIGatewayProxyEvent): Promise<AP
       }
 
       // Prepare image for S3 upload
-      const s3Key = `${event.id}/${eventImage.id}.jpg`;
+      const s3Key = `${newEvent.id}/${eventImage.id}.jpg`;
       const imageBuffer = Buffer.from(coverPhoto, 'base64');
 
       // Upload image to S3
@@ -147,7 +147,7 @@ export const handleCreateEvent = async (event: APIGatewayProxyEvent): Promise<AP
 
       // Update event with the cover photo reference
       await prisma.event.update({
-        where: { id: event.id },
+        where: { id: newEvent.id },
         data: { coverPhotoID: eventImage.id }
       });
     }
@@ -158,13 +158,13 @@ export const handleCreateEvent = async (event: APIGatewayProxyEvent): Promise<AP
       body: JSON.stringify({
         message: 'Event created successfully',
         event: {
-          id: event.id,
-          name: event.name,
-          description: event.description,
-          date: event.date,
-          location: event.location,
-          coveId: event.coveId,
-          createdAt: event.createdAt
+          id: newEvent.id,
+          name: newEvent.name,
+          description: newEvent.description,
+          date: newEvent.date,
+          location: newEvent.location,
+          coveId: newEvent.coveId,
+          createdAt: newEvent.createdAt
         }
       })
     };

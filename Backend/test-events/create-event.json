@@ -1,0 +1,14 @@
+{
+  "httpMethod": "POST",
+  "headers": {
+    "Authorization": "Bearer test-token"
+  },
+  "body": {
+    "name": "Summer Beach Party",
+    "description": "Join us for a fun day at the beach with games and BBQ!",
+    "date": "2024-07-15T15:00:00Z",
+    "location": "Santa Monica Beach",
+    "coveId": "test-cove-id",
+    "coverPhoto": "/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAb/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
+  }
+} 
