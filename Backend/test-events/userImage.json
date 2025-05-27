@@ -1,5 +1,6 @@
 {
   "httpMethod": "POST",
+  "path": "/userImage",
   "headers": {
     "Authorization": "Bearer test-token"
   },

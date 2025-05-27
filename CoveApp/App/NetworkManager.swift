@@ -143,6 +143,8 @@ class NetworkManager {
             }
             
             print("🔑 Auth Token received")
+            // TODO: DELETE THIS WHEN DONE TESTING
+            print("🔑 Auth Token received: \(token)")
             
             // Create URL
             guard let url = URL(string: "\(self.apiBaseURL)\(endpoint)") else {
