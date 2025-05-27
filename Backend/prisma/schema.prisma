@@ -41,8 +41,7 @@ model User {
   updatedAt       DateTime    @updatedAt
 
   // Relations
-  profile         UserProfile? @relation(fields: [profileId], references: [id])
-  profileId       String?     @unique
+  profile         UserProfile?
   profilePhotoID  String?     @unique
   profilePhoto    UserImage?  @relation("ProfilePhoto", fields: [profilePhotoID], references: [id])
   photos          UserImage[] @relation("UserPhotos")
