@@ -42,15 +42,7 @@ struct NamePageView: View {
                         .focused($isFirstNameFocused)
                         .autocorrectionDisabled()
                         .onChange(of: firstName) { oldValue, newValue in
-                            if !newValue.isEmpty {
-                                // First filter to only allow letters and hyphens
-                                let filtered = newValue.filter { $0.isLetter || $0 == "-" }
-                                // Then convert to lowercase
-                                let lowercase = filtered.lowercased()
-                                if lowercase != newValue {
-                                    firstName = lowercase
-                                }
-                            }
+                            firstName = newValue.lettersAndHyphensOnly
                         }
                     
                     Divider()
@@ -64,15 +56,7 @@ struct NamePageView: View {
                         .padding(.horizontal, 10)
                         .autocorrectionDisabled()
                         .onChange(of: lastName) { oldValue, newValue in
-                            if !newValue.isEmpty {
-                                // First filter to only allow letters and hyphens
-                                let filtered = newValue.filter { $0.isLetter || $0 == "-" }
-                                // Then convert to lowercase
-                                let lowercase = filtered.lowercased()
-                                if lowercase != newValue {
-                                    lastName = lowercase
-                                }
-                            }
+                            lastName = newValue.lettersAndHyphensOnly
                         }
                     
                     Divider()

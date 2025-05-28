@@ -51,6 +51,9 @@ struct UserLocationView: View {
                                     .foregroundStyle(Colors.k656566)
                                     .keyboardType(.alphabet)
                                     .focused($isFocused)
+                                    .onChange(of: viewModel.state) { oldValue, newValue in
+                                        viewModel.state = newValue.lowercaseIfNotEmpty
+                                    }
                             }
                             
                             Divider()
@@ -71,6 +74,9 @@ struct UserLocationView: View {
                                     .foregroundStyle(Colors.k656566)
                                     .keyboardType(.alphabet)
                                     .focused($isFocused)
+                                    .onChange(of: viewModel.city) { oldValue, newValue in
+                                        viewModel.city = newValue.lowercaseIfNotEmpty
+                                    }
                             }
                             
                             Divider()
