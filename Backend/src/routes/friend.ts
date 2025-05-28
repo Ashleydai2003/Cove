@@ -258,4 +258,301 @@ export const handleResolveFriendRequest = async (event: APIGatewayProxyEvent): P
       })
     };
   }
+};
+
+/**
+ * Handles getting all friends for a user with pagination
+ * 
+ * Query Parameters:
+ * - cursor: ID of the last friendship from previous request (optional)
+ * - limit: number of friends to return (optional, defaults to 10, max 50)
+ * 
+ * Returns:
+ * - 200: Friends retrieved successfully
+ * - 401: Unauthorized
+ * - 500: Server error
+ * 
+ * Response Format:
+ * {
+ *   friends: [
+ *     {
+ *       id: string,          // Friend's user ID
+ *       name: string,        // Friend's name
+ *       profilePhotoUrl: string | null,  // URL of friend's profile photo
+ *       friendshipId: string,  // ID of the friendship record
+ *       createdAt: Date      // When the friendship was created
+ *     }
+ *   ],
+ *   pagination: {
+ *     hasMore: boolean,      // Whether there are more friends to load
+ *     nextCursor: string | null  // ID to use for next page of results
+ *   }
+ * }
+ */
+export const handleGetFriends = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+  try {
+    // Validate request method
+    if (event.httpMethod !== 'GET') {
+      return {
+        statusCode: 405,
+        body: JSON.stringify({
+          message: 'Method not allowed. Only GET requests are accepted.'
+        })
+      };
+    }
+
+    // Authenticate the request
+    const authResult = await authMiddleware(event);
+    if ('statusCode' in authResult) {
+      return authResult;
+    }
+
+    // Get the authenticated user's ID
+    const userId = authResult.user.uid;
+
+    // Get pagination parameters
+    // cursor: ID of the last friendship from previous request (for pagination)
+    // limit: number of friends to return (defaults to 10, max 50)
+    const cursor = event.queryStringParameters?.cursor;
+    const requestedLimit = parseInt(event.queryStringParameters?.limit || '10');
+    const limit = Math.min(requestedLimit, 50); // Enforce maximum limit of 50
+
+    // Initialize database connection
+    const prisma = await initializeDatabase();
+
+    // Get friendships where the user is either user1 or user2
+    // We fetch limit + 1 items to determine if there are more results
+    const friendships = await prisma.friendship.findMany({
+      where: {
+        OR: [
+          { user1Id: userId },
+          { user2Id: userId }
+        ]
+      },
+      include: {
+        // Include user1's details (id, name, and profile photo)
+        user1: {
+          select: {
+            id: true,
+            name: true,
+            profilePhoto: {
+              select: {
+                id: true
+              }
+            }
+          }
+        },
+        // Include user2's details (id, name, and profile photo)
+        user2: {
+          select: {
+            id: true,
+            name: true,
+            profilePhoto: {
+              select: {
+                id: true
+              }
+            }
+          }
+        }
+      },
+      // Order by most recent friendships first
+      orderBy: {
+        createdAt: 'desc'
+      },
+      // Take one extra item to determine if there are more results
+      take: limit + 1,
+      // If cursor exists, skip the cursor item and start after it
+      ...(cursor ? {
+        cursor: {
+          id: cursor
+        },
+        skip: 1
+      } : {})
+    });
+
+    // Check if there are more results by comparing actual length with requested limit
+    const hasMore = friendships.length > limit;
+    // Remove the extra item we fetched if there are more results
+    const friendshipsToReturn = hasMore ? friendships.slice(0, -1) : friendships;
+
+    // Return success response with friends and pagination info
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        friends: friendshipsToReturn.map(friendship => {
+          // Determine which user is the friend (not the current user)
+          // If current user is user1, friend is user2, and vice versa
+          const friend = friendship.user1Id === userId ? friendship.user2 : friendship.user1;
+          
+          // Get the friend's profile photo URL
+          const profilePhotoUrl = friend.profilePhoto ? 
+            `${process.env.USER_IMAGE_BUCKET_URL}/${friend.id}/${friend.profilePhoto.id}.jpg` : 
+            null;
+          
+          return {
+            id: friend.id,
+            name: friend.name,
+            profilePhotoUrl,
+            friendshipId: friendship.id,
+            createdAt: friendship.createdAt
+          };
+        }),
+        pagination: {
+          hasMore,
+          // If there are more results, use the last item's ID as the next cursor
+          nextCursor: hasMore ? friendships[friendships.length - 2].id : null
+        }
+      })
+    };
+  } catch (error) {
+    console.error('Get friends error:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        message: 'Error retrieving friends',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      })
+    };
+  }
+};
+
+/**
+ * Handles getting all pending friend requests for a user with pagination
+ * 
+ * Query Parameters:
+ * - cursor: ID of the last request from previous request (optional)
+ * - limit: number of requests to return (optional, defaults to 10, max 50)
+ * 
+ * Returns:
+ * - 200: Friend requests retrieved successfully
+ * - 401: Unauthorized
+ * - 500: Server error
+ * 
+ * Response Format:
+ * {
+ *   requests: [
+ *     {
+ *       id: string,          // Friend request ID
+ *       sender: {
+ *         id: string,        // Sender's user ID
+ *         name: string,      // Sender's name
+ *         profilePhotoUrl: string | null  // URL of sender's profile photo
+ *       },
+ *       createdAt: Date      // When the request was sent
+ *     }
+ *   ],
+ *   pagination: {
+ *     hasMore: boolean,      // Whether there are more requests to load
+ *     nextCursor: string | null  // ID to use for next page of results
+ *   }
+ * }
+ */
+export const handleGetFriendRequests = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+  try {
+    // Validate request method
+    if (event.httpMethod !== 'GET') {
+      return {
+        statusCode: 405,
+        body: JSON.stringify({
+          message: 'Method not allowed. Only GET requests are accepted.'
+        })
+      };
+    }
+
+    // Authenticate the request
+    const authResult = await authMiddleware(event);
+    if ('statusCode' in authResult) {
+      return authResult;
+    }
+
+    // Get the authenticated user's ID
+    const userId = authResult.user.uid;
+
+    // Get pagination parameters
+    // cursor: ID of the last request from previous request (for pagination)
+    // limit: number of requests to return (defaults to 10, max 50)
+    const cursor = event.queryStringParameters?.cursor;
+    const requestedLimit = parseInt(event.queryStringParameters?.limit || '10');
+    const limit = Math.min(requestedLimit, 50); // Enforce maximum limit of 50
+
+    // Initialize database connection
+    const prisma = await initializeDatabase();
+
+    // Get friend requests where the user is the recipient
+    // We fetch limit + 1 items to determine if there are more results
+    const requests = await prisma.friendRequest.findMany({
+      where: {
+        toUserId: userId
+      },
+      include: {
+        // Include sender's details (id, name, and profile photo)
+        fromUser: {
+          select: {
+            id: true,
+            name: true,
+            profilePhoto: {
+              select: {
+                id: true
+              }
+            }
+          }
+        }
+      },
+      // Order by most recent requests first
+      orderBy: {
+        createdAt: 'desc'
+      },
+      // Take one extra item to determine if there are more results
+      take: limit + 1,
+      // If cursor exists, skip the cursor item and start after it
+      ...(cursor ? {
+        cursor: {
+          id: cursor
+        },
+        skip: 1
+      } : {})
+    });
+
+    // Check if there are more results by comparing actual length with requested limit
+    const hasMore = requests.length > limit;
+    // Remove the extra item we fetched if there are more results
+    const requestsToReturn = hasMore ? requests.slice(0, -1) : requests;
+
+    // Return success response with requests and pagination info
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        requests: requestsToReturn.map(request => {
+          // Get the sender's profile photo URL
+          const profilePhotoUrl = request.fromUser.profilePhoto ? 
+            `${process.env.USER_IMAGE_BUCKET_URL}/${request.fromUser.id}/${request.fromUser.profilePhoto.id}.jpg` : 
+            null;
+          
+          return {
+            id: request.id,
+            sender: {
+              id: request.fromUser.id,
+              name: request.fromUser.name,
+              profilePhotoUrl
+            },
+            createdAt: request.createdAt
+          };
+        }),
+        pagination: {
+          hasMore,
+          // If there are more results, use the last item's ID as the next cursor
+          nextCursor: hasMore ? requests[requests.length - 2].id : null
+        }
+      })
+    };
+  } catch (error) {
+    console.error('Get friend requests error:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        message: 'Error retrieving friend requests',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      })
+    };
+  }
 }; 
