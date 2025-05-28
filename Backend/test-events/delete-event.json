@@ -1,0 +1,8 @@
+{
+  "path": "/delete-event",
+  "httpMethod": "POST",
+  "headers": {
+    "Authorization": "Bearer test_token"
+  },
+  "body": "{\"eventId\":\"test_event_id\"}"
+} 
