@@ -192,6 +192,9 @@ struct HobbiesView: View {
                             .foregroundColor(.gray)
                         TextField("Search or add activities...", text: $searchText)
                             .font(.LeagueSpartan(size: 14))
+                            .onChange(of: searchText) { oldValue, newValue in
+                                searchText = newValue.lowercaseIfNotEmpty
+                            }
                         if !searchText.isEmpty {
                             Button(action: {
                                 searchText = ""

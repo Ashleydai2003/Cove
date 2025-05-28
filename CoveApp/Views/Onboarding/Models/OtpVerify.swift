@@ -99,7 +99,7 @@ struct OtpVerify {
                     
                     // Update onboarding state
                     if loginResponse.user.onboarding {
-                        if !loginResponse.user.verified {
+                        if loginResponse.user.verified {
                             print("✅ User is verified")
                             AppController.shared.path.append(.adminVerify)
                             Onboarding.setAdminCove(adminCove: loginResponse.user.cove ?? "create new cove!")
