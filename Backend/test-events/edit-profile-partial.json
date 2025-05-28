@@ -1,0 +1,8 @@
+{
+  "path": "/edit-profile",
+  "httpMethod": "POST",
+  "headers": {
+    "Authorization": "Bearer test_token"
+  },
+  "body": "{\"name\":\"John Doe\",\"bio\":\"Software engineer and coffee enthusiast\"}"
+} 

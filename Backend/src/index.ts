@@ -4,7 +4,28 @@
 // Currently, it is just a placeholder hello world function
 
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
-import { handleProfile, handleLogin, handleTestDatabase, handleTestS3, handleOnboard, handleUserImage, handleContacts, handleCreateEvent, handleCreateCove, handleSendFriendRequest, handleResolveFriendRequest } from './routes';
+import {
+  handleProfile,
+  handleEditProfile,
+  handleLogin,
+  handleTestDatabase,
+  handleTestS3,
+  handleOnboard,
+  handleUserImage,
+  handleContacts,
+  handleCreateEvent,
+  handleCreateCove,
+  handleSendFriendRequest,
+  handleResolveFriendRequest,
+  handleGetCoveEvents,
+  handleGetCalendarEvents,
+  handleGetFriends,
+  handleGetFriendRequests,
+  handleGetCove,
+  handleGetCoveMembers,
+  handleDeleteUser,
+  handleDeleteEvent
+} from './routes';
 
 export const handler = async (
   event: APIGatewayProxyEvent,
@@ -38,6 +59,24 @@ export const handler = async (
         return handleSendFriendRequest(event);
       case '/resolve-friend-request':
         return handleResolveFriendRequest(event);
+      case '/cove-events':
+        return handleGetCoveEvents(event);
+      case '/calendar-events':
+        return handleGetCalendarEvents(event);
+      case '/friends':
+        return handleGetFriends(event);
+      case '/friend-requests':
+        return handleGetFriendRequests(event);
+      case '/cove':
+        return handleGetCove(event);
+      case '/cove-members':
+        return handleGetCoveMembers(event);
+      case '/edit-profile':
+        return handleEditProfile(event);
+      case '/delete-user':
+        return handleDeleteUser(event);
+      case '/delete-event':
+        return handleDeleteEvent(event);
       default:
         // Handle common web standard files
         switch (event.path) {
