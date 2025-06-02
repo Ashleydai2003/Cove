@@ -126,6 +126,9 @@ struct MoreAboutYouView: View {
                                     .font(.LibreCaslon(size: 15))
                                     .foregroundStyle(Colors.k6F6F73)
                                     .focused($isFocused)
+                                    .onChange(of: job) { oldValue, newValue in
+                                        job = newValue.lowercaseIfNotEmpty
+                                    }
                             }
                             Divider()
                                 .frame(height: 2)
@@ -143,6 +146,9 @@ struct MoreAboutYouView: View {
                                     .font(.LibreCaslon(size: 15))
                                     .foregroundStyle(Colors.k6F6F73)
                                     .focused($isFocused)
+                                    .onChange(of: workLocation) { oldValue, newValue in
+                                        workLocation = newValue.lowercaseIfNotEmpty
+                                    }
                             }
                             Divider()
                                 .frame(height: 2)

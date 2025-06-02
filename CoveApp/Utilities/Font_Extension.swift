@@ -17,7 +17,7 @@ extension Font {
         return .custom("LibreBodoni-Regular_Medium", size: size)
     }
     static func LibreBodoniBold(size: CGFloat) -> Font {
-        return .custom("LibreBodoni-Bold", size: size)
+        return .custom("LibreBodoni-Regular_Bold", size: size)
     }
     
     static func LeagueSpartan(size: CGFloat) -> Font {

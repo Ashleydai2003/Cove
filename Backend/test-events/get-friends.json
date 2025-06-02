@@ -1,0 +1,11 @@
+{
+  "httpMethod": "GET",
+  "path": "/friends",
+  "queryStringParameters": {
+    "cursor": "friendship_id_123",
+    "limit": "10"
+  },
+  "headers": {
+    "Authorization": "Bearer test_token"
+  }
+} 
