@@ -158,3 +158,318 @@ export const handleCreateCove = async (event: APIGatewayProxyEvent): Promise<API
     return errorResponse;
   }
 };
+
+/**
+ * Get cove information
+ * 
+ * This endpoint handles retrieving cove information with the following requirements:
+ * 1. User must be authenticated
+ * 2. User must be a member of the cove
+ * 
+ * The endpoint returns:
+ * - Basic cove information (id, name, description, location)
+ * - Creator information (id, name)
+ * - Cover photo URL if one exists
+ * - Statistics (member count, event count)
+ * 
+ * Error cases:
+ * - 400: Missing coveId parameter
+ * - 403: User is not a member of the cove
+ * - 404: Cove not found
+ * - 405: Invalid HTTP method
+ * - 500: Server error
+ */
+export const handleGetCove = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+  try {
+    // Validate request method - only GET is allowed
+    if (event.httpMethod !== 'GET') {
+      return {
+        statusCode: 405,
+        body: JSON.stringify({
+          message: 'Method not allowed. Only GET requests are accepted for retrieving cove information.'
+        })
+      };
+    }
+
+    // Authenticate the request using Firebase
+    const authResult = await authMiddleware(event);
+    
+    // If auth failed, return the error response
+    if ('statusCode' in authResult) {
+      return authResult;
+    }
+
+    // Get the authenticated user's info from Firebase
+    const user = authResult.user;
+    console.log('Authenticated user:', user.uid);
+
+    // Get coveId from query parameters
+    const coveId = event.queryStringParameters?.coveId;
+    if (!coveId) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          message: 'Cove ID is required'
+        })
+      };
+    }
+
+    // Initialize database connection
+    const prisma = await initializeDatabase();
+
+    // Check if user is a member of the cove
+    // This is done before fetching cove details to prevent unauthorized access
+    const userMembership = await prisma.coveMember.findUnique({
+      where: {
+        coveId_userId: {
+          coveId,
+          userId: user.uid
+        }
+      }
+    });
+
+    if (!userMembership) {
+      return {
+        statusCode: 403,
+        body: JSON.stringify({
+          message: 'You must be a member of this cove to view its information'
+        })
+      };
+    }
+
+    // Get cove information including:
+    // - Basic details (name, description, location)
+    // - Cover photo reference
+    // - Creator information
+    // - Member and event counts
+    const cove = await prisma.cove.findUnique({
+      where: { id: coveId },
+      include: {
+        coverPhoto: {
+          select: {
+            id: true
+          }
+        },
+        createdBy: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        _count: {
+          select: {
+            members: true,
+            events: true
+          }
+        }
+      }
+    });
+
+    // Check if the cove exists
+    if (!cove) {
+      return {
+        statusCode: 404,
+        body: JSON.stringify({
+          message: 'Cove not found'
+        })
+      };
+    }
+
+    // Construct cover photo URL if it exists
+    // The URL is constructed using the cove ID and photo ID
+    const coverPhoto = cove.coverPhoto ? {
+      id: cove.coverPhoto.id,
+      url: `${process.env.COVE_IMAGE_BUCKET_URL}/${cove.id}/${cove.coverPhoto.id}.jpg`
+    } : null;
+
+    // Return success response with cove information
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        cove: {
+          id: cove.id,
+          name: cove.name,
+          description: cove.description,
+          location: cove.location,
+          createdAt: cove.createdAt,
+          creator: {
+            id: cove.createdBy.id,
+            name: cove.createdBy.name
+          },
+          coverPhoto,
+          stats: {
+            memberCount: cove._count.members,
+            eventCount: cove._count.events
+          }
+        }
+      })
+    };
+  } catch (error) {
+    console.error('Get cove route error:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        message: 'Error processing get cove request',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      })
+    };
+  }
+};
+
+/**
+ * Get cove members
+ * 
+ * This endpoint handles retrieving cove members with the following requirements:
+ * 1. User must be authenticated
+ * 2. User must be a member of the cove
+ * 
+ * The endpoint returns:
+ * - Paginated list of cove members
+ * - Each member's basic information (id, name, profile photo)
+ * - Member's role in the cove (MEMBER or ADMIN)
+ * - When they joined the cove
+ * 
+ * Error cases:
+ * - 400: Missing coveId parameter
+ * - 403: User is not a member of the cove
+ * - 405: Invalid HTTP method
+ * - 500: Server error
+ */
+export const handleGetCoveMembers = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+  try {
+    // Validate request method - only GET is allowed
+    if (event.httpMethod !== 'GET') {
+      return {
+        statusCode: 405,
+        body: JSON.stringify({
+          message: 'Method not allowed. Only GET requests are accepted for retrieving cove members.'
+        })
+      };
+    }
+
+    // Authenticate the request using Firebase
+    const authResult = await authMiddleware(event);
+    
+    // If auth failed, return the error response
+    if ('statusCode' in authResult) {
+      return authResult;
+    }
+
+    // Get the authenticated user's info from Firebase
+    const user = authResult.user;
+    console.log('Authenticated user:', user.uid);
+
+    // Get coveId from query parameters
+    const coveId = event.queryStringParameters?.coveId;
+    if (!coveId) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          message: 'Cove ID is required'
+        })
+      };
+    }
+
+    // Get pagination parameters
+    // cursor: ID of the last member from previous request (for pagination)
+    // limit: number of members to return (defaults to 10, max 50)
+    const cursor = event.queryStringParameters?.cursor;
+    const requestedLimit = parseInt(event.queryStringParameters?.limit || '10');
+    const limit = Math.min(requestedLimit, 50); // Enforce maximum limit of 50
+
+    // Initialize database connection
+    const prisma = await initializeDatabase();
+
+    // Check if user is a member of the cove
+    // This is done before fetching member list to prevent unauthorized access
+    const userMembership = await prisma.coveMember.findUnique({
+      where: {
+        coveId_userId: {
+          coveId,
+          userId: user.uid
+        }
+      }
+    });
+
+    if (!userMembership) {
+      return {
+        statusCode: 403,
+        body: JSON.stringify({
+          message: 'You must be a member of this cove to view its members'
+        })
+      };
+    }
+
+    // Get cove members with pagination
+    // We fetch limit + 1 items to determine if there are more results
+    const members = await prisma.coveMember.findMany({
+      where: { coveId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            profilePhoto: {
+              select: {
+                id: true
+              }
+            }
+          }
+        }
+      },
+      // Order by most recent members first
+      orderBy: {
+        joinedAt: 'desc'
+      },
+      // Take one extra item to determine if there are more results
+      take: limit + 1,
+      // If cursor exists, skip the cursor item and start after it
+      ...(cursor ? {
+        cursor: {
+          id: cursor
+        },
+        skip: 1
+      } : {})
+    });
+
+    // Check if there are more results by comparing actual length with requested limit
+    const hasMore = members.length > limit;
+    // Remove the extra item we fetched if there are more results
+    const membersToReturn = hasMore ? members.slice(0, -1) : members;
+
+    // Return success response with members and pagination info
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        members: membersToReturn.map(member => {
+          // Construct profile photo URL if it exists
+          const profilePhotoUrl = member.user.profilePhoto ? 
+            `${process.env.USER_IMAGE_BUCKET_URL}/${member.user.id}/${member.user.profilePhoto.id}.jpg` : 
+            null;
+
+          return {
+            id: member.user.id,
+            name: member.user.name,
+            profilePhotoUrl,
+            role: member.role,
+            joinedAt: member.joinedAt
+          };
+        }),
+        pagination: {
+          hasMore,
+          // If there are more results, use the last item's ID as the next cursor
+          nextCursor: hasMore ? members[members.length - 2].id : null
+        }
+      })
+    };
+  } catch (error) {
+    console.error('Get cove members route error:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        message: 'Error processing get cove members request',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      })
+    };
+  }
+};

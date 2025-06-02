@@ -1,0 +1,8 @@
+{
+  "path": "/edit-profile",
+  "httpMethod": "POST",
+  "headers": {
+    "Authorization": "Bearer test_token"
+  },
+  "body": "{\"name\":\"John Doe\",\"bio\":\"Software engineer and coffee enthusiast\",\"interests\":[\"coding\",\"hiking\",\"photography\"],\"birthdate\":\"1990-01-01T00:00:00.000Z\",\"latitude\":37.7749,\"longitude\":-122.4194,\"almaMater\":\"Stanford University\",\"job\":\"Senior Software Engineer\",\"workLocation\":\"San Francisco\",\"relationStatus\":\"Single\",\"sexuality\":\"Straight\",\"gender\":\"Male\"}"
+} 

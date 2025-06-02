@@ -1,0 +1,7 @@
+{
+  "path": "/delete-user",
+  "httpMethod": "POST",
+  "headers": {
+    "Authorization": "Bearer test_token"
+  }
+} 

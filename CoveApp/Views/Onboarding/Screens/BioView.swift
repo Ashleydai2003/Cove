@@ -54,6 +54,9 @@ struct BioView: View {
                             .font(.LeagueSpartan(size: 14))
                             .foregroundStyle(.primary)
                             .focused($isFocused)
+                            .onChange(of: bio) { oldValue, newValue in
+                                bio = newValue.lowercaseIfNotEmpty
+                            }
                             .overlay(
                                 RoundedRectangle(cornerRadius: 10)
                                     .stroke(Color.black.opacity(0.5), lineWidth: 1)

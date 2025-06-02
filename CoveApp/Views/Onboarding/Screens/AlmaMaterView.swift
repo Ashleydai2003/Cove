@@ -44,6 +44,9 @@ struct AlmaMaterView: View {
                     .font(.LeagueSpartan(size: 30))
                     .foregroundStyle(Colors.k060505)
                     .keyboardType(.alphabet)
+                    .onChange(of: searchUniversity) { oldValue, newValue in
+                        searchUniversity = newValue.lowercaseIfNotEmpty
+                    }
                 
                 Divider()
                     .frame(height: 2)
