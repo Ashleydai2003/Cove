@@ -278,6 +278,8 @@ struct ProfileView: View {
                     
                     Button {
                         isEditing.toggle()
+                        // TODO: REMOVE BEFORE PUSHING
+                        appController.path.append(.exploreFriends)
                     } label: {
                         Image(systemName: "pencil")
                             .foregroundColor(Colors.primaryDark)
