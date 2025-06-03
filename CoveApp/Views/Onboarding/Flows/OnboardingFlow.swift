@@ -42,6 +42,13 @@ struct OnboardingFlow: View {
                         PluggingYouIn()
                     case .profile:
                         ProfileView()
+                    case .yourInvites:
+                        YourInvitesView()
+                        
+                    case .home:
+                        HomeView()
+                    case .membersList:
+                        EventMembersView()
                     }
                 }
         }
