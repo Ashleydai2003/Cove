@@ -1,7 +1,7 @@
 //
 //  MapView.swift
 //  Cove
-//
+//  Created by Ananya Agarwal
 
 import SwiftUI
 import MapKit
