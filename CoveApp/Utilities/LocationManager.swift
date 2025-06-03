@@ -2,6 +2,7 @@
 //  LocationManager.swift
 //  Cove
 //
+//  Created by Nesib Muhedin
 
 import CoreLocation
 import Combine
