@@ -1,7 +1,7 @@
 //
 //  UserLocationViewModel.swift
 //  Cove
-//
+//  Created by Ananya Agarwal
 
 import Foundation
 import MapKit

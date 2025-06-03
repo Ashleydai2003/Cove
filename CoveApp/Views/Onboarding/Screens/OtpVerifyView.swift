@@ -2,6 +2,7 @@
 //  OtpVerifyView.swift
 //  Cove
 //
+//  Created by Ananya Agarwal
 
 // TODO: allow backspace when field is empty
 
