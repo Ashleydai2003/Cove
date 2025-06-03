@@ -55,7 +55,7 @@ struct PluggingYouIn: View {
                                             if let error = errorMessage {
                                                 appController.errorMessage = error
                                             }
-                                            appController.path.append(.profile)
+                                            appController.path.append(.home)
                                         }
                                     }
                                 }

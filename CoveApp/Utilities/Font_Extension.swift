@@ -16,6 +16,18 @@ extension Font {
     static func LibreBodoniMedium(size: CGFloat) -> Font {
         return .custom("LibreBodoni-Regular_Medium", size: size)
     }
+    static func LibreBodoniMediumItalic(size: CGFloat) -> Font {
+        return .custom("LibreBodoni-Italic_Medium-Italic", size: size)
+    }
+    static func LibreBodoniItalic(size: CGFloat) -> Font {
+        return .custom("LibreBodoni-Italic", size: size)
+    }
+    static func LibreBodoniSemiBold(size: CGFloat) -> Font {
+        return .custom("LibreBodoni-Regular_SemiBold", size: size)
+    }
+    static func LibreBodoniSemiBoldItalic(size: CGFloat) -> Font {
+        return .custom("LibreBodoni-Italic_SemiBold-Italic", size: size)
+    }
     static func LibreBodoniBold(size: CGFloat) -> Font {
         return .custom("LibreBodoni-Regular_Bold", size: size)
     }
@@ -32,5 +44,9 @@ extension Font {
     
     static func LibreCaslon(size: CGFloat) -> Font {
         return .custom("LibreCaslontext-Regular", size: size)
+    }
+    
+    static func Lugrasimo(size: CGFloat) -> Font {
+        return .custom("Lugrasimo-Regular", size: size)
     }
 }
