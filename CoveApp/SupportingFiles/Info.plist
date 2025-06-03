@@ -2,8 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>NSContactsUsageDescription</key>
-	<string>We need access to your contacts to see who&apos;s already on Cove.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
@@ -35,6 +33,8 @@
 	<string>1</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSContactsUsageDescription</key>
+	<string>We need access to your contacts to see who's already on Cove.</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>LibreBodoni-Italic-VariableFont_wght.ttf</string>
@@ -43,6 +43,7 @@
 		<string>LibreCaslonText-Bold.ttf</string>
 		<string>LibreCaslonText-Italic.ttf</string>
 		<string>LibreCaslonText-Regular.ttf</string>
+		<string>Lugrasimo-Regular.ttf</string>
 	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>

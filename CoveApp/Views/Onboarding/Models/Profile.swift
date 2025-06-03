@@ -1,3 +1,4 @@
+// Created by Nesib Muhedin
 import Foundation
 
 struct Profile: Decodable {
