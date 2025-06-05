@@ -46,6 +46,12 @@ struct OnboardingFlow: View {
                         FriendsView()
                     case .friendRequests:
                         RequestsView()
+                    case .yourInvites:
+                        YourInvitesView()
+                    case .home:
+                        HomeView()
+                    case .membersList:
+                        EventMembersView()
                     }
                 }
         }

@@ -2,6 +2,8 @@
 //  ProfileView.swift
 //  Cove
 //
+//  Created by Nesib Muhedin
+
 
 import SwiftUI
 import CoreLocation
@@ -259,11 +261,11 @@ struct ProfileView: View {
             
             VStack {
                 HStack(alignment: .top) {
-                    Button {
-                        appController.path.removeLast()
-                    } label: {
-                        Images.backArrow
-                    }
+//                    Button {
+//                        appController.path.removeLast()
+//                    } label: {
+//                        Images.backArrow
+//                    }
                     
                     Spacer()
                     
