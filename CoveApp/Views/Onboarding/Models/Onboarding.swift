@@ -250,7 +250,7 @@ class Onboarding {
                                         print("✅ All operations completed successfully")
                                         AppController.shared.hasCompletedOnboarding = true
                                         clearImages() // Clear stored images after successful upload
-                                        AppController.shared.path = [.profile]
+                                        AppController.shared.path = [.yourInvites]
                                     } else {
                                         print("❌ Friend request sending failed")
                                         AppController.shared.errorMessage = "Failed to send friend requests"
@@ -264,7 +264,7 @@ class Onboarding {
                                 print("✅ Onboarding completed without friend requests")
                                 AppController.shared.hasCompletedOnboarding = true
                                 clearImages() // Clear stored images after successful upload
-                                AppController.shared.path = [.profile]
+                                AppController.shared.path = [.yourInvites]
                                 completion(true)
                             }
                         }

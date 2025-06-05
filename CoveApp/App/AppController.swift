@@ -25,6 +25,9 @@ enum OnboardingRoute: Hashable {
     case profile
     case exploreFriends
     case friendRequests
+    case yourInvites
+    case home
+    case membersList
 }
 
 /// AppController: Manages shared application state and business logic
