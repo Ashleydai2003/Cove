@@ -50,27 +50,24 @@ class LocationSearchViewModel: NSObject, ObservableObject {
     func formattedAddress(from placemark: CLPlacemark) -> String {
         var addressParts: [String] = []
 
-        if let name = placemark.name {
+        // Only include name if it's not already part of the city
+        if let name = placemark.name,
+           let city = placemark.locality,
+           !name.contains(city) {
             addressParts.append(name)
         }
+        
         if let street = placemark.thoroughfare {
             addressParts.append(street)
         }
-//        if let subLocality = placemark.subLocality {
-//            addressParts.append(subLocality)
-//        }
+        
         if let city = placemark.locality {
             addressParts.append(city)
         }
+        
         if let state = placemark.administrativeArea {
             addressParts.append(state)
         }
-//        if let postalCode = placemark.postalCode {
-//            addressParts.append(postalCode)
-//        }
-//        if let country = placemark.country {
-//            addressParts.append(country)
-//        }
 
         return addressParts.joined(separator: ", ")
     }

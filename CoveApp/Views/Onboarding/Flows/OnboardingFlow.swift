@@ -52,6 +52,8 @@ struct OnboardingFlow: View {
                         HomeView()
                     case .membersList:
                         EventMembersView()
+                    case .eventPost(let eventId):
+                        EventPostView(eventId: eventId)
                     }
                 }
         }

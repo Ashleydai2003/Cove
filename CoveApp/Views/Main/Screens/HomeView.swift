@@ -9,6 +9,7 @@ import SwiftUI
 struct HomeView: View {
     @State private var tabSelection = 1
     
+    // TODO: add indicator on which tab is chosen atm
     var body: some View {
         TabView(selection: $tabSelection) {
             
@@ -32,6 +33,7 @@ struct HomeView: View {
             
             ProfileView()
                 .tag(4)
+                // TODO: Change default image/connect to backend
                 .tabItem {
 //                    if let imageData = UserDefaults.standard.data(forKey: "user_profile_image"), let image = UIImage(data: imageData) {
 //                        Image(uiImage: image)

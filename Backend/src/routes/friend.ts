@@ -1,6 +1,11 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { authMiddleware } from '../middleware/auth';
 import { initializeDatabase } from '../config/database';
+import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+
+// Initialize S3 client for accessing user photos
+const s3Client = new S3Client({ region: process.env.AWS_REGION });
 
 /**
  * Handles sending friend requests
@@ -379,14 +384,16 @@ export const handleGetFriends = async (event: APIGatewayProxyEvent): Promise<API
     return {
       statusCode: 200,
       body: JSON.stringify({
-        friends: friendshipsToReturn.map(friendship => {
+        friends: await Promise.all(friendshipsToReturn.map(async friendship => {
           // Determine which user is the friend (not the current user)
-          // If current user is user1, friend is user2, and vice versa
           const friend = friendship.user1Id === userId ? friendship.user2 : friendship.user1;
           
-          // Get the friend's profile photo URL
+          // Generate profile photo URL if it exists
           const profilePhotoUrl = friend.profilePhoto ? 
-            `${process.env.USER_IMAGE_BUCKET_URL}/${friend.id}/${friend.profilePhoto.id}.jpg` : 
+            await getSignedUrl(s3Client, new GetObjectCommand({
+              Bucket: process.env.USER_IMAGE_BUCKET_NAME,
+              Key: `${friend.id}/${friend.profilePhoto.id}.jpg`
+            }), { expiresIn: 3600 }) : 
             null;
           
           return {
@@ -396,10 +403,9 @@ export const handleGetFriends = async (event: APIGatewayProxyEvent): Promise<API
             friendshipId: friendship.id,
             createdAt: friendship.createdAt
           };
-        }),
+        })),
         pagination: {
           hasMore,
-          // If there are more results, use the last item's ID as the next cursor
           nextCursor: hasMore ? friendships[friendships.length - 2].id : null
         }
       })
@@ -522,10 +528,13 @@ export const handleGetFriendRequests = async (event: APIGatewayProxyEvent): Prom
     return {
       statusCode: 200,
       body: JSON.stringify({
-        requests: requestsToReturn.map(request => {
-          // Get the sender's profile photo URL
+        requests: await Promise.all(requestsToReturn.map(async request => {
+          // Generate profile photo URL if it exists
           const profilePhotoUrl = request.fromUser.profilePhoto ? 
-            `${process.env.USER_IMAGE_BUCKET_URL}/${request.fromUser.id}/${request.fromUser.profilePhoto.id}.jpg` : 
+            await getSignedUrl(s3Client, new GetObjectCommand({
+              Bucket: process.env.USER_IMAGE_BUCKET_NAME,
+              Key: `${request.fromUser.id}/${request.fromUser.profilePhoto.id}.jpg`
+            }), { expiresIn: 3600 }) : 
             null;
           
           return {
@@ -537,10 +546,9 @@ export const handleGetFriendRequests = async (event: APIGatewayProxyEvent): Prom
             },
             createdAt: request.createdAt
           };
-        }),
+        })),
         pagination: {
           hasMore,
-          // If there are more results, use the last item's ID as the next cursor
           nextCursor: hasMore ? requests[requests.length - 2].id : null
         }
       })

@@ -20,11 +20,18 @@ struct Profile: Decodable {
     let bio: String?
     let gender: String?
     let photos: [Photo]
+    let stats: Stats?
     
     struct Photo: Decodable {
         let id: String
         let url: URL
         let isProfilePic: Bool
+    }
+    
+    struct Stats: Decodable {
+        let friendCount: Int
+        let requestCount: Int
+        let coveCount: Int
     }
     
     func calculateAge() -> Int? {

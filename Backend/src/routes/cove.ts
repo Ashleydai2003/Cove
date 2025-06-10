@@ -1,7 +1,8 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { authMiddleware } from '../middleware/auth';
 import { initializeDatabase } from '../config/database';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 // Initialize S3 client for image uploads
 const s3Client = new S3Client({ region: process.env.AWS_REGION });
@@ -275,11 +276,13 @@ export const handleGetCove = async (event: APIGatewayProxyEvent): Promise<APIGat
       };
     }
 
-    // Construct cover photo URL if it exists
-    // The URL is constructed using the cove ID and photo ID
+    // Generate cover photo URL if it exists
     const coverPhoto = cove.coverPhoto ? {
       id: cove.coverPhoto.id,
-      url: `${process.env.COVE_IMAGE_BUCKET_URL}/${cove.id}/${cove.coverPhoto.id}.jpg`
+      url: await getSignedUrl(s3Client, new GetObjectCommand({
+        Bucket: process.env.COVE_IMAGE_BUCKET_NAME,
+        Key: `${cove.id}/${cove.coverPhoto.id}.jpg`
+      }), { expiresIn: 3600 })
     } : null;
 
     // Return success response with cove information
@@ -441,10 +444,13 @@ export const handleGetCoveMembers = async (event: APIGatewayProxyEvent): Promise
     return {
       statusCode: 200,
       body: JSON.stringify({
-        members: membersToReturn.map(member => {
-          // Construct profile photo URL if it exists
+        members: await Promise.all(membersToReturn.map(async member => {
+          // Generate profile photo URL if it exists
           const profilePhotoUrl = member.user.profilePhoto ? 
-            `${process.env.USER_IMAGE_BUCKET_URL}/${member.user.id}/${member.user.profilePhoto.id}.jpg` : 
+            await getSignedUrl(s3Client, new GetObjectCommand({
+              Bucket: process.env.USER_IMAGE_BUCKET_NAME,
+              Key: `${member.user.id}/${member.user.profilePhoto.id}.jpg`
+            }), { expiresIn: 3600 }) : 
             null;
 
           return {
@@ -454,10 +460,9 @@ export const handleGetCoveMembers = async (event: APIGatewayProxyEvent): Promise
             role: member.role,
             joinedAt: member.joinedAt
           };
-        }),
+        })),
         pagination: {
           hasMore,
-          // If there are more results, use the last item's ID as the next cursor
           nextCursor: hasMore ? members[members.length - 2].id : null
         }
       })
@@ -468,6 +473,97 @@ export const handleGetCoveMembers = async (event: APIGatewayProxyEvent): Promise
       statusCode: 500,
       body: JSON.stringify({
         message: 'Error processing get cove members request',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      })
+    };
+  }
+};
+
+/**
+ * Get user's coves
+ * 
+ * This endpoint handles retrieving all coves that a user is a member of.
+ * 
+ * The endpoint returns:
+ * - List of coves with basic information (id, name, cover photo)
+ * 
+ * Error cases:
+ * - 405: Invalid HTTP method
+ * - 500: Server error
+ */
+export const handleGetUserCoves = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+  try {
+    // Validate request method - only GET is allowed
+    if (event.httpMethod !== 'GET') {
+      return {
+        statusCode: 405,
+        body: JSON.stringify({
+          message: 'Method not allowed. Only GET requests are accepted for retrieving user coves.'
+        })
+      };
+    }
+
+    // Authenticate the request using Firebase
+    const authResult = await authMiddleware(event);
+    
+    // If auth failed, return the error response
+    if ('statusCode' in authResult) {
+      return authResult;
+    }
+
+    // Get the authenticated user's info from Firebase
+    const user = authResult.user;
+    console.log('Authenticated user:', user.uid);
+
+    // Initialize database connection
+    const prisma = await initializeDatabase();
+
+    // Get all coves where the user is a member
+    const userCoves = await prisma.coveMember.findMany({
+      where: { userId: user.uid },
+      include: {
+        cove: {
+          include: {
+            coverPhoto: {
+              select: {
+                id: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // Generate signed URLs for cover photos and format response
+    const coves = await Promise.all(userCoves.map(async ({ cove }) => {
+      const coverPhoto = cove.coverPhoto ? {
+        id: cove.coverPhoto.id,
+        url: await getSignedUrl(s3Client, new GetObjectCommand({
+          Bucket: process.env.COVE_IMAGE_BUCKET_NAME,
+          Key: `${cove.id}/${cove.coverPhoto.id}.jpg`
+        }), { expiresIn: 3600 })
+      } : null;
+
+      return {
+        id: cove.id,
+        name: cove.name,
+        coverPhoto
+      };
+    }));
+
+    // Return success response with user's coves
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        coves
+      })
+    };
+  } catch (error) {
+    console.error('Get user coves route error:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        message: 'Error processing get user coves request',
         error: error instanceof Error ? error.message : 'Unknown error'
       })
     };
