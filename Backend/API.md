@@ -204,6 +204,24 @@ Takes Data Parameters:
 Returns:
 * message: String
 
+### `/update-event-rsvp`
+
+Updates a user's RSVP status for an event. User must be a member of the event's cove.
+
+Takes Data Parameters:
+* eventId: String (required) - ID of the event to RSVP to
+* status: String (required) - One of: "GOING", "MAYBE", "NOT_GOING"
+
+Returns:
+* message: String
+* rsvp: {
+  * id: String
+  * status: String
+  * eventId: String
+  * userId: String
+  * createdAt: DateTime
+}
+
 ## GET
 
 ### `/profile`
@@ -233,6 +251,11 @@ Returns:
     * id: String
     * url: String
     * isProfilePic: Bool
+  }
+  * stats: {
+    * friendCount: Number - Total number of friends
+    * requestCount: Number - Number of pending friend requests
+    * coveCount: Number - Number of coves the user is a member of
   }
 }
 
@@ -390,4 +413,49 @@ Returns:
 * pagination: {
   * hasMore: Boolean
   * nextCursor: String | null
+}
+
+### `/user-coves`
+
+Retrieves a list of all coves that the authenticated user is a member of.
+
+Returns:
+* coves: Array<{
+  * id: String
+  * name: String
+  * coverPhoto: {
+    * id: String
+    * url: String
+  } | null
+}>
+
+### `/event`
+
+Retrieves detailed information about a specific event. User must be a member of the event's cove.
+
+Takes Query String Parameters:
+* eventId: String (required) - ID of the event to retrieve
+
+Returns:
+* event: {
+  * id: String
+  * name: String
+  * description: String | null
+  * date: String
+  * location: String
+  * coveId: String
+  * host: {
+    * id: String
+    * name: String
+  }
+  * cove: {
+    * id: String
+    * name: String
+  }
+  * rsvpStatus: "GOING" | "MAYBE" | "NOT_GOING" | null
+  * coverPhoto: {
+    * id: String
+    * url: String
+  } | null
+  * isHost: Boolean - Indicates whether the current user is the host of this event
 } 

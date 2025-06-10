@@ -10,6 +10,7 @@ struct FriendsView: View {
     @EnvironmentObject var appController: AppController
 
     // TODO: connect to API once endpoint is finished
+    // For now, just pull from people in the same coves (implement get cove members API)
     @State private var mutuals: [FriendDTO] = [
         FriendDTO(
             id: "1",
@@ -58,6 +59,13 @@ struct FriendsView: View {
 
             VStack(spacing: 0) {
                 VStack(spacing: 4) {
+                    HStack {
+                        Button { appController.path.removeLast() } label: {
+                            Images.backArrow
+                        }
+                        Spacer()
+                    }
+                    
                     Text("explore")
                         .font(.LibreBodoniBold(size: 25))
                         .foregroundStyle(Colors.primaryDark)
@@ -96,15 +104,21 @@ struct FriendsView: View {
                     VStack(spacing: 30) {
                         ForEach(mutuals) { friend in
                             HStack(spacing: 16) {
-                                // Profile image (if URL exists, load with AsyncImage; otherwise placeholder)
+                                // Profile image (if URL exists, load with CachedAsyncImage; otherwise placeholder)
                                 if let url = friend.profilePhotoUrl {
-                                    AsyncImage(url: url) { image in
+                                    CachedAsyncImage(
+                                        url: url
+                                    ) { image in
                                         image
                                             .resizable()
                                             .scaledToFill()
                                     } placeholder: {
                                         Circle()
                                             .fill(Color.gray.opacity(0.3))
+                                            .overlay(
+                                                ProgressView()
+                                                    .tint(.gray)
+                                            )
                                     }
                                     .frame(width: 60, height: 60)
                                     .clipShape(Circle())
@@ -117,14 +131,14 @@ struct FriendsView: View {
                                         .clipShape(Circle())
                                 }
 
-                                // Friend’s name
+                                // Friend's name
                                 Text(friend.name)
                                     .font(.LibreBodoni(size: 16))
                                     .foregroundStyle(Color.black)
 
                                 Spacer()
 
-                                // “Request” / “Pending” button
+                                // "Request" / "Pending" button
                                 if pendingRequests.contains(friend.friendshipId) {
                                     Text("pending")
                                         .font(.LibreBodoni(size: 12))
@@ -135,7 +149,7 @@ struct FriendsView: View {
                                         .cornerRadius(11)
                                 } else {
                                     Button {
-                                        // Mark this friendshipId as “pending”
+                                        // Mark this friendshipId as "pending"
                                         pendingRequests.insert(friend.friendshipId)
 
                                         // TODO: make api call here

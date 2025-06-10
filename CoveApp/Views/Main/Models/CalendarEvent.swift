@@ -11,42 +11,69 @@ struct Event: Decodable {
     let name: String
     let description: String?
     let date: String
-    let location: String?
+    let location: String
     let coveId: String
-    let coveName: String?
-    let hostId: String
-    let hostName: String?
+    let host: Host
+    let cove: Cove
     let rsvpStatus: String?
-    let createdAt: String
     let coverPhoto: CoverPhoto?
+    let isHost: Bool
     
     var eventDate: Date {
         let inputFormatter = DateFormatter()
         inputFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
-//        inputFormatter.timeZone = TimeZone(secondsFromGMT: 0) // "Z" = UTC
         
         guard let fullDate = inputFormatter.date(from: date) else {
+            // Return a default date if parsing fails
             return Date()
         }
-        // Strip time using Calendar in current timezone
-        var calendar = Calendar.current
-        calendar.timeZone = TimeZone(abbreviation: "UTC")!
-        let dateOnly = calendar.startOfDay(for: fullDate)
-        print(dateOnly)
-        return dateOnly
+        return fullDate
+    }
+    
+    var formattedDate: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
+        
+        guard let date = formatter.date(from: self.date) else {
+            return "TBD"
+        }
+        
+        formatter.dateFormat = "MMMM d, yyyy"
+        return formatter.string(from: date)
+    }
+    
+    var formattedTime: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
+        
+        guard let date = formatter.date(from: self.date) else {
+            return "TBD"
+        }
+        
+        formatter.dateFormat = "h:mm a"
+        return formatter.string(from: date)
+    }
+    
+    struct Host: Decodable {
+        let id: String
+        let name: String
+    }
+    
+    struct Cove: Decodable {
+        let id: String
+        let name: String
+        let coverPhoto: CoverPhoto?
     }
 }
 
 struct CoverPhoto: Decodable {
-    let id: String?
-    let url: String?
-    
+    let id: String
+    let url: String
 }
 
 struct Pagination: Decodable {
     let hasMore: Bool
     let nextCursor: String?
-    
 }
 
 struct EventsResponse: Decodable {
@@ -55,6 +82,16 @@ struct EventsResponse: Decodable {
 }
 
 struct CreateEventResponse: Decodable {
-    let event: Event?
-    let message: String?
+    let message: String
+    let event: CreatedEvent
+}
+
+struct CreatedEvent: Decodable {
+    let id: String
+    let name: String
+    let description: String?
+    let date: String
+    let location: String
+    let coveId: String
+    let createdAt: String
 }

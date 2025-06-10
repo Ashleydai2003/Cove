@@ -1,0 +1,10 @@
+{
+  "path": "/event",
+  "queryStringParameters": {
+    "eventId": "cmb77a64d000ijs086d8sifig"
+  },
+  "httpMethod": "GET",
+  "headers": {
+    "Authorization": "Bearer test-token"
+  }
+} 
