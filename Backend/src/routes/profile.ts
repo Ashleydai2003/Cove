@@ -47,7 +47,11 @@ export const handleProfile = async (event: APIGatewayProxyEvent): Promise<APIGat
       },
       include: {
         profile: true,
-        photos: true
+        photos: true,
+        friendships1: true,
+        friendships2: true,
+        receivedFriendRequests: true,
+        coveMemberships: true
       }
     });
 
@@ -60,19 +64,24 @@ export const handleProfile = async (event: APIGatewayProxyEvent): Promise<APIGat
       };
     }
 
+    // Calculate counts
+    const friendCount = userProfile.friendships1.length + userProfile.friendships2.length;
+    const requestCount = userProfile.receivedFriendRequests.length;
+    const coveCount = userProfile.coveMemberships.length;
+
     // Step 6: Get S3 URLs for all photos
     const photoUrls = await Promise.all(
       userProfile.photos.map(async (photo) => {
-        const bucketName = process.env.USER_IMAGE_BUCKET_NAME;
-        if (!bucketName) {
-          throw new Error('USER_IMAGE_BUCKET_NAME environment variable is not set');
+        const bucketUrl = process.env.USER_IMAGE_BUCKET_URL;
+        if (!bucketUrl) {
+          throw new Error('USER_IMAGE_BUCKET_URL environment variable is not set');
         }
 
         const s3Key = `${targetUserId}/${photo.id}.jpg`;
         
         // Generate a presigned URL that expires in 1 hour
         const command = new GetObjectCommand({
-          Bucket: bucketName,
+          Bucket: process.env.USER_IMAGE_BUCKET_NAME,
           Key: s3Key
         });
         
@@ -95,7 +104,12 @@ export const handleProfile = async (event: APIGatewayProxyEvent): Promise<APIGat
           phone: userProfile.phone,
           onboarding: userProfile.onboarding,
           ...userProfile.profile, // Include all profile fields
-          photos: photoUrls
+          photos: photoUrls,
+          stats: {
+            friendCount,
+            requestCount,
+            coveCount
+          }
         }
       })
     };

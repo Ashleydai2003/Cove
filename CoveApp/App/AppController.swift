@@ -28,6 +28,7 @@ enum OnboardingRoute: Hashable {
     case yourInvites
     case home
     case membersList
+    case eventPost(eventId: String)
 }
 
 /// AppController: Manages shared application state and business logic

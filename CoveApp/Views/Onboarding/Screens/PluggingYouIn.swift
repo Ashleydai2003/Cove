@@ -108,9 +108,36 @@ struct PluggingYouIn: View {
                     }.resume()
                 }
                 
+                // Fetch user coves after profile is fetched
+                fetchUserCoves()
+                
             case .failure(let error):
                 errorMessage = "Failed to fetch profile: \(error.localizedDescription)"
             }
         }
     }
+    
+    private func fetchUserCoves() {
+        NetworkManager.shared.get(endpoint: "/user-coves") { (result: Result<UserCovesResponse, NetworkError>) in
+            switch result {
+            case .success(let response):
+                // Store cove IDs in UserDefaults
+                let coveIds = response.coves.map { $0.id }
+                UserDefaults.standard.set(coveIds, forKey: "user_cove_ids")
+            case .failure(let error):
+                errorMessage = "Failed to fetch user coves: \(error.localizedDescription)"
+            }
+        }
+    }
+}
+
+// Response model for user coves
+struct UserCovesResponse: Decodable {
+    let coves: [Cove]
+}
+
+struct Cove: Decodable {
+    let id: String
+    let name: String
+    let coverPhoto: CoverPhoto?
 }
