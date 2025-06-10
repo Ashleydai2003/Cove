@@ -6,6 +6,8 @@
 
 import SwiftUI
 
+let tabIconSize: CGFloat = 10
+
 struct HomeView: View {
     @State private var tabSelection = 1
     
@@ -16,24 +18,32 @@ struct HomeView: View {
             UpcomingEventsView()
                 .tag(1)
                 .tabItem {
-                    Image("tab1").renderingMode(.original)
+                    Image("tab2")
+                        .renderingMode(
+                            .original)
                 }
             
-            CreateEventView()
+            CalendarView()
                 .tag(2)
                 .tabItem {
-                    Image("tab2").renderingMode(.original)
+                    Image("calendar").renderingMode(.original)
                 }
             
             FeedView()
                 .tag(3)
                 .tabItem {
-                    Image("tab3").renderingMode(.original)
+                    Image("cove").renderingMode(.original)
+                }
+            
+            FriendsView()
+                .tag(4)
+                // TODO: Change default image/connect to backend
+                .tabItem {
+                    Image("friends").renderingMode(.original)
                 }
             
             ProfileView()
-                .tag(4)
-                // TODO: Change default image/connect to backend
+                .tag(5)
                 .tabItem {
 //                    if let imageData = UserDefaults.standard.data(forKey: "user_profile_image"), let image = UIImage(data: imageData) {
 //                        Image(uiImage: image)
