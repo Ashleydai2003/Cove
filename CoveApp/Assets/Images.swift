@@ -21,5 +21,9 @@ enum Images {
     static let pencilEdit = Image("pencil-edit")
     static let profileActivity1 = Image("profile-activity-1")
     static let profileActivity2 = Image("profile-activity-2")
+    static let dms = Image("dms-icon")
+    static let coves = Image("coves-icon")
+    static let home = Image("home_icon")
+    static let magnifyingglass = Image("magnifyingglass-icon")
 }
 
