@@ -116,15 +116,36 @@ export const handleContacts = async (event: APIGatewayProxyEvent): Promise<APIGa
       })
     );
 
-    // Return list of matching contacts
-    const response = {
+    // Return success response with contacts and pagination info
+    const hasMore = false; // Assuming no more results
+    const contactsToReturn = contacts.slice(0, 10); // Assuming a limit of 10 contacts
+    return {
       statusCode: 200,
       body: JSON.stringify({
-        contacts
+        contacts: contactsToReturn.map(contact => {
+          // Get S3 bucket URL from environment variables
+          const bucketUrl = process.env.USER_IMAGE_BUCKET_URL;
+          if (!bucketUrl) {
+            throw new Error('USER_IMAGE_BUCKET_URL environment variable is not set');
+          }
+          
+          // Get the contact's profile photo URL
+          const profilePhotoUrl = contact.profilePhotoUrl ? 
+            `${bucketUrl}/${contact.id}/${contact.profilePhotoUrl}.jpg` : 
+            null;
+          
+          return {
+            id: contact.id,
+            name: contact.name,
+            profilePhotoUrl
+          };
+        }),
+        pagination: {
+          hasMore,
+          nextCursor: hasMore ? contacts[contacts.length - 2].id : null
+        }
       })
     };
-    console.log('Contacts response:', response);
-    return response;
   } catch (error) {
     console.error('Contacts route error:', error);
     const errorResponse = {

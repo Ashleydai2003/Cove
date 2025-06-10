@@ -55,6 +55,9 @@ resource "aws_lambda_function" "my_lambda" {
       USER_IMAGE_BUCKET_NAME = aws_s3_bucket.user_images.id
       COVE_IMAGE_BUCKET_NAME = aws_s3_bucket.cove_images.id
       EVENT_IMAGE_BUCKET_NAME = aws_s3_bucket.event_images.id
+      USER_IMAGE_BUCKET_URL = "https://${aws_s3_bucket.user_images.bucket}.s3.amazonaws.com"
+      COVE_IMAGE_BUCKET_URL = "https://${aws_s3_bucket.cove_images.bucket}.s3.amazonaws.com"
+      EVENT_IMAGE_BUCKET_URL = "https://${aws_s3_bucket.event_images.bucket}.s3.amazonaws.com"
     }
   }
   

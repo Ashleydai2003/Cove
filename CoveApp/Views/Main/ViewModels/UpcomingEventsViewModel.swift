@@ -10,12 +10,50 @@ final class UpcomingEventsViewModel: BaseViewModel {
     
     @Published var events: [Event] = []
     @Published var groupedEvent: [Date: [Event]]?
+    @Published var nextCursor: String?
+    @Published var hasMore: Bool = false
+    @Published var isLoading: Bool = false
     
-    func fetchUpcomingEvents() {
-        let response: EventsResponse = Bundle.main.decode("CoveEvents.json")
+    func fetchUpcomingEvents(cursor: String? = nil) {
+        guard !isLoading else { return }
         
-        groupedEvent = Dictionary(grouping: response.events ?? []) { event in
-            event.eventDate
+        isLoading = true
+        let parameters: [String: Any] = [
+            "limit": 10,
+            "cursor": cursor as Any
+        ]
+        
+        NetworkManager.shared.get(endpoint: "/calendar-events", parameters: parameters) { [weak self] (result: Result<EventsResponse, NetworkError>) in
+            guard let self = self else { return }
+            
+            self.isLoading = false
+            
+            switch result {
+            case .success(let response):
+                if cursor == nil {
+                    // First page, replace existing data
+                    self.events = response.events ?? []
+                } else {
+                    // Append new events to existing data
+                    self.events.append(contentsOf: response.events ?? [])
+                }
+                
+                self.groupedEvent = Dictionary(grouping: self.events) { event in
+                    event.eventDate
+                }
+                self.hasMore = response.pagination?.hasMore ?? false
+                self.nextCursor = response.pagination?.nextCursor
+                
+            case .failure(let error):
+                print("Error fetching events: \(error.localizedDescription)")
+                // TODO: Handle error appropriately
+            }
+        }
+    }
+    
+    func loadMoreEventsIfNeeded() {
+        if hasMore, let cursor = nextCursor {
+            fetchUpcomingEvents(cursor: cursor)
         }
     }
     
