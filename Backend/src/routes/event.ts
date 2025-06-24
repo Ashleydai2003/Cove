@@ -370,6 +370,7 @@ export const handleGetCoveEvents = async (event: APIGatewayProxyEvent): Promise<
   }
 };
 
+// TODO: change this to get only the events they rsvped to or recommended 
 // Get all events for a user's calendar (events from coves they're members of)
 // This endpoint handles retrieving all events from coves the user is a member of with the following requirements:
 // 1. User must be authenticated

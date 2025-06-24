@@ -196,7 +196,7 @@ struct UpcomingEventsView: View {
 
 struct UpcomingEventCellView: View {
     
-    var event: Event
+    var event: CalendarEvent
     
     var body: some View {
         HStack(spacing: 16) {

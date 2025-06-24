@@ -26,7 +26,8 @@ import {
   handleDeleteUser,
   handleDeleteEvent,
   handleGetEvent,
-  handleGetUserCoves
+  handleGetUserCoves,
+  handleUpdateEventRSVP,
 } from './routes';
 
 export const handler = async (
@@ -83,6 +84,8 @@ export const handler = async (
         return handleGetEvent(event);
       case '/user-coves':
         return handleGetUserCoves(event);
+      case '/update-event-rsvp':
+        return handleUpdateEventRSVP(event);
       default:
         // Handle common web standard files
         switch (event.path) {
