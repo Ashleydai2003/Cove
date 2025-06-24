@@ -8,8 +8,8 @@ import Foundation
 
 final class UpcomingEventsViewModel: BaseViewModel {
     
-    @Published var events: [Event] = []
-    @Published var groupedEvent: [Date: [Event]]?
+    @Published var events: [CalendarEvent] = []
+    @Published var groupedEvent: [Date: [CalendarEvent]]?
     @Published var nextCursor: String?
     @Published var hasMore: Bool = false
     @Published var isLoading: Bool = false
@@ -18,18 +18,48 @@ final class UpcomingEventsViewModel: BaseViewModel {
         guard !isLoading else { return }
         
         isLoading = true
-        let parameters: [String: Any] = [
-            "limit": 10,
-            "cursor": cursor as Any
+        
+        // Build parameters properly - only include cursor if it's not nil
+        var parameters: [String: Any] = [
+            "limit": 10
         ]
         
-        NetworkManager.shared.get(endpoint: "/calendar-events", parameters: parameters) { [weak self] (result: Result<EventsResponse, NetworkError>) in
+        if let cursor = cursor {
+            parameters["cursor"] = cursor
+        }
+        
+        print("🔍 UpcomingEventsViewModel: Calling /calendar-events with parameters: \(parameters)")
+        
+        NetworkManager.shared.get(endpoint: "/calendar-events", parameters: parameters) { [weak self] (result: Result<CalendarEventsResponse, NetworkError>) in
             guard let self = self else { return }
             
             self.isLoading = false
             
             switch result {
             case .success(let response):
+                print("✅ UpcomingEventsViewModel: Successfully received response")
+                print("📊 UpcomingEventsViewModel: Events count: \(response.events?.count ?? 0)")
+                print("📄 UpcomingEventsViewModel: Pagination - hasMore: \(response.pagination?.hasMore ?? false), nextCursor: \(response.pagination?.nextCursor ?? "nil")")
+                
+                // Log each event for debugging
+                if let events = response.events {
+                    print("📋 UpcomingEventsViewModel: Event details:")
+                    for (index, event) in events.enumerated() {
+                        print("  Event \(index + 1):")
+                        print("    ID: \(event.id)")
+                        print("    Name: \(event.name)")
+                        print("    Date: \(event.date)")
+                        print("    Location: \(event.location)")
+                        print("    CoveId: \(event.coveId)")
+                        print("    CoveName: \(event.coveName)")
+                        print("    HostId: \(event.hostId)")
+                        print("    HostName: \(event.hostName)")
+                        print("    RSVPStatus: \(event.rsvpStatus ?? "nil")")
+                        print("    CoverPhoto: \(event.coverPhoto?.url ?? "nil")")
+                        print("    ---")
+                    }
+                }
+                
                 if cursor == nil {
                     // First page, replace existing data
                     self.events = response.events ?? []
@@ -45,7 +75,7 @@ final class UpcomingEventsViewModel: BaseViewModel {
                 self.nextCursor = response.pagination?.nextCursor
                 
             case .failure(let error):
-                print("Error fetching events: \(error.localizedDescription)")
+                print("❌ UpcomingEventsViewModel: Error fetching events: \(error.localizedDescription)")
                 // TODO: Handle error appropriately
             }
         }

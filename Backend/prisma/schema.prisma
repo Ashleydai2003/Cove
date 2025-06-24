@@ -161,6 +161,7 @@ model Event {
   coverPhoto  EventImage? @relation("EventCoverPhoto", fields: [coverPhotoID], references: [id])
 }
 
+// TODO: Change RSVP model to only have GOING and MAYBE 
 // Event RSVP model for tracking attendees
 model EventRSVP {
   id        String   @id @default(cuid())
