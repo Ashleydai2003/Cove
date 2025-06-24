@@ -1,0 +1,9 @@
+{
+  "httpMethod": "POST",
+  "path": "/send-friend-request",
+  "headers": {
+    "Authorization": "Bearer test-token"
+  },
+  "body": "{\"toUserIds\":[\"rVlfUnfbUXeM2rgoXi3HsAk8dvt1\"]}",
+  "isBase64Encoded": false
+} 

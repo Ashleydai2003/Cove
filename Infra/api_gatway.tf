@@ -38,10 +38,23 @@ resource "aws_apigatewayv2_integration" "api_integration" {
 }
 
 # Routes define how API Gateway should handle incoming requests
-# Tells API_gateway which integration to use for different HTTP methods and paths
-resource "aws_apigatewayv2_route" "api_route" {
+# Explicitly define public routes
+resource "aws_apigatewayv2_route" "login_route" {
   api_id    = aws_apigatewayv2_api.api.id
-  route_key = "ANY /{proxy+}"  # This creates a catch-all route for any HTTP method and path
+  route_key = "POST /login"
+  target    = "integrations/${aws_apigatewayv2_integration.api_integration.id}"
+}
+
+resource "aws_apigatewayv2_route" "profile_route" {
+  api_id    = aws_apigatewayv2_api.api.id
+  route_key = "GET /profile"
+  target    = "integrations/${aws_apigatewayv2_integration.api_integration.id}"
+}
+
+# Add a catch-all route that returns 404 for undefined routes
+resource "aws_apigatewayv2_route" "catch_all_route" {
+  api_id    = aws_apigatewayv2_api.api.id
+  route_key = "ANY /{proxy+}"
   target    = "integrations/${aws_apigatewayv2_integration.api_integration.id}"
 }
 

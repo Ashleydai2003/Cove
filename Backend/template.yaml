@@ -1,0 +1,31 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Resources:
+  FindFriendsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: dist/
+      Handler: index.handler
+      Runtime: nodejs18.x
+      Events:
+        FriendsMatch:
+          Type: Api
+          Properties:
+            Path: /friends/match
+            Method: post
+        Login:
+          Type: Api
+          Properties:
+            Path: /login
+            Method: post
+        Profile:
+          Type: Api
+          Properties:
+            Path: /profile
+            Method: get
+        TestDatabase:
+          Type: Api
+          Properties:
+            Path: /test-database
+            Method: post 

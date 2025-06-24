@@ -1,42 +1,50 @@
-import { APIGatewayProxyEvent } from 'aws-lambda';
+import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import * as admin from 'firebase-admin';
+import { initializeFirebase } from './firebase'; // Import the init function
+
+// Auth API request like this:
+// First, authenticate the request
+// const authResult = await authMiddleware(event);
+
+// Define the type for an authenticated event
+type AuthenticatedEvent = APIGatewayProxyEvent & {
+  user: admin.auth.DecodedIdToken;
+};
 
 /**
- * Authentication Middleware Module
+ * Verifies a Firebase ID token from the request headers
  * 
- * This module provides Firebase authentication functionality for AWS Lambda functions.
- * It includes utilities to verify Firebase tokens and protect API endpoints.
+ * This function extracts the Firebase ID token from the Authorization header,
+ * verifies its authenticity using Firebase Admin SDK, and returns the decoded token.
  * 
- * @module auth
- * @requires aws-lambda
- * @requires firebase-admin 
+ * @param {APIGatewayProxyEvent} event - The AWS Lambda API Gateway event
+ * @returns {Promise<admin.auth.DecodedIdToken>} The decoded Firebase ID token
+ * @throws {Error} If no authorization header is present or token verification fails
  */
-
-// Initialize Firebase Admin
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-    }),
-  });
-}
-
 export const verifyFirebaseToken = async (event: APIGatewayProxyEvent) => {
+  await initializeFirebase(); // Always make sure Firebase is initialized before using
   try {
+    // Get the Authorization header, checking both cases
     const authHeader = event.headers.Authorization || event.headers.authorization;
     
     if (!authHeader) {
       throw new Error('No authorization header');
     }
 
+    // Validate Bearer token format
+    if (!authHeader.startsWith('Bearer ')) {
+      throw new Error('Invalid authorization format. Must be "Bearer <token>"');
+    }
+
+    // Extract the token from the Bearer scheme
     const token = authHeader.split('Bearer ')[1];
     
     if (!token) {
       throw new Error('No token provided');
     }
 
+    // Verify the token using Firebase Admin SDK
+    // This checks if the token is valid, not expired, and properly signed
     const decodedToken = await admin.auth().verifyIdToken(token);
     return decodedToken;
   } catch (error) {
@@ -45,14 +53,29 @@ export const verifyFirebaseToken = async (event: APIGatewayProxyEvent) => {
   }
 };
 
-export const authMiddleware = async (event: APIGatewayProxyEvent) => {
+/**
+ * Authentication middleware for API Gateway requests
+ * 
+ * This middleware verifies the Firebase ID token in the request and:
+ * - If valid: Adds the decoded user information to the event object
+ * - If invalid: Returns a 401 Unauthorized response
+ * 
+ * @param {APIGatewayProxyEvent} event - The AWS Lambda API Gateway event
+ * @returns {Promise<APIGatewayProxyResult | AuthenticatedEvent>} The modified event with user info or an error response
+ */
+export const authMiddleware = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult | AuthenticatedEvent> => {
   try {
+    // Verify the token and get user information
     const decodedToken = await verifyFirebaseToken(event);
+    
+    // Add the decoded user information to the event object
+    // This allows API handlers to access user data without re-verifying
     return {
       ...event,
       user: decodedToken,
     };
   } catch (error) {
+    // Return a 401 Unauthorized response if token verification fails
     return {
       statusCode: 401,
       body: JSON.stringify({

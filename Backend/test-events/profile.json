@@ -1,0 +1,10 @@
+{
+  "httpMethod": "GET",
+  "path": "/profile",
+  "queryStringParameters": {
+    "userId": "test-user-123"
+  },
+  "headers": {
+    "Authorization": "Bearer test-token"
+  }
+} 

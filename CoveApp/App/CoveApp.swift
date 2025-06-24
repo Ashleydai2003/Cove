@@ -23,6 +23,20 @@ struct CoveApp: App {
         Bundle(path: "/Applications/InjectionIII.app/Contents/Resources/iOSInjection.bundle")?.load()
         #endif
         
+        let tabBarAppearance = UITabBarAppearance()
+        tabBarAppearance.configureWithOpaqueBackground()
+        tabBarAppearance.backgroundColor = UIColor(named: "CovePrimaryDarkColor")
+        
+        // Selected item color
+        UITabBar.appearance().tintColor = UIColor.systemBlue
+        // Unselected item color
+        UITabBar.appearance().unselectedItemTintColor = UIColor.gray
+        UITabBar.appearance().standardAppearance = tabBarAppearance
+        // For scroll edge behavior
+        if #available(iOS 15.0, *) {
+            UITabBar.appearance().scrollEdgeAppearance = tabBarAppearance
+        }
+        
         // For development: always reset onboarding status
         UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
         

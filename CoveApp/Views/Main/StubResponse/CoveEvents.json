@@ -1,0 +1,59 @@
+{
+  "events": [
+    {
+      "id": "cmb77a64d000ijs086d8sifig",
+      "name": "Winter Beach Party",
+      "description": "Join us for a fun day at the beach with games and BBQ!",
+      "date": "2024-07-15T15:00:00.000Z",
+      "location": "Santa Monica Beach",
+      "coveId": "cmb776s5r000ajs0812w2ncmq",
+      "coveName": "Stanford Bay Area Alumni",
+      "hostId": "VLHeyZaXJaZASPXLHNU4fhxALO62",
+      "hostName": "admin user",
+      "rsvpStatus": null,
+      "createdAt": "2025-05-28T00:21:50.845Z",
+      "coverPhoto": {
+        "id": "cmb77a64x000jjs08yhtgc246",
+        "url": "undefined/cmb77a64d000ijs086d8sifig/cmb77a64x000jjs08yhtgc246.jpg"
+      }
+    },
+    {
+      "id": "cmb77a64d000ijs086d8sifiq",
+      "name": "Winter Beach Party 1",
+      "description": "Join us for a fun day at the beach with games and BBQ!",
+      "date": "2024-07-15T20:30:00.000Z",
+      "location": "Santa Monica Beach",
+      "coveId": "cmb776s5r000ajs0812w2ncmq",
+      "coveName": "Stanford Bay Area Alumni",
+      "hostId": "VLHeyZaXJaZASPXLHNU4fhxALO62",
+      "hostName": "admin user",
+      "rsvpStatus": null,
+      "createdAt": "2025-05-28T00:21:50.845Z",
+      "coverPhoto": {
+        "id": "cmb77a64x000jjs08yhtgc246",
+        "url": "undefined/cmb77a64d000ijs086d8sifig/cmb77a64x000jjs08yhtgc246.jpg"
+      }
+    },
+    {
+      "id": "cmbde0y8v0001lc08dvew7sf4",
+      "name": "Riverfront carnival",
+      "description": "Join us for a fun day at the beach with games and BBQ!",
+      "date": "2024-06-13T18:00:00.000Z",
+      "location": "Santa Monica Beach",
+      "coveId": "cmb776s5r000ajs0812w2ncmq",
+      "coveName": "Stanford Bay Area Alumni",
+      "hostId": "VLHeyZaXJaZASPXLHNU4fhxALO62",
+      "hostName": "admin user",
+      "rsvpStatus": null,
+      "createdAt": "2025-05-28T00:21:50.845Z",
+      "coverPhoto": {
+        "id": "cmb77a64x000jjs08yhtgc246",
+        "url": "undefined/cmb77a64d000ijs086d8sifig/cmb77a64x000jjs08yhtgc246.jpg"
+      }
+    }
+  ],
+  "pagination": {
+    "hasMore": false,
+    "nextCursor": null
+  }
+}
