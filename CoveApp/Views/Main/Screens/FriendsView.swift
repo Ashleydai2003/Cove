@@ -124,7 +124,7 @@ struct FriendsView: View {
                                     .clipShape(Circle())
                                 } else {
                                     // PLACEHOLDER
-                                    Images.smily
+                                    Images.profilePlaceholder
                                         .resizable()
                                         .scaledToFill()
                                         .frame(width: 60, height: 60)
