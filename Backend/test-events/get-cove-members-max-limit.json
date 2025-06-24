@@ -1,0 +1,11 @@
+{
+  "httpMethod": "GET",
+  "path": "/cove-members",
+  "queryStringParameters": {
+    "coveId": "test-cove-id",
+    "limit": "100"
+  },
+  "headers": {
+    "Authorization": "Bearer test_token"
+  }
+} 

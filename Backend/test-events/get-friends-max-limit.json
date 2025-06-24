@@ -1,0 +1,10 @@
+{
+  "httpMethod": "GET",
+  "path": "/friends",
+  "queryStringParameters": {
+    "limit": "50"
+  },
+  "headers": {
+    "Authorization": "Bearer test_token"
+  }
+} 

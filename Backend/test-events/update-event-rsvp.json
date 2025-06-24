@@ -1,0 +1,103 @@
+{
+  "tests": [
+    {
+      "name": "Update RSVP to GOING",
+      "method": "POST",
+      "endpoint": "/update-event-rsvp",
+      "body": {
+        "eventId": "cmb776s5r000ajs0812w2ncmq",
+        "status": "GOING"
+      },
+      "expectedStatus": 200,
+      "expectedResponse": {
+        "message": "RSVP status updated successfully",
+        "rsvp": {
+          "status": "GOING"
+        }
+      }
+    },
+    {
+      "name": "Update RSVP to MAYBE",
+      "method": "POST",
+      "endpoint": "/update-event-rsvp",
+      "body": {
+        "eventId": "cmb776s5r000ajs0812w2ncmq",
+        "status": "MAYBE"
+      },
+      "expectedStatus": 200,
+      "expectedResponse": {
+        "message": "RSVP status updated successfully",
+        "rsvp": {
+          "status": "MAYBE"
+        }
+      }
+    },
+    {
+      "name": "Update RSVP to NOT_GOING",
+      "method": "POST",
+      "endpoint": "/update-event-rsvp",
+      "body": {
+        "eventId": "cmb776s5r000ajs0812w2ncmq",
+        "status": "NOT_GOING"
+      },
+      "expectedStatus": 200,
+      "expectedResponse": {
+        "message": "RSVP status updated successfully",
+        "rsvp": {
+          "status": "NOT_GOING"
+        }
+      }
+    },
+    {
+      "name": "Invalid RSVP status",
+      "method": "POST",
+      "endpoint": "/update-event-rsvp",
+      "body": {
+        "eventId": "cmb776s5r000ajs0812w2ncmq",
+        "status": "INVALID"
+      },
+      "expectedStatus": 400,
+      "expectedResponse": {
+        "message": "Invalid RSVP status. Must be one of: GOING, MAYBE, NOT_GOING"
+      }
+    },
+    {
+      "name": "Missing event ID",
+      "method": "POST",
+      "endpoint": "/update-event-rsvp",
+      "body": {
+        "status": "GOING"
+      },
+      "expectedStatus": 400,
+      "expectedResponse": {
+        "message": "Event ID and RSVP status are required"
+      }
+    },
+    {
+      "name": "Non-existent event",
+      "method": "POST",
+      "endpoint": "/update-event-rsvp",
+      "body": {
+        "eventId": "non-existent-id",
+        "status": "GOING"
+      },
+      "expectedStatus": 404,
+      "expectedResponse": {
+        "message": "Event not found"
+      }
+    },
+    {
+      "name": "User not in cove",
+      "method": "POST",
+      "endpoint": "/update-event-rsvp",
+      "body": {
+        "eventId": "cmb776s5r000ajs0812w2ncmq",
+        "status": "GOING"
+      },
+      "expectedStatus": 403,
+      "expectedResponse": {
+        "message": "You must be a member of this cove to RSVP to its events"
+      }
+    }
+  ]
+} 

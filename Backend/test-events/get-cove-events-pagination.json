@@ -1,0 +1,12 @@
+{
+  "httpMethod": "GET",
+  "path": "/cove-events",
+  "queryStringParameters": {
+    "coveId": "test-cove-id",
+    "limit": "20",
+    "cursor": "last-event-id-from-previous-request"
+  },
+  "headers": {
+    "Authorization": "Bearer test-token"
+  }
+} 

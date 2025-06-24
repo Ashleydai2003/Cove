@@ -23,6 +23,12 @@
 **/.env.local
 **/.env.*.local
 
+# Docker
+# Docker-related files and directories
+**/docker-compose.override.yml
+**/.docker/
+**/docker-compose.*.yml
+
 # IDE and Editor Files
 # Configuration files specific to development environments
 # These are personal preferences and should not be shared

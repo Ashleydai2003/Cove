@@ -18,12 +18,42 @@ struct OnboardingFlow: View {
                         UserPhoneNumberView()
                     case .otpVerify:
                         OtpVerifyView()
+                    case .adminVerify:
+                        AdminVerifyView()
                     case .userDetails:
                         NamePageView()
                     case .birthdate:
                         BirthdateView()
-                    case .finished:
-                        EmptyView()
+                    case .userLocation:
+                        UserLocationView()
+                    case .almaMater:
+                        AlmaMaterView()
+                    case .moreAboutYou:
+                        MoreAboutYouView()
+                    case .hobbies:
+                        HobbiesView()
+                    case .bio:
+                        BioView()
+                    case .profilePics:
+                        ProfilePicView()
+                    case .mutuals:
+                        MutualsView()
+                    case .pluggingIn:
+                        PluggingYouIn()
+                    case .profile:
+                        ProfileView()
+                    case .exploreFriends:
+                        FriendsView()
+                    case .friendRequests:
+                        RequestsView()
+                    case .yourInvites:
+                        YourInvitesView()
+                    case .home:
+                        HomeView()
+                    case .membersList:
+                        EventMembersView()
+                    case .eventPost(let eventId):
+                        EventPostView(eventId: eventId)
                     }
                 }
         }
@@ -44,3 +74,4 @@ struct OnboardingBackgroundView: View {
             .ignoresSafeArea()
     }
 }
+

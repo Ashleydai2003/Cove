@@ -4,77 +4,127 @@
 // Currently, it is just a placeholder hello world function
 
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
-import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
-import { authMiddleware } from './middleware/auth';
+import {
+  handleProfile,
+  handleEditProfile,
+  handleLogin,
+  handleTestDatabase,
+  handleTestS3,
+  handleOnboard,
+  handleUserImage,
+  handleContacts,
+  handleCreateEvent,
+  handleCreateCove,
+  handleSendFriendRequest,
+  handleResolveFriendRequest,
+  handleGetCoveEvents,
+  handleGetCalendarEvents,
+  handleGetFriends,
+  handleGetFriendRequests,
+  handleGetCove,
+  handleGetCoveMembers,
+  handleDeleteUser,
+  handleDeleteEvent,
+  handleGetEvent,
+  handleGetUserCoves
+} from './routes';
 
 export const handler = async (
   event: APIGatewayProxyEvent,
   context: Context
 ): Promise<APIGatewayProxyResult> => {
   console.log('=== Lambda Function Start ===');
+  console.log('Path:', event.path);
   
   try {
-    // Initialize Secrets Manager client
-    const secretsManager = new SecretsManagerClient({
-      region: 'us-west-1'
-    });
-    
-    /*
-    // Get Firebase credentials from Secrets Manager
-    console.log('Retrieving Firebase credentials from Secrets Manager...');
-    const firebaseResponse = await secretsManager.send(
-      new GetSecretValueCommand({
-        SecretId: process.env.FIREBASE_SECRET_ARN
-      })
-    );
-    const firebaseCredentials = JSON.parse(firebaseResponse.SecretString || '{}');
-    
-    // Set Firebase environment variables
-    process.env.FIREBASE_PROJECT_ID = firebaseCredentials.project_id;
-    process.env.FIREBASE_CLIENT_EMAIL = firebaseCredentials.client_email;
-    process.env.FIREBASE_PRIVATE_KEY = firebaseCredentials.private_key;
+    // Route handling based on path
+    switch (event.path) {
+      case '/profile':
+        return handleProfile(event);
+      case '/login':
+        return handleLogin(event);
+      case '/test-database':
+        return handleTestDatabase(event);
+      case '/test-s3':
+        return handleTestS3(event);
+      case '/onboard':
+        return handleOnboard(event);
+      case '/userImage':
+        return handleUserImage(event);
+      case '/contacts':
+        return handleContacts(event);
+      case '/create-event':
+        return handleCreateEvent(event);
+      case '/create-cove':
+        return handleCreateCove(event);
+      case '/send-friend-request':
+        return handleSendFriendRequest(event);
+      case '/resolve-friend-request':
+        return handleResolveFriendRequest(event);
+      case '/cove-events':
+        return handleGetCoveEvents(event);
+      case '/calendar-events':
+        return handleGetCalendarEvents(event);
+      case '/friends':
+        return handleGetFriends(event);
+      case '/friend-requests':
+        return handleGetFriendRequests(event);
+      case '/cove':
+        return handleGetCove(event);
+      case '/cove-members':
+        return handleGetCoveMembers(event);
+      case '/edit-profile':
+        return handleEditProfile(event);
+      case '/delete-user':
+        return handleDeleteUser(event);
+      case '/delete-event':
+        return handleDeleteEvent(event);
+      case '/event':
+        return handleGetEvent(event);
+      case '/user-coves':
+        return handleGetUserCoves(event);
+      default:
+        // Handle common web standard files
+        switch (event.path) {
+          case '/robots.txt':
+            console.log('Robots.txt request');
+            return {
+              statusCode: 200,
+              headers: {
+                'Content-Type': 'text/plain'
+              },
+              body: 'User-agent: *\nDisallow: /'
+            };
+          case '/favicon.ico':
+          case '/apple-touch-icon-precomposed.png':
+          case '/apple-touch-icon.png':
+            console.log('Favicon/icon request:', event.path);
+            return {
+              statusCode: 204, // No content
+              body: ''
+            };
+        }
 
-    console.log('Successfully retrieved Firebase credentials');
-
-    // Authenticate request
-    const authResult = await authMiddleware(event);
-    if (authResult.statusCode === 401) {
-      return authResult;
+        // Check if the request is for a static asset
+        if (event.path && event.path.match(/\.(png|jpg|jpeg|gif|ico|svg)$/i)) {
+          console.log('Static asset request:', event.path);
+          return {
+            statusCode: 404,
+            body: JSON.stringify({ 
+              message: 'Static asset not found',
+              path: event.path
+            })
+          };
+        }
+        
+        return {
+          statusCode: 404,
+          body: JSON.stringify({ 
+            message: 'Not Found',
+            path: event.path
+          })
+        };
     }
-    */
-   
-    // Get database credentials
-    console.log('Retrieving database password from Secrets Manager...');
-    // Get database password from Secrets Manager
-    const dbResponse = await secretsManager.send(
-      new GetSecretValueCommand({
-        SecretId: process.env.RDS_MASTER_SECRET_ARN
-      })
-    );
-    console.log('Successfully retrieved database password');
-    
-    const { password } = JSON.parse(dbResponse.SecretString || '{}');
-    const encodedPassword = encodeURIComponent(password);
-
-    // Construct database URL for Prisma
-    const databaseUrl = `postgresql://${process.env.DB_USER}:${encodedPassword}@${process.env.DB_HOST}:5432/${process.env.DB_NAME}?schema=public&sslmode=require`;
-    process.env.DATABASE_URL = databaseUrl;
-    
-    // Import Prisma after setting DATABASE_URL
-    const prisma = (await import('./prisma/client')).default;
-
-    // Test connection with Prisma
-    console.log('Testing database connection...');
-    const result = await prisma.$queryRaw`SELECT 1`;
-    console.log('Database connection successful');
-
-    return {
-      statusCode: 200,
-      body: JSON.stringify({
-        message: 'Successfully connected to database',
-        queryResult: result
-      })
-    };
   } catch (error) {
     console.error('Error:', error instanceof Error ? error.message : 'Unknown error');
     console.error('Stack:', error instanceof Error ? error.stack : 'No stack trace');

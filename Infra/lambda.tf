@@ -51,6 +51,13 @@ resource "aws_lambda_function" "my_lambda" {
       DB_USER     = aws_db_instance.postgres.username
       DB_NAME     = aws_db_instance.postgres.db_name
       RDS_MASTER_SECRET_ARN = aws_db_instance.postgres.master_user_secret[0].secret_arn
+      FIREBASE_SECRET_ARN = data.aws_secretsmanager_secret.firebase_credentials.arn
+      USER_IMAGE_BUCKET_NAME = aws_s3_bucket.user_images.id
+      COVE_IMAGE_BUCKET_NAME = aws_s3_bucket.cove_images.id
+      EVENT_IMAGE_BUCKET_NAME = aws_s3_bucket.event_images.id
+      USER_IMAGE_BUCKET_URL = "https://${aws_s3_bucket.user_images.bucket}.s3.amazonaws.com"
+      COVE_IMAGE_BUCKET_URL = "https://${aws_s3_bucket.cove_images.bucket}.s3.amazonaws.com"
+      EVENT_IMAGE_BUCKET_URL = "https://${aws_s3_bucket.event_images.bucket}.s3.amazonaws.com"
     }
   }
   
