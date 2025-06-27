@@ -106,22 +106,38 @@ struct RequestsView: View {
                     // Requests list
                     ScrollView {
                         LazyVStack(spacing: 36) {
-                            ForEach(vm.requests) { req in
-                                RequestRowView(
-                                    name: req.sender.name,
-                                    imageUrl: req.sender.profilePhotoUrl,
-                                    onConfirm: { vm.accept(req) },
-                                    onDelete:  { vm.reject(req) }
-                                )
-                                .onAppear {
-                                    if req.id == vm.requests.last?.id {
-                                        vm.loadNextPage()
+                            if vm.requests.isEmpty && !vm.isLoading {
+                                // No requests message
+                                VStack(spacing: 16) {
+                                    Image(systemName: "person.2.slash")
+                                        .font(.system(size: 40))
+                                        .foregroundColor(.gray)
+                                    
+                                    Text("no requests yet!")
+                                        .font(.LibreBodoni(size: 16))
+                                        .foregroundColor(.gray)
+                                        .multilineTextAlignment(.center)
+                                }
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                .padding(.top, 100)
+                            } else {
+                                ForEach(vm.requests) { req in
+                                    RequestRowView(
+                                        name: req.sender.name,
+                                        imageUrl: req.sender.profilePhotoUrl,
+                                        onConfirm: { vm.accept(req) },
+                                        onDelete:  { vm.reject(req) }
+                                    )
+                                    .onAppear {
+                                        if req.id == vm.requests.last?.id {
+                                            vm.loadNextPage()
+                                        }
                                     }
                                 }
-                            }
-                            
-                            if vm.isLoading {
-                                ProgressView().padding()
+                                
+                                if vm.isLoading {
+                                    ProgressView().padding()
+                                }
                             }
                         }
                         .padding(.top, 30)
@@ -211,11 +227,11 @@ struct RequestRowView: View {
 struct RequestsView_Previews: PreviewProvider {
     // placeholder request DTOs
     static let sampleRequests: [RequestDTO] = [
-        .init(id: "1", sender: .init(id: "1", name: "angela nguyen", profilePhotoUrl: nil), createdAt: Date()),
-        .init(id: "2", sender: .init(id: "2", name: "willa r baker", profilePhotoUrl: nil), createdAt: Date()),
-        .init(id: "3", sender: .init(id: "3", name: "nina boord", profilePhotoUrl: nil), createdAt: Date()),
-        .init(id: "4", sender: .init(id: "4", name: "felix roberts", profilePhotoUrl: nil), createdAt: Date()),
-        .init(id: "5", sender: .init(id: "5", name: "tyler schuman", profilePhotoUrl: nil), createdAt: Date())
+        .init(id: "1", sender: .init(id: "1", name: "angela nguyen", profilePhotoUrl: nil), createdAt: "2025-01-01T00:00:00.000Z"),
+        .init(id: "2", sender: .init(id: "2", name: "willa r baker", profilePhotoUrl: nil), createdAt: "2025-01-01T00:00:00.000Z"),
+        .init(id: "3", sender: .init(id: "3", name: "nina boord", profilePhotoUrl: nil), createdAt: "2025-01-01T00:00:00.000Z"),
+        .init(id: "4", sender: .init(id: "4", name: "felix roberts", profilePhotoUrl: nil), createdAt: "2025-01-01T00:00:00.000Z"),
+        .init(id: "5", sender: .init(id: "5", name: "tyler schuman", profilePhotoUrl: nil), createdAt: "2025-01-01T00:00:00.000Z")
     ]
     
     static var previews: some View {

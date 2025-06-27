@@ -110,12 +110,6 @@ private struct NoMatchesView: View {
     }
 }
 
-// MARK: - Response model for friend request
-private struct FriendRequestResponse: Decodable {
-    let message: String
-    let requestId: String?
-}
-
 // MARK: - Main view
 struct AddFriendsSheet: View {
     let serverMatches: [ContactMatcher.MatchedUser]

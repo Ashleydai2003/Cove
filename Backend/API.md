@@ -105,42 +105,7 @@ Returns:
 
 ### `/send-friend-request`
 
-Sends a friend request to another user. The recipient must be a registered user.
-
-Takes Data Parameters:
-* recipientId: String (required) - The user ID of the recipient
-
-Returns:
-* message: String
-* request: {
-  * id: String
-  * senderId: String
-  * recipientId: String
-  * status: "PENDING"
-  * createdAt: DateTime
-}
-
-### `/resolve-friend-request`
-
-Accepts or rejects a friend request. Only the recipient can resolve their own friend requests.
-
-Takes Data Parameters:
-* requestId: String (required) - The ID of the friend request to resolve
-* action: "ACCEPT" | "REJECT" (required) - The action to take on the request
-
-Returns:
-* message: String
-* friendship: {
-  * id: String
-  * user1Id: String
-  * user2Id: String
-  * status: "ACCEPTED"
-  * createdAt: DateTime
-} (only returned if action is "ACCEPT")
-
-### `/friend-request`
-
-Sends friend requests to one or more users.
+Sends friend requests to one or more users. The recipients must be registered users.
 
 Takes Data Parameters:
 * toUserIds: String[] (required) - Array of user IDs to send requests to
@@ -149,13 +114,13 @@ Returns:
 * message: String
 * requestIds: String[] - IDs of created friend requests
 
-### `/friend-request/resolve`
+### `/resolve-friend-request`
 
-Accepts or rejects a friend request.
+Accepts or rejects a friend request. Only the recipient can resolve their own friend requests.
 
 Takes Data Parameters:
-* requestId: String (required) - ID of the friend request to resolve
-* accept: Boolean (required) - true to accept, false to reject
+* requestId: String (required) - The ID of the friend request to resolve
+* action: "ACCEPT" | "REJECT" (required) - The action to take on the request
 
 Returns:
 * message: String
@@ -222,6 +187,23 @@ Returns:
   * createdAt: DateTime
 }
 
+### `/join-cove`
+
+Joins a cove. User must not already be a member of the cove.
+
+Takes Data Parameters:
+* coveId: String (required) - ID of the cove to join
+
+Returns:
+* message: String
+* member: {
+  * id: String
+  * coveId: String
+  * userId: String
+  * role: "MEMBER"
+  * joinedAt: DateTime
+}
+
 ## GET
 
 ### `/profile`
@@ -276,9 +258,15 @@ Returns:
   * date: String
   * location: String
   * coveId: String
+  * coveName: String
+  * coveCoverPhoto: {
+    * id: String
+    * url: String
+  } | null
   * hostId: String
   * hostName: String
   * rsvpStatus: "GOING" | "MAYBE" | "NOT_GOING" | null
+  * goingCount: Number - Number of users who RSVP'd "GOING"
   * createdAt: DateTime
   * coverPhoto: {
     * id: String
@@ -307,9 +295,14 @@ Returns:
   * location: String
   * coveId: String
   * coveName: String
+  * coveCoverPhoto: {
+    * id: String
+    * url: String
+  } | null
   * hostId: String
   * hostName: String
   * rsvpStatus: "GOING" | "MAYBE" | "NOT_GOING" | null
+  * goingCount: Number - Number of users who RSVP'd "GOING"
   * createdAt: DateTime
   * coverPhoto: {
     * id: String
@@ -429,6 +422,26 @@ Returns:
   } | null
 }>
 
+### `/recommended-friends`
+
+Retrieves a paginated list of users who are in at least one cove with the current user. Excludes users who are already friends, have pending friend requests, or have received friend requests from the current user.
+
+Takes Query String Parameters:
+* cursor: String (optional) - ID of the last user from previous request
+* limit: Number (optional, defaults to 10, max 50)
+
+Returns:
+* users: Array<{
+  * id: String
+  * name: String
+  * profilePhotoUrl: String | null
+  * sharedCoveCount: Number - Number of coves they share with the current user
+}>
+* pagination: {
+  * hasMore: Boolean
+  * nextCursor: String | null
+}
+
 ### `/event`
 
 Retrieves detailed information about a specific event. User must be a member of the event's cove.
@@ -451,8 +464,20 @@ Returns:
   * cove: {
     * id: String
     * name: String
+    * coverPhoto: {
+      * id: String
+      * url: String
+    } | null
   }
   * rsvpStatus: "GOING" | "MAYBE" | "NOT_GOING" | null
+  * rsvps: Array<{
+    * id: String
+    * status: "GOING" | "MAYBE" | "NOT_GOING"
+    * userId: String
+    * userName: String
+    * profilePhotoID: String | null
+    * createdAt: DateTime
+  }> - All RSVPs for this event
   * coverPhoto: {
     * id: String
     * url: String

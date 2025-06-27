@@ -7,8 +7,10 @@ import SwiftUI
 
 // MARK: - Main View
 struct FeedView: View {
-    @StateObject private var viewModel = FeedViewModel()
+    @StateObject private var viewModel = CoveModel()
     @EnvironmentObject var appController: AppController
+
+    // TODO: admin can update cove cover photo 
     
     var body: some View {
         ZStack {
@@ -82,7 +84,7 @@ struct FeedView: View {
                         
                         // Events section
                         VStack(alignment: .leading, spacing: 16) {
-                            ForEach(viewModel.events) { event in
+                            ForEach(viewModel.events, id: \.id) { event in
                                 EventView(event: event)
                                     .onAppear {
                                         viewModel.loadMoreEventsIfNeeded(currentEvent: event)
@@ -136,12 +138,12 @@ struct FeedView: View {
 
 // MARK: - Event View
 struct EventView: View {
-    let event: FeedEvent
+    let event: CalendarEvent
     @EnvironmentObject private var appController: AppController
     
     var body: some View {
         Button {
-            appController.path.append(.eventPost(eventId: event.id))
+            appController.navigateToEvent(eventId: event.id)
         } label: {
             VStack(alignment: .leading) {
                 HStack {

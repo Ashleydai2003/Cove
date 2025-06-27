@@ -2,6 +2,8 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { authMiddleware } from '../middleware/auth';
 import { initializeDatabase } from '../config/database';
 
+
+// TODO: there should be a default user profile photo that is used if the user does not have a profile photo
 export const handleOnboard = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
     // Check if the request method is POST

@@ -6,13 +6,15 @@
 import SwiftUI
 
 // MARK: - View Model
+// TODO: insn't this the same as what is being down in feed? 
 class EventPostViewModel: ObservableObject {
     @Published var event: Event?
     @Published var isLoading = false
     @Published var errorMessage: String?
     @Published var isDeleting = false
+    @Published var isUpdatingRSVP = false
     
-    func fetchEventDetails(eventId: String) {
+    func fetchEventDetails(eventId: String, completion: (() -> Void)? = nil) {
         isLoading = true
         
         NetworkManager.shared.get(endpoint: "/event", parameters: ["eventId": eventId]) { [weak self] (result: Result<EventResponse, NetworkError>) in
@@ -24,8 +26,29 @@ class EventPostViewModel: ObservableObject {
                 switch result {
                 case .success(let response):
                     self.event = response.event
+                    completion?()
                 case .failure(let error):
                     self.errorMessage = error.localizedDescription
+                }
+            }
+        }
+    }
+    
+    func updateRSVP(eventId: String, status: String, completion: @escaping (Bool) -> Void) {
+        isUpdatingRSVP = true
+        
+        NetworkManager.shared.post(endpoint: "/update-event-rsvp", parameters: ["eventId": eventId, "status": status]) { [weak self] (result: Result<UpdateRSVPResponse, NetworkError>) in
+            guard let self = self else { return }
+            
+            DispatchQueue.main.async {
+                self.isUpdatingRSVP = false
+                
+                switch result {
+                case .success:
+                    completion(true)
+                case .failure(let error):
+                    self.errorMessage = error.localizedDescription
+                    completion(false)
                 }
             }
         }
@@ -61,12 +84,26 @@ struct DeleteEventResponse: Decodable {
     let message: String
 }
 
+struct UpdateRSVPResponse: Decodable {
+    let message: String
+    let rsvp: RSVPData
+    
+    struct RSVPData: Decodable {
+        let id: String
+        let status: String
+        let eventId: String
+        let userId: String
+        let createdAt: String
+    }
+}
+
 // MARK: - Main View
 struct EventPostView: View {
     let eventId: String
     @StateObject private var viewModel = EventPostViewModel()
     @EnvironmentObject var appController: AppController
     @State private var showingDeleteAlert = false
+    @State private var currentRSVPStatus: String?
     
     var body: some View {
         ZStack {
@@ -80,12 +117,21 @@ struct EventPostView: View {
                         // Back button and cove photo
                         HStack(alignment: .top) {
                             Button {
-                                // Always go back to the previous view
-                                appController.path.removeLast()
+                                // More robust navigation back
+                                print("Back button tapped. Navigation stack count: \(appController.path.count)")
+                                if !appController.path.isEmpty {
+                                    appController.path.removeLast()
+                                    print("Successfully removed last item from navigation stack")
+                                } else {
+                                    // Fallback: dismiss the view
+                                    // This handles cases where the navigation stack might be corrupted
+                                    print("Navigation stack empty, attempting to dismiss view")
+                                }
                             } label: {
                                 Images.backArrow
                             }
                             .padding(.top, 16)
+                            .disabled(viewModel.isUpdatingRSVP) // Disable during RSVP updates
                             
                             Spacer()
                             
@@ -185,23 +231,46 @@ struct EventPostView: View {
                                 .foregroundStyle(Colors.primaryDark)
                                 .font(.LibreBodoniBold(size: 18))
                             
-                            HStack {
-                                ForEach((1...4), id: \.self) { index in
-                                    Images.profilePlaceholder
-                                        .resizable()
-                                        .scaledToFill()
-                                        .frame(width: 62, height: 62)
-                                        .clipShape(Circle())
-                                }
-                                
-                                Text("+80")
-                                    .foregroundStyle(Colors.primaryDark)
-                                    .font(.LibreBodoniBold(size: 10))
-                                    .padding(.all, 8)
-                                    .overlay {
-                                        Circle()
-                                            .stroke(Colors.primaryDark, lineWidth: 1.0)
+                            // Filter RSVPs to only show "GOING" status
+                            let goingRsvps = event.rsvps.filter { $0.status == "GOING" }
+                            
+                            if goingRsvps.isEmpty {
+                                Text("no guests yet! send your invites!")
+                                    .foregroundStyle(Colors.primaryDark.opacity(0.7))
+                                    .font(.LibreBodoni(size: 14))
+                                    .italic()
+                            } else {
+                                HStack {
+                                    // Show up to 4 profile photos
+                                    ForEach(Array(goingRsvps.prefix(4).enumerated()), id: \.element.id) { index, rsvp in
+                                        if let profilePhotoID = rsvp.profilePhotoID {
+                                            // TODO: Replace with actual profile photo URL when available
+                                            Images.profilePlaceholder
+                                                .resizable()
+                                                .scaledToFill()
+                                                .frame(width: 62, height: 62)
+                                                .clipShape(Circle())
+                                        } else {
+                                            Images.profilePlaceholder
+                                                .resizable()
+                                                .scaledToFill()
+                                                .frame(width: 62, height: 62)
+                                                .clipShape(Circle())
+                                        }
                                     }
+                                    
+                                    // Show "+X" if there are more than 4 people
+                                    if goingRsvps.count > 4 {
+                                        Text("+\(goingRsvps.count - 4)")
+                                            .foregroundStyle(Colors.primaryDark)
+                                            .font(.LibreBodoniBold(size: 10))
+                                            .padding(.all, 8)
+                                            .overlay {
+                                                Circle()
+                                                    .stroke(Colors.primaryDark, lineWidth: 1.0)
+                                            }
+                                    }
+                                }
                             }
                         }
                         
@@ -209,7 +278,8 @@ struct EventPostView: View {
                             Spacer()
                             
                             Button {
-                                // TODO: Implement RSVP action
+                                currentRSVPStatus = "GOING"
+                                viewModel.updateRSVP(eventId: eventId, status: "GOING") { _ in }
                             } label: {
                                 Text("yes")
                                     .foregroundStyle(Colors.k070708)
@@ -218,12 +288,14 @@ struct EventPostView: View {
                                     .padding(.vertical, 4)
                                     .background(
                                         Capsule()
-                                            .fill(Colors.kE8DFCB)
+                                            .fill((currentRSVPStatus ?? event.rsvpStatus) == "GOING" ? Colors.kE8DFCB : Color.white)
                                     )
                             }
+                            .disabled(viewModel.isUpdatingRSVP)
                             
                             Button {
-                                // TODO: Implement RSVP action
+                                currentRSVPStatus = "MAYBE"
+                                viewModel.updateRSVP(eventId: eventId, status: "MAYBE") { _ in }
                             } label: {
                                 Text("maybe")
                                     .foregroundStyle(Colors.k070708)
@@ -232,12 +304,14 @@ struct EventPostView: View {
                                     .padding(.vertical, 4)
                                     .background(
                                         Capsule()
-                                            .fill(Color.white)
+                                            .fill((currentRSVPStatus ?? event.rsvpStatus) == "MAYBE" ? Colors.kE8DFCB : Color.white)
                                     )
                             }
+                            .disabled(viewModel.isUpdatingRSVP)
                             
                             Button {
-                                // TODO: Implement RSVP action
+                                currentRSVPStatus = "NOT_GOING"
+                                viewModel.updateRSVP(eventId: eventId, status: "NOT_GOING") { _ in }
                             } label: {
                                 Text("no")
                                     .foregroundStyle(Colors.k070708)
@@ -246,9 +320,10 @@ struct EventPostView: View {
                                     .padding(.vertical, 4)
                                     .background(
                                         Capsule()
-                                            .fill(Color.white)
+                                            .fill((currentRSVPStatus ?? event.rsvpStatus) == "NOT_GOING" ? Colors.kE8DFCB : Color.white)
                                     )
                             }
+                            .disabled(viewModel.isUpdatingRSVP)
                             
                             Spacer()
                         }
@@ -276,8 +351,31 @@ struct EventPostView: View {
             }
         }
         .navigationBarBackButtonHidden()
+        .gesture(
+            DragGesture()
+                .onEnded { value in
+                    // Swipe from left edge to go back
+                    if value.startLocation.x < 50 && value.translation.width > 100 {
+                        if !appController.path.isEmpty {
+                            appController.path.removeLast()
+                        }
+                    }
+                }
+        )
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
+            // Handle app going to background - this can sometimes cause navigation issues
+            print("App going to background, navigation stack count: \(appController.path.count)")
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+            // Handle app coming back to foreground
+            print("App became active, navigation stack count: \(appController.path.count)")
+        }
         .onAppear {
-            viewModel.fetchEventDetails(eventId: eventId)
+            viewModel.fetchEventDetails(eventId: eventId) {
+                if let event = viewModel.event {
+                    currentRSVPStatus = event.rsvpStatus
+                }
+            }
         }
         .alert("Error", isPresented: Binding(
             get: { viewModel.errorMessage != nil },

@@ -288,6 +288,14 @@ export const handleGetCoveEvents = async (event: APIGatewayProxyEvent): Promise<
             name: true
           }
         },
+        // Include cove information with cover photo
+        cove: {
+          select: {
+            id: true,
+            name: true,
+            coverPhotoID: true
+          }
+        },
         // Include cover photo information
         coverPhoto: {
           select: {
@@ -329,12 +337,29 @@ export const handleGetCoveEvents = async (event: APIGatewayProxyEvent): Promise<
           // Get the user's RSVP status
           const userRsvp = event.rsvps[0];
           
+          // Count RSVPs with "GOING" status for this event
+          const goingCount = await prisma.eventRSVP.count({
+            where: {
+              eventId: event.id,
+              status: 'GOING'
+            }
+          });
+          
           // Construct cover photo URL if it exists
           const coverPhoto = event.coverPhoto ? {
             id: event.coverPhoto.id,
             url: await getSignedUrl(s3Client, new GetObjectCommand({
               Bucket: process.env.EVENT_IMAGE_BUCKET_NAME,
               Key: `${event.id}/${event.coverPhoto.id}.jpg`
+            }), { expiresIn: 3600 })
+          } : null;
+          
+          // Generate cove cover photo URL if it exists
+          const coveCoverPhoto = event.cove.coverPhotoID ? {
+            id: event.cove.coverPhotoID,
+            url: await getSignedUrl(s3Client, new GetObjectCommand({
+              Bucket: process.env.COVE_IMAGE_BUCKET_NAME,
+              Key: `${event.cove.id}/${event.cove.coverPhotoID}.jpg`
             }), { expiresIn: 3600 })
           } : null;
           
@@ -345,9 +370,12 @@ export const handleGetCoveEvents = async (event: APIGatewayProxyEvent): Promise<
             date: event.date,
             location: event.location,
             coveId: event.coveId,
+            coveName: event.cove.name,
+            coveCoverPhoto: coveCoverPhoto,
             hostId: event.hostId,
             hostName: event.hostedBy.name,
-            rsvpStatus: userRsvp?.status || null,
+            rsvpStatus: userRsvp?.status || 'NOT_GOING',
+            goingCount: goingCount,
             createdAt: event.createdAt,
             coverPhoto: coverPhoto
           };
@@ -436,11 +464,12 @@ export const handleGetCalendarEvents = async (event: APIGatewayProxyEvent): Prom
             name: true
           }
         },
-        // Include cove information (id and name)
+        // Include cove information (id, name, and cover photo)
         cove: {
           select: {
             id: true,
-            name: true
+            name: true,
+            coverPhotoID: true
           }
         },
         // Include cover photo information
@@ -484,12 +513,29 @@ export const handleGetCalendarEvents = async (event: APIGatewayProxyEvent): Prom
           // Get the user's RSVP status
           const userRsvp = event.rsvps[0];
           
+          // Count RSVPs with "GOING" status for this event
+          const goingCount = await prisma.eventRSVP.count({
+            where: {
+              eventId: event.id,
+              status: 'GOING'
+            }
+          });
+          
           // Generate cover photo URL if it exists
           const coverPhoto = event.coverPhoto ? {
             id: event.coverPhoto.id,
             url: await getSignedUrl(s3Client, new GetObjectCommand({
               Bucket: process.env.EVENT_IMAGE_BUCKET_NAME,
               Key: `${event.id}/${event.coverPhoto.id}.jpg`
+            }), { expiresIn: 3600 })
+          } : null;
+          
+          // Generate cove cover photo URL if it exists
+          const coveCoverPhoto = event.cove.coverPhotoID ? {
+            id: event.cove.coverPhotoID,
+            url: await getSignedUrl(s3Client, new GetObjectCommand({
+              Bucket: process.env.COVE_IMAGE_BUCKET_NAME,
+              Key: `${event.cove.id}/${event.cove.coverPhotoID}.jpg`
             }), { expiresIn: 3600 })
           } : null;
           
@@ -501,9 +547,11 @@ export const handleGetCalendarEvents = async (event: APIGatewayProxyEvent): Prom
             location: event.location,
             coveId: event.coveId,
             coveName: event.cove.name,
+            coveCoverPhoto: coveCoverPhoto,
             hostId: event.hostId,
             hostName: event.hostedBy.name,
-            rsvpStatus: userRsvp?.status || null,
+            rsvpStatus: userRsvp?.status || 'NOT_GOING',
+            goingCount: goingCount,
             createdAt: event.createdAt,
             coverPhoto
           };
@@ -580,20 +628,27 @@ export const handleGetEvent = async (event: APIGatewayProxyEvent): Promise<APIGa
             name: true
           }
         },
-        // Include cove information
+        // Include cove information with cover photo
         cove: {
           select: {
             id: true,
             name: true,
+            coverPhotoID: true,
             members: {
               where: { userId: user.uid }
             }
           }
         },
-        // Include user's RSVP status
+        // Include all RSVPs for the event
         rsvps: {
-          where: {
-            userId: user.uid
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                profilePhotoID: true
+              }
+            }
           }
         },
         // Include cover photo information
@@ -626,7 +681,7 @@ export const handleGetEvent = async (event: APIGatewayProxyEvent): Promise<APIGa
     }
 
     // Get the user's RSVP status
-    const userRsvp = eventData.rsvps[0];
+    const userRsvp = eventData.rsvps.find(rsvp => rsvp.userId === user.uid);
     
     // Generate cover photo URL if it exists
     const coverPhoto = eventData.coverPhoto ? {
@@ -634,6 +689,15 @@ export const handleGetEvent = async (event: APIGatewayProxyEvent): Promise<APIGa
       url: await getSignedUrl(s3Client, new GetObjectCommand({
         Bucket: process.env.EVENT_IMAGE_BUCKET_NAME,
         Key: `${eventData.id}/${eventData.coverPhoto.id}.jpg`
+      }), { expiresIn: 3600 })
+    } : null;
+
+    // Generate cove cover photo URL if it exists
+    const coveCoverPhoto = eventData.cove.coverPhotoID ? {
+      id: eventData.cove.coverPhotoID,
+      url: await getSignedUrl(s3Client, new GetObjectCommand({
+        Bucket: process.env.COVE_IMAGE_BUCKET_NAME,
+        Key: `${eventData.cove.id}/${eventData.cove.coverPhotoID}.jpg`
       }), { expiresIn: 3600 })
     } : null;
 
@@ -654,9 +718,18 @@ export const handleGetEvent = async (event: APIGatewayProxyEvent): Promise<APIGa
           },
           cove: {
             id: eventData.cove.id,
-            name: eventData.cove.name
+            name: eventData.cove.name,
+            coverPhoto: coveCoverPhoto
           },
-          rsvpStatus: userRsvp?.status || null,
+          rsvpStatus: userRsvp?.status || 'NOT_GOING',
+          rsvps: eventData.rsvps.map(rsvp => ({
+            id: rsvp.id,
+            status: rsvp.status,
+            userId: rsvp.userId,
+            userName: rsvp.user.name,
+            profilePhotoID: rsvp.user.profilePhotoID,
+            createdAt: rsvp.createdAt
+          })),
           coverPhoto,
           isHost: eventData.hostId === user.uid
         }

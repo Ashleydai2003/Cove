@@ -14,9 +14,29 @@ final class UpcomingEventsViewModel: BaseViewModel {
     @Published var hasMore: Bool = false
     @Published var isLoading: Bool = false
     
+    // MARK: - Cancellation Support
+    private var isCancelled: Bool = false
+    
+    /**
+     * Cancels any ongoing requests and resets loading states.
+     * This should be called when the view is dismissed.
+     */
+    func cancelRequests() {
+        isCancelled = true
+        isLoading = false
+    }
+    
+    /**
+     * Resets the cancellation flag when starting new requests.
+     */
+    private func resetCancellationFlag() {
+        isCancelled = false
+    }
+    
     func fetchUpcomingEvents(cursor: String? = nil) {
         guard !isLoading else { return }
         
+        resetCancellationFlag()
         isLoading = true
         
         // Build parameters properly - only include cursor if it's not nil
@@ -33,10 +53,21 @@ final class UpcomingEventsViewModel: BaseViewModel {
         NetworkManager.shared.get(endpoint: "/calendar-events", parameters: parameters) { [weak self] (result: Result<CalendarEventsResponse, NetworkError>) in
             guard let self = self else { return }
             
+            // Check if request was cancelled
+            guard !self.isCancelled else {
+                DispatchQueue.main.async {
+                    self.isLoading = false
+                }
+                return
+            }
+            
             self.isLoading = false
             
             switch result {
             case .success(let response):
+                // Check again if cancelled before processing response
+                guard !self.isCancelled else { return }
+                
                 print("✅ UpcomingEventsViewModel: Successfully received response")
                 print("📊 UpcomingEventsViewModel: Events count: \(response.events?.count ?? 0)")
                 print("📄 UpcomingEventsViewModel: Pagination - hasMore: \(response.pagination?.hasMore ?? false), nextCursor: \(response.pagination?.nextCursor ?? "nil")")

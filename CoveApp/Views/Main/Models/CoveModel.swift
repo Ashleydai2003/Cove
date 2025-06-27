@@ -2,9 +2,9 @@ import SwiftUI
 
 // MARK: - View Model
 @MainActor
-class FeedViewModel: ObservableObject {
+class CoveModel: ObservableObject {
     @Published var cove: FeedCoveDetails?
-    @Published var events: [FeedEvent] = []
+    @Published var events: [CalendarEvent] = []
     @Published var nextCursor: String?
     @Published var hasMore = true
     @Published var isLoading = false
@@ -13,7 +13,7 @@ class FeedViewModel: ObservableObject {
     private let pageSize = 5
     
     init() {
-        print("📱 FeedViewModel initialized")
+        print("📱 CoveModel initialized")
         // Don't fetch data in init to avoid publishing during view updates
     }
     
@@ -125,7 +125,7 @@ class FeedViewModel: ObservableObject {
         }
     }
     
-    func loadMoreEventsIfNeeded(currentEvent: FeedEvent) {
+    func loadMoreEventsIfNeeded(currentEvent: CalendarEvent) {
         // If we're near the end of the current events array, load more
         if let lastEvent = events.last,
            lastEvent.id == currentEvent.id,
@@ -166,30 +166,11 @@ struct FeedCoveDetails: Decodable {
 }
 
 struct CoveEventsResponse: Decodable {
-    let events: [FeedEvent]
+    let events: [CalendarEvent]
     let pagination: Pagination
     
     struct Pagination: Decodable {
         let hasMore: Bool
         let nextCursor: String?
-    }
-}
-
-struct FeedEvent: Decodable, Identifiable {
-    let id: String
-    let name: String
-    let description: String?
-    let date: String
-    let location: String
-    let coveId: String
-    let hostId: String
-    let hostName: String
-    let rsvpStatus: String?
-    let createdAt: String
-    let coverPhoto: CoverPhoto?
-    
-    struct CoverPhoto: Decodable {
-        let id: String
-        let url: String
     }
 } 

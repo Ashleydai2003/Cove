@@ -6,12 +6,14 @@
 import SwiftUI
 import CoreLocation
 
+
+// TODO: maybe don't make this scrollable, instead the down arrow expands to the calendar page 
+// TODO: get rid of stub data
+// also where are these cute little icons coming from?
 struct UpcomingEventsView: View {
     
     @StateObject private var viewModel = UpcomingEventsViewModel()
-    @State private var userLocation: String = ""
     @EnvironmentObject var appController: AppController
-    @State private var profile: Profile?
     
     var body: some View {
         ZStack {
@@ -28,7 +30,7 @@ struct UpcomingEventsView: View {
                         Image("location-pin")
                             .frame(width: 15, height: 20)
                         
-                        Text(userLocation.isEmpty ? "add your location" : userLocation)
+                        Text(appController.profileModel.address.isEmpty ? "add your location" : appController.profileModel.address)
                             .foregroundStyle(Colors.primaryDark)
                             .font(.LibreBodoni(size: 15))
                     }
@@ -44,7 +46,7 @@ struct UpcomingEventsView: View {
                             Button {
                                 appController.path.append(.exploreFriends)
                             } label: {
-                                Text("\(profile?.stats?.friendCount ?? 0) friends")
+                                Text("\(appController.profileModel.stats?.friendCount ?? 0) friends")
                                     .foregroundStyle(Colors.primaryDark)
                                     .font(.LibreBodoniBold(size: 11))
                             }
@@ -56,7 +58,7 @@ struct UpcomingEventsView: View {
                             Button {
                                 appController.path.append(.friendRequests)
                             } label: {
-                                Text("\(profile?.stats?.requestCount ?? 0) requests")
+                                Text("\(appController.profileModel.stats?.requestCount ?? 0) requests")
                                     .foregroundStyle(Colors.primaryDark)
                                     .font(.LibreBodoniBold(size: 11))
                             }
@@ -83,6 +85,7 @@ struct UpcomingEventsView: View {
                         
                         ScrollView {
                             VStack(spacing: 16) {
+                                // Grouped events by date
                                 ForEach(viewModel.groupedEvent?.keys.sorted() ?? [], id: \.self) { date in
                                     VStack(spacing: 8) {
                                         HStack {
@@ -106,10 +109,17 @@ struct UpcomingEventsView: View {
                                 }
                                 
                                 if viewModel.groupedEvent?.isEmpty ?? true {
-                                    Text("No upcoming events")
-                                        .foregroundStyle(Colors.primaryDark)
-                                        .font(.LibreBodoni(size: 14))
-                                        .frame(maxWidth: .infinity, minHeight: 100)
+                                    if viewModel.isLoading {
+                                        Text("Loading...")
+                                            .foregroundStyle(Colors.primaryDark)
+                                            .font(.LibreBodoni(size: 14))
+                                            .frame(maxWidth: .infinity, minHeight: 100)
+                                    } else {
+                                        Text("No events yet!")
+                                            .foregroundStyle(Colors.primaryDark)
+                                            .font(.LibreBodoni(size: 14))
+                                            .frame(maxWidth: .infinity, minHeight: 100)
+                                    }
                                 }
                                 
                                 if viewModel.isLoading {
@@ -135,7 +145,7 @@ struct UpcomingEventsView: View {
                         .frame(height: 200)
                         
                         Button {
-                            
+                            // appController.path.append(.calendar)
                         } label: {
                             VStack(spacing: 6) {
                                 Text("my calendar")
@@ -160,38 +170,38 @@ struct UpcomingEventsView: View {
             }
         }
         .onAppear(perform: {
-            viewModel.fetchUpcomingEvents()
-            updateUserLocation()
-            fetchProfile()
+            // Only fetch if we don't have recent data or if this is the first load
+            if viewModel.events.isEmpty || viewModel.groupedEvent == nil {
+                viewModel.fetchUpcomingEvents()
+            }
+            
+            // Refresh profile data if needed and update address
+            // Only refresh if we don't have recent data to prevent unnecessary loading states
+            if appController.profileModel.lastFetchTime == nil || 
+               Date().timeIntervalSince(appController.profileModel.lastFetchTime!) > 300 {
+                appController.profileModel.refreshProfileIfNeeded { result in
+                    switch result {
+                    case .success(_):
+                        Task {
+                            await appController.profileModel.updateAddress()
+                        }
+                    case .failure(let error):
+                        print("Failed to refresh profile: \(error)")
+                    }
+                }
+            }
         })
+        .onDisappear {
+            // Cancel any ongoing requests when view disappears
+            viewModel.cancelRequests()
+        }
         .navigationBarBackButtonHidden()
-    }
-    
-    private func updateUserLocation() {
-        let latitude = UserDefaults.standard.double(forKey: "user_latitude")
-        let longitude = UserDefaults.standard.double(forKey: "user_longitude")
-        
-        if latitude != 0 && longitude != 0 {
-            Task {
-                userLocation = await LocationUtils.getLocationName(latitude: latitude, longitude: longitude)
-            }
-        }
-    }
-    
-    private func fetchProfile() {
-        NetworkManager.shared.get(endpoint: "/profile") { (result: Result<ProfileResponse, NetworkError>) in
-            switch result {
-            case .success(let response):
-                profile = response.profile
-            case .failure(let error):
-                print("Failed to fetch profile: \(error)")
-            }
-        }
     }
 }
 
 #Preview {
     UpcomingEventsView()
+        .environmentObject(AppController.shared)
 }
 
 struct UpcomingEventCellView: View {
@@ -204,6 +214,7 @@ struct UpcomingEventCellView: View {
                 .foregroundStyle(Color.black)
                 .font(.Lugrasimo(size: 12))
             
+            // TODO: Get actual event image (or Icon? ask Angela)
             Image("event-image-1")
                 .frame(width: 40, height: 40)
             
@@ -214,7 +225,7 @@ struct UpcomingEventCellView: View {
             
             Spacer()
             
-            Text("34 going")
+            Text("\(event.goingCount) going")
                 .foregroundStyle(Color.black)
                 .font(.LibreBodoni(size: 12))
         }
@@ -228,7 +239,6 @@ struct UpcomingEventCellView: View {
         if let date = inputFormatter.date(from: dateString) {
             let outputFormatter = DateFormatter()
             outputFormatter.dateFormat = "h:mm a"
-            outputFormatter.timeZone = TimeZone(secondsFromGMT: 0)
 
             let timeString = outputFormatter.string(from: date)
             return timeString
