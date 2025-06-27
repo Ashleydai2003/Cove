@@ -1,6 +1,7 @@
 // Created by Nesib Muhedin
 import Foundation
 
+// TODO: this is probably not needed anymore
 struct Profile: Decodable {
     let name: String
     let phone: String

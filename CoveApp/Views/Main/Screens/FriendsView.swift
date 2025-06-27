@@ -6,51 +6,68 @@
 
 import SwiftUI
 
+@MainActor
+class FriendsViewModel: ObservableObject {
+    @Published var mutuals: [RecommendedFriendDTO] = []
+    @Published var nextCursor: String?
+    @Published var hasMore = true
+    @Published var isLoading = false
+    @Published var errorMessage: String?
+    @Published var pendingRequests: Set<String> = []
+    
+    private let pageSize = 10
+    
+    init() {
+        loadNextPage()
+    }
+    
+    func loadNextPage() {
+        guard !isLoading && hasMore else { return }
+        isLoading = true
+        
+        RecommendedFriends.fetchRecommendedFriends(cursor: nextCursor, limit: pageSize) { [weak self] result in
+            guard let self = self else { return }
+            self.isLoading = false
+            
+            switch result {
+            case .success(let response):
+                self.mutuals.append(contentsOf: response.users)
+                self.hasMore = response.pagination.hasMore
+                self.nextCursor = response.pagination.nextCursor
+            case .failure(let error):
+                self.errorMessage = error.localizedDescription
+            }
+        }
+    }
+    
+    func sendFriendRequest(to userId: String) {
+        // Mark as pending immediately for better UX
+        pendingRequests.insert(userId)
+        
+        // Make API call to send friend request
+        NetworkManager.shared.post(
+            endpoint: "/send-friend-request",
+            parameters: ["toUserIds": [userId]]
+        ) { [weak self] (result: Result<SendRequestResponse, NetworkError>) in
+            DispatchQueue.main.async {
+                switch result {
+                case .success:
+                    // Keep it as pending - the user will see it in their friend requests
+                    print("✅ Friend request sent successfully to \(userId)")
+                case .failure(let error):
+                    // Remove from pending if the request failed
+                    self?.pendingRequests.remove(userId)
+                    self?.errorMessage = error.localizedDescription
+                    print("❌ Failed to send friend request: \(error)")
+                }
+            }
+        }
+    }
+}
+
 struct FriendsView: View {
     @EnvironmentObject var appController: AppController
-
-    // TODO: connect to API once endpoint is finished
-    // For now, just pull from people in the same coves (implement get cove members API)
-    @State private var mutuals: [FriendDTO] = [
-        FriendDTO(
-            id: "1",
-            name: "angela nguyen",
-            profilePhotoUrl: nil,
-            friendshipId: "fship-1",
-            createdAt: Date()
-        ),
-        FriendDTO(
-            id: "2",
-            name: "willa r baker",
-            profilePhotoUrl: nil,
-            friendshipId: "fship-2",
-            createdAt: Date()
-        ),
-        FriendDTO(
-            id: "3",
-            name: "nina boord",
-            profilePhotoUrl: nil,
-            friendshipId: "fship-3",
-            createdAt: Date()
-        ),
-        FriendDTO(
-            id: "4",
-            name: "felix roberts",
-            profilePhotoUrl: nil,
-            friendshipId: "fship-4",
-            createdAt: Date()
-        ),
-        FriendDTO(
-            id: "5",
-            name: "tyler schuman",
-            profilePhotoUrl: nil,
-            friendshipId: "fship-5",
-            createdAt: Date()
-        )
-    ]
-
-    // TODO: replace once endpoint is finished
-    @State private var pendingRequests: Set<String> = []
+    @StateObject private var viewModel = FriendsViewModel()
 
     var body: some View {
         ZStack {
@@ -59,13 +76,6 @@ struct FriendsView: View {
 
             VStack(spacing: 0) {
                 VStack(spacing: 4) {
-                    HStack {
-                        Button { appController.path.removeLast() } label: {
-                            Images.backArrow
-                        }
-                        Spacer()
-                    }
-                    
                     Text("explore")
                         .font(.LibreBodoniBold(size: 25))
                         .foregroundStyle(Colors.primaryDark)
@@ -100,74 +110,117 @@ struct FriendsView: View {
                 .padding(.bottom, 20)
 
                 // MARK: — Mutuals List
-                ScrollView {
-                    VStack(spacing: 30) {
-                        ForEach(mutuals) { friend in
-                            HStack(spacing: 16) {
-                                // Profile image (if URL exists, load with CachedAsyncImage; otherwise placeholder)
-                                if let url = friend.profilePhotoUrl {
-                                    CachedAsyncImage(
-                                        url: url
-                                    ) { image in
-                                        image
-                                            .resizable()
-                                            .scaledToFill()
-                                    } placeholder: {
-                                        Circle()
-                                            .fill(Color.gray.opacity(0.3))
-                                            .overlay(
-                                                ProgressView()
-                                                    .tint(.gray)
-                                            )
-                                    }
-                                    .frame(width: 60, height: 60)
-                                    .clipShape(Circle())
-                                } else {
-                                    // PLACEHOLDER
-                                    Images.profilePlaceholder
-                                        .resizable()
-                                        .scaledToFill()
+                if viewModel.isLoading && viewModel.mutuals.isEmpty {
+                    VStack(spacing: 16) {
+                        ProgressView()
+                            .tint(Colors.primaryDark)
+                        Text("loading mutuals...")
+                            .font(.LibreBodoni(size: 16))
+                            .foregroundColor(Colors.primaryDark)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if let error = viewModel.errorMessage {
+                    VStack(spacing: 16) {
+                        Image(systemName: "exclamationmark.circle")
+                            .font(.system(size: 40))
+                            .foregroundColor(.gray)
+                        
+                        Text(error)
+                            .font(.LibreBodoni(size: 16))
+                            .foregroundColor(.gray)
+                            .multilineTextAlignment(.center)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    ScrollView {
+                        VStack(spacing: 30) {
+                            ForEach(viewModel.mutuals) { mutual in
+                                HStack(spacing: 16) {
+                                    // Profile image (if URL exists, load with CachedAsyncImage; otherwise placeholder)
+                                    if let url = mutual.profilePhotoUrl {
+                                        CachedAsyncImage(
+                                            url: url
+                                        ) { image in
+                                            image
+                                                .resizable()
+                                                .scaledToFill()
+                                        } placeholder: {
+                                            Circle()
+                                                .fill(Color.gray.opacity(0.3))
+                                                .overlay(
+                                                    ProgressView()
+                                                        .tint(.gray)
+                                                )
+                                        }
                                         .frame(width: 60, height: 60)
                                         .clipShape(Circle())
-                                }
+                                    } else {
+                                        // PLACEHOLDER
+                                        Images.profilePlaceholder
+                                            .resizable()
+                                            .scaledToFill()
+                                            .frame(width: 60, height: 60)
+                                            .clipShape(Circle())
+                                    }
 
-                                // Friend's name
-                                Text(friend.name)
-                                    .font(.LibreBodoni(size: 16))
-                                    .foregroundStyle(Color.black)
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        // Friend's name
+                                        Text(mutual.name)
+                                            .font(.LibreBodoni(size: 16))
+                                            .foregroundStyle(Color.black)
+                                        
+                                        // Shared cove count
+                                        Text("\(mutual.sharedCoveCount) shared cove\(mutual.sharedCoveCount == 1 ? "" : "s")")
+                                            .font(.LibreBodoni(size: 12))
+                                            .foregroundStyle(Color.black.opacity(0.6))
+                                    }
 
-                                Spacer()
+                                    Spacer()
 
-                                // "Request" / "Pending" button
-                                if pendingRequests.contains(friend.friendshipId) {
-                                    Text("pending")
-                                        .font(.LibreBodoni(size: 12))
-                                        .fontWeight(.medium)
-                                        .frame(width: 100, height: 30)
-                                        .background(Color.gray.opacity(0.3))
-                                        .foregroundColor(.primary)
-                                        .cornerRadius(11)
-                                } else {
-                                    Button {
-                                        // Mark this friendshipId as "pending"
-                                        pendingRequests.insert(friend.friendshipId)
-
-                                        // TODO: make api call here
-                                    } label: {
-                                        Text("request")
+                                    // "Request" / "Pending" button
+                                    if viewModel.pendingRequests.contains(mutual.id) {
+                                        Text("pending")
                                             .font(.LibreBodoni(size: 12))
                                             .fontWeight(.medium)
                                             .frame(width: 100, height: 30)
-                                            .background(Colors.primaryDark)
-                                            .foregroundColor(.white)
+                                            .background(Color.gray.opacity(0.3))
+                                            .foregroundColor(.primary)
                                             .cornerRadius(11)
+                                    } else {
+                                        Button {
+                                            viewModel.sendFriendRequest(to: mutual.id)
+                                        } label: {
+                                            Text("request")
+                                                .font(.LibreBodoni(size: 12))
+                                                .fontWeight(.medium)
+                                                .frame(width: 100, height: 30)
+                                                .background(Colors.primaryDark)
+                                                .foregroundColor(.white)
+                                                .cornerRadius(11)
+                                        }
+                                    }
+                                }
+                                .padding(.horizontal, 20)
+                                .onAppear {
+                                    // Load more if this is one of the last items
+                                    if mutual.id == viewModel.mutuals.last?.id {
+                                        viewModel.loadNextPage()
                                     }
                                 }
                             }
-                            .padding(.horizontal, 20)
+                            
+                            if viewModel.isLoading && !viewModel.mutuals.isEmpty {
+                                HStack {
+                                    Spacer()
+                                    ProgressView()
+                                        .tint(Colors.primaryDark)
+                                    Spacer()
+                                }
+                                .padding(.vertical, 16)
+                            }
                         }
+                        .padding(.top, 20)
                     }
-                    .padding(.top, 20)
                 }
 
                 Spacer(minLength: 0)
@@ -175,6 +228,14 @@ struct FriendsView: View {
             .safeAreaPadding()
         }
         .navigationBarBackButtonHidden()
+        .alert("Error", isPresented: Binding(
+            get: { viewModel.errorMessage != nil },
+            set: { if !$0 { viewModel.errorMessage = nil } }
+        )) {
+            Button("OK") { viewModel.errorMessage = nil }
+        } message: {
+            Text(viewModel.errorMessage ?? "")
+        }
     }
 }
 

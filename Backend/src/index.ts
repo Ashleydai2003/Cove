@@ -12,6 +12,7 @@ import {
   handleTestS3,
   handleOnboard,
   handleUserImage,
+  handleUserImageUpdate,
   handleContacts,
   handleCreateEvent,
   handleCreateCove,
@@ -28,6 +29,8 @@ import {
   handleGetEvent,
   handleGetUserCoves,
   handleUpdateEventRSVP,
+  handleGetRecommendedFriends,
+  handleJoinCove,
 } from './routes';
 
 export const handler = async (
@@ -52,6 +55,8 @@ export const handler = async (
         return handleOnboard(event);
       case '/userImage':
         return handleUserImage(event);
+      case '/userImageUpdate':
+        return handleUserImageUpdate(event);
       case '/contacts':
         return handleContacts(event);
       case '/create-event':
@@ -86,6 +91,10 @@ export const handler = async (
         return handleGetUserCoves(event);
       case '/update-event-rsvp':
         return handleUpdateEventRSVP(event);
+      case '/recommended-friends':
+        return handleGetRecommendedFriends(event);
+      case '/join-cove':
+        return handleJoinCove(event);
       default:
         // Handle common web standard files
         switch (event.path) {

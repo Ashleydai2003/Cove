@@ -6,8 +6,9 @@
 
 import Foundation
 
+// TODO: we should return less information, only the information needed 
 // Model for /calendar-events API response
-struct CalendarEvent: Decodable {
+struct CalendarEvent: Decodable, Identifiable {
     let id: String
     let name: String
     let description: String?
@@ -15,9 +16,11 @@ struct CalendarEvent: Decodable {
     let location: String
     let coveId: String
     let coveName: String
+    let coveCoverPhoto: CoverPhoto?
     let hostId: String
     let hostName: String
     let rsvpStatus: String?
+    let goingCount: Int
     let createdAt: String
     let coverPhoto: CoverPhoto?
     
@@ -67,6 +70,7 @@ struct Event: Decodable {
     let host: Host
     let cove: Cove
     let rsvpStatus: String?
+    let rsvps: [EventRSVP]
     let coverPhoto: CoverPhoto?
     let isHost: Bool
     
@@ -149,5 +153,14 @@ struct CreatedEvent: Decodable {
     let date: String
     let location: String
     let coveId: String
+    let createdAt: String
+}
+
+struct EventRSVP: Decodable {
+    let id: String
+    let status: String
+    let userId: String
+    let userName: String
+    let profilePhotoID: String?
     let createdAt: String
 }

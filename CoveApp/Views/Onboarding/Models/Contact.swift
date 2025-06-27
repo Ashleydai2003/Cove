@@ -13,13 +13,18 @@ struct ContactMatcher {
     struct MatchedUser: Decodable, Identifiable {
         let id: String
         let name: String
-        let phone: String
         let profilePhotoUrl: URL?
     }
 
     // 2) Add a wrapper that matches the JSON
     private struct ContactsResponse: Decodable {
         let contacts: [MatchedUser]
+        let pagination: PaginationInfo
+    }
+    
+    private struct PaginationInfo: Decodable {
+        let hasMore: Bool
+        let nextCursor: String?
     }
 
     /// POST the given E.164 phone numbers and decode the matched users.

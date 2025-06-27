@@ -5,44 +5,10 @@
 
 import SwiftUI
 
-struct PlaceholderEvent: Identifiable {
-    let id = UUID()
-    let dateString: String
-    let title: String
-    let goingCount: Int
-}
-
 // MARK: — The main CalendarView
 struct CalendarView: View {
-
-    /// (1) Hard‐coded array of five placeholder events
-    private let events: [PlaceholderEvent] = [
-        PlaceholderEvent(
-            dateString: "saturday, june 21  @ 9pm",
-            title: "stanford x harvard happy hour",
-            goingCount: 34
-        ),
-        PlaceholderEvent(
-            dateString: "sunday, june 22  @ 9pm",
-            title: "stanford sf club dinner",
-            goingCount: 34
-        ),
-        PlaceholderEvent(
-            dateString: "wednesday, june 25  @ 9pm",
-            title: "yale founders dinner",
-            goingCount: 34
-        ),
-        PlaceholderEvent(
-            dateString: "friday, june 27  @ 9pm",
-            title: "usc x cal mixer",
-            goingCount: 34
-        ),
-        PlaceholderEvent(
-            dateString: "saturday, june 28  @ 9pm",
-            title: "stanford sf club opera",
-            goingCount: 34
-        )
-    ]
+    
+    @StateObject private var viewModel = UpcomingEventsViewModel()
 
     var body: some View {
         ZStack {
@@ -58,9 +24,19 @@ struct CalendarView: View {
                         .padding(.top, 20)
                         .padding(.bottom, 30)
 
-                    ForEach(events) { event in
-                        EventCardView(event: event)
-                            .padding(.horizontal, 20)
+                    if viewModel.isLoading && viewModel.events.isEmpty {
+                        ProgressView()
+                            .padding()
+                    } else {
+                        ForEach(viewModel.events, id: \.id) { event in
+                            EventCardView(event: event)
+                                .padding(.horizontal, 20)
+                        }
+                        
+                        if viewModel.isLoading {
+                            ProgressView()
+                                .padding()
+                        }
                     }
 
                     Spacer(minLength: 20)
@@ -68,59 +44,81 @@ struct CalendarView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
+        .onAppear {
+            viewModel.fetchUpcomingEvents()
+        }
     }
 }
 
 fileprivate struct EventCardView: View {
-    let event: PlaceholderEvent
+    let event: CalendarEvent
+    @EnvironmentObject var appController: AppController
 
     var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color.white)
-                .frame(height: 100)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.black.opacity(1.0), lineWidth: 1)
-                )
+        Button {
+            appController.navigateToEvent(eventId: event.id)
+        } label: {
+            ZStack {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.white)
+                    .frame(height: 100)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color.black.opacity(1.0), lineWidth: 1)
+                    )
 
-            VStack(spacing: 4) {
-                HStack {
-                    Text(event.dateString)
-                        .font(.LibreBodoniItalic(size: 14))
-                        .foregroundColor(Colors.primaryDark.opacity(0.8))
+                VStack(spacing: 4) {
+                    HStack {
+                        Text(formattedDateTime(event.date))
+                            .font(.LibreBodoniItalic(size: 14))
+                            .foregroundColor(Colors.primaryDark.opacity(0.8))
+                        Spacer()
+                        // TODO: Get actual RSVP count
+                        Text("\(event.goingCount) going")
+                            .font(.LeagueSpartan(size: 13))
+                            .foregroundColor(Colors.primaryDark.opacity(0.9))
+                    }
+
+                    HStack {
+                        Spacer()
+                        Text(event.name)
+                            .font(.LibreBodoniBold(size: 20))
+                            .foregroundColor(Colors.primaryDark)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                            .padding(.top, 15)
+                        Spacer()
+                    }
+
                     Spacer()
-                    Text("\(event.goingCount) going")
-                        .font(.LeagueSpartan(size: 13))
-                        .foregroundColor(Colors.primaryDark.opacity(0.9))
                 }
-
-                HStack {
-                    Spacer()
-                    Text(event.title)
-                        .font(.LibreBodoniBold(size: 20))
-                        .foregroundColor(Colors.primaryDark)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
-                        .padding(.top, 15)
-                    Spacer()
-                }
-
-                Spacer()
+                .padding(.horizontal, 16)
+                .padding(.top, 12)
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 12)
+            .frame(height: 100)
         }
-        .frame(height: 100)
+        .buttonStyle(PlainButtonStyle())
+    }
+    
+    func formattedDateTime(_ dateString: String) -> String {
+        let inputFormatter = DateFormatter()
+        inputFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
+        
+        guard let date = inputFormatter.date(from: dateString) else {
+            return "TBD"
+        }
+        
+        let outputFormatter = DateFormatter()
+        outputFormatter.dateFormat = "EEEE, MMMM d @ h:mm a"
+        // Use user's local timezone (default behavior)
+        return outputFormatter.string(from: date).lowercased()
     }
 }
-
 
 // MARK: — Preview
 struct CalendarView_Previews: PreviewProvider {
     static var previews: some View {
         CalendarView()
-            .previewDevice("iPhone 13")
     }
 }
 

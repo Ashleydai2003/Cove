@@ -427,7 +427,7 @@ extension CreateEventView {
                 case .success(let response):
                     debugPrint(response)
                     // Navigate to EventPostView with the created event ID
-                    appController.path.append(.eventPost(eventId: response.event.id))
+                    appController.navigateToEvent(eventId: response.event.id)
                 case .failure(let error):
                     debugPrint(error)
                     // TODO: Show error alert to user
