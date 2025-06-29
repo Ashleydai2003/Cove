@@ -192,8 +192,7 @@ class Onboarding {
     static func completeOnboarding(completion: @escaping (Bool) -> Void) {
         if isOnboardingComplete() {
             print("📱 Starting onboarding completion")
-            // Show loading screen immediately
-            AppController.shared.path = [.pluggingIn]
+            // Note: We're already on the pluggingIn screen, so no need to navigate there
             
             // Move all heavy operations to background
             DispatchQueue.global(qos: .userInitiated).async {

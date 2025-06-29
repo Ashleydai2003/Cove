@@ -14,8 +14,8 @@ struct CoveApp: App {
     // firebase delegate
     @UIApplicationDelegateAdaptor(FirebaseSetup.self) var firebase_delegate
     
-    /// Shared app controller instance
-    private let appController = AppController.shared
+    /// Shared app controller instance - now properly managed by SwiftUI
+    @StateObject private var appController = AppController.shared
     
     init() {
         // For Injection (hot reloading)

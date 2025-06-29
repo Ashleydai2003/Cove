@@ -124,12 +124,8 @@ struct MutualsView: View {
                     action: processAllContacts,
                     isLoading: isLoading,
                     onSkip: {
-                        // complete onboarding without adding any friends or syncing contacts
-                        Onboarding.completeOnboarding { success in
-                            if !success {
-                                showError = true
-                            }
-                        }
+                        // Navigate to PluggingYouIn instead of completing onboarding directly
+                        appController.path.append(.pluggingIn)
                     }
                 )
             }
@@ -153,7 +149,8 @@ struct MutualsView: View {
                 showingNoMatches: showingNoMatches,
                 isLoading: isLoading,
                 onDismiss: { showSheet = false },
-                showError: $showError
+                showError: $showError,
+                appController: appController
             )
         }
         .alert("Error", isPresented: $showError) {

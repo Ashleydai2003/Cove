@@ -71,4 +71,14 @@ class AppController: ObservableObject {
         // The previousTabSelection will be updated by HomeView's onChange(of: tabSelection)
         path.append(.eventPost(eventId: eventId))
     }
+    
+    /**
+     * Refreshes cove data across the app when needed.
+     * This should be called after creating events or when data might be stale.
+     */
+    func refreshCoveData() {
+        // This will be called by views that need to refresh cove data
+        // For now, we'll rely on individual view models to handle their own refresh
+        print("🔄 AppController: Cove data refresh requested")
+    }
 }
