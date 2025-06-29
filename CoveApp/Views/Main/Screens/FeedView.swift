@@ -123,7 +123,34 @@ struct FeedView: View {
         }
         .navigationBarBackButtonHidden()
         .onAppear {
-            viewModel.fetchCoveDetails()
+            // Check if we have complete data (cove + events)
+            if viewModel.hasCompleteData {
+                print("📱 Using complete cached data in FeedView")
+                return
+            }
+            
+            // Check if we have cached cove data but no events
+            if viewModel.hasAnyData && viewModel.events.isEmpty {
+                print("📱 Using cached cove data, fetching events")
+                let coveId = viewModel.cove?.id ?? (UserDefaults.standard.array(forKey: "user_cove_ids") as? [String])?.first
+                if let coveId = coveId {
+                    viewModel.fetchEvents(coveId: coveId)
+                }
+                return
+            }
+            
+            // Check if cache is stale or no data exists
+            if viewModel.lastFetchTime == nil || 
+               Date().timeIntervalSince(viewModel.lastFetchTime ?? Date.distantPast) > 300 {
+                print("📱 Cache is stale or no data exists, fetching fresh data")
+                viewModel.fetchCoveDetails()
+            } else {
+                print("📱 Using cached data in FeedView")
+            }
+        }
+        .onDisappear {
+            // Cancel any ongoing requests when view disappears
+            viewModel.cancelRequests()
         }
         .alert("Error", isPresented: Binding(
             get: { viewModel.errorMessage != nil },

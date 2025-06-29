@@ -9,6 +9,7 @@ import SwiftUI
 import CoreLocation
 import MapKit
 import PhotosUI
+import Kingfisher
 
 // TODO: Default profile picture
 // TODO: Consider a view and edit option up top to swipe like hinge instead
@@ -34,7 +35,7 @@ struct ProfileHeader: View {
     let gender: String
     let relationStatus: String
     let job: String
-    let profileImage: UIImage?
+    let profileImageURL: URL?
     let age: Int?
     let address: String
     let isEditing: Bool
@@ -48,14 +49,15 @@ struct ProfileHeader: View {
     
     @State private var selectedItem: PhotosPickerItem?
     @State private var isPressed = false
+    @EnvironmentObject var appController: AppController
     
     var body: some View {
         VStack(spacing: 10) {
             // MARK: - Profile Photo
             PhotosPicker(selection: $selectedItem, matching: .images) {
                 ZStack {
-                    if let image = profileImage {
-                        Image(uiImage: image)
+                    if let profileImage = appController.profileModel.profileUIImage {
+                        Image(uiImage: profileImage)
                             .resizable()
                             .scaledToFill()
                             .frame(maxWidth: 200, maxHeight: 200)
@@ -67,6 +69,9 @@ struct ProfileHeader: View {
                             .scaledToFill()
                             .frame(maxWidth: 200, maxHeight: 200)
                             .clipShape(Circle())
+                            .onAppear {
+                                print("📸 ProfileHeader: Displaying placeholder image")
+                            }
                     }
                     
                     // Overlay for editing
@@ -249,6 +254,12 @@ struct ProfileHeader: View {
                     }
                 }
             }
+        }
+        .onAppear {
+            print("📸 ProfileHeader: profileImage=\(profileImageURL != nil ? "loaded" : "nil")")
+        }
+        .onChange(of: profileImageURL) { _, newURL in
+            print("📸 ProfileHeader: profileImage changed to \(newURL != nil ? "loaded" : "nil")")
         }
     }
 }
@@ -750,18 +761,19 @@ struct HobbiesSelectionView: View {
 
 // MARK: - Extra Photo Component
 struct ExtraPhotoView: View {
-    let image: UIImage?
+    let imageIndex: Int
     let isEditing: Bool
     let onImageChange: (UIImage?) -> Void
     
     @State private var selectedItem: PhotosPickerItem?
     @State private var isPressed = false
+    @EnvironmentObject var appController: AppController
     
     var body: some View {
         PhotosPicker(selection: $selectedItem, matching: .images) {
             ZStack {
-                if let image = image {
-                    Image(uiImage: image)
+                if let extraImage = appController.profileModel.extraUIImages[imageIndex] {
+                    Image(uiImage: extraImage)
                         .resizable()
                         .scaledToFill()
                         .frame(maxWidth: AppConstants.SystemSize.width*0.8)
@@ -774,6 +786,15 @@ struct ExtraPhotoView: View {
                             RoundedRectangle(cornerRadius: 10)
                                 .stroke(Color.gray.opacity(0.3), lineWidth: 1)
                         )
+                        .onAppear {
+                            print("📸 ExtraPhotoView: Displaying empty space (editing mode)")
+                        }
+                } else {
+                    // Show nothing when not editing and no image
+                    EmptyView()
+                        .onAppear {
+                            print("📸 ExtraPhotoView: No image to display (not editing)")
+                        }
                 }
                 
                 if isEditing {
@@ -781,7 +802,7 @@ struct ExtraPhotoView: View {
                         .fill(Color.black.opacity(isPressed ? 0.7 : 0.3))
                         .frame(maxWidth: AppConstants.SystemSize.width*0.8)
                     
-                    Text(image == nil ? "add picture" : "change")
+                    Text(appController.profileModel.extraUIImages[imageIndex] == nil ? "add picture" : "change")
                         .font(.LibreBodoni(size: 16))
                         .foregroundColor(.white)
                 }
@@ -885,9 +906,9 @@ struct ProfileView: View {
                 }
                 .padding(.vertical, 20)
 
-                if appController.profileModel.isLoading || appController.profileModel.imagesLoading {
+                if appController.profileModel.isLoading {
                     Spacer()
-                    ProgressView(appController.profileModel.isLoading ? "Loading profile..." : "Loading images...")
+                    ProgressView("Loading profile...")
                         .foregroundColor(Colors.primaryDark)
                     Spacer()
                 } else {
@@ -895,11 +916,11 @@ struct ProfileView: View {
                         VStack(spacing: 20) {
                             ProfileHeader(
                                 name: isEditing ? editingName : appController.profileModel.name,
-                                workLocation: isEditing ? editingWorkLocation : (appController.profileModel.workLocation ?? ""),
-                                gender: isEditing ? editingGender : (appController.profileModel.gender ?? ""),
-                                relationStatus: isEditing ? editingRelationStatus : (appController.profileModel.relationStatus ?? ""),
-                                job: isEditing ? editingJob : (appController.profileModel.job ?? ""),
-                                profileImage: isEditing ? editingProfileImage : appController.profileModel.profileImage,
+                                workLocation: isEditing ? editingWorkLocation : appController.profileModel.workLocation,
+                                gender: isEditing ? editingGender : appController.profileModel.gender,
+                                relationStatus: isEditing ? editingRelationStatus : appController.profileModel.relationStatus,
+                                job: isEditing ? editingJob : appController.profileModel.job,
+                                profileImageURL: isEditing ? nil : appController.profileModel.profileImageURL,
                                 age: appController.profileModel.calculatedAge,
                                 address: isEditing ? editingAddress : appController.profileModel.address,
                                 isEditing: isEditing,
@@ -913,24 +934,42 @@ struct ProfileView: View {
                                 },
                                 onProfileImageChange: { editingProfileImage = $0 }
                             ).frame(maxWidth: 270)
+                            .onAppear {
+                                print("📸 ProfileHeader: profileImage=\(appController.profileModel.profileImageURL != nil ? "loaded" : "nil")")
+                            }
+                            .onChange(of: appController.profileModel.profileImageURL) { _, newURL in
+                                print("📸 ProfileHeader: profileImage changed to \(newURL != nil ? "loaded" : "nil")")
+                            }
                             
                             ExtraPhotoView(
-                                image: isEditing ? editingExtraImages[0] : appController.profileModel.extraImages[0],
+                                imageIndex: 0,
                                 isEditing: isEditing,
                                 onImageChange: { editingExtraImages[0] = $0 }
                             )
+                            .onAppear {
+                                print("📸 ExtraPhotoView 1: imageURL=\(appController.profileModel.extraImageURLs.first?.absoluteString ?? "nil")")
+                            }
+                            .onChange(of: appController.profileModel.extraImageURLs.first) { _, newURL in
+                                print("📸 ExtraPhotoView 1: imageURL changed to \(newURL?.absoluteString ?? "nil")")
+                            }
                             
                             BioSection(
-                                bio: isEditing ? editingBio : (appController.profileModel.bio ?? ""),
+                                bio: isEditing ? editingBio : appController.profileModel.bio,
                                 isEditing: isEditing,
                                 onBioChange: { editingBio = $0 }
                             )
                             
                             ExtraPhotoView(
-                                image: isEditing ? editingExtraImages[1] : appController.profileModel.extraImages[1],
+                                imageIndex: 1,
                                 isEditing: isEditing,
                                 onImageChange: { editingExtraImages[1] = $0 }
                             )
+                            .onAppear {
+                                print("📸 ExtraPhotoView 2: imageURL=\(appController.profileModel.extraImageURLs.dropFirst().first?.absoluteString ?? "nil")")
+                            }
+                            .onChange(of: appController.profileModel.extraImageURLs.dropFirst().first) { _, newURL in
+                                print("📸 ExtraPhotoView 2: imageURL changed to \(newURL?.absoluteString ?? "nil")")
+                            }
                             
                             InterestsSection(
                                 interests: isEditing ? editingInterests : appController.profileModel.interests,
@@ -956,8 +995,12 @@ struct ProfileView: View {
             )
         }
         .task {
+            print("📸 ProfileView: Current ProfileModel state:")
+            print("📸 ProfileModel profileImageURL: \(appController.profileModel.profileImageURL?.absoluteString ?? "nil")")
+            print("📸 ProfileModel extraImageURLs: \(appController.profileModel.extraImageURLs.map { $0.absoluteString })")
+            
             // Refresh profile data if needed
-            appController.profileModel.refreshProfileIfNeeded { result in
+            appController.profileModel.fetchProfile { result in
                 switch result {
                 case .success(_):
                     // Profile data updated, address will be updated automatically
@@ -965,34 +1008,54 @@ struct ProfileView: View {
                         await appController.profileModel.updateAddress()
                     }
                 case .failure(let error):
-                    print("Failed to refresh profile: \(error)")
+                    print("Failed to fetch profile: \(error)")
                 }
             }
         }
         .onDisappear {
-            // Cancel any ongoing profile requests when view disappears
-            appController.profileModel.cancelAllRequests()
+            // Don't cancel requests here - let ProfileModel handle its own lifecycle
+            // The image loading should complete naturally
         }
     }
     
     private func initializeEditingState() {
         editingName = appController.profileModel.name
-        editingWorkLocation = appController.profileModel.workLocation ?? ""
-        editingGender = appController.profileModel.gender ?? ""
-        editingRelationStatus = appController.profileModel.relationStatus ?? ""
-        editingJob = appController.profileModel.job ?? ""
-        editingBio = appController.profileModel.bio ?? ""
+        editingWorkLocation = appController.profileModel.workLocation
+        editingGender = appController.profileModel.gender
+        editingRelationStatus = appController.profileModel.relationStatus
+        editingJob = appController.profileModel.job
+        editingBio = appController.profileModel.bio
         editingInterests = appController.profileModel.interests
         editingAddress = appController.profileModel.address
         editingLatitude = appController.profileModel.latitude
         editingLongitude = appController.profileModel.longitude
-        editingProfileImage = appController.profileModel.profileImage
-        editingExtraImages = appController.profileModel.extraImages
+        // Note: editingProfileImage and editingExtraImages are used only for new images selected during editing
+        editingProfileImage = nil
+        editingExtraImages = [nil, nil]
     }
     
     private func saveChanges(completion: @escaping (Bool) -> Void) {
-        // Update the ProfileModel with backend changes including images
-        // TODO: in the future there will be more fields 
+        // Check if any changes were actually made
+        let hasChanges = editingName != appController.profileModel.name ||
+                        editingInterests != appController.profileModel.interests ||
+                        editingBio != appController.profileModel.bio ||
+                        editingLatitude != appController.profileModel.latitude ||
+                        editingLongitude != appController.profileModel.longitude ||
+                        editingJob != appController.profileModel.job ||
+                        editingWorkLocation != appController.profileModel.workLocation ||
+                        editingRelationStatus != appController.profileModel.relationStatus ||
+                        editingGender != appController.profileModel.gender ||
+                        editingProfileImage != nil ||
+                        editingExtraImages.contains { $0 != nil }
+        
+        if !hasChanges {
+            print("📱 No changes detected in ProfileView, skipping save")
+            completion(true) // Return success since there's nothing to save
+            return
+        }
+        
+        // Update the ProfileModel with backend changes
+        // TODO: Handle image uploads separately in the future
         appController.profileModel.updateProfile(
             name: editingName,
             interests: editingInterests,
@@ -1002,9 +1065,7 @@ struct ProfileView: View {
             job: editingJob,
             workLocation: editingWorkLocation,
             relationStatus: editingRelationStatus,
-            gender: editingGender,
-            profileImage: editingProfileImage,
-            extraImages: editingExtraImages
+            gender: editingGender
         ) { result in
             switch result {
             case .success:

@@ -176,18 +176,15 @@ struct UpcomingEventsView: View {
             }
             
             // Refresh profile data if needed and update address
-            // Only refresh if we don't have recent data to prevent unnecessary loading states
-            if appController.profileModel.lastFetchTime == nil || 
-               Date().timeIntervalSince(appController.profileModel.lastFetchTime!) > 300 {
-                appController.profileModel.refreshProfileIfNeeded { result in
-                    switch result {
-                    case .success(_):
-                        Task {
-                            await appController.profileModel.updateAddress()
-                        }
-                    case .failure(let error):
-                        print("Failed to refresh profile: \(error)")
+            appController.profileModel.fetchProfile { result in
+                switch result {
+                case .success(_):
+                    // Profile data updated, address will be updated automatically
+                    Task {
+                        await appController.profileModel.updateAddress()
                     }
+                case .failure(let error):
+                    print("Failed to fetch profile: \(error)")
                 }
             }
         })

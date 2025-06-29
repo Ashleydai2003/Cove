@@ -6,7 +6,6 @@ struct PluggingYouIn: View {
     /// AppController environment object used for navigation and app state management
     @EnvironmentObject var appController: AppController
     @State private var rotation: Double = 0
-    @State private var profile: Profile?
     @State private var errorMessage: String?
     @State private var isProfileLoaded = false
     @State private var isCovesLoaded = false
@@ -28,11 +27,7 @@ struct PluggingYouIn: View {
                     .rotationEffect(.degrees(rotation))
                     .onAppear {
                         startContinuousAnimation()
-                        
-                        // Start fetching data after initial delay
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                            fetchProfile()
-                        }
+                        plugInUser()
                     }
                     .onDisappear {
                         stopAnimation()
@@ -71,31 +66,63 @@ struct PluggingYouIn: View {
         animationTimer = nil
     }
     
-    private func fetchProfile() {
+    private func plugInUser() {
+        // Check if view was cancelled
+        guard !isCancelled else { return }
+        
+        // First, check if user is in onboarding mode
+        if appController.profileModel.onboarding {
+            print("📱 User is in onboarding mode, completing onboarding...")
+            completeOnboarding()
+        } else {
+            print("📱 User is not in onboarding mode, proceeding with normal flow...")
+            fetchUserProfile {
+                self.fetchUserCoves()
+            }
+        }
+    }
+    
+    private func completeOnboarding() {
+        Onboarding.completeOnboarding { success in
+            DispatchQueue.main.async {
+                // Check if view was cancelled
+                guard !self.isCancelled else { return }
+                
+                if success {
+                    print("✅ Onboarding completed successfully")
+                    // After onboarding is complete, fetch profile and coves
+                    self.fetchUserProfile {
+                        self.fetchUserCoves()
+                    }
+                } else {
+                    print("❌ Onboarding failed")
+                    self.errorMessage = "Failed to complete onboarding"
+                    // Stay on this screen if onboarding fails
+                }
+            }
+        }
+    }
+    
+    private func fetchUserProfile(completion: @escaping () -> Void) {
         appController.profileModel.fetchProfile { result in
             DispatchQueue.main.async {
                 // Check if view was cancelled
                 guard !self.isCancelled else { return }
                 
                 switch result {
-                case .success(_):
-                    // Profile data is now automatically updated in the ProfileModel
+                case .success(let profileData):
                     print("✅ Profile fetched successfully")
-                    isProfileLoaded = true
-                    
-                    // Fetch user coves after profile is fetched
-                    fetchUserCoves()
-                    
-                    // Check if we can navigate now
-                    checkAndNavigate()
+                    self.isProfileLoaded = true
                     
                 case .failure(let error):
                     print("❌ Profile fetch failed: \(error.localizedDescription)")
-                    errorMessage = "Failed to fetch profile: \(error.localizedDescription)"
-                    // Still try to navigate even if profile fetch fails
-                    isProfileLoaded = true
-                    checkAndNavigate()
+                    self.errorMessage = "Failed to fetch profile: \(error.localizedDescription)"
+                    // Still mark as loaded even if profile fetch fails
+                    self.isProfileLoaded = true
                 }
+                
+                // Call completion regardless of success/failure
+                completion()
             }
         }
     }
@@ -112,23 +139,23 @@ struct PluggingYouIn: View {
                     let coveIds = response.coves.map { $0.id }
                     UserDefaults.standard.set(coveIds, forKey: "user_cove_ids")
                     print("✅ User coves fetched successfully")
-                    isCovesLoaded = true
+                    self.isCovesLoaded = true
                     
-                    // Check if we can navigate now
-                    checkAndNavigate()
+                    // Navigate to home after everything is loaded
+                    self.navigateToHome()
                     
                 case .failure(let error):
                     print("❌ User coves fetch failed: \(error.localizedDescription)")
-                    errorMessage = "Failed to fetch user coves: \(error.localizedDescription)"
+                    self.errorMessage = "Failed to fetch user coves: \(error.localizedDescription)"
                     // Still try to navigate even if coves fetch fails
-                    isCovesLoaded = true
-                    checkAndNavigate()
+                    self.isCovesLoaded = true
+                    self.navigateToHome()
                 }
             }
         }
     }
     
-    private func checkAndNavigate() {
+    private func navigateToHome() {
         // Check if view was cancelled
         guard !isCancelled else { return }
         
@@ -147,24 +174,10 @@ struct PluggingYouIn: View {
                 // Check if view was cancelled before navigating
                 guard !self.isCancelled else { return }
                 
-                // Check if images are still loading
-                if appController.profileModel.imagesLoading {
-                    // Wait a bit more for images to load, but keep animation going
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                        // Check again if cancelled
-                        guard !self.isCancelled else { return }
-                        
-                        if let error = errorMessage {
-                            appController.errorMessage = error
-                        }
-                        appController.path.append(.home)
-                    }
-                } else {
-                    if let error = errorMessage {
-                        appController.errorMessage = error
-                    }
-                    appController.path.append(.home)
+                if let error = errorMessage {
+                    appController.errorMessage = error
                 }
+                appController.path.append(.home)
             }
         }
     }

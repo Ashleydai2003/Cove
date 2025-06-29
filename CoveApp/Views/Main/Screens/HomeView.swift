@@ -5,63 +5,102 @@
 //  Created by Ananya Agarwal
 
 import SwiftUI
+import Kingfisher
+
 
 let tabIconSize: CGFloat = 10
+
+// NOTE: We are using a custom tab bar because the default tab bar is not customizable with the profile image icon
+
+// MARK: - Custom Tab Bar View
+struct TabBarView: View {
+    @Binding var selectedTab: Int
+    @EnvironmentObject var appController: AppController
+    
+    var body: some View {
+        HStack {
+            Spacer()
+            
+            // Home Tab
+            Button(action: { selectedTab = 1 }) {
+                Image("tab2")
+                    .renderingMode(.original)
+            }
+            
+            Spacer()
+            
+            // Calendar Tab
+            Button(action: { selectedTab = 2 }) {
+                Image("calendar")
+                    .renderingMode(.original)
+            }
+            
+            Spacer()
+            
+            // Cove Tab
+            Button(action: { selectedTab = 3 }) {
+                Image("cove")
+                    .renderingMode(.original)
+            }
+            
+            Spacer()
+            
+            // Friends Tab
+            Button(action: { selectedTab = 4 }) {
+                Image("friends")
+                    .renderingMode(.original)
+            }
+            
+            Spacer()
+            
+            // Profile Tab with KFImage
+            Button(action: { selectedTab = 5 }) {
+                if let profileImage = appController.profileModel.profileUIImage {
+                    Image(uiImage: profileImage)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: 28, height: 28)
+                        .clipShape(Circle())
+                } else {
+                    // TODO: replace with default profile image
+                    Image("tab4")
+                        .renderingMode(.original)
+                }
+            }
+            
+            Spacer()
+        }
+        .padding(.vertical, 8)
+        .background(Color(hex: "5E1C1D"))
+        .overlay(
+            Rectangle()
+                .frame(height: 0.5)
+                .foregroundColor(Color.gray.opacity(0.3)),
+            alignment: .top
+        )
+    }
+}
 
 struct HomeView: View {
     @State private var tabSelection = 1
     @EnvironmentObject var appController: AppController
     
-    // TODO: add indicator on which tab is chosen atm
     var body: some View {
-        TabView(selection: $tabSelection) {
-            
-            UpcomingEventsView()
-                .tag(1)
-                .tabItem {
-                    Image("tab2")
-                        .renderingMode(
-                            .original)
+        VStack(spacing: 0) {
+            ZStack {
+                // Main content area - switch instead of TabView to prevent rebuilding
+                switch tabSelection {
+                case 1: UpcomingEventsView()
+                case 2: CalendarView()
+                case 3: FeedView()
+                case 4: FriendsView()
+                case 5: ProfileView()
+                default: UpcomingEventsView()
                 }
-            
-            CalendarView()
-                .tag(2)
-                .tabItem {
-                    Image("calendar").renderingMode(.original)
-                }
-            
-            FeedView()
-                .tag(3)
-                .tabItem {
-                    Image("cove").renderingMode(.original)
-                }
-            
-            FriendsView()
-                .tag(4)
-                // TODO: Change default image/connect to backend
-                .tabItem {
-                    Image("friends").renderingMode(.original)
-                }
-            
-            ProfileView()
-                .tag(5)
-                .tabItem {
-                    if let profileImage = appController.profileModel.profileImage {
-                        Image(uiImage: profileImage)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: 28, height: 28)
-                            .clipShape(Circle())
-                            .clipped()
-                    } else {
-                        Image("tab4")
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: 28, height: 28)
-                            .clipShape(Circle())
-                            .clipped()
-                    }
-                }
+            }
+
+            // Tab bar - now won't be recreated on tab switches
+            TabBarView(selectedTab: $tabSelection)
         }
         .onAppear(perform: {
             // Only set to home tab if this is the initial app launch
