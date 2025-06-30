@@ -90,12 +90,12 @@ struct HomeView: View {
             ZStack {
                 // Main content area - switch instead of TabView to prevent rebuilding
                 switch tabSelection {
-                case 1: UpcomingEventsView()
-                case 2: CalendarView()
+                case 1: UpcomingEventsView(viewModel: appController.calendarFeed)
+                case 2: CalendarView(viewModel: appController.calendarFeed)
                 case 3: CoveFeedView(viewModel: appController.coveFeed)
                 case 4: FriendsView()
                 case 5: ProfileView()
-                default: UpcomingEventsView()
+                default: UpcomingEventsView(viewModel: appController.calendarFeed)
                 }
             }
 

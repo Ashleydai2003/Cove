@@ -12,7 +12,7 @@ import CoreLocation
 // also where are these cute little icons coming from?
 struct UpcomingEventsView: View {
     
-    @StateObject private var viewModel = UpcomingEventsViewModel()
+    @ObservedObject var viewModel: CalendarFeed
     @EnvironmentObject var appController: AppController
     
     var body: some View {
@@ -86,7 +86,7 @@ struct UpcomingEventsView: View {
                         ScrollView {
                             VStack(spacing: 16) {
                                 // Grouped events by date
-                                ForEach(viewModel.groupedEvent?.keys.sorted() ?? [], id: \.self) { date in
+                                ForEach(viewModel.groupedEvents.keys.sorted(), id: \.self) { date in
                                     VStack(spacing: 8) {
                                         HStack {
                                             Text(viewModel.formattedDateWithOrdinal(date))
@@ -97,7 +97,7 @@ struct UpcomingEventsView: View {
                                         }
                                         .padding(.horizontal, 16)
                                         
-                                        ForEach(viewModel.groupedEvent?[date] ?? [], id: \.id) { event in
+                                        ForEach(viewModel.groupedEvents[date] ?? [], id: \.id) { event in
                                             UpcomingEventCellView(event: event)
                                         }
                                         
@@ -108,7 +108,7 @@ struct UpcomingEventsView: View {
                                     }
                                 }
                                 
-                                if viewModel.groupedEvent?.isEmpty ?? true {
+                                if viewModel.groupedEvents.isEmpty {
                                     if viewModel.isLoading {
                                         Text("loading...")
                                             .font(.LibreBodoni(size: 14))
@@ -170,10 +170,8 @@ struct UpcomingEventsView: View {
             }
         }
         .onAppear(perform: {
-            // Only fetch if we don't have recent data or if this is the first load
-            if viewModel.events.isEmpty || viewModel.groupedEvent == nil {
-                viewModel.fetchUpcomingEvents()
-            }
+            // Fetch calendar events if needed
+            viewModel.fetchCalendarEventsIfStale()
             
             // Refresh profile data if needed and update address
             appController.profileModel.fetchProfile { result in
@@ -197,7 +195,7 @@ struct UpcomingEventsView: View {
 }
 
 #Preview {
-    UpcomingEventsView()
+    UpcomingEventsView(viewModel: CalendarFeed())
         .environmentObject(AppController.shared)
 }
 
