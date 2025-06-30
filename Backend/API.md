@@ -278,7 +278,7 @@ Returns:
   * nextCursor: String | null
 }
 
-### `/calendar-events`
+### `/upcoming-events`
 
 Retrieves all events from coves the user is a member of, with pagination.
 
@@ -302,6 +302,42 @@ Returns:
   * hostId: String
   * hostName: String
   * rsvpStatus: "GOING" | "MAYBE" | "NOT_GOING" | null
+  * goingCount: Number - Number of users who RSVP'd "GOING"
+  * createdAt: DateTime
+  * coverPhoto: {
+    * id: String
+    * url: String
+  } | null
+}>
+* pagination: {
+  * hasMore: Boolean
+  * nextCursor: String | null
+}
+
+### `/calendar-events`
+
+Retrieves events that the user has RSVP'd "GOING" to, with pagination. This endpoint is specifically for calendar view showing committed events.
+
+Takes Query String Parameters:
+* cursor: String (optional, for pagination)
+* limit: Number (optional, defaults to 10, max 50)
+
+Returns:
+* events: Array<{
+  * id: String
+  * name: String
+  * description: String | null
+  * date: String
+  * location: String
+  * coveId: String
+  * coveName: String
+  * coveCoverPhoto: {
+    * id: String
+    * url: String
+  } | null
+  * hostId: String
+  * hostName: String
+  * rsvpStatus: "GOING" (always "GOING" for this endpoint)
   * goingCount: Number - Number of users who RSVP'd "GOING"
   * createdAt: DateTime
   * coverPhoto: {
