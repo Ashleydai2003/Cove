@@ -1,5 +1,5 @@
 //
-//  MutualsView.swift
+//  ContactsView.swift
 //  Cove
 //
 
@@ -94,7 +94,7 @@ private struct ContactRow: View {
 }
 
 // MARK: - Main View
-struct MutualsView: View {
+struct ContactsView: View {
     @EnvironmentObject var appController: AppController
     
     // MARK: – State
@@ -224,6 +224,6 @@ struct MutualsView: View {
 }
 
 #Preview {
-    MutualsView()
+    ContactsView()
         .environmentObject(AppController.shared)
 }

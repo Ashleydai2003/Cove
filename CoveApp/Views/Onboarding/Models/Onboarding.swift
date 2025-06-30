@@ -285,7 +285,7 @@ class Onboarding {
             print("❌ Onboarding incomplete, missing required fields")
             Task { @MainActor in
             AppController.shared.errorMessage = "Onboarding process incomplete"
-            AppController.shared.path = [.mutuals]
+            AppController.shared.path = [.contacts]
             }
             completion(false)
         }

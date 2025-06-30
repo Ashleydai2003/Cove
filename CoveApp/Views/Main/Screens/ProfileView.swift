@@ -863,50 +863,51 @@ struct ProfileView: View {
                 .ignoresSafeArea()
             
             VStack {
-                HStack(alignment: .top) {
-                    Spacer()
-                    
+                // Custom Header
+                HStack(alignment: .center) {
                     Text("cove")
-                        .font(.LibreBodoni(size: 70))
+                        .font(.LibreBodoniBold(size: 32))
                         .foregroundColor(Colors.primaryDark)
-                        .frame(maxHeight: 20)
-                    
                     Spacer()
-                    
-                    Button {
-                        if isEditing {
-                            // Show loading spinner immediately
-                            isSaving = true
-                            
-                            // Save changes and wait for completion before toggling
-                            saveChanges { success in
-                                DispatchQueue.main.async {
-                                    isSaving = false
-                                    if success {
-                                        isEditing = false
+                    HStack(spacing: 18) {
+                        // Edit/Save button
+                        Button(action: {
+                            if isEditing {
+                                // Show loading spinner immediately
+                                isSaving = true
+                                
+                                // Save changes and wait for completion before toggling
+                                saveChanges { success in
+                                    DispatchQueue.main.async {
+                                        isSaving = false
+                                        if success {
+                                            isEditing = false
+                                        }
+                                        // If failed, stay in editing mode so user can try again
                                     }
-                                    // If failed, stay in editing mode so user can try again
                                 }
+                            } else {
+                                // Enter editing mode
+                                isEditing = true
+                                initializeEditingState()
                             }
-                        } else {
-                            // Enter editing mode
-                            isEditing = true
-                            initializeEditingState()
+                        }) {
+                            if isSaving {
+                                ProgressView()
+                                    .scaleEffect(0.8)
+                                    .foregroundColor(Colors.primaryDark)
+                            } else {
+                                Image(systemName: isEditing ? "checkmark" : "pencil")
+                                    .foregroundColor(Colors.primaryDark)
+                                    .font(.system(size: 20))
+                            }
                         }
-                    } label: {
-                        if isSaving {
-                            ProgressView()
-                                .scaleEffect(0.8)
-                                .foregroundColor(Colors.primaryDark)
-                        } else {
-                            Image(systemName: isEditing ? "checkmark" : "pencil")
-                                .foregroundColor(Colors.primaryDark)
-                                .font(.system(size: 20))
-                        }
+                        .disabled(isSaving)
                     }
-                    .disabled(isSaving)
                 }
-                .padding(.vertical, 20)
+                .padding(.horizontal, 30)
+                .padding(.top, 24)
+                .padding(.bottom, 8)
 
                 if appController.profileModel.isLoading {
                     Spacer()
@@ -1091,3 +1092,4 @@ struct ProfileView: View {
     ProfileView()
         .environmentObject(AppController.shared)
 }
+

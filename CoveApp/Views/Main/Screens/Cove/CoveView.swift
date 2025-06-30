@@ -102,7 +102,7 @@ struct CoveView: View {
                         // Events section
                         VStack(alignment: .leading, spacing: 5) {
                             ForEach(viewModel.events, id: \.id) { event in
-                                EventSummaryView(event: event)
+                                EventSummaryView(event: event, type: .cove)
                                     .onAppear {
                                         viewModel.loadMoreEventsIfNeeded(currentEvent: event)
                                     }
