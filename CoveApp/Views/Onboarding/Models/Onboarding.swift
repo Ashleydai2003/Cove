@@ -248,14 +248,14 @@ class Onboarding {
                                     if friendRequestSuccess {
                                         print("✅ All operations completed successfully")
                                         Task { @MainActor in
-                                            AppController.shared.hasCompletedOnboarding = true
-                                            clearImages() // Clear stored images after successful upload
-                                            AppController.shared.path = [.yourInvites]
+                                        AppController.shared.hasCompletedOnboarding = true
+                                        clearImages() // Clear stored images after successful upload
+                                        AppController.shared.path = [.yourInvites]
                                         }
                                     } else {
                                         print("❌ Friend request sending failed")
                                         Task { @MainActor in
-                                            AppController.shared.errorMessage = "Failed to send friend requests"
+                                        AppController.shared.errorMessage = "Failed to send friend requests"
                                         }
                                     }
                                     completion(friendRequestSuccess)
@@ -266,9 +266,9 @@ class Onboarding {
                             DispatchQueue.main.async {
                                 print("✅ Onboarding completed without friend requests")
                                 Task { @MainActor in
-                                    AppController.shared.hasCompletedOnboarding = true
-                                    clearImages() // Clear stored images after successful upload
-                                    AppController.shared.path = [.yourInvites]
+                                AppController.shared.hasCompletedOnboarding = true
+                                clearImages() // Clear stored images after successful upload
+                                AppController.shared.path = [.yourInvites]
                                 }
                                 completion(true)
                             }
@@ -284,8 +284,8 @@ class Onboarding {
         } else {
             print("❌ Onboarding incomplete, missing required fields")
             Task { @MainActor in
-                AppController.shared.errorMessage = "Onboarding process incomplete"
-                AppController.shared.path = [.mutuals]
+            AppController.shared.errorMessage = "Onboarding process incomplete"
+            AppController.shared.path = [.mutuals]
             }
             completion(false)
         }
@@ -335,7 +335,7 @@ class Onboarding {
                 completion(true)
             case .failure(let error):
                 Task { @MainActor in
-                    AppController.shared.errorMessage = "Onboarding failed: \(error.localizedDescription)"
+                AppController.shared.errorMessage = "Onboarding failed: \(error.localizedDescription)"
                 }
                 completion(false)
             }

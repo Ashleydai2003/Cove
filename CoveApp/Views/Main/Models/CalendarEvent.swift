@@ -6,7 +6,7 @@
 
 import Foundation
 
-// TODO: we should return less information, only the information needed
+// TODO: we should return less information, only the information needed 
 
 /// CalendarEvent: Represents a single event in a cove's feed or calendar.
 /// - Used for event lists, event details, and event post views.
@@ -69,7 +69,7 @@ struct Event: Decodable {
         let inputFormatter = DateFormatter()
         inputFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
         return inputFormatter.date(from: date) ?? Date()
-    }
+        }
     var formattedDate: String {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
