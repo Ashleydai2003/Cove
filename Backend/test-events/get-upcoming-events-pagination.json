@@ -1,9 +1,9 @@
 {
   "httpMethod": "GET",
-  "path": "/calendar-events",
+  "path": "/upcoming-events",
   "queryStringParameters": {
-    "limit": "100",
-    "cursor": null
+    "limit": "5",
+    "cursor": "event-123"
   },
   "headers": {
     "Authorization": "Bearer test-token"

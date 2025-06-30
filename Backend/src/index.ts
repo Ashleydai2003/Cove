@@ -19,7 +19,7 @@ import {
   handleSendFriendRequest,
   handleResolveFriendRequest,
   handleGetCoveEvents,
-  handleGetCalendarEvents,
+  handleGetUpcomingEvents,
   handleGetFriends,
   handleGetFriendRequests,
   handleGetCove,
@@ -31,6 +31,7 @@ import {
   handleUpdateEventRSVP,
   handleGetRecommendedFriends,
   handleJoinCove,
+  handleGetCalendarEvents,
 } from './routes';
 
 export const handler = async (
@@ -69,8 +70,8 @@ export const handler = async (
         return handleResolveFriendRequest(event);
       case '/cove-events':
         return handleGetCoveEvents(event);
-      case '/calendar-events':
-        return handleGetCalendarEvents(event);
+      case '/upcoming-events':
+        return handleGetUpcomingEvents(event);
       case '/friends':
         return handleGetFriends(event);
       case '/friend-requests':
@@ -95,6 +96,8 @@ export const handler = async (
         return handleGetRecommendedFriends(event);
       case '/join-cove':
         return handleJoinCove(event);
+      case '/calendar-events':
+        return handleGetCalendarEvents(event);
       default:
         // Handle common web standard files
         switch (event.path) {
