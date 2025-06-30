@@ -57,6 +57,9 @@ class AppController: ObservableObject {
     /// Shared CoveFeed instance for all cove feed and caching logic
     @Published var coveFeed = CoveFeed()
     
+    /// Shared CalendarFeed instance for all calendar events and caching logic
+    @Published var calendarFeed = CalendarFeed()
+    
     /// Shared ProfileModel instance for user profile data
     @Published var profileModel = ProfileModel()
     
