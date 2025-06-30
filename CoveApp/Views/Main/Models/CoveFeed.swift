@@ -45,6 +45,19 @@ class CoveFeed: ObservableObject {
         isCancelled = false
     }
     
+    /// Sets the user coves directly (used when fetched during onboarding).
+    /// This bypasses the loading state and cache checks.
+    func setUserCoves(_ coves: [Cove]) {
+        print("📱 CoveFeed: Setting user coves directly (\(coves.count) coves)")
+        self.userCoves = coves
+        self.lastFetchTime = Date()
+        
+        // Set the first cove as selected if none is selected
+        if self.selectedCoveId == nil && !coves.isEmpty {
+            self.setSelectedCove(id: coves[0].id)
+        }
+    }
+    
     /// Fetches user coves from the backend, using cache if fresh.
     /// - Parameter completion: Optional completion handler called when the fetch operation completes
     func fetchUserCoves(completion: (() -> Void)? = nil) {

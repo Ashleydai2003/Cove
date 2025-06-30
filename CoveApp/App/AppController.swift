@@ -21,7 +21,7 @@ enum OnboardingRoute: Hashable {
     case hobbies
     case bio
     case profilePics
-    case mutuals
+    case contacts
     case pluggingIn
     case profile
     case exploreFriends
@@ -57,7 +57,10 @@ class AppController: ObservableObject {
     /// Shared CoveFeed instance for all cove feed and caching logic
     @Published var coveFeed = CoveFeed()
     
-    /// Shared CalendarFeed instance for all calendar events and caching logic
+    /// Shared UpcomingFeed instance for all upcoming events and caching logic
+    @Published var upcomingFeed = UpcomingFeed()
+    
+    /// Shared CalendarFeed instance for all calendar events (committed events) and caching logic
     @Published var calendarFeed = CalendarFeed()
     
     /// Shared ProfileModel instance for user profile data

@@ -1,13 +1,12 @@
 //
-//  FriendsView.swift
+//  MutualsView.swift
 //  Cove
 //
-//  Screen where user can add friends on Cove ("add friends on cove" on Figma)
 
 import SwiftUI
 
 @MainActor
-class FriendsViewModel: ObservableObject {
+class MutualsViewModel: ObservableObject {
     @Published var mutuals: [RecommendedFriendDTO] = []
     @Published var nextCursor: String?
     @Published var hasMore = true
@@ -65,9 +64,9 @@ class FriendsViewModel: ObservableObject {
     }
 }
 
-struct FriendsView: View {
+struct MutualsView: View {
     @EnvironmentObject var appController: AppController
-    @StateObject private var viewModel = FriendsViewModel()
+    @StateObject private var viewModel = MutualsViewModel()
 
     var body: some View {
         ZStack {
@@ -75,39 +74,7 @@ struct FriendsView: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
-                VStack(spacing: 4) {
-                    Text("explore")
-                        .font(.LibreBodoniBold(size: 25))
-                        .foregroundStyle(Colors.primaryDark)
-                    Text("send friend requests to mutuals you know")
-                        .font(.LibreBodoni(size: 12))
-                        .foregroundStyle(.black.opacity(0.7))
-                }
-                .padding(.top, 30)
-                .padding(.horizontal, 20)
-                .padding(.bottom, 30)
-
-                Button {
-                    appController.path.append(.friendRequests)
-                } label: {
-                    HStack {
-                        Text("friend requests")
-                            .font(.LibreBodoniBold(size: 14))
-                            .foregroundStyle(Color.black)
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .foregroundColor(Color.black)
-                    }
-                    .padding(.horizontal, 12)
-                    .frame(height: 44)
-                    .background(
-                        RoundedRectangle(cornerRadius: 11)
-                            .stroke(Color.black.opacity(1), lineWidth: 1)
-                    )
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 10)
-                .padding(.bottom, 20)
+                
 
                 // MARK: — Mutuals List
                 if viewModel.isLoading && viewModel.mutuals.isEmpty {
@@ -241,9 +208,9 @@ struct FriendsView: View {
 
 // MARK: — Preview
 
-struct FriendsView_Previews: PreviewProvider {
+struct MutualsView_Previews: PreviewProvider {
     static var previews: some View {
-        FriendsView()
+        MutualsView()
             .environmentObject(AppController.shared)
             .previewDevice("iPhone 13")
     }

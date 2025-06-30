@@ -144,9 +144,9 @@ struct PluggingYouIn: View {
                 
                 switch result {
                 case .success(let response):
-                    // Store cove IDs in UserDefaults
-                    let coveIds = response.coves.map { $0.id }
-                    UserDefaults.standard.set(coveIds, forKey: "user_cove_ids")
+                    // Set the coves in the shared CoveFeed instance
+                    appController.coveFeed.setUserCoves(response.coves)
+                    
                     print("✅ User coves fetched successfully")
                     self.isCovesLoaded = true
                     

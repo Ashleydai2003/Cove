@@ -59,7 +59,7 @@ struct TabBarView: View {
                     Image(uiImage: profileImage)
                         .resizable()
                         .aspectRatio(contentMode: .fill)
-                        .frame(width: 28, height: 28)
+                        .frame(width: 30, height: 30)
                         .clipShape(Circle())
                 } else {
                     // TODO: replace with default profile image
@@ -90,12 +90,12 @@ struct HomeView: View {
             ZStack {
                 // Main content area - switch instead of TabView to prevent rebuilding
                 switch tabSelection {
-                case 1: UpcomingEventsView()
+                case 1: HomeFeedView()
                 case 2: CalendarView()
                 case 3: CoveFeedView()
-                case 4: FriendsView()
+                case 4: FriendsTabView()
                 case 5: ProfileView()
-                default: UpcomingEventsView()
+                default: CalendarView()
                 }
             }
 

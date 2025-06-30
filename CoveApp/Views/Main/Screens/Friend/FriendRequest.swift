@@ -77,21 +77,8 @@ struct RequestsView: View {
                 Colors.faf8f4.ignoresSafeArea()
                 
                 VStack(spacing: 0) {
-                    ZStack {
-                        Text("requests")
-                            .font(.LibreBodoniBold(size: 35))
-                            .foregroundStyle(Colors.primaryDark)
-                        HStack {
-                            Button { appController.path.removeLast() } label: {
-                                Images.backArrow
-                            }
-                            Spacer()
-                        }
-                    }
-                    .padding(.top, 10)
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 50)
-                    
+                 
+                
                     // Error banner
                     if let msg = vm.errorMessage {
                         Text(msg)
@@ -244,10 +231,6 @@ struct RequestsView_Previews: PreviewProvider {
                         Text("requests")
                             .font(.LibreBodoniBold(size: 35))
                             .foregroundStyle(Colors.primaryDark)
-                        HStack {
-                            Images.backArrow
-                            Spacer()
-                        }
                     }
                     .padding(.top, 10)
                     .padding(.horizontal, 20)

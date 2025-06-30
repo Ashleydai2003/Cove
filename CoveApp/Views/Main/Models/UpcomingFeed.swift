@@ -1,5 +1,5 @@
 //
-//  CalendarFeed.swift
+//  UpcomingFeed.swift
 //  Cove
 //
 //  Created by Ashley Dai on 6/29/25.
@@ -7,12 +7,12 @@
 
 import SwiftUI
 
-/// CalendarFeed: Manages the user's calendar events (committed events) with caching and lazy loading.
-/// - Handles caching, preloading, and pagination for events the user has RSVP'd "GOING" to.
+/// UpcomingFeed: Manages the user's upcoming events with caching and lazy loading.
+/// - Handles caching, preloading, and pagination for upcoming events from all user's coves.
 /// - Use a single shared instance (see AppController).
 @MainActor
-class CalendarFeed: ObservableObject {
-    /// List of calendar events for the user (events they've committed to)
+class UpcomingFeed: ObservableObject {
+    /// List of upcoming events for the user
     @Published var events: [CalendarEvent] = []
     /// Cursor for event pagination
     @Published var nextCursor: String?
@@ -41,12 +41,12 @@ class CalendarFeed: ObservableObject {
     }
     
     init() {
-        print("📅 CalendarFeed initialized")
+        print("📅 UpcomingFeed initialized")
     }
     
     /// Cancels any ongoing requests and resets loading states.
     func cancelRequests() {
-        print("🛑 CalendarFeed: cancelRequests called - cancelling all tasks")
+        print("🛑 UpcomingFeed: cancelRequests called - cancelling all tasks")
         isCancelled = true
         isLoading = false
     }
@@ -56,13 +56,13 @@ class CalendarFeed: ObservableObject {
         isCancelled = false
     }
     
-    /// Fetches calendar events from the backend, using cache if fresh.
+    /// Fetches upcoming events from the backend, using cache if fresh.
     /// - Parameter forceRefresh: If true, bypasses cache and fetches fresh data
     /// - Parameter completion: Optional completion handler called when the fetch operation completes
-    func fetchCalendarEvents(forceRefresh: Bool = false, completion: (() -> Void)? = nil) {
+    func fetchUpcomingEvents(forceRefresh: Bool = false, completion: (() -> Void)? = nil) {
         // Check if we have recent cached data and not forcing refresh
         if !forceRefresh && hasCachedData && !isCacheStale {
-            print("📅 CalendarFeed: Using cached calendar events data (\(events.count) events)")
+            print("📅 UpcomingFeed: Using cached upcoming events data (\(events.count) events)")
             completion?()
             return
         }
@@ -71,7 +71,7 @@ class CalendarFeed: ObservableObject {
         
         resetCancellationFlag()
         isLoading = true
-        print("🔍 CalendarFeed: Fetching calendar events from backend...")
+        print("🔍 UpcomingFeed: Fetching upcoming events from backend...")
         
         var parameters: [String: Any] = [
             "limit": pageSize
@@ -82,7 +82,7 @@ class CalendarFeed: ObservableObject {
             parameters["cursor"] = cursor
         }
         
-        NetworkManager.shared.get(endpoint: "/calendar-events", parameters: parameters) { [weak self] (result: Result<CalendarEventsResponse, NetworkError>) in
+        NetworkManager.shared.get(endpoint: "/upcoming-events", parameters: parameters) { [weak self] (result: Result<CalendarEventsResponse, NetworkError>) in
             guard let self = self else { return }
             
             // Check if request was cancelled
@@ -98,7 +98,7 @@ class CalendarFeed: ObservableObject {
                 
                 switch result {
                 case .success(let response):
-                    print("✅ CalendarFeed: Calendar events fetched successfully: \(response.events?.count ?? 0) events")
+                    print("✅ UpcomingFeed: Upcoming events fetched successfully: \(response.events?.count ?? 0) events")
                     
                     if forceRefresh || self.nextCursor == nil {
                         // First page or refresh, replace existing data
@@ -115,7 +115,7 @@ class CalendarFeed: ObservableObject {
                     completion?()
                     
                 case .failure(let error):
-                    print("❌ CalendarFeed: Calendar events fetch failed: \(error.localizedDescription)")
+                    print("❌ UpcomingFeed: Upcoming events fetch failed: \(error.localizedDescription)")
                     self.errorMessage = error.localizedDescription
                     completion?()
                 }
@@ -123,36 +123,36 @@ class CalendarFeed: ObservableObject {
         }
     }
     
-    /// Forces a refresh of calendar events data, bypassing cache.
-    func refreshCalendarEvents(completion: (() -> Void)? = nil) {
-        print("🔄 CalendarFeed: Forcing refresh of calendar events data")
+    /// Forces a refresh of upcoming events data, bypassing cache.
+    func refreshUpcomingEvents(completion: (() -> Void)? = nil) {
+        print("🔄 UpcomingFeed: Forcing refresh of upcoming events data")
         nextCursor = nil
         hasMore = true
-        fetchCalendarEvents(forceRefresh: true, completion: completion)
+        fetchUpcomingEvents(forceRefresh: true, completion: completion)
     }
     
     /// Loads more events if the user scrolls to the end of the list.
     func loadMoreEventsIfNeeded() {
         if hasMore && !isLoading && nextCursor != nil {
-            print("📅 CalendarFeed: Loading more events...")
-            fetchCalendarEvents(forceRefresh: false)
+            print("📅 UpcomingFeed: Loading more events...")
+            fetchUpcomingEvents(forceRefresh: false)
         }
     }
     
-    /// Fetches calendar events only if data is missing or stale (older than 5 minutes)
-    func fetchCalendarEventsIfStale(completion: (() -> Void)? = nil) {
+    /// Fetches upcoming events only if data is missing or stale (older than 5 minutes)
+    func fetchUpcomingEventsIfStale(completion: (() -> Void)? = nil) {
         if !hasCachedData || isCacheStale {
-            fetchCalendarEvents(forceRefresh: false, completion: completion)
+            fetchUpcomingEvents(forceRefresh: false, completion: completion)
         } else {
-            print("📅 CalendarFeed: Using fresh cached data")
+            print("📅 UpcomingFeed: Using fresh cached data")
             completion?()
         }
     }
     
     /// Gets events grouped by date for UI display
     var groupedEvents: [Date: [CalendarEvent]] {
-        Dictionary(grouping: events) { event in
-            Calendar.current.startOfDay(for: event.eventDate)
+        return Dictionary(grouping: events) { event in
+            event.eventDate
         }
     }
     

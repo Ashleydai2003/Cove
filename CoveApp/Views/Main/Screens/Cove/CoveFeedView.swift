@@ -24,34 +24,11 @@ struct CoveFeedView: View {
             
             VStack(spacing: 0) {
                 // Custom Header
-                HStack {
-                    Spacer()
-                    Text("cove")
-                        .font(.LibreBodoniBold(size: 32))
-                        .foregroundColor(Colors.primaryDark)
-                        .frame(maxWidth: .infinity)
-                        .multilineTextAlignment(.center)
-                    Spacer(minLength: 0)
-                    HStack(spacing: 18) {
-                        Button(action: { /* TODO: Inbox action */ }) {
-                            Image(systemName: "envelope")
-                                .resizable()
-                                .frame(width: 28, height: 22)
-                                .foregroundColor(Colors.primaryDark)
-                        }
-                        Button(action: { /* TODO: Paper plane action */ }) {
-                            Image(systemName: "paperplane")
-                                .resizable()
-                                .frame(width: 26, height: 26)
-                                .foregroundColor(Colors.primaryDark)
-                        }
-                    }
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 24)
-                .padding(.bottom, 8)
+                CoveBannerView()
                 
-                if coveFeed.isLoading && coveFeed.userCoves.isEmpty {
+                // Only show loading if we have no coves AND we're actively loading
+                // (coves should already be fetched during onboarding)
+                if coveFeed.userCoves.isEmpty && coveFeed.isLoading {
                     VStack(spacing: 16) {
                         ProgressView()
                             .tint(Colors.primaryDark)
@@ -103,7 +80,10 @@ struct CoveFeedView: View {
         }
         .navigationBarBackButtonHidden()
         .onAppear {
-            coveFeed.fetchUserCoves()
+            // Only fetch if we don't have any coves (they should be fetched during onboarding)
+            if coveFeed.userCoves.isEmpty {
+                coveFeed.fetchUserCoves()
+            }
         }
         .onDisappear {
             coveFeed.cancelRequests()

@@ -193,7 +193,7 @@ struct ProfilePicView: View {
                             .frame(width: 52, height: 52)
                             .padding(.trailing, 20)
                             .onTapGesture {
-                                appController.path.append(.mutuals)
+                                appController.path.append(.contacts)
                             }
                     }
                 }
