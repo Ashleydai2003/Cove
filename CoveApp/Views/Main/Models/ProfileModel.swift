@@ -1,3 +1,9 @@
+//
+//  ProfileModel.swift
+//  Cove
+//
+//  Refactored and documented for maintainability and best practices
+
 import SwiftUI
 import Foundation
 import CoreLocation
@@ -53,36 +59,67 @@ struct ProfileData: Decodable {
     let stats: ProfileStats?
 }
 
-/**
- * ProfileModel manages user profile data and provides methods for fetching, updating, and caching profile information.
- * This class serves as the central data store for user profile information used throughout the app.
- */
+/// ProfileModel: Manages the user's profile data, including images and editing state.
+/// - Handles profile fetching, updating, and image management.
+/// - Use a single shared instance (see AppController).
+@MainActor
 class ProfileModel: ObservableObject {
-    // MARK: - Published Properties (Used for both onboarding and profile data)
-    @Published var name: String = ""
-    @Published var phone: String = ""
-    @Published var onboarding: Bool = false
-    @Published var id: String = ""
-    @Published var userId: String = ""
-    @Published var age: Int?
-    @Published var birthdate: String?
-    @Published var interests: [String] = []
-    @Published var latitude: Double?
-    @Published var longitude: Double?
-    @Published var almaMater: String?
-    @Published var job: String = ""
-    @Published var workLocation: String = ""
-    @Published var relationStatus: String = ""
-    @Published var sexuality: String = ""
-    @Published var bio: String = ""
-    @Published var gender: String = ""
-    @Published var photos: [ProfilePhoto] = []
-    @Published var stats: ProfileStats?
-    @Published var address: String = ""
-    
-    // MARK: - Static Images (Loaded once, used everywhere)
+    // MARK: - Published Properties
+    /// The user's profile data (fetched from backend)
+    @Published var profile: UserProfile?
+    /// The user's profile image (UIImage, loaded once and cached)
     @Published var profileUIImage: UIImage?
-    @Published var extraUIImages: [UIImage?] = [nil, nil]
+    /// Extra profile images (UIImages, loaded once and cached)
+    @Published var extraUIImages: [UIImage?] = []
+    /// Loading state for UI
+    @Published var isLoading = false
+    /// Error message for UI
+    @Published var errorMessage: String?
+    /// Editing state for profile fields
+    @Published var isEditing: Bool = false
+    /// Editing state for images
+    @Published var editingProfileImage: UIImage?
+    @Published var editingExtraImages: [UIImage] = []
+    /// The user's display name
+    @Published var name: String = ""
+    /// The user's phone number
+    @Published var phone: String = ""
+    /// The user's onboarding status
+    @Published var onboarding: Bool = false
+    /// The user's ID
+    @Published var id: String = ""
+    /// The user's unique identifier
+    @Published var userId: String = ""
+    /// The user's age
+    @Published var age: Int?
+    /// The user's birthdate
+    @Published var birthdate: String?
+    /// The user's interests
+    @Published var interests: [String] = []
+    /// The user's location latitude
+    @Published var latitude: Double?
+    /// The user's location longitude
+    @Published var longitude: Double?
+    /// The user's alma mater
+    @Published var almaMater: String?
+    /// The user's job title
+    @Published var job: String = ""
+    /// The user's work location
+    @Published var workLocation: String = ""
+    /// The user's relationship status
+    @Published var relationStatus: String = ""
+    /// The user's sexuality
+    @Published var sexuality: String = ""
+    /// The user's biography
+    @Published var bio: String = ""
+    /// The user's gender
+    @Published var gender: String = ""
+    /// The user's photos
+    @Published var photos: [ProfilePhoto] = []
+    /// The user's profile statistics
+    @Published var stats: ProfileStats?
+    /// The user's address
+    @Published var address: String = ""
     
     // MARK: - Photo ID Storage
     @Published var profilePhotoId: String?
@@ -93,7 +130,6 @@ class ProfileModel: ObservableObject {
     @Published var adminCove: String?
     
     // MARK: - Loading States
-    @Published var isLoading: Bool = false
     @Published var lastFetchTime: Date?
     
     // MARK: - Cancellation Support
@@ -680,4 +716,22 @@ extension Array {
     subscript(safe index: Index) -> Element? {
         return indices.contains(index) ? self[index] : nil
     }
+}
+
+/// UserProfile: Represents the user's profile data from the backend.
+struct UserProfile: Decodable {
+    let id: String
+    let name: String
+    let bio: String?
+    let birthdate: String?
+    let location: String?
+    let almaMater: String?
+    let job: String?
+    let workLocation: String?
+    let relationStatus: String?
+    let interestedInto: String?
+    let gender: String?
+    let profilePhoto: ProfilePhoto?
+    let extraPhotos: [ProfilePhoto]?
+    // ... (other fields as needed)
 } 
