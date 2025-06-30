@@ -8,8 +8,13 @@
 import SwiftUI
 
 struct CoveFeedView: View {
-    @ObservedObject var viewModel: CoveFeed
     @EnvironmentObject var appController: AppController
+    @ObservedObject private var coveFeed: CoveFeed
+    
+    init() {
+        // Initialize with the shared instance
+        self._coveFeed = ObservedObject(wrappedValue: AppController.shared.coveFeed)
+    }
     
     // MARK: - Main Body 
     var body: some View {
@@ -46,7 +51,7 @@ struct CoveFeedView: View {
                 .padding(.top, 24)
                 .padding(.bottom, 8)
                 
-                if viewModel.isLoading && viewModel.userCoves.isEmpty {
+                if coveFeed.isLoading && coveFeed.userCoves.isEmpty {
                     VStack(spacing: 16) {
                         ProgressView()
                             .tint(Colors.primaryDark)
@@ -55,7 +60,7 @@ struct CoveFeedView: View {
                             .foregroundColor(Colors.primaryDark)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if let error = viewModel.errorMessage {
+                } else if let error = coveFeed.errorMessage {
                     VStack(spacing: 16) {
                         Image(systemName: "exclamationmark.circle")
                             .font(.system(size: 40))
@@ -67,7 +72,7 @@ struct CoveFeedView: View {
                             .multilineTextAlignment(.center)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if viewModel.userCoves.isEmpty {
+                } else if coveFeed.userCoves.isEmpty {
                     VStack(spacing: 16) {
                         Image(systemName: "house")
                             .font(.system(size: 40))
@@ -82,9 +87,9 @@ struct CoveFeedView: View {
                 } else {
                     ScrollView {
                         VStack(spacing: 0) {
-                            ForEach(Array(viewModel.userCoves.enumerated()), id: \..element.id) { idx, cove in
+                            ForEach(Array(coveFeed.userCoves.enumerated()), id: \.element.id) { idx, cove in
                                 CoveCardView(cove: cove)
-                                if idx < viewModel.userCoves.count - 1 {
+                                if idx < coveFeed.userCoves.count - 1 {
                                     Divider()
                                         .padding(.leading, 84)
                                 }
@@ -98,23 +103,23 @@ struct CoveFeedView: View {
         }
         .navigationBarBackButtonHidden()
         .onAppear {
-            viewModel.fetchUserCoves()
+            coveFeed.fetchUserCoves()
         }
         .onDisappear {
-            viewModel.cancelRequests()
+            coveFeed.cancelRequests()
         }
         .alert("error", isPresented: Binding(
-            get: { viewModel.errorMessage != nil },
-            set: { if !$0 { viewModel.errorMessage = nil } }
+            get: { coveFeed.errorMessage != nil },
+            set: { if !$0 { coveFeed.errorMessage = nil } }
         )) {
-            Button("ok") { viewModel.errorMessage = nil }
+            Button("ok") { coveFeed.errorMessage = nil }
         } message: {
-            Text(viewModel.errorMessage ?? "")
+            Text(coveFeed.errorMessage ?? "")
         }
     }
 }
 
 #Preview {
-    CoveFeedView(viewModel: AppController.shared.coveFeed)
+    CoveFeedView()
         .environmentObject(AppController.shared)
 }
