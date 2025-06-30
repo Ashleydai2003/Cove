@@ -110,14 +110,14 @@ struct UpcomingEventsView: View {
                                 
                                 if viewModel.groupedEvent?.isEmpty ?? true {
                                     if viewModel.isLoading {
-                                        Text("Loading...")
-                                            .foregroundStyle(Colors.primaryDark)
+                                        Text("loading...")
                                             .font(.LibreBodoni(size: 14))
+                                            .foregroundColor(Colors.primaryDark)
                                             .frame(maxWidth: .infinity, minHeight: 100)
                                     } else {
-                                        Text("No events yet!")
-                                            .foregroundStyle(Colors.primaryDark)
+                                        Text("no events yet!")
                                             .font(.LibreBodoni(size: 14))
+                                            .foregroundColor(Colors.primaryDark)
                                             .frame(maxWidth: .infinity, minHeight: 100)
                                     }
                                 }

@@ -4,6 +4,7 @@
 //
 //  Created by Ananya Agarwal
 import SwiftUI
+import Kingfisher
 
 // MARK: - View Model
 // TODO: insn't this the same as what is being down in feed? 
@@ -174,24 +175,26 @@ struct EventPostView: View {
                             .frame(maxWidth: .infinity, alignment: .center)
                             .multilineTextAlignment(.center)
                         
-                        if let coverPhoto = event.coverPhoto {
-                            CachedAsyncImage(
-                                url: URL(string: coverPhoto.url)
-                            ) { image in
-                                image
-                                    .resizable()
-                                    .scaledToFill()
-                            } placeholder: {
-                                Rectangle()
-                                    .fill(Color.gray.opacity(0.2))
-                                    .overlay(
-                                        ProgressView()
-                                            .tint(.gray)
-                                    )
-                            }
-                            .frame(height: 192)
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
-                            .clipped()
+                        if let urlString = event.coverPhoto?.url, let url = URL(string: urlString) {
+                            KFImage(url)
+                                .onSuccess { result in
+                                    print("📸 EventPostView event cover loaded from: \(result.cacheType)")
+                                }
+                                .resizable()
+                                .cancelOnDisappear(true)
+                                .fade(duration: 0.2)
+                                .cacheOriginalImage()
+                                .loadDiskFileSynchronously()
+                                .aspectRatio(contentMode: .fill)
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                                .frame(height: 192)
+                                .clipped()
+                        } else {
+                            // fallback placeholder
+                            Rectangle()
+                                .fill(Color.gray.opacity(0.2))
+                                .frame(height: 192)
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
                         }
                         
                         VStack(alignment: .leading) {
@@ -214,9 +217,9 @@ struct EventPostView: View {
                                     .font(.LibreBodoniBold(size: 16))
                             }
                             
-                            Text("Hosted by \(event.host.name)")
-                                .foregroundStyle(Colors.primaryDark)
-                                .font(.LibreBodoni(size: 16))
+                            Text("hosted by \(event.host.name)")
+                                .font(.LibreBodoni(size: 18))
+                                .foregroundColor(Colors.primaryDark)
                         }
                         
                         if let description = event.description {
@@ -228,17 +231,16 @@ struct EventPostView: View {
                         
                         VStack(alignment: .leading) {
                             Text("guest list")
-                                .foregroundStyle(Colors.primaryDark)
-                                .font(.LibreBodoniBold(size: 18))
+                                .font(.LibreBodoni(size: 18))
+                                .foregroundColor(Colors.primaryDark)
                             
                             // Filter RSVPs to only show "GOING" status
                             let goingRsvps = event.rsvps.filter { $0.status == "GOING" }
                             
                             if goingRsvps.isEmpty {
                                 Text("no guests yet! send your invites!")
-                                    .foregroundStyle(Colors.primaryDark.opacity(0.7))
                                     .font(.LibreBodoni(size: 14))
-                                    .italic()
+                                    .foregroundColor(Colors.primaryDark)
                             } else {
                                 HStack {
                                     // Show up to 4 profile photos

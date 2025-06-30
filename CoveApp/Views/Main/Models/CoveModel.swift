@@ -56,22 +56,23 @@ class CoveModel: ObservableObject {
     /**
      * Fetches cove details with caching support.
      * Only fetches fresh data if cache is stale or no cached data exists.
+     * 
+     * - Parameter coveId: The specific cove ID to fetch details for
+     * - Parameter forceRefresh: Whether to bypass cache and force a fresh fetch
      */
-    func fetchCoveDetails(forceRefresh: Bool = false) {
+    func fetchCoveDetails(coveId: String, forceRefresh: Bool = false) {
         // Check if we have recent cached data and not forcing refresh
         if !forceRefresh, 
            let lastFetch = lastFetchTime,
            Date().timeIntervalSince(lastFetch) < 300, // 5 minutes cache
-           cove != nil {
+           cove != nil,
+           cove?.id == coveId {
             print("📱 Using cached cove data")
             
             // If we have cached cove data but no events, fetch events
             if events.isEmpty {
                 print("📱 Cached cove data found, but no events - fetching events")
-                let coveId = cove?.id ?? (UserDefaults.standard.array(forKey: "user_cove_ids") as? [String])?.first
-                if let coveId = coveId {
-                    fetchEvents(coveId: coveId)
-                }
+                fetchEvents(coveId: coveId)
             }
             return
         }
@@ -80,16 +81,7 @@ class CoveModel: ObservableObject {
         
         resetCancellationFlag()
         isLoading = true
-        print("🔍 Fetching cove details...")
-        
-        // Get the first cove ID from UserDefaults
-        let coveId: String? = (UserDefaults.standard.array(forKey: "user_cove_ids") as? [String])?.first
-        guard let coveId else {
-            print("❌ No cove ID found")
-            errorMessage = "No cove ID found"
-            isLoading = false
-            return
-        }
+        print("🔍 Fetching cove details for cove ID: \(coveId)")
         
         NetworkManager.shared.get(endpoint: "/cove", parameters: ["coveId": coveId]) { [weak self] (result: Result<FeedCoveResponse, NetworkError>) in
             guard let self = self else { return }
@@ -127,28 +119,37 @@ class CoveModel: ObservableObject {
         }
     }
     
+    /**
+     * Fetches events for the current cove.
+     * This method uses the cove ID from the current cove object.
+     */
     func fetchEvents() {
+        guard let coveId = cove?.id else {
+            print("❌ No cove ID available")
+            errorMessage = "No cove ID available"
+            return
+        }
+        
+        fetchEvents(coveId: coveId)
+    }
+    
+    func fetchEvents(coveId: String) {
         guard !isLoading && hasMore else { return }
         
         resetCancellationFlag()
         isLoading = true
         print("🔍 Fetching events...")
         
-        // Get the first cove ID from UserDefaults
-        let coveId: String? = (UserDefaults.standard.array(forKey: "user_cove_ids") as? [String])?.first
-        guard let coveId else {
-            print("❌ No cove ID found")
-            errorMessage = "No cove ID found"
-            isLoading = false
-            return
-        }
+        var parameters: [String: Any] = [
+            "coveId": coveId,
+            "limit": pageSize
+        ]
         
-        var params: [String: Any] = ["coveId": coveId, "limit": pageSize]
         if let cursor = nextCursor {
-            params["cursor"] = cursor
+            parameters["cursor"] = cursor
         }
         
-        NetworkManager.shared.get(endpoint: "/cove-events", parameters: params) { [weak self] (result: Result<CoveEventsResponse, NetworkError>) in
+        NetworkManager.shared.get(endpoint: "/cove-events", parameters: parameters) { [weak self] (result: Result<CoveEventsResponse, NetworkError>) in
             guard let self = self else { return }
             
             // Check if request was cancelled
@@ -176,54 +177,16 @@ class CoveModel: ObservableObject {
         }
     }
     
-    func fetchEvents(coveId: String) {
-        guard !isLoading && hasMore else { return }
-        
-        resetCancellationFlag()
-        isLoading = true
-        
-        var parameters: [String: Any] = [
-            "coveId": coveId,
-            "limit": pageSize
-        ]
-        
-        if let cursor = nextCursor {
-            parameters["cursor"] = cursor
-        }
-        
-        NetworkManager.shared.get(endpoint: "/cove-events", parameters: parameters) { [weak self] (result: Result<CoveEventsResponse, NetworkError>) in
-            guard let self = self else { return }
-            
-            // Check if request was cancelled
-            guard !self.isCancelled else {
-                DispatchQueue.main.async {
-                    self.isLoading = false
-                }
-                return
-            }
-            
-            DispatchQueue.main.async {
-                self.isLoading = false
-                
-                switch result {
-                case .success(let response):
-                    // Append new events to existing array
-                    self.events.append(contentsOf: response.events)
-                    self.nextCursor = response.pagination.nextCursor
-                    self.hasMore = response.pagination.hasMore
-                case .failure(let error):
-                    self.errorMessage = error.localizedDescription
-                }
-            }
-        }
-    }
-    
     /**
      * Forces a refresh of cove data, bypassing cache.
      * This should be called when we know the data has changed (e.g., after creating an event).
      */
     func refreshCoveData() {
-        fetchCoveDetails(forceRefresh: true)
+        guard let coveId = cove?.id else {
+            print("❌ No cove ID available for refresh")
+            return
+        }
+        fetchCoveDetails(coveId: coveId, forceRefresh: true)
     }
     
     /**
@@ -231,7 +194,7 @@ class CoveModel: ObservableObject {
      * This is useful when we know events have changed but cove details haven't.
      */
     func refreshEvents() {
-        guard let coveId = cove?.id ?? (UserDefaults.standard.array(forKey: "user_cove_ids") as? [String])?.first else {
+        guard let coveId = cove?.id else {
             print("❌ No cove ID found for events refresh")
             return
         }
@@ -248,7 +211,21 @@ class CoveModel: ObservableObject {
         if let lastEvent = events.last,
            lastEvent.id == currentEvent.id,
            hasMore && !isLoading {
-            fetchEvents(coveId: cove?.id ?? "")
+            guard let coveId = cove?.id else {
+                print("❌ No cove ID available for loading more events")
+                return
+            }
+            fetchEvents(coveId: coveId)
+        }
+    }
+    
+    /// Fetches cove details only if data is missing or stale (older than 5 minutes)
+    func fetchCoveDetailsIfStale(coveId: String) {
+        let needsRefresh = lastFetchTime == nil ||
+            Date().timeIntervalSince(lastFetchTime!) > 300
+
+        if !hasCompleteData || needsRefresh {
+            fetchCoveDetails(coveId: coveId)
         }
     }
 }
@@ -270,11 +247,6 @@ struct FeedCoveDetails: Decodable {
     struct Creator: Decodable {
         let id: String
         let name: String
-    }
-    
-    struct CoverPhoto: Decodable {
-        let id: String
-        let url: String
     }
     
     struct Stats: Decodable {

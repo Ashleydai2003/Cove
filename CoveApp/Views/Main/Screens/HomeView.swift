@@ -92,7 +92,7 @@ struct HomeView: View {
                 switch tabSelection {
                 case 1: UpcomingEventsView()
                 case 2: CalendarView()
-                case 3: FeedView()
+                case 3: CoveFeedView(viewModel: appController.coveFeed)
                 case 4: FriendsView()
                 case 5: ProfileView()
                 default: UpcomingEventsView()

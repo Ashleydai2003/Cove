@@ -54,6 +54,11 @@ struct OnboardingFlow: View {
                         EventMembersView()
                     case .eventPost(let eventId):
                         EventPostView(eventId: eventId)
+                    case .feed(let coveId):
+                        FeedView(
+                            viewModel: appController.coveFeed.getOrCreateCoveModel(for: coveId),
+                            coveId: coveId
+                        )
                     }
                 }
         }

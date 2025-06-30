@@ -226,7 +226,7 @@ class Onboarding {
                 // Check for upload errors
                 if let error = uploadError {
                     print("❌ Upload error occurred: \(error)")
-                    DispatchQueue.main.async {
+                    Task { @MainActor in
                         AppController.shared.errorMessage = "Failed to upload images: \(error.localizedDescription)"
                         completion(false)
                     }
@@ -247,12 +247,16 @@ class Onboarding {
                                 DispatchQueue.main.async {
                                     if friendRequestSuccess {
                                         print("✅ All operations completed successfully")
-                                        AppController.shared.hasCompletedOnboarding = true
-                                        clearImages() // Clear stored images after successful upload
-                                        AppController.shared.path = [.yourInvites]
+                                        Task { @MainActor in
+                                            AppController.shared.hasCompletedOnboarding = true
+                                            clearImages() // Clear stored images after successful upload
+                                            AppController.shared.path = [.yourInvites]
+                                        }
                                     } else {
                                         print("❌ Friend request sending failed")
-                                        AppController.shared.errorMessage = "Failed to send friend requests"
+                                        Task { @MainActor in
+                                            AppController.shared.errorMessage = "Failed to send friend requests"
+                                        }
                                     }
                                     completion(friendRequestSuccess)
                                 }
@@ -261,9 +265,11 @@ class Onboarding {
                             print("📱 No friend requests to send")
                             DispatchQueue.main.async {
                                 print("✅ Onboarding completed without friend requests")
-                                AppController.shared.hasCompletedOnboarding = true
-                                clearImages() // Clear stored images after successful upload
-                                AppController.shared.path = [.yourInvites]
+                                Task { @MainActor in
+                                    AppController.shared.hasCompletedOnboarding = true
+                                    clearImages() // Clear stored images after successful upload
+                                    AppController.shared.path = [.yourInvites]
+                                }
                                 completion(true)
                             }
                         }
@@ -277,8 +283,10 @@ class Onboarding {
             }
         } else {
             print("❌ Onboarding incomplete, missing required fields")
-            AppController.shared.errorMessage = "Onboarding process incomplete"
-            AppController.shared.path = [.mutuals]
+            Task { @MainActor in
+                AppController.shared.errorMessage = "Onboarding process incomplete"
+                AppController.shared.path = [.mutuals]
+            }
             completion(false)
         }
     }
@@ -326,7 +334,9 @@ class Onboarding {
                 print("Onboarding complete: \(response.message)")
                 completion(true)
             case .failure(let error):
-                AppController.shared.errorMessage = "Onboarding failed: \(error.localizedDescription)"
+                Task { @MainActor in
+                    AppController.shared.errorMessage = "Onboarding failed: \(error.localizedDescription)"
+                }
                 completion(false)
             }
         }
