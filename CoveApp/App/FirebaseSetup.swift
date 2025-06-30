@@ -15,13 +15,8 @@ class FirebaseSetup: NSObject, UIApplicationDelegate {
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         print("Initializing Firebase...")
         
-        do {
-            FirebaseApp.configure()
-            print("Firebase configured successfully")
-        } catch {
-            print("Error configuring Firebase: \(error)")
-            return false
-        }
+        FirebaseApp.configure()
+        print("Firebase configured successfully")
         
         // Enable IQKeyboardManager to prevent issues of keyboard sliding up
         IQKeyboardManager.shared.enable = true

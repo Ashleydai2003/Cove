@@ -1,5 +1,5 @@
 //
-//  FeedView.swift
+//  CoveView.swift (formerly FeedView.swift)
 //  Cove
 //
 //  Created by Ananya Agarwal
@@ -8,8 +8,8 @@
 import SwiftUI
 import Kingfisher
 
-/// FeedView: Displays the feed for a specific cove, including cove details and events.
-struct FeedView: View {
+/// CoveView: Displays the feed for a specific cove, including cove details and events.
+struct CoveView: View {
     @ObservedObject var viewModel: CoveModel
     let coveId: String
     @EnvironmentObject var appController: AppController
@@ -56,24 +56,24 @@ struct FeedView: View {
                                     .placeholder {
                                         Circle()
                                             .fill(Color.gray.opacity(0.2))
-                                            .frame(width: 100, height: 100)
+                                            .frame(maxWidth: 100, maxHeight: 100)
                                             .overlay(ProgressView().tint(.gray))
                                     }
                                     .onSuccess { result in
-                                        print("📸 FeedView cove cover loaded from: \(result.cacheType)")
+                                        print("📸 CoveView cove cover loaded from: \(result.cacheType)")
                                     }
                                     .resizable()
                                     .cancelOnDisappear(true)
                                     .fade(duration: 0.2)
                                     .cacheOriginalImage()
                                     .loadDiskFileSynchronously()
-                                    .aspectRatio(contentMode: .fill)
+                                    .aspectRatio(1, contentMode: .fill)
+                                    .frame(maxWidth: 100, maxHeight: 100)
                                     .clipShape(Circle())
-                                    .frame(width: 100, height: 100)
                             } else {
                                 Circle()
                                     .fill(Color.gray.opacity(0.2))
-                                    .frame(width: 100, height: 100)
+                                    .frame(maxWidth: 100, maxHeight: 100)
                             }
                             
                             Spacer()
@@ -100,9 +100,9 @@ struct FeedView: View {
                         }
                         
                         // Events section
-                        VStack(alignment: .leading, spacing: 16) {
+                        VStack(alignment: .leading, spacing: 5) {
                             ForEach(viewModel.events, id: \.id) { event in
-                                EventView(event: event)
+                                EventSummaryView(event: event)
                                     .onAppear {
                                         viewModel.loadMoreEventsIfNeeded(currentEvent: event)
                                     }
@@ -240,5 +240,5 @@ struct EventView: View {
 }
 
 #Preview {
-    FeedView(viewModel: CoveModel(), coveId: "1")
+    CoveView(viewModel: CoveModel(), coveId: "1")
 }
