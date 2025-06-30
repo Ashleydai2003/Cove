@@ -8,6 +8,7 @@
 import SwiftUI
 import FirebaseAuth
 
+/// Enum representing all possible navigation routes in the app.
 enum OnboardingRoute: Hashable {
     case enterPhoneNumber
     case otpVerify
@@ -29,27 +30,34 @@ enum OnboardingRoute: Hashable {
     case home
     case membersList
     case eventPost(eventId: String)
+    case feed(coveId: String)
 }
 
 /// AppController: Manages shared application state and business logic
 /// - Handles authentication state
 /// - Manages shared data between views
 /// - Provides utility functions for data formatting and validation
+/// - Singleton: Use AppController.shared or inject via .environmentObject
+@MainActor
 class AppController: ObservableObject {
     /// Singleton instance for global access
     static let shared = AppController()
     
-    /// API base URL and login path
+    /// API base URL and login path (used for backend requests)
     private let apiBaseURL = "https://api.coveapp.co"
     private let apiLoginPath = "/login"
     
-    /// Currently entered phone number
+    /// Navigation path for NavigationStack
     @Published var path: [OnboardingRoute] = []
+    /// Whether the user has completed onboarding (persisted)
     @AppStorage("hasCompletedOnboarding") var hasCompletedOnboarding = false
+    /// Global error message for displaying alerts
     @Published var errorMessage: String = ""
     
-    // TODO: we should actually probably store all models here 
-    /// Profile model for storing user profile data
+    /// Shared CoveFeed instance for all cove feed and caching logic
+    @Published var coveFeed = CoveFeed()
+    
+    /// Shared ProfileModel instance for user profile data
     @Published var profileModel = ProfileModel()
     
     /// Track the previous tab selection for navigation preservation
@@ -67,8 +75,7 @@ class AppController: ObservableObject {
      * - Parameter eventId: The ID of the event to navigate to
      */
     func navigateToEvent(eventId: String) {
-        // Navigate to the event
-        // The previousTabSelection will be updated by HomeView's onChange(of: tabSelection)
+        print("[AppController] Navigating to event: \(eventId)")
         path.append(.eventPost(eventId: eventId))
     }
     
@@ -77,8 +84,8 @@ class AppController: ObservableObject {
      * This should be called after creating events or when data might be stale.
      */
     func refreshCoveData() {
+        print("🔄 AppController: Cove data refresh requested")
         // This will be called by views that need to refresh cove data
         // For now, we'll rely on individual view models to handle their own refresh
-        print("🔄 AppController: Cove data refresh requested")
     }
 }

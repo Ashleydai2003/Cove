@@ -39,6 +39,7 @@ struct ProfileHeader: View {
     let age: Int?
     let address: String
     let isEditing: Bool
+    let editingProfileImage: UIImage?
     let onNameChange: (String) -> Void
     let onWorkLocationChange: (String) -> Void
     let onGenderChange: (String) -> Void
@@ -56,7 +57,7 @@ struct ProfileHeader: View {
             // MARK: - Profile Photo
             PhotosPicker(selection: $selectedItem, matching: .images) {
                 ZStack {
-                    if let profileImage = appController.profileModel.profileUIImage {
+                    if let profileImage = editingProfileImage ?? appController.profileModel.profileUIImage {
                         Image(uiImage: profileImage)
                             .resizable()
                             .scaledToFill()
@@ -276,7 +277,7 @@ struct RelationStatusPicker: View {
         Button(action: {
             showingPicker = true
         }) {
-            Text(selectedStatus.isEmpty ? "add status" : selectedStatus)
+            Text(selectedStatus.isEmpty ? "add status" : selectedStatus.lowercased())
                 .font(.LibreBodoni(size: 15))
                 .foregroundColor(selectedStatus.isEmpty ? Colors.k6F6F73 : Colors.primaryDark)
                 .padding(.vertical, 4)
@@ -289,7 +290,7 @@ struct RelationStatusPicker: View {
         }
         .sheet(isPresented: $showingPicker) {
             VStack(spacing: 20) {
-                Text("Relationship Status")
+                Text("relationship status")
                     .font(.LibreBodoni(size: 24))
                     .foregroundColor(Colors.primaryDark)
                 
@@ -494,7 +495,7 @@ struct LocationSelectionView: View {
                     }
                 
                 VStack(spacing: 16) {
-                    Text("Selected Location")
+                    Text("selected location")
                         .font(.LibreBodoni(size: 18))
                         .foregroundColor(Colors.primaryDark)
                     
@@ -510,7 +511,7 @@ struct LocationSelectionView: View {
                             dismiss()
                         }
                     }) {
-                        Text("Confirm Location")
+                        Text("confirm location")
                             .font(.LibreBodoni(size: 16))
                             .foregroundColor(.white)
                             .padding(.horizontal, 24)
@@ -763,6 +764,7 @@ struct HobbiesSelectionView: View {
 struct ExtraPhotoView: View {
     let imageIndex: Int
     let isEditing: Bool
+    let editingImage: UIImage?
     let onImageChange: (UIImage?) -> Void
     
     @State private var selectedItem: PhotosPickerItem?
@@ -772,7 +774,7 @@ struct ExtraPhotoView: View {
     var body: some View {
         PhotosPicker(selection: $selectedItem, matching: .images) {
             ZStack {
-                if let extraImage = appController.profileModel.extraUIImages[imageIndex] {
+                if let extraImage = editingImage ?? appController.profileModel.extraUIImages[imageIndex] {
                     Image(uiImage: extraImage)
                         .resizable()
                         .scaledToFill()
@@ -802,7 +804,7 @@ struct ExtraPhotoView: View {
                         .fill(Color.black.opacity(isPressed ? 0.7 : 0.3))
                         .frame(maxWidth: AppConstants.SystemSize.width*0.8)
                     
-                    Text(appController.profileModel.extraUIImages[imageIndex] == nil ? "add picture" : "change")
+                    Text((editingImage ?? appController.profileModel.extraUIImages[imageIndex]) == nil ? "add picture" : "change")
                         .font(.LibreBodoni(size: 16))
                         .foregroundColor(.white)
                 }
@@ -924,6 +926,7 @@ struct ProfileView: View {
                                 age: appController.profileModel.calculatedAge,
                                 address: isEditing ? editingAddress : appController.profileModel.address,
                                 isEditing: isEditing,
+                                editingProfileImage: editingProfileImage,
                                 onNameChange: { editingName = $0 },
                                 onWorkLocationChange: { editingWorkLocation = $0 },
                                 onGenderChange: { editingGender = $0 },
@@ -944,6 +947,7 @@ struct ProfileView: View {
                             ExtraPhotoView(
                                 imageIndex: 0,
                                 isEditing: isEditing,
+                                editingImage: editingExtraImages[0],
                                 onImageChange: { editingExtraImages[0] = $0 }
                             )
                             .onAppear {
@@ -962,6 +966,7 @@ struct ProfileView: View {
                             ExtraPhotoView(
                                 imageIndex: 1,
                                 isEditing: isEditing,
+                                editingImage: editingExtraImages[1],
                                 onImageChange: { editingExtraImages[1] = $0 }
                             )
                             .onAppear {
@@ -1054,8 +1059,7 @@ struct ProfileView: View {
             return
         }
         
-        // Update the ProfileModel with backend changes
-        // TODO: Handle image uploads separately in the future
+        // Update the ProfileModel with all changes (images and text fields)
         appController.profileModel.updateProfile(
             name: editingName,
             interests: editingInterests,
@@ -1065,7 +1069,9 @@ struct ProfileView: View {
             job: editingJob,
             workLocation: editingWorkLocation,
             relationStatus: editingRelationStatus,
-            gender: editingGender
+            gender: editingGender,
+            profileImage: editingProfileImage,
+            extraImages: editingExtraImages
         ) { result in
             switch result {
             case .success:

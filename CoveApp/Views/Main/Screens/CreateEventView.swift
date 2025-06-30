@@ -115,8 +115,8 @@ extension CreateEventView {
             .padding(.horizontal, 16)
             
             Text("host an event")
-                .foregroundStyle(Colors.primaryDark)
-                .font(.Lugrasimo(size: 30))
+                .font(.LibreBodoni(size: 35))
+                .foregroundColor(Colors.primaryDark)
         }
     }
     
@@ -130,7 +130,7 @@ extension CreateEventView {
                         .font(.LibreBodoniBold(size: 22))
                 }
                 
-                TextField("", text: $eventName)
+                TextField("untitled event", text: $eventName)
                     .foregroundStyle(Color.white)
                     .font(.LibreBodoniBold(size: 22))
                     .multilineTextAlignment(.center)
@@ -212,9 +212,9 @@ extension CreateEventView {
         } label: {
             ZStack {
                 if eventImage == nil {
-                    Text("Image")
-                        .foregroundStyle(Colors.k070708)
-                        .font(.LeagueSpartan(size: 12))
+                    Text("image")
+                        .font(.LibreBodoni(size: 16))
+                        .foregroundColor(Colors.primaryDark)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
                 

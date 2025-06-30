@@ -112,17 +112,26 @@ struct PluggingYouIn: View {
                 switch result {
                 case .success(let profileData):
                     print("✅ Profile fetched successfully")
-                    self.isProfileLoaded = true
+                    
+                    // Wait for images to load before proceeding
+                    self.appController.profileModel.loadAllImages {
+                        DispatchQueue.main.async {
+                            // Check if view was cancelled again after images loaded
+                            guard !self.isCancelled else { return }
+                            
+                            print("✅ Profile images loaded successfully")
+                            self.isProfileLoaded = true
+                            completion()
+                        }
+                    }
                     
                 case .failure(let error):
                     print("❌ Profile fetch failed: \(error.localizedDescription)")
                     self.errorMessage = "Failed to fetch profile: \(error.localizedDescription)"
                     // Still mark as loaded even if profile fetch fails
                     self.isProfileLoaded = true
+                    completion()
                 }
-                
-                // Call completion regardless of success/failure
-                completion()
             }
         }
     }
@@ -183,13 +192,7 @@ struct PluggingYouIn: View {
     }
 }
 
-// Response model for user coves
-struct UserCovesResponse: Decodable {
-    let coves: [Cove]
-}
-
-struct Cove: Decodable {
-    let id: String
-    let name: String
-    let coverPhoto: CoverPhoto?
+#Preview {
+    PluggingYouIn()
+        .environmentObject(AppController.shared)
 }

@@ -486,6 +486,7 @@ export const handleGetCoveMembers = async (event: APIGatewayProxyEvent): Promise
  * 
  * The endpoint returns:
  * - List of coves with basic information (id, name, cover photo)
+ * TODO: also get latest event namea and date
  * 
  * Error cases:
  * - 405: Invalid HTTP method

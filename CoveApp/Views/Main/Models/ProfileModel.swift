@@ -326,6 +326,8 @@ class ProfileModel: ObservableObject {
      *   - relationStatus: User's relationship status
      *   - sexuality: User's sexuality
      *   - gender: User's gender
+     *   - profileImage: The new profile image to upload
+     *   - extraImages: The new extra images to upload
      *   - isOnboarding: If true, uses onboarding endpoint; otherwise uses edit-profile endpoint
      *   - completion: A closure called with the result of the update operation
      *     - Success: Returns void
@@ -344,64 +346,173 @@ class ProfileModel: ObservableObject {
         relationStatus: String? = nil,
         sexuality: String? = nil,
         gender: String? = nil,
+        profileImage: UIImage? = nil,
+        extraImages: [UIImage?] = [nil, nil],
         isOnboarding: Bool = false,
         completion: @escaping (Result<Void, NetworkError>) -> Void
     ) {
-        // Build parameters dictionary with only changed values
-        var parameters: [String: Any] = [:]
+        // Step 1: Handle image uploads first
+        let imageUploadGroup = DispatchGroup()
+        var imageUploadErrors: [NetworkError] = []
         
-        // Helper function to add parameter if changed
-        func addIfChanged<T: Equatable>(_ key: String, newValue: T?, currentValue: T?) {
-            if let newValue = newValue, newValue != currentValue {
-                parameters[key] = newValue
+        // Upload profile image if changed
+        if let newProfileImage = profileImage {
+            imageUploadGroup.enter()
+            uploadImage(newProfileImage, photoId: profilePhotoId, isProfilePic: true) { result in
+                switch result {
+                case .success:
+                    // Update local image immediately
+                    DispatchQueue.main.async {
+                        self.profileUIImage = newProfileImage
+                    }
+                case .failure(let error):
+                    imageUploadErrors.append(error)
+                }
+                imageUploadGroup.leave()
             }
         }
         
-        // Check each field for changes
-        addIfChanged("name", newValue: name, currentValue: self.name)
-        addIfChanged("birthdate", newValue: birthdate, currentValue: self.birthdate)
-        addIfChanged("interests", newValue: interests, currentValue: self.interests)
-        addIfChanged("bio", newValue: bio, currentValue: self.bio)
-        addIfChanged("latitude", newValue: latitude, currentValue: self.latitude)
-        addIfChanged("longitude", newValue: longitude, currentValue: self.longitude)
-        addIfChanged("almaMater", newValue: almaMater, currentValue: self.almaMater)
-        addIfChanged("job", newValue: job, currentValue: self.job)
-        addIfChanged("workLocation", newValue: workLocation, currentValue: self.workLocation)
-        addIfChanged("relationStatus", newValue: relationStatus, currentValue: self.relationStatus)
-        addIfChanged("sexuality", newValue: sexuality, currentValue: self.sexuality)
-        addIfChanged("gender", newValue: gender, currentValue: self.gender)
+        // Upload extra images if changed
+        for (index, newImage) in extraImages.enumerated() {
+            if let newImage = newImage {
+                imageUploadGroup.enter()
+                let photoId = index < extraPhotoIds.count ? extraPhotoIds[index] : nil
+                uploadImage(newImage, photoId: photoId, isProfilePic: false) { result in
+                    switch result {
+                    case .success:
+                        // Update local image immediately
+                        DispatchQueue.main.async {
+                            if index < self.extraUIImages.count {
+                                self.extraUIImages[index] = newImage
+                            }
+                        }
+                    case .failure(let error):
+                        imageUploadErrors.append(error)
+                    }
+                    imageUploadGroup.leave()
+                }
+            }
+        }
         
-        // Use different endpoints for onboarding vs profile editing
-        let endpoint = isOnboarding ? "/onboard" : "/edit-profile"
-        
-        NetworkManager.shared.post(endpoint: endpoint, parameters: parameters) { [weak self] (result: Result<ProfileUpdateResponse, NetworkError>) in
-            guard let self = self else { return }
+        // Step 2: After image uploads complete, handle text field updates
+        imageUploadGroup.notify(queue: .main) {
+            // Check if any image uploads failed
+            if !imageUploadErrors.isEmpty {
+                completion(.failure(imageUploadErrors.first!))
+                return
+            }
             
+            // Build parameters dictionary with only changed text values
+            var parameters: [String: Any] = [:]
+            
+            // Helper function to add parameter if changed
+            func addIfChanged<T: Equatable>(_ key: String, newValue: T?, currentValue: T?) {
+                if let newValue = newValue, newValue != currentValue {
+                    parameters[key] = newValue
+                }
+            }
+            
+            // Check each text field for changes
+            addIfChanged("name", newValue: name, currentValue: self.name)
+            addIfChanged("birthdate", newValue: birthdate, currentValue: self.birthdate)
+            addIfChanged("interests", newValue: interests, currentValue: self.interests)
+            addIfChanged("bio", newValue: bio, currentValue: self.bio)
+            addIfChanged("latitude", newValue: latitude, currentValue: self.latitude)
+            addIfChanged("longitude", newValue: longitude, currentValue: self.longitude)
+            addIfChanged("almaMater", newValue: almaMater, currentValue: self.almaMater)
+            addIfChanged("job", newValue: job, currentValue: self.job)
+            addIfChanged("workLocation", newValue: workLocation, currentValue: self.workLocation)
+            addIfChanged("relationStatus", newValue: relationStatus, currentValue: self.relationStatus)
+            addIfChanged("sexuality", newValue: sexuality, currentValue: self.sexuality)
+            addIfChanged("gender", newValue: gender, currentValue: self.gender)
+            
+            // If no text changes, we're done (images were already handled)
+            if parameters.isEmpty {
+                completion(.success(()))
+                return
+            }
+            
+            // Use different endpoints for onboarding vs profile editing
+            let endpoint = isOnboarding ? "/onboard" : "/edit-profile"
+            
+            NetworkManager.shared.post(endpoint: endpoint, parameters: parameters) { [weak self] (result: Result<ProfileUpdateResponse, NetworkError>) in
+                guard let self = self else { return }
+                
+                DispatchQueue.main.async {
+                    switch result {
+                    case .success(_):
+                        // Update all local @Published variables after successful backend call
+                        if let name = name { self.name = name }
+                        if let birthdate = birthdate { self.birthdate = birthdate }
+                        if let interests = interests { self.interests = interests }
+                        if let bio = bio { self.bio = bio }
+                        if let latitude = latitude { self.latitude = latitude }
+                        if let longitude = longitude { self.longitude = longitude }
+                        if let almaMater = almaMater { self.almaMater = almaMater }
+                        if let job = job { self.job = job }
+                        if let workLocation = workLocation { self.workLocation = workLocation }
+                        if let relationStatus = relationStatus { self.relationStatus = relationStatus }
+                        if let sexuality = sexuality { self.sexuality = sexuality }
+                        if let gender = gender { self.gender = gender }
+                        
+                        // Update address if location changed
+                        if parameters["latitude"] != nil || parameters["longitude"] != nil {
+                            Task {
+                                await self.updateAddress()
+                            }
+                        }
+                        
+                        completion(.success(()))
+                    case .failure(let error):
+                        completion(.failure(error))
+                    }
+                }
+            }
+        }
+    }
+    
+    /**
+     * Uploads a single image to the backend.
+     * 
+     * - Parameters:
+     *   - image: The UIImage to upload
+     *   - photoId: The existing photo ID to update (nil for new photos)
+     *   - isProfilePic: Whether this is a profile picture
+     *   - completion: Completion handler with result
+     */
+    private func uploadImage(_ image: UIImage, photoId: String?, isProfilePic: Bool, completion: @escaping (Result<Void, NetworkError>) -> Void) {
+        // Convert UIImage to base64
+        guard let imageData = image.jpegData(compressionQuality: 0.8) else {
+            completion(.failure(.networkError(NSError(domain: "ProfileModel", code: 400, userInfo: [NSLocalizedDescriptionKey: "Failed to convert image to data"]))))
+            return
+        }
+        
+        let base64String = imageData.base64EncodedString()
+        
+        // Determine endpoint and parameters based on whether we're updating or creating
+        let endpoint: String
+        let parameters: [String: Any]
+        
+        if let photoId = photoId {
+            // Updating existing photo
+            endpoint = "/userImageUpdate"
+            parameters = [
+                "data": base64String,
+                "photoId": photoId
+            ]
+        } else {
+            // Creating new photo
+            endpoint = "/userImage"
+            parameters = [
+                "data": base64String,
+                "isProfilePic": isProfilePic
+            ]
+        }
+        
+        NetworkManager.shared.post(endpoint: endpoint, parameters: parameters) { (result: Result<EditProfileResponse, NetworkError>) in
             DispatchQueue.main.async {
                 switch result {
                 case .success(_):
-                    // Update all local @Published variables after successful backend call
-                    // This ensures the UI updates immediately with the new data
-                    if let name = name { self.name = name }
-                    if let birthdate = birthdate { self.birthdate = birthdate }
-                    if let interests = interests { self.interests = interests }
-                    if let bio = bio { self.bio = bio }
-                    if let latitude = latitude { self.latitude = latitude }
-                    if let longitude = longitude { self.longitude = longitude }
-                    if let almaMater = almaMater { self.almaMater = almaMater }
-                    if let job = job { self.job = job }
-                    if let workLocation = workLocation { self.workLocation = workLocation }
-                    if let relationStatus = relationStatus { self.relationStatus = relationStatus }
-                    if let sexuality = sexuality { self.sexuality = sexuality }
-                    if let gender = gender { self.gender = gender }
-                    
-                    // Update address if location changed
-                    if parameters["latitude"] != nil || parameters["longitude"] != nil {
-                        Task {
-                            await self.updateAddress()
-                        }
-                    }
-                    
                     completion(.success(()))
                 case .failure(let error):
                     completion(.failure(error))
@@ -472,10 +583,15 @@ class ProfileModel: ObservableObject {
     /**
      * Loads all profile images using Kingfisher and stores them as static UIImages.
      * This method should be called after profile data is fetched.
+     * 
+     * - Parameter completion: Optional completion handler called when all images are loaded
      */
-    func loadAllImages() {
+    func loadAllImages(completion: (() -> Void)? = nil) {
+        let imageLoadGroup = DispatchGroup()
+        
         // Load profile image
         if let profileURL = profileImageURL {
+            imageLoadGroup.enter()
             KingfisherManager.shared.retrieveImage(with: profileURL) { result in
                 DispatchQueue.main.async {
                     switch result {
@@ -486,12 +602,14 @@ class ProfileModel: ObservableObject {
                         print("❌ Failed to load profile image: \(error)")
                         self.profileUIImage = nil
                     }
+                    imageLoadGroup.leave()
                 }
             }
         }
         
         // Load extra images
         for (index, url) in extraImageURLs.enumerated() {
+            imageLoadGroup.enter()
             KingfisherManager.shared.retrieveImage(with: url) { result in
                 DispatchQueue.main.async {
                     switch result {
@@ -506,8 +624,14 @@ class ProfileModel: ObservableObject {
                             self.extraUIImages[index] = nil
                         }
                     }
+                    imageLoadGroup.leave()
                 }
             }
+        }
+        
+        // Call completion when all images are loaded
+        imageLoadGroup.notify(queue: .main) {
+            completion?()
         }
     }
     

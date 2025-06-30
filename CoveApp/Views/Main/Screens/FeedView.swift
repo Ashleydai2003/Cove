@@ -3,13 +3,17 @@
 //  Cove
 //
 //  Created by Ananya Agarwal
+//  Refactored and documented by AI for maintainability and best practices
+
 import SwiftUI
+import Kingfisher
 
-// MARK: - Main View
+/// FeedView: Displays the feed for a specific cove, including cove details and events.
 struct FeedView: View {
-    @StateObject private var viewModel = CoveModel()
+    @ObservedObject var viewModel: CoveModel
+    let coveId: String
     @EnvironmentObject var appController: AppController
-
+    
     // TODO: admin can update cove cover photo 
     
     var body: some View {
@@ -28,42 +32,55 @@ struct FeedView: View {
             } else if let cove = viewModel.cove {
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 24) {
-                        // Cove header
+                        // Cove header with back button
                         HStack(alignment: .top) {
-                            // Back button commented out as per request
-                            /*
+                            // Back button - robust navigation
                             Button {
-                                appController.path.removeLast()
+                                // Check if we can go back in the navigation stack
+                                if !appController.path.isEmpty {
+                                    appController.path.removeLast()
+                                } else {
+                                    // Fallback: navigate to home
+                                    appController.path.append(.home)
+                                }
                             } label: {
                                 Images.backArrow
                             }
                             .padding(.top, 16)
-                            */
                             
                             Spacer()
                             
-                            CachedAsyncImage(
-                                url: URL(string: cove.coverPhoto?.url ?? "")
-                            ) { image in
-                                image
+                            // Cove cover photo using Kingfisher
+                            if let urlString = cove.coverPhoto?.url, let url = URL(string: urlString) {
+                                KFImage(url)
+                                    .placeholder {
+                                        Circle()
+                                            .fill(Color.gray.opacity(0.2))
+                                            .frame(width: 100, height: 100)
+                                            .overlay(ProgressView().tint(.gray))
+                                    }
+                                    .onSuccess { result in
+                                        print("📸 FeedView cove cover loaded from: \(result.cacheType)")
+                                    }
                                     .resizable()
-                                    .scaledToFill()
-                            } placeholder: {
-                                Rectangle()
+                                    .cancelOnDisappear(true)
+                                    .fade(duration: 0.2)
+                                    .cacheOriginalImage()
+                                    .loadDiskFileSynchronously()
+                                    .aspectRatio(contentMode: .fill)
+                                    .clipShape(Circle())
+                                    .frame(width: 100, height: 100)
+                            } else {
+                                Circle()
                                     .fill(Color.gray.opacity(0.2))
-                                    .overlay(
-                                        ProgressView()
-                                            .tint(.gray)
-                                    )
+                                    .frame(width: 100, height: 100)
                             }
-                            .frame(width: 100, height: 100)
-                            .clipShape(Circle())
                             
                             Spacer()
                         }
                         .padding(.horizontal, 16)
                         
-                        Text(cove.name.isEmpty ? "Untitled" : cove.name)
+                        Text(cove.name.isEmpty ? "untitled" : cove.name)
                             .foregroundStyle(Colors.primaryDark)
                             .font(.LibreBodoniBold(size: 26))
                             .frame(maxWidth: .infinity, alignment: .center)
@@ -123,47 +140,24 @@ struct FeedView: View {
         }
         .navigationBarBackButtonHidden()
         .onAppear {
-            // Check if we have complete data (cove + events)
-            if viewModel.hasCompleteData {
-                print("📱 Using complete cached data in FeedView")
-                return
-            }
-            
-            // Check if we have cached cove data but no events
-            if viewModel.hasAnyData && viewModel.events.isEmpty {
-                print("📱 Using cached cove data, fetching events")
-                let coveId = viewModel.cove?.id ?? (UserDefaults.standard.array(forKey: "user_cove_ids") as? [String])?.first
-                if let coveId = coveId {
-                    viewModel.fetchEvents(coveId: coveId)
-                }
-                return
-            }
-            
-            // Check if cache is stale or no data exists
-            if viewModel.lastFetchTime == nil || 
-               Date().timeIntervalSince(viewModel.lastFetchTime ?? Date.distantPast) > 300 {
-                print("📱 Cache is stale or no data exists, fetching fresh data")
-                viewModel.fetchCoveDetails()
-            } else {
-                print("📱 Using cached data in FeedView")
-            }
+            viewModel.fetchCoveDetailsIfStale(coveId: coveId)
         }
         .onDisappear {
             // Cancel any ongoing requests when view disappears
             viewModel.cancelRequests()
         }
-        .alert("Error", isPresented: Binding(
+        .alert("error", isPresented: Binding(
             get: { viewModel.errorMessage != nil },
             set: { if !$0 { viewModel.errorMessage = nil } }
         )) {
-            Button("OK") { viewModel.errorMessage = nil }
+            Button("ok") { viewModel.errorMessage = nil }
         } message: {
             Text(viewModel.errorMessage ?? "")
         }
     }
 }
 
-// MARK: - Event View
+/// EventView: Displays a single event in the feed, including cover photo and details.
 struct EventView: View {
     let event: CalendarEvent
     @EnvironmentObject private var appController: AppController
@@ -190,24 +184,28 @@ struct EventView: View {
                         .font(.LibreBodoniSemiBold(size: 12))
                 }
                 
-                if let coverPhoto = event.coverPhoto {
-                    CachedAsyncImage(
-                        url: URL(string: coverPhoto.url)
-                    ) { image in
-                        image
-                            .resizable()
-                            .scaledToFill()
-                    } placeholder: {
-                        Rectangle()
-                            .fill(Color.gray.opacity(0.2))
-                            .overlay(
-                                ProgressView()
-                                    .tint(.gray)
-                            )
-                    }
-                    .frame(height: 192)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                    .clipped()
+                // Event cover photo using Kingfisher
+                if let urlString = event.coverPhoto?.url, let url = URL(string: urlString) {
+                    KFImage(url)
+                        .placeholder {
+                            Rectangle()
+                                .fill(Color.gray.opacity(0.2))
+                                .aspectRatio(16/9, contentMode: .fill)
+                                .frame(maxWidth: .infinity, maxHeight: 192)
+                                .overlay(ProgressView().tint(.gray))
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                        }
+                        .onSuccess { result in
+                            print("📸 Event cover loaded from: \(result.cacheType)")
+                        }
+                        .resizable()
+                        .cancelOnDisappear(true)
+                        .fade(duration: 0.2)
+                        .cacheOriginalImage()
+                        .loadDiskFileSynchronously()
+                        .aspectRatio(16/9, contentMode: .fill)
+                        .frame(maxWidth: .infinity, maxHeight: 192)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
                 
                 Text(event.description ?? "")
@@ -220,6 +218,7 @@ struct EventView: View {
         .buttonStyle(PlainButtonStyle())
     }
     
+    /// Returns a human-readable time-ago string for the event date.
     private func timeAgo(_ dateString: String) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
@@ -241,5 +240,5 @@ struct EventView: View {
 }
 
 #Preview {
-    FeedView()
+    FeedView(viewModel: CoveModel(), coveId: "1")
 }
