@@ -9,34 +9,18 @@ async function resolveDrift() {
     console.log('Initializing database connection...');
     await initializeDatabase();
     
-    const missingMigrations = [
-      '20250508033331_init',
-      '20250514005216_user_onboarding', 
-      '20250519221357_new',
-      '20250520022616_user_images_schema',
-      '20250527035022_user_events_coves',
-      '20250527043215_updated_schema_5_26',
-      '20250527063059_request_schema_5_26',
-      '20250527080319_updated_profile_5_26',
-      '20250527204831_admin_allow_list_schema_5_27',
-      '20250527222839_admin_user_5_27'
-    ];
+    console.log('One-time reset to fix migration drift permanently');
+    console.log('Using force-reset to sync database with current schema and clear migration history');
     
-    console.log('Resolving migration drift by marking missing migrations as applied...');
+    // Use force-reset to clear drift and sync database with schema
+    console.log('Running prisma db push --force-reset...');
+    execSync('npx prisma db push --force-reset', { stdio: 'inherit' });
     
-    for (const migration of missingMigrations) {
-      try {
-        console.log(`Resolving migration: ${migration}`);
-        execSync(`npx prisma migrate resolve --applied ${migration}`, { stdio: 'inherit' });
-        console.log(`✓ Migration ${migration} resolved`);
-      } catch (error) {
-        console.log(`Migration ${migration} already resolved or not needed`);
-      }
-    }
+    console.log('Database reset and synced with current schema');
+    console.log('Migration drift has been resolved - database is now clean');
     
-    console.log('Drift resolution completed successfully!');
   } catch (error) {
-    console.error('Drift resolution failed:', error);
+    console.error('Database reset failed:', error);
     process.exit(1);
   }
 }
