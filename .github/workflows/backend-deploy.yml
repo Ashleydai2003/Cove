@@ -53,28 +53,12 @@ jobs:
       # Install dependencies
       - name: Install dependencies
         working-directory: Backend
-        run: |
-          echo "Installing dependencies..."
-          # Use npm install since package-lock.json might not exist
-          npm install
-          echo "✅ Dependencies installed"
+        run: npm install
 
       # Build Lambda package
       - name: Build Lambda package
         working-directory: Backend
         run: npm run build
-
-      # Debug secrets
-      - name: Debug AWS setup
-        run: |
-          echo "Checking AWS configuration..."
-          echo "AWS Region: ${{ env.AWS_REGION }}"
-          if [ -z "${{ secrets.AWS_ROLE_ARN }}" ]; then
-            echo "❌ AWS_ROLE_ARN secret is not set"
-            exit 1
-          else
-            echo "✅ AWS_ROLE_ARN secret is configured"
-          fi
 
       # Authenticate with AWS
       - name: Configure AWS credentials
@@ -89,13 +73,8 @@ jobs:
       - name: Check for schema changes
         id: schema-check
         run: |
-          echo "Debug: Checking for schema changes..."
-          echo "Before commit: ${{ github.event.before }}"
-          echo "Current commit: ${{ github.sha }}"
-          
           # Handle first push case where before commit might be null
           if [ "${{ github.event.before }}" == "0000000000000000000000000000000000000000" ] || [ -z "${{ github.event.before }}" ]; then
-            echo "First push detected - will run migrations to be safe"
             echo "schema_changed=true" >> $GITHUB_OUTPUT
             echo "📋 First push - migrations will be run"
           else
@@ -215,16 +194,6 @@ jobs:
       # Deploy the Lambda function
       - name: Deploy Lambda function
         run: |
-          echo "Deploying Lambda function..."
-          
-          # Check if the zip file exists
-          if [ ! -f "Backend/dist/index.zip" ]; then
-            echo "❌ Lambda package not found at Backend/dist/index.zip"
-            ls -la Backend/dist/ || echo "Backend/dist/ directory doesn't exist"
-            exit 1
-          fi
-          
-          echo "✅ Lambda package found, deploying..."
           aws lambda update-function-code \
             --function-name hello-lambda \
             --zip-file fileb://Backend/dist/index.zip \
