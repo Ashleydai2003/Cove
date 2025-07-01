@@ -64,6 +64,18 @@ jobs:
         working-directory: Backend
         run: npm run build
 
+      # Debug secrets
+      - name: Debug AWS setup
+        run: |
+          echo "Checking AWS configuration..."
+          echo "AWS Region: ${{ env.AWS_REGION }}"
+          if [ -z "${{ secrets.AWS_ROLE_ARN }}" ]; then
+            echo "❌ AWS_ROLE_ARN secret is not set"
+            exit 1
+          else
+            echo "✅ AWS_ROLE_ARN secret is configured"
+          fi
+
       # Authenticate with AWS
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
