@@ -58,8 +58,8 @@ struct CoveApp: App {
                     .environmentObject(appController)
             } else {
                 // Onboarding flow - linear navigation
-                OnboardingFlow()
-                    .environmentObject(appController)
+            OnboardingFlow()
+                .environmentObject(appController)
             }
         }
     }

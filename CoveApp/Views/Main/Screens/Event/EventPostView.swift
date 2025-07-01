@@ -229,8 +229,8 @@ struct EventPostView: View {
                                     .font(.LibreBodoni(size: 18))
                                     .foregroundColor(Color.black)
                                 Text(event.host.name)
-                                    .font(.LibreBodoni(size: 18))
-                                    .foregroundColor(Colors.primaryDark)
+                                .font(.LibreBodoni(size: 18))
+                                .foregroundColor(Colors.primaryDark)
                             }
                         }
                         
@@ -289,7 +289,7 @@ struct EventPostView: View {
                         }
                         
                         // Single RSVP button with two states
-                        Button {
+                            Button {
                             let currentStatus = currentRSVPStatus ?? event.rsvpStatus
                             if currentStatus == "GOING" {
                                 // User is going, change to not going
@@ -300,7 +300,7 @@ struct EventPostView: View {
                                 currentRSVPStatus = "GOING"
                                 viewModel.updateRSVP(eventId: eventId, status: "GOING") { _ in }
                             }
-                        } label: {
+                            } label: {
                             let currentStatus = currentRSVPStatus ?? event.rsvpStatus
                             let isGoing = currentStatus == "GOING"
                             
@@ -309,13 +309,13 @@ struct EventPostView: View {
                                 .font(.LibreBodoni(size: 25))
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 10)
-                                .background(
+                                    .background(
                                     RoundedRectangle(cornerRadius: 20)
                                         .fill(isGoing ? Color.white : Colors.primaryDark)
                                         .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 8)
-                                )
-                        }
-                        .disabled(viewModel.isUpdatingRSVP)
+                                    )
+                            }
+                            .disabled(viewModel.isUpdatingRSVP)
                         
                         Spacer(minLength: 24)
                     }
@@ -335,7 +335,7 @@ struct EventPostView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-                }
+        }
         .navigationBarBackButtonHidden(true)
         .onAppear {
             viewModel.fetchEventDetails(eventId: eventId) {

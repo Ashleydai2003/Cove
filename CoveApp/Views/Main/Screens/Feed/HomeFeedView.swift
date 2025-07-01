@@ -20,31 +20,31 @@ struct HomeFeedView: View {
                 Colors.faf8f4
                     .ignoresSafeArea()
                 
-                VStack(spacing: 0) {
-                    // Header
-                    CoveBannerView()
-                    
-                    // Top Tabs
-                    PillTabBar(
-                        titles: Tab.allCases.map { $0.title },
-                        selectedIndex: Binding(
-                            get: { selectedTab.rawValue },
-                            set: { selectedTab = Tab(rawValue: $0) ?? .upcoming }
-                        )
-                    )
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 10)
-                    
-                    // Tab Content
-                    ZStack {
-                        switch selectedTab {
-                        case .upcoming:
-                            UpcomingView()
-                        case .discover:
-                            DiscoverView()
-                        }
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+        VStack(spacing: 0) {
+            // Header
+            CoveBannerView()
+            
+            // Top Tabs
+            PillTabBar(
+                titles: Tab.allCases.map { $0.title },
+                selectedIndex: Binding(
+                    get: { selectedTab.rawValue },
+                    set: { selectedTab = Tab(rawValue: $0) ?? .upcoming }
+                )
+            )
+            .padding(.horizontal, 16)
+            .padding(.bottom, 10)
+            
+            // Tab Content
+            ZStack {
+                switch selectedTab {
+                case .upcoming:
+                    UpcomingView()
+                case .discover:
+                    DiscoverView()
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
             .navigationDestination(for: String.self) { eventId in
