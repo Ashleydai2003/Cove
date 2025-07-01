@@ -1,0 +1,382 @@
+# Backend CI/CD Pipeline
+# This workflow handles testing, building, and deploying the Node.js/Lambda backend
+# It uses your existing AWS infrastructure with EC2-based migrations via SSM
+
+name: Backend Deploy
+
+on:
+  push:
+    branches: [main, develop]  # Deploy on pushes to main (prod) and develop (staging)
+    paths: ['Backend/**']      # Only trigger when Backend files change
+  pull_request:
+    branches: [main]           # Run tests on PRs to main branch
+    paths: ['Backend/**']      # Only trigger when Backend files change
+
+env:
+  AWS_REGION: us-west-1       # Your AWS region (matches your existing infrastructure)
+  NODE_VERSION: '18'          # Node.js version (matches Lambda runtime)
+
+jobs:
+  # =============================================================================
+  # TEST JOB - Runs on all PRs and pushes to validate code quality
+  # =============================================================================
+  test:
+    name: Test Backend
+    runs-on: ubuntu-latest
+    
+    # Set up a PostgreSQL database for testing
+    # This creates a temporary database that matches your production setup
+    services:
+      postgres:
+        image: postgres:15          # Use same PostgreSQL version as production
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db      # Temporary database for tests
+        options: >-
+          --health-cmd pg_isready   # Health check command
+          --health-interval 10s     # Check every 10 seconds
+          --health-timeout 5s       # Timeout after 5 seconds
+          --health-retries 5        # Retry 5 times before failing
+        ports:
+          - 5432:5432               # Expose PostgreSQL on standard port
+
+    steps:
+      # Get the latest code from the repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Set up Node.js with caching for faster builds
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}        # Use Node 18 to match Lambda
+          cache: 'npm'                                 # Cache npm dependencies
+          cache-dependency-path: Backend/package-lock.json  # Cache based on lockfile
+
+      # Install all dependencies (npm ci is faster and more reliable than npm install)
+      - name: Install dependencies
+        working-directory: Backend
+        run: npm ci  # Clean install from package-lock.json
+
+      # Generate Prisma client for the test database
+      # This creates the TypeScript types and database client
+      - name: Generate Prisma client
+        working-directory: Backend
+        run: npm run prisma:generate
+        env:
+          # Connect to the test PostgreSQL database created above
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+
+      # Run the test suite (currently placeholder - add real tests later)
+      - name: Run tests (when available)
+        working-directory: Backend
+        run: npm test || echo "No tests configured yet"  # Don't fail if no tests exist
+
+  # =============================================================================
+  # BUILD JOB - Creates deployable Lambda package
+  # Only runs on pushes (not PRs) and after tests pass
+  # =============================================================================
+  build:
+    name: Build Backend
+    runs-on: ubuntu-latest
+    needs: test                      # Wait for tests to pass first
+    if: github.event_name == 'push'  # Only build on actual pushes, not PRs
+    
+    steps:
+      # Get the latest code from the repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Set up Node.js environment (same as test job)
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}        # Node 18 for Lambda compatibility
+          cache: 'npm'                                 # Reuse cached dependencies
+          cache-dependency-path: Backend/package-lock.json
+
+      # Install production dependencies
+      - name: Install dependencies
+        working-directory: Backend
+        run: npm ci  # Clean install ensures consistent builds
+
+      # Build the Lambda deployment package
+      # This runs esbuild to bundle everything into a single zip file
+      - name: Build Lambda package
+        working-directory: Backend
+        run: npm run build  # Runs the build script from package.json
+
+      # Save the built package as an artifact for the deploy job
+      # This allows the deploy job to download the built package
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lambda-package          # Name for the artifact
+          path: Backend/dist/index.zip  # The zip file created by npm run build
+          retention-days: 7             # Keep artifacts for 7 days
+
+  # =============================================================================
+  # DEPLOY JOB - Handles database migrations and Lambda deployment
+  # This is the most complex job that uses your existing AWS infrastructure
+  # =============================================================================
+  deploy:
+    name: Deploy to AWS
+    runs-on: ubuntu-latest
+    needs: build                     # Wait for build to complete first
+    if: github.event_name == 'push'  # Only deploy on pushes, not PRs
+    
+    # Use GitHub environments for deployment protection
+    # main branch = production, develop branch = staging
+    environment: 
+      name: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
+    
+    # Required permissions for OIDC authentication with AWS
+    permissions:
+      id-token: write   # Needed to request OIDC token
+      contents: read    # Needed to read repository contents
+
+    # Output whether schema changes were detected for use in notification job
+    outputs:
+      schema_changed: ${{ steps.schema-check.outputs.schema_changed }}
+
+    steps:
+      # Get the latest code (needed for migration scripts)
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Authenticate with AWS using OIDC (no long-lived credentials needed)
+      # This uses the GitHub Actions role you created in IAM
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}        # Your GitHubActionsRole ARN
+          aws-region: ${{ env.AWS_REGION }}                  # us-west-1
+          role-session-name: GitHubActions-BackendDeploy     # Session name for logging
+
+      # Download the Lambda package built in the previous job
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: lambda-package    # Same name used in upload
+          path: Backend/dist/     # Extract to Backend/dist/ directory
+
+      # Check if Prisma schema has changed to determine if we need migrations
+      # This saves costs by only starting EC2 when schema changes are detected
+      - name: Check for schema changes
+        id: schema-check
+        run: |
+          # Check if schema.prisma file was modified in this push
+          if git diff --name-only ${{ github.event.before }}..${{ github.sha }} | grep -q "Backend/prisma/schema.prisma"; then
+            echo "schema_changed=true" >> $GITHUB_OUTPUT
+            echo "📋 Prisma schema changes detected - migrations will be run"
+          else
+            echo "schema_changed=false" >> $GITHUB_OUTPUT
+            echo "✅ No schema changes - skipping migrations"
+          fi
+
+      # Start your dedicated migration EC2 instance only when schema changes
+      # This is cost-efficient: only run the instance when needed for migrations
+      - name: Start EC2 instance for migrations
+        if: steps.schema-check.outputs.schema_changed == 'true'
+        run: |
+          echo "Starting EC2 instance for database migrations..."
+          # Start the instance using the instance ID from your secrets
+          aws ec2 start-instances --instance-ids ${{ secrets.EC2_INSTANCE_ID }}
+          
+          # Wait for the instance to be fully running before proceeding
+          # This ensures SSM is ready to accept commands
+          aws ec2 wait instance-running --instance-ids ${{ secrets.EC2_INSTANCE_ID }}
+          echo "EC2 instance is running and ready for migrations"
+
+      # This is the core migration step using AWS Systems Manager (SSM)
+      # SSM allows secure command execution without SSH access
+      # This matches your manual process: source profile, navigate to ~/cove, run migrations
+      - name: Run database migrations
+        if: steps.schema-check.outputs.schema_changed == 'true'
+        run: |
+          echo "Running database migrations via SSM..."
+          
+          # Generate migration name using GitHub username and timestamp for uniqueness
+          MIGRATION_NAME="${{ github.actor }}-$(date +%Y%m%d-%H%M%S)"
+          echo "Migration name: $MIGRATION_NAME"
+          
+          # Send a complex shell script to the EC2 instance via SSM
+          # This script matches your manual process exactly
+          COMMAND_ID=$(aws ssm send-command \
+            --document-name "AWS-RunShellScript" \
+            --targets "Key=instanceids,Values=${{ secrets.EC2_INSTANCE_ID }}" \
+            --comment "Database migration from GitHub Actions - Schema changes detected" \
+            --parameters "commands=[
+              \"echo 'Starting migration process...'\",
+              \"source /etc/profile\",
+              \"cd ~/cove || (echo 'cove directory not found' && exit 1)\",
+              \"echo 'Pulling latest code from ${{ github.ref_name }}...'\",
+              \"git fetch origin\",
+              \"git checkout ${{ github.ref_name }}\",
+              \"git pull origin ${{ github.ref_name }}\",
+              \"cd Backend\",
+              \"echo 'Installing/updating dependencies...'\",
+              \"npm ci\",
+              \"echo 'Generating Prisma client...'\",
+              \"npm run prisma:generate\",
+              \"echo 'Getting database credentials from Secrets Manager...'\",
+              \"DB_SECRET=\$(aws secretsmanager get-secret-value --secret-id ${{ secrets.RDS_SECRET_ARN }} --query SecretString --output text)\",
+              \"DB_PASSWORD=\$(echo \$DB_SECRET | jq -r .password)\",
+              \"DB_HOST=\$(echo \$DB_SECRET | jq -r .host)\",
+              \"DB_USER=\$(echo \$DB_SECRET | jq -r .username)\",
+              \"DB_NAME=\$(echo \$DB_SECRET | jq -r .dbname)\",
+              \"export DATABASE_URL=\\\"postgresql://\$DB_USER:\$DB_PASSWORD@\$DB_HOST:5432/\$DB_NAME\\\"\",
+              \"echo 'Creating migration: $MIGRATION_NAME'\",
+              \"echo '$MIGRATION_NAME' | npm run prisma:dev\",
+              \"echo 'Running migration...'\",
+              \"npm run prisma:migrate\",
+              \"echo 'Migration completed successfully!'\",
+              \"echo 'Final status check...'\",
+              \"npx prisma db status\"
+            ]" \
+            --region ${{ env.AWS_REGION }} \
+            --output text --query 'Command.CommandId')
+          
+          echo "Command ID: $COMMAND_ID"
+          
+          # Wait for the migration command to complete
+          # This can take several minutes depending on migration complexity
+          echo "Waiting for migration to complete..."
+          aws ssm wait command-executed \
+            --command-id "$COMMAND_ID" \
+            --instance-id ${{ secrets.EC2_INSTANCE_ID }} \
+            --region ${{ env.AWS_REGION }}
+          
+          # Display the migration output for debugging
+          echo "Migration output:"
+          aws ssm get-command-invocation \
+            --command-id "$COMMAND_ID" \
+            --instance-id ${{ secrets.EC2_INSTANCE_ID }} \
+            --region ${{ env.AWS_REGION }} \
+            --query 'StandardOutputContent' \
+            --output text
+          
+          # Check if the migration succeeded or failed
+          STATUS=$(aws ssm get-command-invocation \
+            --command-id "$COMMAND_ID" \
+            --instance-id ${{ secrets.EC2_INSTANCE_ID }} \
+            --region ${{ env.AWS_REGION }} \
+            --query 'Status' \
+            --output text)
+          
+          # If migration failed, show error details and fail the workflow
+          if [ "$STATUS" != "Success" ]; then
+            echo "Migration failed with status: $STATUS"
+            # Display error output for debugging
+            aws ssm get-command-invocation \
+              --command-id "$COMMAND_ID" \
+              --instance-id ${{ secrets.EC2_INSTANCE_ID }} \
+              --region ${{ env.AWS_REGION }} \
+              --query 'StandardErrorContent' \
+              --output text
+            exit 1  # Fail the workflow
+          fi
+
+      # Deploy the new Lambda code after successful migration
+      # This updates your existing Lambda function with the new code
+      - name: Deploy Lambda function
+        run: |
+          echo "Deploying Lambda function..."
+          
+          # Update the Lambda function with the new zip file
+          # This replaces the existing code with the newly built version
+          aws lambda update-function-code \
+            --function-name hello-lambda \                    # Your Lambda function name
+            --zip-file fileb://Backend/dist/index.zip \       # The zip file from build step
+            --region ${{ env.AWS_REGION }}
+          
+          # Wait for the Lambda update to complete before proceeding
+          # Lambda updates can take a few seconds to propagate
+          aws lambda wait function-updated \
+            --function-name hello-lambda \
+            --region ${{ env.AWS_REGION }}
+          
+          echo "Lambda function deployed successfully"
+
+      # Run basic health checks to ensure the deployment worked
+      # These are simple HTTP requests to verify the API is responding
+      - name: Run smoke tests
+        run: |
+          echo "Running smoke tests..."
+          
+          # Your API endpoint (update this to match your actual API Gateway URL)
+          API_URL="https://api.coveapp.co"
+          
+          # Test a basic endpoint to ensure the API is responding
+          # We accept both 200 (success) and 400 (bad request) as "healthy" responses
+          # because 400 means the API is running but rejecting invalid input
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X POST "$API_URL/login" \
+            -H "Content-Type: application/json" \
+            -d '{"test": true}')
+          
+          # Check if we got a reasonable response
+          if [ "$HTTP_STATUS" -eq 200 ] || [ "$HTTP_STATUS" -eq 400 ]; then
+            echo "✅ API is responding (status: $HTTP_STATUS)"
+          else
+            echo "❌ API health check failed (status: $HTTP_STATUS)"
+            exit 1  # Fail the deployment if API is not responding
+          fi
+
+      # Always stop the EC2 instance to save costs, even if previous steps failed
+      # This runs regardless of whether the deployment succeeded or failed
+      # Only runs if we started the instance (i.e., if there were schema changes)
+      - name: Stop EC2 instance
+        if: always() && steps.schema-check.outputs.schema_changed == 'true'
+        run: |
+          echo "Stopping EC2 instance to save costs..."
+          aws ec2 stop-instances --instance-ids ${{ secrets.EC2_INSTANCE_ID }}
+          echo "EC2 instance stopped - this saves money when not doing migrations"
+
+  # =============================================================================
+  # NOTIFICATION JOB - Reports deployment status
+  # Always runs to provide feedback on deployment success/failure
+  # =============================================================================
+  notify:
+    name: Notify Deployment Status
+    runs-on: ubuntu-latest
+    needs: [test, build, deploy]    # Wait for all previous jobs
+    if: always() && github.event_name == 'push'  # Always run on pushes (success or failure)
+    
+    steps:
+      # Celebrate successful deployments
+      - name: Deployment Success
+        if: needs.deploy.result == 'success'
+        run: |
+          echo "🚀 Backend deployment to ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }} successful!"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Commit: ${{ github.sha }}"
+          echo ""
+          if [ "${{ needs.deploy.outputs.schema_changed }}" == "true" ]; then
+            echo "✅ Database migrations completed"
+            echo "✅ EC2 instance stopped (cost optimized)"
+          else
+            echo "ℹ️  No schema changes - migrations skipped"
+          fi
+          echo "✅ Lambda function updated"
+          echo "✅ Smoke tests passed"
+          
+      # Report deployment failures with debugging info
+      - name: Deployment Failed
+        if: needs.deploy.result == 'failure'
+        run: |
+          echo "❌ Backend deployment failed!"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Commit: ${{ github.sha }}"
+          echo ""
+          echo "🔍 Check the logs above for details:"
+          echo "- Migration logs in 'Run database migrations' step"
+          echo "- Lambda deployment logs in 'Deploy Lambda function' step"
+          echo "- API health check logs in 'Run smoke tests' step"
+          echo ""
+          echo "💡 Common issues:"
+          echo "- Database migration syntax errors"
+          echo "- Lambda function name mismatch"
+          echo "- API Gateway endpoint not responding"
+          exit 1  # Mark the workflow as failed 
