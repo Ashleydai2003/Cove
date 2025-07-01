@@ -60,6 +60,7 @@ private struct NoMatchesView: View {
     let onDismiss: () -> Void
     let isLoading: Bool
     @Binding var showError: Bool
+    let appController: AppController
     
     var body: some View {
         ZStack {
@@ -74,15 +75,9 @@ private struct NoMatchesView: View {
                     .foregroundStyle(.black)
                 
                 Button(action: {
-                    // TODO: Implement invite action
-                    // on success, finish the onboarding flow
-                    // TODO: also on dismiss, we should finish the onboarding flow
-                    // or have a finished button 
-                    Onboarding.completeOnboarding { success in
-                        if !success {
-                            showError = true
-                        }
-                    }
+                    // Navigate to PluggingYouIn instead of completing onboarding directly
+                    appController.path.append(.pluggingIn)
+                    onDismiss()
                 }) {
                     Text("send invite")
                         .font(.LeagueSpartan(size: 16))
@@ -110,12 +105,6 @@ private struct NoMatchesView: View {
     }
 }
 
-// MARK: - Response model for friend request
-private struct FriendRequestResponse: Decodable {
-    let message: String
-    let requestId: String?
-}
-
 // MARK: - Main view
 struct AddFriendsSheet: View {
     let serverMatches: [ContactMatcher.MatchedUser]
@@ -123,6 +112,7 @@ struct AddFriendsSheet: View {
     let isLoading: Bool
     let onDismiss: () -> Void
     @Binding var showError: Bool
+    let appController: AppController
     
     var body: some View {
         ZStack {
@@ -135,7 +125,8 @@ struct AddFriendsSheet: View {
                         onDismiss()
                     },
                     isLoading: isLoading,
-                    showError: $showError
+                    showError: $showError,
+                    appController: appController
                 )
             } else {
                 VStack {
@@ -154,11 +145,9 @@ struct AddFriendsSheet: View {
                     }
                     
                     Button(action: {
-                        Onboarding.completeOnboarding { success in
-                            if !success {
-                                showError = true
-                            }
-                        }
+                        // Navigate to PluggingYouIn instead of completing onboarding directly
+                        appController.path.append(.pluggingIn)
+                        onDismiss()
                     }) {
                         Text("done")
                             .font(.LeagueSpartan(size: 16))
@@ -189,6 +178,7 @@ struct AddFriendsSheet: View {
         showingNoMatches: true,
         isLoading: false,
         onDismiss: {},
-        showError: .constant(false)
+        showError: .constant(false),
+        appController: AppController.shared
     )
 } 

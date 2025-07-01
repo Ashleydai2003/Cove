@@ -6,8 +6,11 @@ struct PluggingYouIn: View {
     /// AppController environment object used for navigation and app state management
     @EnvironmentObject var appController: AppController
     @State private var rotation: Double = 0
-    @State private var profile: Profile?
     @State private var errorMessage: String?
+    @State private var isProfileLoaded = false
+    @State private var isCovesLoaded = false
+    @State private var animationTimer: Timer?
+    @State private var isCancelled = false
     
     var body: some View {
         ZStack {
@@ -23,44 +26,14 @@ struct PluggingYouIn: View {
                     .frame(width: 52, height: 52)
                     .rotationEffect(.degrees(rotation))
                     .onAppear {
-                        // Start with a delay
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                            // First rotation
-                            withAnimation(.easeInOut(duration: 0.5)) {
-                                rotation = 180
-                            }
-                            
-                            // Second rotation after a short pause
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
-                                withAnimation(.easeInOut(duration: 0.5)) {
-                                    rotation = 360
-                                }
-                                
-                                // Fetch profile data
-                                fetchProfile()
-                                
-                                // Repeat the sequence twice more
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
-                                    withAnimation(.easeInOut(duration: 0.5)) {
-                                        rotation = 540
-                                    }
-                                    
-                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
-                                        withAnimation(.easeInOut(duration: 0.5)) {
-                                            rotation = 720
-                                        }
-                                        
-                                        // Navigate to next screen after all animations
-                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
-                                            if let error = errorMessage {
-                                                appController.errorMessage = error
-                                            }
-                                            appController.path.append(.home)
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                        startContinuousAnimation()
+                        plugInUser()
+                    }
+                    .onDisappear {
+                        stopAnimation()
+                        isCancelled = true
+                        // Cancel any ongoing profile requests
+                        appController.profileModel.cancelAllRequests()
                     }
                 
                 // App tagline with matching font style
@@ -74,70 +47,154 @@ struct PluggingYouIn: View {
         .navigationBarBackButtonHidden()
     }
     
-    private func fetchProfile() {
-        NetworkManager.shared.get(endpoint: "/profile") { (result: Result<ProfileResponse, NetworkError>) in
-            switch result {
-            case .success(let response):
-                profile = response.profile
-                // Store profile data in UserDefaults or AppController for later use
-                UserDefaults.standard.set(response.profile.name, forKey: "user_name")
-                UserDefaults.standard.set(response.profile.bio, forKey: "user_bio")
-                UserDefaults.standard.set(response.profile.interests, forKey: "user_interests")
-                UserDefaults.standard.set(response.profile.relationStatus, forKey: "user_relation_status")
-                UserDefaults.standard.set(response.profile.sexuality, forKey: "user_sexuality")
-                UserDefaults.standard.set(response.profile.job, forKey: "user_job")
-                UserDefaults.standard.set(response.profile.workLocation, forKey: "user_work_location")
-                UserDefaults.standard.set(response.profile.almaMater, forKey: "user_alma_mater")
-                UserDefaults.standard.set(response.profile.latitude, forKey: "user_latitude")
-                UserDefaults.standard.set(response.profile.longitude, forKey: "user_longitude")
-                UserDefaults.standard.set(response.profile.gender, forKey: "user_gender")
-                UserDefaults.standard.set(response.profile.id, forKey: "user_id")
-                UserDefaults.standard.set(response.profile.userId, forKey: "user_firebase_id")
+    private func startContinuousAnimation() {
+        // Start with initial rotation
+        withAnimation(.easeInOut(duration: 0.5)) {
+            rotation = 180
+        }
+        
+        // Create a repeating timer for continuous animation
+        animationTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+            withAnimation(.easeInOut(duration: 0.5)) {
+                rotation += 180
+            }
+        }
+    }
+    
+    private func stopAnimation() {
+        animationTimer?.invalidate()
+        animationTimer = nil
+    }
+    
+    private func plugInUser() {
+        // Check if view was cancelled
+        guard !isCancelled else { return }
+        
+        // First, check if user is in onboarding mode
+        if appController.profileModel.onboarding {
+            print("📱 User is in onboarding mode, completing onboarding...")
+            completeOnboarding()
+        } else {
+            print("📱 User is not in onboarding mode, proceeding with normal flow...")
+            fetchUserProfile {
+                self.fetchUserCoves()
+            }
+        }
+    }
+    
+    private func completeOnboarding() {
+        Onboarding.completeOnboarding { success in
+            DispatchQueue.main.async {
+                // Check if view was cancelled
+                guard !self.isCancelled else { return }
                 
-                // Store all photos
-                let nonProfilePhotos = response.profile.photos.filter { !$0.isProfilePic }
-                for (index, photo) in response.profile.photos.enumerated() {
-                    URLSession.shared.dataTask(with: photo.url) { data, response, error in
-                        if let imageData = data {
-                            if photo.isProfilePic {
-                                UserDefaults.standard.set(imageData, forKey: "user_profile_image")
-                            } else if index < 3 { // Only store up to 2 additional photos
-                                UserDefaults.standard.set(imageData, forKey: "user_extra_image_\(index)")
-                            }
-                        }
-                    }.resume()
+                if success {
+                    print("✅ Onboarding completed successfully")
+                    // After onboarding is complete, fetch profile and coves
+                    self.fetchUserProfile {
+                        self.fetchUserCoves()
+                    }
+                } else {
+                    print("❌ Onboarding failed")
+                    self.errorMessage = "Failed to complete onboarding"
+                    // Stay on this screen if onboarding fails
                 }
+            }
+        }
+    }
+    
+    private func fetchUserProfile(completion: @escaping () -> Void) {
+        appController.profileModel.fetchProfile { result in
+            DispatchQueue.main.async {
+                // Check if view was cancelled
+                guard !self.isCancelled else { return }
                 
-                // Fetch user coves after profile is fetched
-                fetchUserCoves()
-                
-            case .failure(let error):
-                errorMessage = "Failed to fetch profile: \(error.localizedDescription)"
+                switch result {
+                case .success(let profileData):
+                    print("✅ Profile fetched successfully")
+                    
+                    // Wait for images to load before proceeding
+                    self.appController.profileModel.loadAllImages {
+                        DispatchQueue.main.async {
+                            // Check if view was cancelled again after images loaded
+                            guard !self.isCancelled else { return }
+                            
+                            print("✅ Profile images loaded successfully")
+                            self.isProfileLoaded = true
+                            completion()
+                        }
+                    }
+                    
+                case .failure(let error):
+                    print("❌ Profile fetch failed: \(error.localizedDescription)")
+                    self.errorMessage = "Failed to fetch profile: \(error.localizedDescription)"
+                    // Still mark as loaded even if profile fetch fails
+                    self.isProfileLoaded = true
+                    completion()
+                }
             }
         }
     }
     
     private func fetchUserCoves() {
         NetworkManager.shared.get(endpoint: "/user-coves") { (result: Result<UserCovesResponse, NetworkError>) in
-            switch result {
-            case .success(let response):
-                // Store cove IDs in UserDefaults
-                let coveIds = response.coves.map { $0.id }
-                UserDefaults.standard.set(coveIds, forKey: "user_cove_ids")
-            case .failure(let error):
-                errorMessage = "Failed to fetch user coves: \(error.localizedDescription)"
+            DispatchQueue.main.async {
+                // Check if view was cancelled
+                guard !self.isCancelled else { return }
+                
+                switch result {
+                case .success(let response):
+                    // Set the coves in the shared CoveFeed instance
+                    appController.coveFeed.setUserCoves(response.coves)
+                    
+                    print("✅ User coves fetched successfully")
+                    self.isCovesLoaded = true
+                    
+                    // Navigate to home after everything is loaded
+                    self.navigateToHome()
+                    
+                case .failure(let error):
+                    print("❌ User coves fetch failed: \(error.localizedDescription)")
+                    self.errorMessage = "Failed to fetch user coves: \(error.localizedDescription)"
+                    // Still try to navigate even if coves fetch fails
+                    self.isCovesLoaded = true
+                    self.navigateToHome()
+                }
+            }
+        }
+    }
+    
+    private func navigateToHome() {
+        // Check if view was cancelled
+        guard !isCancelled else { return }
+        
+        // Only navigate if both profile and coves are loaded (or failed to load)
+        if isProfileLoaded && isCovesLoaded {
+            // Stop the animation
+            stopAnimation()
+            
+            // Complete the current rotation smoothly
+            withAnimation(.easeInOut(duration: 0.5)) {
+                rotation = Double(Int(rotation / 180) + 1) * 180.0 // Complete to next 180-degree increment
+            }
+            
+            // Wait for animation to complete, then navigate
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                // Check if view was cancelled before navigating
+                guard !self.isCancelled else { return }
+                
+                if let error = errorMessage {
+                    appController.errorMessage = error
+                }
+                
+                // Mark as logged in - this will switch to the main app flow
+                appController.isLoggedIn = true
             }
         }
     }
 }
 
-// Response model for user coves
-struct UserCovesResponse: Decodable {
-    let coves: [Cove]
-}
-
-struct Cove: Decodable {
-    let id: String
-    let name: String
-    let coverPhoto: CoverPhoto?
+#Preview {
+    PluggingYouIn()
+        .environmentObject(AppController.shared)
 }

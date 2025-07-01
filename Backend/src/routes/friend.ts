@@ -153,7 +153,7 @@ export const handleSendFriendRequest = async (event: APIGatewayProxyEvent): Prom
  * 
  * Request body:
  * - requestId: ID of the friend request to resolve
- * - accept: boolean - true to accept, false to reject
+ * - action: string - "ACCEPT" to accept, "REJECT" to reject
  * 
  * Returns:
  * - 200: Friend request resolved successfully
@@ -194,12 +194,12 @@ export const handleResolveFriendRequest = async (event: APIGatewayProxyEvent): P
       };
     }
 
-    const { requestId, accept } = JSON.parse(event.body);
-    if (!requestId || typeof accept !== 'boolean') {
+    const { requestId, action } = JSON.parse(event.body);
+    if (!requestId || !action || !['ACCEPT', 'REJECT'].includes(action)) {
       return {
         statusCode: 400,
         body: JSON.stringify({
-          message: 'requestId and accept (boolean) are required in request body'
+          message: 'requestId and action ("ACCEPT" or "REJECT") are required in request body'
         })
       };
     }
@@ -231,7 +231,7 @@ export const handleResolveFriendRequest = async (event: APIGatewayProxyEvent): P
       };
     }
 
-    if (accept) {
+    if (action === 'ACCEPT') {
       // Create friendship
       await prisma.friendship.create({
         data: {
@@ -250,7 +250,7 @@ export const handleResolveFriendRequest = async (event: APIGatewayProxyEvent): P
     return {
       statusCode: 200,
       body: JSON.stringify({
-        message: `Friend request ${accept ? 'accepted' : 'rejected'} successfully`
+        message: `Friend request ${action.toLowerCase()}ed successfully`
       })
     };
   } catch (error) {
@@ -564,3 +564,229 @@ export const handleGetFriendRequests = async (event: APIGatewayProxyEvent): Prom
     };
   }
 }; 
+
+
+// TODO: there's a lot of database queries here, we should try to optimize this 
+/**
+ * Get recommended friends
+ * 
+ * This endpoint handles retrieving users who are in at least one cove with the current user.
+ * 
+ * The endpoint returns:
+ * - Paginated list of users with basic information (id, name, profile photo)
+ * - Number of coves they share with the current user
+ * - When they joined their most recent shared cove
+ * 
+ * Error cases:
+ * - 405: Invalid HTTP method
+ * - 500: Server error
+ */
+export const handleGetRecommendedFriends = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+  try {
+    // Validate request method - only GET is allowed
+    if (event.httpMethod !== 'GET') {
+      return {
+        statusCode: 405,
+        body: JSON.stringify({
+          message: 'Method not allowed. Only GET requests are accepted for retrieving recommended friends.'
+        })
+      };
+    }
+
+    // Authenticate the request using Firebase
+    const authResult = await authMiddleware(event);
+    
+    // If auth failed, return the error response
+    if ('statusCode' in authResult) {
+      return authResult;
+    }
+
+    // Get the authenticated user's info from Firebase
+    const user = authResult.user;
+    console.log('Authenticated user:', user.uid);
+
+    // Get pagination parameters
+    // cursor: ID of the last user from previous request (for pagination)
+    // limit: number of users to return (defaults to 10, max 50)
+    const cursor = event.queryStringParameters?.cursor;
+    const requestedLimit = parseInt(event.queryStringParameters?.limit || '10');
+    const limit = Math.min(requestedLimit, 50); // Enforce maximum limit of 50
+
+    // Initialize database connection
+    const prisma = await initializeDatabase();
+
+    // Get all coves where the current user is a member
+    const userCoveIds = await prisma.coveMember.findMany({
+      where: { userId: user.uid },
+      select: { coveId: true }
+    });
+
+    if (userCoveIds.length === 0) {
+      // User is not in any coves, return empty result
+      return {
+        statusCode: 200,
+        body: JSON.stringify({
+          users: [],
+          pagination: {
+            hasMore: false,
+            nextCursor: null
+          }
+        })
+      };
+    }
+
+    const userCoveIdList = userCoveIds.map(member => member.coveId);
+
+    // Get all cove members from the user's coves, excluding the user themselves
+    const allCoveMembers = await prisma.coveMember.findMany({
+      where: {
+        coveId: { in: userCoveIdList },
+        userId: { not: user.uid }
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            profilePhoto: {
+              select: {
+                id: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: {
+        joinedAt: 'desc'
+      }
+    });
+
+    // Get users to exclude (friends, sent requests, received requests)
+    const [existingFriendships, sentRequests, receivedRequests] = await Promise.all([
+      // Get existing friendships
+      prisma.friendship.findMany({
+        where: {
+          OR: [
+            { user1Id: user.uid },
+            { user2Id: user.uid }
+          ]
+        },
+        select: {
+          user1Id: true,
+          user2Id: true
+        }
+      }),
+      // Get sent friend requests
+      prisma.friendRequest.findMany({
+        where: { fromUserId: user.uid },
+        select: { toUserId: true }
+      }),
+      // Get received friend requests
+      prisma.friendRequest.findMany({
+        where: { toUserId: user.uid },
+        select: { fromUserId: true }
+      })
+    ]);
+
+    // Create a set of user IDs to exclude
+    const excludedUserIds = new Set<string>();
+    
+    // Add friends
+    existingFriendships.forEach(friendship => {
+      if (friendship.user1Id === user.uid) {
+        excludedUserIds.add(friendship.user2Id);
+      } else {
+        excludedUserIds.add(friendship.user1Id);
+      }
+    });
+    
+    // Add users we've sent requests to
+    sentRequests.forEach(request => {
+      excludedUserIds.add(request.toUserId);
+    });
+    
+    // Add users who have sent us requests
+    receivedRequests.forEach(request => {
+      excludedUserIds.add(request.fromUserId);
+    });
+
+    // Group by user and count shared coves, excluding the filtered users
+    const userCoveCounts = new Map<string, {
+      user: any;
+      sharedCoveCount: number;
+    }>();
+
+    for (const member of allCoveMembers) {
+      const userId = member.user.id;
+      
+      // Skip if user is in the excluded list
+      if (excludedUserIds.has(userId)) {
+        continue;
+      }
+      
+      const existing = userCoveCounts.get(userId);
+      
+      if (existing) {
+        existing.sharedCoveCount++;
+      } else {
+        userCoveCounts.set(userId, {
+          user: member.user,
+          sharedCoveCount: 1
+        });
+      }
+    }
+
+    // Convert to array and sort by shared cove count (descending)
+    const sortedUsers = Array.from(userCoveCounts.values())
+      .sort((a, b) => b.sharedCoveCount - a.sharedCoveCount);
+
+    // Apply pagination
+    let startIndex = 0;
+    if (cursor) {
+      const cursorIndex = sortedUsers.findIndex(u => u.user.id === cursor);
+      if (cursorIndex !== -1) {
+        startIndex = cursorIndex + 1;
+      }
+    }
+
+    const endIndex = startIndex + limit;
+    const hasMore = endIndex < sortedUsers.length;
+    const usersToReturn = sortedUsers.slice(startIndex, endIndex);
+
+    // Return success response with users and pagination info
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        users: await Promise.all(usersToReturn.map(async userData => {
+          // Generate profile photo URL if it exists
+          const profilePhotoUrl = userData.user.profilePhoto ? 
+            await getSignedUrl(s3Client, new GetObjectCommand({
+              Bucket: process.env.USER_IMAGE_BUCKET_NAME,
+              Key: `${userData.user.id}/${userData.user.profilePhoto.id}.jpg`
+            }), { expiresIn: 3600 }) : 
+            null;
+
+          return {
+            id: userData.user.id,
+            name: userData.user.name,
+            profilePhotoUrl,
+            sharedCoveCount: userData.sharedCoveCount
+          };
+        })),
+        pagination: {
+          hasMore,
+          nextCursor: hasMore ? usersToReturn[usersToReturn.length - 1].user.id : null
+        }
+      })
+    };
+  } catch (error) {
+    console.error('Get recommended friends route error:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        message: 'Error processing get recommended friends request',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      })
+    };
+  }
+};

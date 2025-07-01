@@ -1,0 +1,9 @@
+{
+  "httpMethod": "POST",
+  "path": "/join-cove",
+  "headers": {
+    "Authorization": "Bearer test-token"
+  },
+  "body": "{\"coveId\":\"cmb77a64d000ijs086d8sifig\"}",
+  "isBase64Encoded": false
+} 

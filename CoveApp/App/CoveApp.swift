@@ -8,13 +8,14 @@
 import SwiftUI
 import UIKit
 
+// TODO: fix dark mode
 @main
 struct CoveApp: App {
     // firebase delegate
     @UIApplicationDelegateAdaptor(FirebaseSetup.self) var firebase_delegate
     
-    /// Shared app controller instance
-    private let appController = AppController.shared
+    /// Shared app controller instance - now properly managed by SwiftUI
+    @StateObject private var appController = AppController.shared
     
     init() {
         // For Injection (hot reloading)
@@ -51,8 +52,15 @@ struct CoveApp: App {
     
     var body: some Scene {
         WindowGroup {
-            OnboardingFlow()
-                .environmentObject(appController)
+            if appController.isLoggedIn {
+                // Main app flow - tab-based navigation
+                HomeView()
+                    .environmentObject(appController)
+            } else {
+                // Onboarding flow - linear navigation
+                OnboardingFlow()
+                    .environmentObject(appController)
+            }
         }
     }
 }

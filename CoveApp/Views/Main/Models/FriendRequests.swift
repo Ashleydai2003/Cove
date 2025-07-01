@@ -12,7 +12,13 @@ import Foundation
 struct RequestDTO: Decodable, Identifiable {
     let id: String
     let sender: Sender
-    let createdAt: Date
+    let createdAt: String // Keep as string for JSON decoding
+    
+    // Computed property to convert string to Date when needed
+    var createdAtAsDate: Date? {
+        let formatter = ISO8601DateFormatter()
+        return formatter.date(from: createdAt)
+    }
     
     struct Sender: Decodable {
         let id: String
@@ -38,15 +44,7 @@ struct RequestsResponse: Decodable {
 /// Response from POST /send-friend-request
 struct SendRequestResponse: Decodable {
     let message: String
-    let request: RequestRecord
-    
-    struct RequestRecord: Decodable {
-        let id: String
-        let senderId: String
-        let recipientId: String
-        let status: String
-        let createdAt: Date
-    }
+    let requestIds: [String]
 }
 
 /// Response from POST /resolve-friend-request
@@ -59,7 +57,13 @@ struct ResolveRequestResponse: Decodable {
         let user1Id: String
         let user2Id: String
         let status: String
-        let createdAt: Date
+        let createdAt: String // Keep as string for JSON decoding
+        
+        // Computed property to convert string to Date when needed
+        var createdAtAsDate: Date? {
+            let formatter = ISO8601DateFormatter()
+            return formatter.date(from: createdAt)
+        }
     }
 }
 
@@ -98,7 +102,7 @@ struct FriendRequests {
         to recipientId: String,
         completion: @escaping (Result<SendRequestResponse, NetworkError>) -> Void
     ) {
-        let body: [String: Any] = ["recipientId": recipientId]
+        let body: [String: Any] = ["toUserIds": [recipientId]]
         
         NetworkManager.shared.post(
             endpoint: "/send-friend-request",
@@ -107,7 +111,7 @@ struct FriendRequests {
             DispatchQueue.main.async {
                 switch result {
                 case .success(let resp):
-                    print("✅ send succeeded: message = '\(resp.message)', new request id = \(resp.request.id)")
+                    print("✅ send succeeded: message = '\(resp.message)', new request id = \(resp.requestIds.first ?? "–")")
                     completion(.success(resp))
                 case .failure(let error):
                     print("❌ send failed: \(error.localizedDescription)")

@@ -1,0 +1,11 @@
+{
+  "httpMethod": "GET",
+  "path": "/upcoming-events",
+  "queryStringParameters": {
+    "limit": "5",
+    "cursor": "event-123"
+  },
+  "headers": {
+    "Authorization": "Bearer test-token"
+  }
+} 

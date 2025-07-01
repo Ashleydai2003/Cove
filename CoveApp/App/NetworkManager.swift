@@ -100,12 +100,19 @@ class NetworkManager {
                     
                     print("📦 Received Data: \(String(data: data, encoding: .utf8) ?? "Unable to decode data")")
                     
+                    // Add more detailed logging for debugging
+                    if let jsonString = String(data: data, encoding: .utf8) {
+                        print("🔍 NetworkManager: Raw JSON response:")
+                        print(jsonString)
+                    }
+                    
                     do {
                         let decodedResponse = try JSONDecoder().decode(T.self, from: data)
                         print("✅ Successfully decoded response")
                         completion(.success(decodedResponse))
                     } catch {
                         print("❌ Decoding Error: \(error.localizedDescription)")
+                        print("🔍 NetworkManager: Failed to decode response as \(T.self)")
                         completion(.failure(.decodingError(error)))
                     }
                 }
@@ -204,12 +211,19 @@ class NetworkManager {
                     
                     print("📦 Received Data: \(String(data: data, encoding: .utf8) ?? "Unable to decode data")")
                     
+                    // Add more detailed logging for debugging
+                    if let jsonString = String(data: data, encoding: .utf8) {
+                        print("🔍 NetworkManager: Raw JSON response:")
+                        print(jsonString)
+                    }
+                    
                     do {
                         let decodedResponse = try JSONDecoder().decode(T.self, from: data)
                         print("✅ Successfully decoded response")
                         completion(.success(decodedResponse))
                     } catch {
                         print("❌ Decoding Error: \(error.localizedDescription)")
+                        print("🔍 NetworkManager: Failed to decode response as \(T.self)")
                         completion(.failure(.decodingError(error)))
                     }
                 }

@@ -486,6 +486,7 @@ export const handleGetCoveMembers = async (event: APIGatewayProxyEvent): Promise
  * 
  * The endpoint returns:
  * - List of coves with basic information (id, name, cover photo)
+ * TODO: also get latest event namea and date
  * 
  * Error cases:
  * - 405: Invalid HTTP method
@@ -569,3 +570,150 @@ export const handleGetUserCoves = async (event: APIGatewayProxyEvent): Promise<A
     };
   }
 };
+
+/**
+ * Join a cove
+ * 
+ * This endpoint handles joining a cove with the following requirements:
+ * 1. User must be authenticated
+ * 2. Cove must exist
+ * 3. User must not already be a member of the cove
+ * 
+ * The endpoint returns:
+ * - Success message
+ * - Member information (id, role, joinedAt)
+ * 
+ * Error cases:
+ * - 400: Missing coveId parameter
+ * - 403: User already a member
+ * - 404: Cove not found
+ * - 405: Invalid HTTP method
+ * - 500: Server error
+ */
+export const handleJoinCove = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+  try {
+    // Validate request method - only POST is allowed
+    if (event.httpMethod !== 'POST') {
+      return {
+        statusCode: 405,
+        body: JSON.stringify({
+          message: 'Method not allowed. Only POST requests are accepted for joining a cove.'
+        })
+      };
+    }
+
+    // Authenticate the request using Firebase
+    const authResult = await authMiddleware(event);
+    
+    // If auth failed, return the error response
+    if ('statusCode' in authResult) {
+      return authResult;
+    }
+
+    // Get the authenticated user's info from Firebase
+    const user = authResult.user;
+    console.log('Authenticated user:', user.uid);
+
+    // Parse and validate request body
+    if (!event.body) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          message: 'Request body is required'
+        })
+      };
+    }
+
+    // Extract required fields from request body
+    const { coveId } = JSON.parse(event.body);
+
+    // Validate required fields
+    if (!coveId) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          message: 'Cove ID is required'
+        })
+      };
+    }
+
+    // Initialize database connection
+    const prisma = await initializeDatabase();
+
+    // TODO: Consider adding user verification requirement in the future
+    // Currently, any authenticated user can join coves
+    // This could be changed to require verification for joining certain coves
+
+    // Check if cove exists
+    const cove = await prisma.cove.findUnique({
+      where: { id: coveId }
+    });
+
+    if (!cove) {
+      return {
+        statusCode: 404,
+        body: JSON.stringify({
+          message: 'Cove not found'
+        })
+      };
+    }
+
+    // Check if user is already a member of the cove
+    const existingMembership = await prisma.coveMember.findUnique({
+      where: {
+        coveId_userId: {
+          coveId: coveId,
+          userId: user.uid
+        }
+      }
+    });
+
+    if (existingMembership) {
+      return {
+        statusCode: 403,
+        body: JSON.stringify({
+          message: 'You are already a member of this cove'
+        })
+      };
+    }
+
+    // Add user as a member of the cove
+    const newMembership = await prisma.coveMember.create({
+      data: {
+        coveId: coveId,
+        userId: user.uid,
+        role: 'MEMBER' // Default role for new members
+      }
+    });
+
+    // Return success response
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        message: 'Successfully joined the cove',
+        member: {
+          id: newMembership.id,
+          coveId: newMembership.coveId,
+          userId: newMembership.userId,
+          role: newMembership.role,
+          joinedAt: newMembership.joinedAt
+        }
+      })
+    };
+  } catch (error) {
+    console.error('Join cove route error:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        message: 'Error processing join cove request',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      })
+    };
+  }
+};
+
+ // TODO: send invite endpoint 
+ // Only admin of the cove can send invites for that cove 
+
+ // TODO: later, request to join a cove endpoint and an approve request endpoint 
+ // only admin of the cove can approve requests 
