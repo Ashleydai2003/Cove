@@ -19,28 +19,12 @@ env:
 
 jobs:
   # =============================================================================
-  # TEST JOB - Runs on all PRs and pushes to validate code quality
+  # TEST JOB - Validates code quality and build process
+  # Simplified version without database since no tests are configured yet
   # =============================================================================
   test:
     name: Test Backend
     runs-on: ubuntu-latest
-    
-    # Set up a PostgreSQL database for testing
-    # This creates a temporary database that matches your production setup
-    services:
-      postgres:
-        image: postgres:15          # Use same PostgreSQL version as production
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: test_db      # Temporary database for tests
-        options: >-
-          --health-cmd pg_isready   # Health check command
-          --health-interval 10s     # Check every 10 seconds
-          --health-timeout 5s       # Timeout after 5 seconds
-          --health-retries 5        # Retry 5 times before failing
-        ports:
-          - 5432:5432               # Expose PostgreSQL on standard port
 
     steps:
       # Get the latest code from the repository
@@ -60,19 +44,28 @@ jobs:
         working-directory: Backend
         run: npm ci  # Clean install from package-lock.json
 
-      # Generate Prisma client for the test database
-      # This creates the TypeScript types and database client
+      # Validate Prisma schema syntax without needing a database
+      # This catches schema syntax errors early
+      - name: Validate Prisma schema
+        working-directory: Backend
+        run: npx prisma validate
+
+      # Generate Prisma client to ensure schema is valid
+      # This creates TypeScript types and validates the schema
       - name: Generate Prisma client
         working-directory: Backend
         run: npm run prisma:generate
-        env:
-          # Connect to the test PostgreSQL database created above
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+
+      # Run TypeScript compilation to catch type errors
+      # This validates that your code compiles without runtime errors
+      - name: TypeScript compilation check
+        working-directory: Backend
+        run: npx tsc --noEmit
 
       # Run the test suite (currently placeholder - add real tests later)
       - name: Run tests (when available)
         working-directory: Backend
-        run: npm test || echo "No tests configured yet"  # Don't fail if no tests exist
+        run: npm test || echo "No tests configured yet - skipping"  # Don't fail if no tests exist
 
   # =============================================================================
   # BUILD JOB - Creates deployable Lambda package
