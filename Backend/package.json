@@ -9,6 +9,7 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "NODE_OPTIONS='--max-old-space-size=4096' NODE_ENV=production ts-node src/scripts/migrate.ts",
     "prisma:dev": "read -p 'Enter migration name: ' migration_name && NODE_ENV=production ts-node src/scripts/migrate-dev.ts \"$migration_name\"",
+    "prisma:resolve-drift": "NODE_ENV=production ts-node src/scripts/resolve-drift.ts",
     "prisma:migrate:dev": "NODE_OPTIONS='--max-old-space-size=4096' NODE_ENV=development ts-node src/scripts/migrate.t"
   },
   "keywords": [],
