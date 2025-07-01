@@ -10,6 +10,16 @@ import Kingfisher
 
 let tabIconSize: CGFloat = 10
 
+// MARK: - Image Extension for Tab Bar Icons
+extension Image {
+    func tabBarIcon(isSelected: Bool = false) -> some View {
+        self
+            .resizable()
+            .aspectRatio(contentMode: .fill)
+            .frame(maxWidth: isSelected ? 43 : 40, maxHeight: isSelected ? 43 : 40)
+    }
+}
+
 // NOTE: We are using a custom tab bar because the default tab bar is not customizable with the profile image icon
 
 // MARK: - Custom Tab Bar View
@@ -23,33 +33,41 @@ struct TabBarView: View {
             
             // Home Tab
             Button(action: { selectedTab = 1 }) {
-                Image("tab2")
-                    .renderingMode(.original)
+                Image(selectedTab == 1 ? "home_selected" : "home_unselected")
+                    .tabBarIcon(isSelected: selectedTab == 1)
+                    .animation(nil, value: selectedTab)
             }
+            .frame(maxWidth: 50, maxHeight: 50)
             
             Spacer()
             
             // Calendar Tab
             Button(action: { selectedTab = 2 }) {
-                Image("calendar")
-                    .renderingMode(.original)
+                Image(selectedTab == 2 ? "calendar_selected" : "calendar_unselected")
+                    .tabBarIcon(isSelected: selectedTab == 2)
+                    .animation(nil, value: selectedTab)
             }
+            .frame(maxWidth: 50, maxHeight: 50)
             
             Spacer()
             
             // Cove Tab
             Button(action: { selectedTab = 3 }) {
-                Image("cove")
-                    .renderingMode(.original)
+                Image(selectedTab == 3 ? "cove_selected" : "cove_unselected")
+                    .tabBarIcon(isSelected: selectedTab == 3)
+                    .animation(nil, value: selectedTab)
             }
+            .frame(maxWidth: 50, maxHeight: 50)
             
             Spacer()
             
             // Friends Tab
             Button(action: { selectedTab = 4 }) {
-                Image("friends")
-                    .renderingMode(.original)
+                Image(selectedTab == 4 ? "friends_selected" : "friends_unselected")
+                    .tabBarIcon(isSelected: selectedTab == 4)
+                    .animation(nil, value: selectedTab)
             }
+            .frame(maxWidth: 50, maxHeight: 50)
             
             Spacer()
             
@@ -59,14 +77,25 @@ struct TabBarView: View {
                     Image(uiImage: profileImage)
                         .resizable()
                         .aspectRatio(contentMode: .fill)
-                        .frame(width: 30, height: 30)
+                        .frame(maxWidth: 40, maxHeight: 40)
                         .clipShape(Circle())
+                        .overlay(
+                            Circle()
+                                .stroke(Color(hex: "F5F0E6"), lineWidth: selectedTab == 5 ? 3 : 0)
+                        )
+                        .animation(nil, value: selectedTab)
                 } else {
                     // TODO: replace with default profile image
-                    Image("tab4")
-                        .renderingMode(.original)
+                    Image("smiley")
+                        .tabBarIcon(isSelected: selectedTab == 5)
+                        .overlay(
+                            Circle()
+                                .stroke(Color(hex: "F5F0E6"), lineWidth: selectedTab == 5 ? 3 : 0)
+                        )
+                        .animation(nil, value: selectedTab)
                 }
             }
+            .frame(maxWidth: 50, maxHeight: 50)
             
             Spacer()
         }
