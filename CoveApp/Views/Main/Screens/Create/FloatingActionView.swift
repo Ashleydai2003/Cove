@@ -29,7 +29,7 @@ struct FloatingActionView: View {
                     HStack(spacing: 12) {
                         Text("event")
                             .font(.LibreBodoni(size: 20))
-                            .foregroundColor(.white)
+                                .foregroundColor(.white)
                             Image("confetti")
                             .font(.system(size: 20, weight: .medium))
                                 .foregroundColor(.white)

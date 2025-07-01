@@ -118,8 +118,8 @@ struct PluggingYouIn: View {
                 switch result {
                 case .success(_):
                     print("✅ Profile and images loaded successfully")
-                    self.isProfileLoaded = true
-                    completion()
+                            self.isProfileLoaded = true
+                            completion()
                     
                 case .failure(let error):
                     print("❌ Profile fetch failed: \(error.localizedDescription)")
@@ -146,13 +146,13 @@ struct PluggingYouIn: View {
                 }
                 
                 // Mark as loaded regardless of success/failure
-                self.isCovesLoaded = true
+                    self.isCovesLoaded = true
                 
                 // Start background prefetch for cove events (non-blocking)
                 self.prefetchCoveEvents()
-                
-                // Navigate to home after everything is loaded
-                self.navigateToHome()
+                    
+                    // Navigate to home after everything is loaded
+                    self.navigateToHome()
             }
         }
     }
