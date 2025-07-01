@@ -9,6 +9,8 @@ struct PluggingYouIn: View {
     @State private var errorMessage: String?
     @State private var isProfileLoaded = false
     @State private var isCovesLoaded = false
+    @State private var isCalendarEventsLoaded = false
+    @State private var isUpcomingEventsLoaded = false
     @State private var animationTimer: Timer?
     @State private var isCancelled = false
     
@@ -78,6 +80,8 @@ struct PluggingYouIn: View {
             print("📱 User is not in onboarding mode, proceeding with normal flow...")
             fetchUserProfile {
                 self.fetchUserCoves()
+                self.fetchCalendarEvents()
+                self.fetchUpcomingEvents()
             }
         }
     }
@@ -93,6 +97,8 @@ struct PluggingYouIn: View {
                     // After onboarding is complete, fetch profile and coves
                     self.fetchUserProfile {
                         self.fetchUserCoves()
+                        self.fetchCalendarEvents()
+                        self.fetchUpcomingEvents()
                     }
                 } else {
                     print("❌ Onboarding failed")
@@ -104,26 +110,16 @@ struct PluggingYouIn: View {
     }
     
     private func fetchUserProfile(completion: @escaping () -> Void) {
-        appController.profileModel.fetchProfile { result in
+        appController.profileModel.fetchProfileWithImages { result in
             DispatchQueue.main.async {
                 // Check if view was cancelled
                 guard !self.isCancelled else { return }
                 
                 switch result {
-                case .success(let profileData):
-                    print("✅ Profile fetched successfully")
-                    
-                    // Wait for images to load before proceeding
-                    self.appController.profileModel.loadAllImages {
-                        DispatchQueue.main.async {
-                            // Check if view was cancelled again after images loaded
-                            guard !self.isCancelled else { return }
-                            
-                            print("✅ Profile images loaded successfully")
-                            self.isProfileLoaded = true
-                            completion()
-                        }
-                    }
+                case .success(_):
+                    print("✅ Profile and images loaded successfully")
+                    self.isProfileLoaded = true
+                    completion()
                     
                 case .failure(let error):
                     print("❌ Profile fetch failed: \(error.localizedDescription)")
@@ -137,29 +133,26 @@ struct PluggingYouIn: View {
     }
     
     private func fetchUserCoves() {
-        NetworkManager.shared.get(endpoint: "/user-coves") { (result: Result<UserCovesResponse, NetworkError>) in
+        appController.coveFeed.fetchUserCoves { 
             DispatchQueue.main.async {
                 // Check if view was cancelled
                 guard !self.isCancelled else { return }
                 
-                switch result {
-                case .success(let response):
-                    // Set the coves in the shared CoveFeed instance
-                    appController.coveFeed.setUserCoves(response.coves)
-                    
+                if let error = self.appController.coveFeed.errorMessage {
+                    print("❌ User coves fetch failed: \(error)")
+                    self.errorMessage = "Failed to fetch user coves: \(error)"
+                } else {
                     print("✅ User coves fetched successfully")
-                    self.isCovesLoaded = true
-                    
-                    // Navigate to home after everything is loaded
-                    self.navigateToHome()
-                    
-                case .failure(let error):
-                    print("❌ User coves fetch failed: \(error.localizedDescription)")
-                    self.errorMessage = "Failed to fetch user coves: \(error.localizedDescription)"
-                    // Still try to navigate even if coves fetch fails
-                    self.isCovesLoaded = true
-                    self.navigateToHome()
                 }
+                
+                // Mark as loaded regardless of success/failure
+                self.isCovesLoaded = true
+                
+                // Start background prefetch for cove events (non-blocking)
+                self.prefetchCoveEvents()
+                
+                // Navigate to home after everything is loaded
+                self.navigateToHome()
             }
         }
     }
@@ -168,8 +161,8 @@ struct PluggingYouIn: View {
         // Check if view was cancelled
         guard !isCancelled else { return }
         
-        // Only navigate if both profile and coves are loaded (or failed to load)
-        if isProfileLoaded && isCovesLoaded {
+        // Only navigate if all critical data is loaded (or failed to load)
+        if isProfileLoaded && isCovesLoaded && isCalendarEventsLoaded && isUpcomingEventsLoaded {
             // Stop the animation
             stopAnimation()
             
@@ -190,6 +183,64 @@ struct PluggingYouIn: View {
                 // Mark as logged in - this will switch to the main app flow
                 appController.isLoggedIn = true
             }
+        }
+    }
+    
+    private func fetchCalendarEvents() {
+        appController.calendarFeed.fetchCalendarEventsIfStale {
+            DispatchQueue.main.async {
+                // Check if view was cancelled
+                guard !self.isCancelled else { return }
+                
+                if let error = self.appController.calendarFeed.errorMessage {
+                    print("❌ Calendar events fetch failed: \(error)")
+                    self.errorMessage = "Failed to fetch calendar events: \(error)"
+                } else {
+                    print("✅ Calendar events fetched successfully")
+                }
+                
+                // Mark as loaded regardless of success/failure
+                self.isCalendarEventsLoaded = true
+                
+                // Navigate to home after everything is loaded
+                self.navigateToHome()
+            }
+        }
+    }
+    
+    private func fetchUpcomingEvents() {
+        appController.upcomingFeed.fetchUpcomingEventsIfStale {
+            DispatchQueue.main.async {
+                // Check if view was cancelled
+                guard !self.isCancelled else { return }
+                
+                if let error = self.appController.upcomingFeed.errorMessage {
+                    print("❌ Upcoming events fetch failed: \(error)")
+                    self.errorMessage = "Failed to fetch upcoming events: \(error)"
+                } else {
+                    print("✅ Upcoming events fetched successfully")
+                }
+                
+                // Mark as loaded regardless of success/failure
+                self.isUpcomingEventsLoaded = true
+                
+                // Navigate to home after everything is loaded
+                self.navigateToHome()
+            }
+        }
+    }
+    
+    private func prefetchCoveEvents() {
+        // Get first 10 coves for prefetching
+        let covesToPrefetch = Array(appController.coveFeed.userCoves.prefix(10))
+        
+        print("🔄 Starting background prefetch for \(covesToPrefetch.count) coves")
+        
+        // Start background prefetch for each cove (non-blocking)
+        for cove in covesToPrefetch {
+            let coveModel = appController.coveFeed.getOrCreateCoveModel(for: cove.id)
+            // This will fetch cove details and first page of events
+            coveModel.fetchCoveDetailsIfStale(coveId: cove.id)
         }
     }
 }
