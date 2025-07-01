@@ -18,7 +18,7 @@ datasource db {
 }
 
 // TODO: for testing purposes
-model DummyTesting {
+model DummyTest {
   id String @id @default(cuid())
 }
 
