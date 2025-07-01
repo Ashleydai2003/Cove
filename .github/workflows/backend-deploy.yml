@@ -53,7 +53,11 @@ jobs:
       # Install dependencies
       - name: Install dependencies
         working-directory: Backend
-        run: npm ci
+        run: |
+          echo "Installing dependencies..."
+          # Use npm install since package-lock.json might not exist
+          npm install
+          echo "✅ Dependencies installed"
 
       # Build Lambda package
       - name: Build Lambda package
@@ -73,13 +77,24 @@ jobs:
       - name: Check for schema changes
         id: schema-check
         run: |
-          # Check if schema.prisma file was modified in this push
-          if git diff --name-only ${{ github.event.before }}..${{ github.sha }} | grep -q "Backend/prisma/schema.prisma"; then
+          echo "Debug: Checking for schema changes..."
+          echo "Before commit: ${{ github.event.before }}"
+          echo "Current commit: ${{ github.sha }}"
+          
+          # Handle first push case where before commit might be null
+          if [ "${{ github.event.before }}" == "0000000000000000000000000000000000000000" ] || [ -z "${{ github.event.before }}" ]; then
+            echo "First push detected - will run migrations to be safe"
             echo "schema_changed=true" >> $GITHUB_OUTPUT
-            echo "📋 Prisma schema changes detected - migrations will be run"
+            echo "📋 First push - migrations will be run"
           else
-            echo "schema_changed=false" >> $GITHUB_OUTPUT
-            echo "✅ No schema changes - skipping migrations"
+            # Check if schema.prisma file was modified in this push
+            if git diff --name-only ${{ github.event.before }}..${{ github.sha }} | grep -q "Backend/prisma/schema.prisma"; then
+              echo "schema_changed=true" >> $GITHUB_OUTPUT
+              echo "📋 Prisma schema changes detected - migrations will be run"
+            else
+              echo "schema_changed=false" >> $GITHUB_OUTPUT
+              echo "✅ No schema changes - skipping migrations"
+            fi
           fi
 
       # Start your dedicated migration EC2 instance only when schema changes
@@ -189,6 +204,15 @@ jobs:
       - name: Deploy Lambda function
         run: |
           echo "Deploying Lambda function..."
+          
+          # Check if the zip file exists
+          if [ ! -f "Backend/dist/index.zip" ]; then
+            echo "❌ Lambda package not found at Backend/dist/index.zip"
+            ls -la Backend/dist/ || echo "Backend/dist/ directory doesn't exist"
+            exit 1
+          fi
+          
+          echo "✅ Lambda package found, deploying..."
           aws lambda update-function-code \
             --function-name hello-lambda \
             --zip-file fileb://Backend/dist/index.zip \
