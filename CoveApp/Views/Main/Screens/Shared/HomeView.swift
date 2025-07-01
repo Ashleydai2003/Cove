@@ -132,39 +132,9 @@ struct HomeView: View {
             TabBarView(selectedTab: $tabSelection)
         }
         .onAppear(perform: {
-            // Only set to home tab if this is the initial app launch
-            // Otherwise, preserve the current tab selection
-            if appController.path.isEmpty {
+            // Set default tab selection
                 tabSelection = 1
-                appController.previousTabSelection = 1
-            } else {
-                // Restore the previous tab selection when returning from navigation
-                tabSelection = appController.previousTabSelection
-            }
         })
-        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
-            // Only reset tab selection when app becomes active if we're at the root level
-            // This prevents resetting when returning from background while in a sub-navigation
-            if appController.path.isEmpty {
-                tabSelection = appController.previousTabSelection
-            }
-        }
-        .onChange(of: appController.path) { _, newPath in
-            // When navigation path changes (like returning from an event)
-            if newPath.isEmpty {
-                // We're back at the root level, restore the previous tab
-                tabSelection = appController.previousTabSelection
-            } else if newPath.last == .home {
-                // We're navigating to home, update the previous tab to current selection
-                appController.previousTabSelection = tabSelection
-            }
-        }
-        .onChange(of: tabSelection) { _, newTab in
-            // Store the current tab selection as previous when user manually changes tabs
-            if !appController.path.isEmpty {
-                appController.previousTabSelection = newTab
-            }
-        }
         .onDisappear {
             // Cancel any ongoing requests when HomeView disappears
             appController.profileModel.cancelAllRequests()

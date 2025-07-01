@@ -6,10 +6,7 @@ struct CoveCardView: View {
     @EnvironmentObject var appController: AppController
     
     var body: some View {
-        Button {
-            // Navigate to the specific cove feed
-            appController.path.append(.feed(coveId: cove.id))
-        } label: {
+        NavigationLink(value: cove.id) {
             HStack(alignment: .center, spacing: 16) {
                 // Cove cover photo using Kingfisher for caching and smooth loading
                 if let urlString = cove.coverPhoto?.url, let url = URL(string: urlString) {
@@ -59,7 +56,6 @@ struct CoveCardView: View {
             .padding(.horizontal, 20)
             .background(Color.clear)
         }
-        .buttonStyle(PlainButtonStyle())
         .onAppear {
             appController.coveFeed.preloadCoveDetails(for: cove.id)
         }

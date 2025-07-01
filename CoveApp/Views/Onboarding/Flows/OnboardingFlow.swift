@@ -40,25 +40,6 @@ struct OnboardingFlow: View {
                         ContactsView()
                     case .pluggingIn:
                         PluggingYouIn()
-                    case .profile:
-                        ProfileView()
-                    case .exploreFriends:
-                        MutualsView()
-                    case .friendRequests:
-                        RequestsView()
-                    case .yourInvites:
-                        YourInvitesView()
-                    case .home:
-                        HomeView()
-                    case .membersList:
-                        EventMembersView()
-                    case .eventPost(let eventId):
-                        EventPostView(eventId: eventId)
-                    case .feed(let coveId):
-                        CoveView(
-                            viewModel: appController.coveFeed.getOrCreateCoveModel(for: coveId),
-                            coveId: coveId
-                        )
                     }
                 }
         }

@@ -15,9 +15,7 @@ struct EventSummaryView: View {
     @EnvironmentObject private var appController: AppController
     
     var body: some View {
-        Button {
-            appController.navigateToEvent(eventId: event.id)
-        } label: {
+        NavigationLink(value: event.id) {
             VStack(alignment: .leading, spacing: 0) {
                 // Time-ago label above the photo (always render, but clear for calendar type)
                 HStack {
@@ -140,7 +138,6 @@ struct EventSummaryView: View {
             }
         }
         .padding(.vertical, 5)
-        .buttonStyle(PlainButtonStyle())
     }
     /// Returns a human-readable time-ago string for the event date.
     private func timeAgo(_ dateString: String) -> String {

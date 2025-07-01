@@ -14,26 +14,32 @@ struct CalendarView: View {
     init() {
         self._calendarFeed = ObservedObject(wrappedValue: AppController.shared.calendarFeed)
     }
-    
+
     var body: some View {
-        VStack(spacing: 0) {
-            // Header
-            CoveBannerView()
-            
-            // Main content
-            ZStack {
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 5) {
-                        contentView
-                        Spacer(minLength: 20)
-                    }
+        NavigationStack {
+        ZStack {
+            Colors.faf8f4
+                .ignoresSafeArea()
+
+                VStack(spacing: 0) {
+                    // Header
+                    CoveBannerView()
+                    
+                    // Main content
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 5) {
+                                contentView
+                                Spacer(minLength: 20)
+                            }
+                        }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Colors.faf8f4)
+            .navigationDestination(for: String.self) { eventId in
+                EventPostView(eventId: eventId)
+                        }
         }
         .ignoresSafeArea(edges: .bottom)
-        .background(Colors.faf8f4)
         .navigationBarBackButtonHidden(true)
         .onAppear {
             calendarFeed.fetchCalendarEventsIfStale()
@@ -200,4 +206,4 @@ struct CalendarView_Previews: PreviewProvider {
         CalendarView()
             .environmentObject(AppController.shared)
     }
-} 
+}

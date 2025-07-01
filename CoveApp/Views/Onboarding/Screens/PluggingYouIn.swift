@@ -186,7 +186,9 @@ struct PluggingYouIn: View {
                 if let error = errorMessage {
                     appController.errorMessage = error
                 }
-                appController.path.append(.home)
+                
+                // Mark as logged in - this will switch to the main app flow
+                appController.isLoggedIn = true
             }
         }
     }

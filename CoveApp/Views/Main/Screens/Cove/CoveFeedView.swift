@@ -18,17 +18,18 @@ struct CoveFeedView: View {
     
     // MARK: - Main Body 
     var body: some View {
+        NavigationStack {
         ZStack {
             Colors.faf8f4
                 .ignoresSafeArea()
             
             VStack(spacing: 0) {
                 // Custom Header
-                CoveBannerView()
-                
-                // Only show loading if we have no coves AND we're actively loading
-                // (coves should already be fetched during onboarding)
-                if coveFeed.userCoves.isEmpty && coveFeed.isLoading {
+                    CoveBannerView()
+                    
+                    // Only show loading if we have no coves AND we're actively loading
+                    // (coves should already be fetched during onboarding)
+                    if coveFeed.userCoves.isEmpty && coveFeed.isLoading {
                     VStack(spacing: 16) {
                         ProgressView()
                             .tint(Colors.primaryDark)
@@ -37,7 +38,7 @@ struct CoveFeedView: View {
                             .foregroundColor(Colors.primaryDark)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if let error = coveFeed.errorMessage {
+                    } else if let error = coveFeed.errorMessage {
                     VStack(spacing: 16) {
                         Image(systemName: "exclamationmark.circle")
                             .font(.system(size: 40))
@@ -49,7 +50,7 @@ struct CoveFeedView: View {
                             .multilineTextAlignment(.center)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if coveFeed.userCoves.isEmpty {
+                    } else if coveFeed.userCoves.isEmpty {
                     VStack(spacing: 16) {
                         Image(systemName: "house")
                             .font(.system(size: 40))
@@ -64,9 +65,9 @@ struct CoveFeedView: View {
                 } else {
                     ScrollView {
                         VStack(spacing: 0) {
-                            ForEach(Array(coveFeed.userCoves.enumerated()), id: \.element.id) { idx, cove in
+                                ForEach(Array(coveFeed.userCoves.enumerated()), id: \.element.id) { idx, cove in
                                 CoveCardView(cove: cove)
-                                if idx < coveFeed.userCoves.count - 1 {
+                                    if idx < coveFeed.userCoves.count - 1 {
                                     Divider()
                                         .padding(.leading, 84)
                                 }
@@ -75,6 +76,21 @@ struct CoveFeedView: View {
                         .padding(.horizontal, 0)
                         .padding(.top, 8)
                     }
+                    }
+                }
+            }
+            .navigationDestination(for: String.self) { value in
+                // This handles both cove IDs and event IDs
+                // We can distinguish them by checking if it's a valid cove
+                if let _ = appController.coveFeed.getCove(by: value) {
+                    // It's a cove ID
+                    CoveView(
+                        viewModel: appController.coveFeed.getOrCreateCoveModel(for: value),
+                        coveId: value
+                    )
+                } else {
+                    // It's an event ID
+                    EventPostView(eventId: value)
                 }
             }
         }

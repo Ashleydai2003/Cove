@@ -52,8 +52,15 @@ struct CoveApp: App {
     
     var body: some Scene {
         WindowGroup {
-            OnboardingFlow()
-                .environmentObject(appController)
+            if appController.isLoggedIn {
+                // Main app flow - tab-based navigation
+                HomeView()
+                    .environmentObject(appController)
+            } else {
+                // Onboarding flow - linear navigation
+                OnboardingFlow()
+                    .environmentObject(appController)
+            }
         }
     }
 }

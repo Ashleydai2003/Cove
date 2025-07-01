@@ -170,12 +170,12 @@ struct HobbiesView: View {
                 // Header section
                 VStack(alignment: .leading, spacing: 10) {
                     Text("what are your favorite social pass times?")
-                        .foregroundStyle(Colors.primary)
+                        .foregroundStyle(Colors.primaryLight)
                         .font(.LibreBodoni(size: 35))
                     
                     HStack(alignment: .center, spacing: 4) {
                         Text("select at least 5 activities you wish to see in your area.")
-                            .foregroundStyle(Colors.primary)
+                            .foregroundStyle(Colors.primaryLight)
                             .font(.LeagueSpartan(size: 12))
                         
                         Image("smiley")
@@ -222,7 +222,7 @@ struct HobbiesView: View {
                                     .font(.LeagueSpartan(size: 14))
                                 Image(systemName: "plus.circle.fill")
                             }
-                            .foregroundColor(Colors.primary)
+                            .foregroundColor(Colors.primaryLight)
                             .padding(.vertical, 4)
                         }
                     }
@@ -238,7 +238,7 @@ struct HobbiesView: View {
                             VStack(alignment: .leading, spacing: 12) {
                                 Text(category.0)
                                     .font(.LeagueSpartan(size: 16))
-                                    .foregroundStyle(Colors.primary)
+                                    .foregroundStyle(Colors.primaryLight)
                                     .padding(.horizontal)
                                 
                                 LazyVGrid(columns: columns, spacing: 12) {
@@ -265,7 +265,7 @@ struct HobbiesView: View {
                             VStack(alignment: .leading, spacing: 12) {
                                 Text("Custom Hobbies ✨")
                                     .font(.LeagueSpartan(size: 16))
-                                    .foregroundStyle(Colors.primary)
+                                    .foregroundStyle(Colors.primaryLight)
                                     .padding(.horizontal)
                                 
                                 LazyVGrid(columns: columns, spacing: 12) {

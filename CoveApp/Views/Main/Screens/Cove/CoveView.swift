@@ -13,6 +13,7 @@ struct CoveView: View {
     @ObservedObject var viewModel: CoveModel
     let coveId: String
     @EnvironmentObject var appController: AppController
+    @Environment(\.dismiss) private var dismiss
     
     // TODO: admin can update cove cover photo 
     
@@ -32,17 +33,10 @@ struct CoveView: View {
             } else if let cove = viewModel.cove {
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 24) {
-                        // Cove header with back button
+                        // Cove header with back button and cover photo
                         HStack(alignment: .top) {
-                            // Back button - robust navigation
                             Button {
-                                // Check if we can go back in the navigation stack
-                                if !appController.path.isEmpty {
-                                    appController.path.removeLast()
-                                } else {
-                                    // Fallback: navigate to home
-                                    appController.path.append(.home)
-                                }
+                                dismiss()
                             } label: {
                                 Images.backArrow
                             }
@@ -104,7 +98,9 @@ struct CoveView: View {
                             ForEach(viewModel.events, id: \.id) { event in
                                 EventSummaryView(event: event, type: .cove)
                                     .onAppear {
-                                        viewModel.loadMoreEventsIfNeeded(currentEvent: event)
+                                        DispatchQueue.main.async {
+                                            viewModel.loadMoreEventsIfNeeded(currentEvent: event)
+                                        }
                                     }
                             }
                             
@@ -137,8 +133,19 @@ struct CoveView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
+            
+            // Floating Action Button
+            VStack {
+                Spacer()
+                HStack {
+                    Spacer()
+                    FloatingActionView(coveId: coveId)
+                        .padding(.trailing, 24)
+                        .padding(.bottom, 30) 
+                }
+            }
         }
-        .navigationBarBackButtonHidden()
+        .navigationBarBackButtonHidden(true)
         .onAppear {
             viewModel.fetchCoveDetailsIfStale(coveId: coveId)
         }
@@ -160,12 +167,9 @@ struct CoveView: View {
 /// EventView: Displays a single event in the feed, including cover photo and details.
 struct EventView: View {
     let event: CalendarEvent
-    @EnvironmentObject private var appController: AppController
     
     var body: some View {
-        Button {
-            appController.navigateToEvent(eventId: event.id)
-        } label: {
+        NavigationLink(value: event.id) {
             VStack(alignment: .leading) {
                 HStack {
                     HStack(spacing: 5) {
@@ -215,7 +219,6 @@ struct EventView: View {
             }
             .padding(.vertical, 10)
         }
-        .buttonStyle(PlainButtonStyle())
     }
     
     /// Returns a human-readable time-ago string for the event date.
@@ -238,6 +241,7 @@ struct EventView: View {
         }
     }
 }
+
 
 #Preview {
     CoveView(viewModel: CoveModel(), coveId: "1")
