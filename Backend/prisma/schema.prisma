@@ -17,10 +17,6 @@ datasource db {
   url = env("DATABASE_URL")
 }
 
-// TODO: for testing purposes
-model DummyTest {
-  id String @id @default(cuid())
-}
 
 // Prisma Enum for RSVPs 
 enum RSVPStatus {
