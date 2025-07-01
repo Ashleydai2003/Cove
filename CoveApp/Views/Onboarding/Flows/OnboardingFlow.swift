@@ -36,24 +36,10 @@ struct OnboardingFlow: View {
                         BioView()
                     case .profilePics:
                         ProfilePicView()
-                    case .mutuals:
-                        MutualsView()
+                    case .contacts:
+                        ContactsView()
                     case .pluggingIn:
                         PluggingYouIn()
-                    case .profile:
-                        ProfileView()
-                    case .exploreFriends:
-                        FriendsView()
-                    case .friendRequests:
-                        RequestsView()
-                    case .yourInvites:
-                        YourInvitesView()
-                    case .home:
-                        HomeView()
-                    case .membersList:
-                        EventMembersView()
-                    case .eventPost(let eventId):
-                        EventPostView(eventId: eventId)
                     }
                 }
         }

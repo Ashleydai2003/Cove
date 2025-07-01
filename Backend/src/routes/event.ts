@@ -288,6 +288,14 @@ export const handleGetCoveEvents = async (event: APIGatewayProxyEvent): Promise<
             name: true
           }
         },
+        // Include cove information with cover photo
+        cove: {
+          select: {
+            id: true,
+            name: true,
+            coverPhotoID: true
+          }
+        },
         // Include cover photo information
         coverPhoto: {
           select: {
@@ -329,12 +337,29 @@ export const handleGetCoveEvents = async (event: APIGatewayProxyEvent): Promise<
           // Get the user's RSVP status
           const userRsvp = event.rsvps[0];
           
+          // Count RSVPs with "GOING" status for this event
+          const goingCount = await prisma.eventRSVP.count({
+            where: {
+              eventId: event.id,
+              status: 'GOING'
+            }
+          });
+          
           // Construct cover photo URL if it exists
           const coverPhoto = event.coverPhoto ? {
             id: event.coverPhoto.id,
             url: await getSignedUrl(s3Client, new GetObjectCommand({
               Bucket: process.env.EVENT_IMAGE_BUCKET_NAME,
               Key: `${event.id}/${event.coverPhoto.id}.jpg`
+            }), { expiresIn: 3600 })
+          } : null;
+          
+          // Generate cove cover photo URL if it exists
+          const coveCoverPhoto = event.cove.coverPhotoID ? {
+            id: event.cove.coverPhotoID,
+            url: await getSignedUrl(s3Client, new GetObjectCommand({
+              Bucket: process.env.COVE_IMAGE_BUCKET_NAME,
+              Key: `${event.cove.id}/${event.cove.coverPhotoID}.jpg`
             }), { expiresIn: 3600 })
           } : null;
           
@@ -345,9 +370,12 @@ export const handleGetCoveEvents = async (event: APIGatewayProxyEvent): Promise<
             date: event.date,
             location: event.location,
             coveId: event.coveId,
+            coveName: event.cove.name,
+            coveCoverPhoto: coveCoverPhoto,
             hostId: event.hostId,
             hostName: event.hostedBy.name,
-            rsvpStatus: userRsvp?.status || null,
+            rsvpStatus: userRsvp?.status || 'NOT_GOING',
+            goingCount: goingCount,
             createdAt: event.createdAt,
             coverPhoto: coverPhoto
           };
@@ -370,19 +398,20 @@ export const handleGetCoveEvents = async (event: APIGatewayProxyEvent): Promise<
   }
 };
 
-// Get all events for a user's calendar (events from coves they're members of)
+// TODO: change this to get only the events they rsvped to or recommended 
+// Get all events for a user's upcoming events (events from coves they're members of)
 // This endpoint handles retrieving all events from coves the user is a member of with the following requirements:
 // 1. User must be authenticated
 // 2. Events are returned with pagination using cursor-based approach
 // 3. Each event includes the user's RSVP status and cove information
-export const handleGetCalendarEvents = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+export const handleGetUpcomingEvents = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
     // Validate request method - only GET is allowed
     if (event.httpMethod !== 'GET') {
       return {
         statusCode: 405,
         body: JSON.stringify({
-          message: 'Method not allowed. Only GET requests are accepted for retrieving calendar events.'
+          message: 'Method not allowed. Only GET requests are accepted for retrieving upcoming events.'
         })
       };
     }
@@ -435,11 +464,12 @@ export const handleGetCalendarEvents = async (event: APIGatewayProxyEvent): Prom
             name: true
           }
         },
-        // Include cove information (id and name)
+        // Include cove information (id, name, and cover photo)
         cove: {
           select: {
             id: true,
-            name: true
+            name: true,
+            coverPhotoID: true
           }
         },
         // Include cover photo information
@@ -483,12 +513,29 @@ export const handleGetCalendarEvents = async (event: APIGatewayProxyEvent): Prom
           // Get the user's RSVP status
           const userRsvp = event.rsvps[0];
           
+          // Count RSVPs with "GOING" status for this event
+          const goingCount = await prisma.eventRSVP.count({
+            where: {
+              eventId: event.id,
+              status: 'GOING'
+            }
+          });
+          
           // Generate cover photo URL if it exists
           const coverPhoto = event.coverPhoto ? {
             id: event.coverPhoto.id,
             url: await getSignedUrl(s3Client, new GetObjectCommand({
               Bucket: process.env.EVENT_IMAGE_BUCKET_NAME,
               Key: `${event.id}/${event.coverPhoto.id}.jpg`
+            }), { expiresIn: 3600 })
+          } : null;
+          
+          // Generate cove cover photo URL if it exists
+          const coveCoverPhoto = event.cove.coverPhotoID ? {
+            id: event.cove.coverPhotoID,
+            url: await getSignedUrl(s3Client, new GetObjectCommand({
+              Bucket: process.env.COVE_IMAGE_BUCKET_NAME,
+              Key: `${event.cove.id}/${event.cove.coverPhotoID}.jpg`
             }), { expiresIn: 3600 })
           } : null;
           
@@ -500,9 +547,11 @@ export const handleGetCalendarEvents = async (event: APIGatewayProxyEvent): Prom
             location: event.location,
             coveId: event.coveId,
             coveName: event.cove.name,
+            coveCoverPhoto: coveCoverPhoto,
             hostId: event.hostId,
             hostName: event.hostedBy.name,
-            rsvpStatus: userRsvp?.status || null,
+            rsvpStatus: userRsvp?.status || 'NOT_GOING',
+            goingCount: goingCount,
             createdAt: event.createdAt,
             coverPhoto
           };
@@ -514,11 +563,11 @@ export const handleGetCalendarEvents = async (event: APIGatewayProxyEvent): Prom
       })
     };
   } catch (error) {
-    console.error('Get calendar events route error:', error);
+    console.error('Get upcoming events route error:', error);
     return {
       statusCode: 500,
       body: JSON.stringify({
-        message: 'Error processing get calendar events request',
+        message: 'Error processing get upcoming events request',
         error: error instanceof Error ? error.message : 'Unknown error'
       })
     };
@@ -579,20 +628,27 @@ export const handleGetEvent = async (event: APIGatewayProxyEvent): Promise<APIGa
             name: true
           }
         },
-        // Include cove information
+        // Include cove information with cover photo
         cove: {
           select: {
             id: true,
             name: true,
+            coverPhotoID: true,
             members: {
               where: { userId: user.uid }
             }
           }
         },
-        // Include user's RSVP status
+        // Include all RSVPs for the event
         rsvps: {
-          where: {
-            userId: user.uid
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                profilePhotoID: true
+              }
+            }
           }
         },
         // Include cover photo information
@@ -625,7 +681,7 @@ export const handleGetEvent = async (event: APIGatewayProxyEvent): Promise<APIGa
     }
 
     // Get the user's RSVP status
-    const userRsvp = eventData.rsvps[0];
+    const userRsvp = eventData.rsvps.find(rsvp => rsvp.userId === user.uid);
     
     // Generate cover photo URL if it exists
     const coverPhoto = eventData.coverPhoto ? {
@@ -633,6 +689,15 @@ export const handleGetEvent = async (event: APIGatewayProxyEvent): Promise<APIGa
       url: await getSignedUrl(s3Client, new GetObjectCommand({
         Bucket: process.env.EVENT_IMAGE_BUCKET_NAME,
         Key: `${eventData.id}/${eventData.coverPhoto.id}.jpg`
+      }), { expiresIn: 3600 })
+    } : null;
+
+    // Generate cove cover photo URL if it exists
+    const coveCoverPhoto = eventData.cove.coverPhotoID ? {
+      id: eventData.cove.coverPhotoID,
+      url: await getSignedUrl(s3Client, new GetObjectCommand({
+        Bucket: process.env.COVE_IMAGE_BUCKET_NAME,
+        Key: `${eventData.cove.id}/${eventData.cove.coverPhotoID}.jpg`
       }), { expiresIn: 3600 })
     } : null;
 
@@ -653,9 +718,18 @@ export const handleGetEvent = async (event: APIGatewayProxyEvent): Promise<APIGa
           },
           cove: {
             id: eventData.cove.id,
-            name: eventData.cove.name
+            name: eventData.cove.name,
+            coverPhoto: coveCoverPhoto
           },
-          rsvpStatus: userRsvp?.status || null,
+          rsvpStatus: userRsvp?.status || 'NOT_GOING',
+          rsvps: eventData.rsvps.map(rsvp => ({
+            id: rsvp.id,
+            status: rsvp.status,
+            userId: rsvp.userId,
+            userName: rsvp.user.name,
+            profilePhotoID: rsvp.user.profilePhotoID,
+            createdAt: rsvp.createdAt
+          })),
           coverPhoto,
           isHost: eventData.hostId === user.uid
         }
@@ -810,6 +884,182 @@ export const handleUpdateEventRSVP = async (event: APIGatewayProxyEvent): Promis
       statusCode: 500,
       body: JSON.stringify({
         message: 'Error processing RSVP update request',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      })
+    };
+  }
+};
+
+// TODO: In the future, consider handling MAYBE responses as well for a more comprehensive calendar view
+// Get events that the user has RSVP'd "GOING" to (for calendar view)
+// This endpoint handles retrieving events the user has committed to attend with the following requirements:
+// 1. User must be authenticated
+// 2. Only returns events where user RSVP status is "GOING"
+// 3. Events are returned with pagination using cursor-based approach
+// 4. Each event includes the user's RSVP status and cove information
+export const handleGetCalendarEvents = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+  try {
+    // Validate request method - only GET is allowed
+    if (event.httpMethod !== 'GET') {
+      return {
+        statusCode: 405,
+        body: JSON.stringify({
+          message: 'Method not allowed. Only GET requests are accepted for retrieving calendar events.'
+        })
+      };
+    }
+
+    // Authenticate the request using Firebase
+    const authResult = await authMiddleware(event);
+    
+    // If auth failed, return the error response
+    if ('statusCode' in authResult) {
+      return authResult;
+    }
+
+    // Get the authenticated user's info from Firebase
+    const user = authResult.user;
+    console.log('Authenticated user:', user.uid);
+
+    // Get pagination parameters from query string
+    // cursor: ID of the last event from previous request (for pagination)
+    // limit: number of events to return (defaults to 10, max 50)
+    const cursor = event.queryStringParameters?.cursor;
+    const requestedLimit = parseInt(event.queryStringParameters?.limit || '10');
+    const limit = Math.min(requestedLimit, 50); // Enforce maximum limit of 50
+
+    // Initialize database connection
+    const prisma = await initializeDatabase();
+
+    // Get events where the user has RSVP'd "GOING"
+    // We fetch limit + 1 items to determine if there are more results
+    const events = await prisma.event.findMany({
+      where: {
+        rsvps: {
+          some: {
+            userId: user.uid,
+            status: 'GOING'
+          }
+        }
+      },
+      include: {
+        // Only get RSVPs for the current user to return their status
+        rsvps: {
+          where: {
+            userId: user.uid
+          }
+        },
+        // Include host information (id and name)
+        hostedBy: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        // Include cove information (id, name, and cover photo)
+        cove: {
+          select: {
+            id: true,
+            name: true,
+            coverPhotoID: true
+          }
+        },
+        // Include cover photo information
+        coverPhoto: {
+          select: {
+            id: true
+          }
+        }
+      },
+      // Order events by date ascending (earliest first)
+      orderBy: {
+        date: 'asc'
+      },
+      // Take one extra item to determine if there are more results
+      take: limit + 1,
+      // If cursor exists, skip the cursor item and start after it
+      ...(cursor ? {
+        cursor: {
+          id: cursor
+        },
+        skip: 1
+      } : {})
+    });
+
+    // Check if there are more results by comparing actual length with requested limit
+    const hasMore = events.length > limit;
+    // Remove the extra item we fetched if there are more results
+    const eventsToReturn = hasMore ? events.slice(0, -1) : events;
+
+    // Get S3 bucket URL from environment variables
+    const bucketUrl = process.env.EVENT_IMAGE_BUCKET_URL;
+    if (!bucketUrl) {
+      throw new Error('EVENT_IMAGE_BUCKET_URL environment variable is not set');
+    }
+
+    // Return success response with events and pagination info
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        events: await Promise.all(eventsToReturn.map(async event => {
+          // Get the user's RSVP status (should always be "GOING" for this endpoint)
+          const userRsvp = event.rsvps[0];
+          
+          // Count RSVPs with "GOING" status for this event
+          const goingCount = await prisma.eventRSVP.count({
+            where: {
+              eventId: event.id,
+              status: 'GOING'
+            }
+          });
+          
+          // Generate cover photo URL if it exists
+          const coverPhoto = event.coverPhoto ? {
+            id: event.coverPhoto.id,
+            url: await getSignedUrl(s3Client, new GetObjectCommand({
+              Bucket: process.env.EVENT_IMAGE_BUCKET_NAME,
+              Key: `${event.id}/${event.coverPhoto.id}.jpg`
+            }), { expiresIn: 3600 })
+          } : null;
+          
+          // Generate cove cover photo URL if it exists
+          const coveCoverPhoto = event.cove.coverPhotoID ? {
+            id: event.cove.coverPhotoID,
+            url: await getSignedUrl(s3Client, new GetObjectCommand({
+              Bucket: process.env.COVE_IMAGE_BUCKET_NAME,
+              Key: `${event.cove.id}/${event.cove.coverPhotoID}.jpg`
+            }), { expiresIn: 3600 })
+          } : null;
+          
+          return {
+            id: event.id,
+            name: event.name,
+            description: event.description,
+            date: event.date,
+            location: event.location,
+            coveId: event.coveId,
+            coveName: event.cove.name,
+            coveCoverPhoto: coveCoverPhoto,
+            hostId: event.hostId,
+            hostName: event.hostedBy.name,
+            rsvpStatus: userRsvp?.status || 'NOT_GOING',
+            goingCount: goingCount,
+            createdAt: event.createdAt,
+            coverPhoto
+          };
+        })),
+        pagination: {
+          hasMore,
+          nextCursor: hasMore ? events[events.length - 2].id : null
+        }
+      })
+    };
+  } catch (error) {
+    console.error('Get calendar events route error:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        message: 'Error processing get calendar events request',
         error: error instanceof Error ? error.message : 'Unknown error'
       })
     };

@@ -2,7 +2,16 @@
 //  Friends.swift
 //  Cove
 //
-//  Makes network call to /friends endpoint; retrieves list of user's friends.
+//  This file is the service/data model for fetching and caching the user's friends list.
+//  
+//  Why do we have both Friends (service) and FriendsViewModel (UI/view model)?
+//  - Friends.swift is responsible for network calls, in-memory caching, and exposing data.
+//  - FriendsViewModel is an ObservableObject that manages UI state (loading, errors, pagination) and updates the SwiftUI view.
+//  - This separation keeps the code clean, testable, and scalable.
+//  - If you used only Friends.swift, you would lose SwiftUI reactivity and mix service logic with UI state.
+//  - Best practice: use Friends.swift for data/service, and FriendsViewModel for UI/view logic.
+//
+//  If you want to merge them, you could, but you would lose the benefits of clean architecture and reactivity.
 //
 
 import Foundation
@@ -38,6 +47,10 @@ struct FriendsResponse: Decodable {
 
 /// FriendsService: Fetches paginated friends list via NetworkManager
 class Friends {
+    /// In-memory cache of the last fetched friends list
+    private static var cachedFriends: [FriendDTO] = []
+    private static var cachedPagination: FriendsPagination? = nil
+
     /// Fetches a page of friends
     /// - Parameters:
     ///   - cursor: ID of last friendship from previous page (for pagination)
@@ -61,10 +74,26 @@ class Friends {
         ) { (result: Result<FriendsResponse, NetworkError>) in
             switch result {
             case .success(let response):
+                if cursor == nil {
+                    // First page, replace cache
+                    cachedFriends = response.friends
+                } else {
+                    // Append to cache
+                    cachedFriends.append(contentsOf: response.friends)
+                }
+                cachedPagination = response.pagination
                 completion(.success(response))
             case .failure(let error):
                 completion(.failure(error))
             }
         }
+    }
+
+    /// Returns the cached friends list
+    static var friendsCache: [FriendDTO] { cachedFriends }
+    /// Clears the cached friends list
+    static func clearCache() {
+        cachedFriends = []
+        cachedPagination = nil
     }
 }

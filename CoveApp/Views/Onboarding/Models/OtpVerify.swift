@@ -28,7 +28,8 @@ struct OtpVerify {
                     return
                 }
                 
-                if let user = authResult?.user {
+                // Only print user if needed, don't bind unused
+                if authResult?.user != nil {
                     print("✅ Successfully verified OTP and signed in")
                     // Make login request to backend
                     makeLoginRequest { success in
@@ -58,7 +59,9 @@ struct OtpVerify {
         UserDefaults.standard.removeObject(forKey: "verification_id")
         
         // Reset the navigation path to the phone number entry screen
-        AppController.shared.path = [.enterPhoneNumber]
+        Task { @MainActor in
+            AppController.shared.path = [.enterPhoneNumber]
+        }
     }
     
     /// Response model for login API
@@ -98,19 +101,20 @@ struct OtpVerify {
                     UserDefaults.standard.set(loginResponse.user.uid, forKey: "user_id")
                     
                     // Update onboarding state
-                    if loginResponse.user.onboarding {
-                        if loginResponse.user.verified {
-                            print("✅ User is verified")
-                            AppController.shared.path.append(.adminVerify)
-                            Onboarding.setAdminCove(adminCove: loginResponse.user.cove ?? "create new cove!")
+                    Task { @MainActor in
+                        if loginResponse.user.onboarding {
+                            if loginResponse.user.verified {
+                                print("✅ User is verified")
+                                AppController.shared.path.append(.adminVerify)
+                                Onboarding.setAdminCove(adminCove: loginResponse.user.cove ?? "create new cove!")
+                            } else {
+                                AppController.shared.path.append(.userDetails)
+                            }
                         } else {
-                            AppController.shared.path.append(.userDetails)
+                            AppController.shared.path.append(.pluggingIn)
+                            AppController.shared.hasCompletedOnboarding = true
                         }
-                    } else {
-                        AppController.shared.path.append(.pluggingIn)
-                        AppController.shared.hasCompletedOnboarding = true
                     }
-                    
                     completion(true)
                     
                 case .failure(let error):
