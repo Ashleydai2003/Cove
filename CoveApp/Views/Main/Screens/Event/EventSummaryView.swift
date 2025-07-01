@@ -120,7 +120,7 @@ struct EventSummaryView: View {
                 if type == .calendar {
                     HStack(spacing: 24) {
                         HStack(spacing: 6) {
-                            Image(systemName: "mappin.and.ellipse")
+                            Image("location-pin")
                                 .foregroundColor(Colors.primaryDark)
                             Text(firstLocationPart(event.location))
                                 .font(.LibreBodoniSemiBold(size: 13))

@@ -243,28 +243,16 @@ struct HobbiesView: View {
                                 
                                 LazyVGrid(columns: columns, spacing: 12) {
                                     ForEach(category.1, id: \.0) { hobby in
-                                        Button(action: {
+                                        HobbyPill(
+                                            text: hobby.0,
+                                            emoji: hobby.1,
+                                            isSelected: selectedButtons.contains(hobby.0)
+                                        ) {
                                             if selectedButtons.contains(hobby.0) {
                                                 selectedButtons.remove(hobby.0)
                                             } else {
                                                 selectedButtons.insert(hobby.0)
                                             }
-                                        }) {
-                                            ZStack {
-                                                Image(selectedButtons.contains(hobby.0) ? "buttonRed" : "buttonWhite")
-                                                    .resizable()
-                                                    .aspectRatio(contentMode: .fit)
-                                                
-                                                HStack(spacing: 4) {
-                                                    Text(hobby.1)
-                                                    Text(hobby.0.lowercased())
-                                                }
-                                                .foregroundColor(selectedButtons.contains(hobby.0) ? .white : .black)
-                                                .font(.LeagueSpartan(size: 14))
-                                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                                .multilineTextAlignment(.center)
-                                            }
-                                            .frame(height: 48)
                                         }
                                     }
                                 }
@@ -282,28 +270,16 @@ struct HobbiesView: View {
                                 
                                 LazyVGrid(columns: columns, spacing: 12) {
                                     ForEach(customHobbies, id: \.0) { hobby in
-                                        Button(action: {
+                                        HobbyPill(
+                                            text: hobby.0,
+                                            emoji: hobby.1,
+                                            isSelected: selectedButtons.contains(hobby.0)
+                                        ) {
                                             if selectedButtons.contains(hobby.0) {
                                                 selectedButtons.remove(hobby.0)
                                             } else {
                                                 selectedButtons.insert(hobby.0)
                                             }
-                                        }) {
-                                            ZStack {
-                                                Image(selectedButtons.contains(hobby.0) ? "buttonRed" : "buttonWhite")
-                                                    .resizable()
-                                                    .aspectRatio(contentMode: .fit)
-                                                
-                                                HStack(spacing: 4) {
-                                                    Text(hobby.1)
-                                                    Text(hobby.0.lowercased())
-                                                }
-                                                .foregroundColor(selectedButtons.contains(hobby.0) ? .white : .black)
-                                                .font(.LeagueSpartan(size: 14))
-                                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                                .multilineTextAlignment(.center)
-                                            }
-                                            .frame(height: 48)
                                         }
                                     }
                                 }

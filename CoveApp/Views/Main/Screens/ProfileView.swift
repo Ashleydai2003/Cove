@@ -390,35 +390,16 @@ struct InterestsSection: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             
             if interests.isEmpty && !isEditing {
-                ZStack {
-                    Image("buttonWhite")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                    
-                    Text("whoops! add your passtimes!")
-                        .font(.LeagueSpartan(size: 14))
-                        .foregroundColor(Colors.k6F6F73)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .multilineTextAlignment(.center)
-                        .padding(.bottom, 5)
-                }
+                StaticHobbyPill(text: "whoops! add your passtimes!", textColor: Colors.k6F6F73)
             } else {
                 LazyVGrid(columns: columns, spacing: 12) {
                     ForEach(interests, id: \.self) { hobby in
                         ZStack {
-                            Image("buttonWhite")
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
+                            StaticHobbyPill(text: hobby, textColor: Colors.k6F6F73)
                             
-                            HStack(spacing: 4) {
-                                Text(hobby.lowercased())
-                                    .font(.LeagueSpartan(size: 14))
-                                    .foregroundColor(Colors.k6F6F73)
-                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                    .multilineTextAlignment(.center)
-                                    .padding(.bottom, 5)
-                                
-                                if isEditing {
+                            if isEditing {
+                                HStack {
+                                    Spacer()
                                     Button(action: {
                                         var newInterests = interests
                                         newInterests.removeAll { $0 == hobby }
@@ -429,32 +410,19 @@ struct InterestsSection: View {
                                             .font(.system(size: 16))
                                     }
                                     .padding(.trailing, 8)
-                                    .padding(.bottom, 5)
                                 }
                             }
                         }
                     }
                     
                     if isEditing {
-                        Button(action: {
+                        StaticHobbyPill(
+                            text: "add hobby",
+                            emoji: "➕",
+                            textColor: Colors.primaryDark
+                        )
+                        .onTapGesture {
                             showingHobbiesSheet = true
-                        }) {
-                            ZStack {
-                                Image("buttonWhite")
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fit)
-                                
-                                HStack(spacing: 4) {
-                                    Image(systemName: "plus.circle.fill")
-                                        .foregroundColor(Colors.primaryDark)
-                                    Text("add hobby")
-                                        .font(.LeagueSpartan(size: 14))
-                                        .foregroundColor(Colors.primaryDark)
-                                }
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                .multilineTextAlignment(.center)
-                                .padding(.bottom, 5)
-                            }
                         }
                     }
                 }
@@ -718,21 +686,17 @@ struct HobbiesSelectionView: View {
                                                 currentSelection.insert(hobby.0)
                                             }
                                         }) {
-                                            ZStack {
-                                                Image(currentSelection.contains(hobby.0) ? "buttonRed" : "buttonWhite")
-                                                    .resizable()
-                                                    .aspectRatio(contentMode: .fit)
-                                                
-                                                HStack(spacing: 4) {
-                                                    Text(hobby.1)
-                                                    Text(hobby.0.lowercased())
+                                            HobbyPill(
+                                                text: hobby.0,
+                                                emoji: hobby.1,
+                                                isSelected: currentSelection.contains(hobby.0)
+                                            ) {
+                                                if currentSelection.contains(hobby.0) {
+                                                    currentSelection.remove(hobby.0)
+                                                } else {
+                                                    currentSelection.insert(hobby.0)
                                                 }
-                                                .foregroundColor(currentSelection.contains(hobby.0) ? .white : .black)
-                                                .font(.LeagueSpartan(size: 14))
-                                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                                .multilineTextAlignment(.center)
                                             }
-                                            .frame(height: 48)
                                         }
                                     }
                                 }
