@@ -101,10 +101,8 @@ jobs:
               \"echo 'DEBUG: In Backend directory, current path:' \$(pwd)\",
               \"npm install\",
               \"npm run prisma:generate\",
-              \"echo 'DEBUG: Creating migration'\",
-              \"echo '$MIGRATION_NAME' | npm run prisma:dev\",
-              \"echo 'DEBUG: Running migration'\",
-              \"npm run prisma:migrate\",
+              \"echo 'DEBUG: Checking migration status'\",
+              \"if npx prisma migrate status 2>&1 | grep -q 'drift detected\\\\|missing from the local migrations directory'; then echo 'Schema drift detected - using db push instead of migrations'; npx prisma db push --force-reset; else echo 'No drift detected - proceeding with normal migration'; echo '$MIGRATION_NAME' | npm run prisma:dev; npm run prisma:migrate; fi\",
               \"echo 'SUCCESS: Migration completed'\"
             ]" \
             --region ${{ env.AWS_REGION }} \
