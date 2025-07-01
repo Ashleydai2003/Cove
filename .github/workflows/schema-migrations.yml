@@ -77,6 +77,8 @@ jobs:
             --parameters "commands=[
               \"set -e\",
               \"echo 'Migration: $MIGRATION_NAME'\",
+              \"export HOME=/home/ssm-user\",
+              \"export USER=ssm-user\",
               \"source /etc/profile\",
               \"git config --global --add safe.directory /home/ssm-user/Cove\",
               \"echo 'DEBUG: Checking if Cove directory exists'\",
