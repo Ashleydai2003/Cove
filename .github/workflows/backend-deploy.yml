@@ -1,30 +1,32 @@
-# Backend CI/CD Pipeline
-# This workflow handles testing, building, and deploying the Node.js/Lambda backend
-# It uses your existing AWS infrastructure with EC2-based migrations via SSM
+# Backend Deployment Workflow
+# This workflow handles building and deploying the backend Lambda function
+# Database migrations are handled separately by the schema-migrations.yml workflow
 
-name: Backend Deploy
+name: Deploy Backend
 
+# Trigger this workflow when Backend files are modified (excluding schema)
 on:
   push:
-    # temp test in ci/test-deploy branch
-    branches: [main, develop, ci/test-deploy]  # Deploy on pushes to main (prod) and develop (staging)
-    paths: ['Backend/**']      # Only trigger when Backend files change
-  pull_request:
-    branches: [main]           # Run tests on PRs to main branch
-    paths: ['Backend/**']      # Only trigger when Backend files change
+    branches: [main, develop, ci/test-deploy]
+    paths:
+      - 'Backend/**'
+      - '!Backend/prisma/schema.prisma'  # Exclude schema changes (handled by separate workflow)
+      - '.github/workflows/backend-deploy.yml'  # Include workflow changes
+  workflow_dispatch:  # Allow manual triggering for testing
 
+# Environment variables used throughout the workflow
 env:
-  AWS_REGION: us-west-1       # Your AWS region (matches your existing infrastructure)
-  NODE_VERSION: '18'          # Node.js version (matches Lambda runtime)
+  NODE_VERSION: '18'    # LTS version for stability
+  AWS_REGION: 'us-west-1'  # Your AWS region
 
 jobs:
-  # =============================================================================
-  # SIMPLE DEPLOY JOB - Just migrations and Lambda updates
-  # =============================================================================
+  # Main deployment job - handles Lambda deployment only
   deploy:
-    name: Deploy
+    name: Deploy Backend Lambda
     runs-on: ubuntu-latest
-    if: github.event_name == 'push'  # Only run on pushes, not PRs
+    
+    # Only run on direct pushes, not pull requests
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     
     # Use GitHub environments for deployment protection
     environment: 
@@ -35,32 +37,32 @@ jobs:
       id-token: write   # For OIDC authentication
       contents: read    # To read repository contents
 
-    # Output whether schema changes were detected
-    outputs:
-      schema_changed: ${{ steps.schema-check.outputs.schema_changed }}
-
     steps:
       # Get the code
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Set up Node.js (no caching to avoid path issues)
+      # Set up Node.js environment
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      # Install dependencies
+      # Install dependencies for the backend
       - name: Install dependencies
         working-directory: Backend
-        run: npm install
+        run: |
+          echo "📦 Installing Node.js dependencies..."
+          npm install
 
-      # Build Lambda package
+      # Build the Lambda deployment package
       - name: Build Lambda package
         working-directory: Backend
-        run: npm run build
+        run: |
+          echo "🔨 Building Lambda deployment package..."
+          npm run build
 
-      # Authenticate with AWS
+      # Authenticate with AWS using OIDC (no long-lived secrets needed)
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -68,151 +70,23 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
           role-session-name: GitHubActions-Deploy
 
-      # Check if Prisma schema has changed to determine if we need migrations
-      # This saves costs by only starting EC2 when schema changes are detected
-      - name: Check for schema changes
-        id: schema-check
-        run: |
-          # Handle first push case where before commit might be null
-          if [ "${{ github.event.before }}" == "0000000000000000000000000000000000000000" ] || [ -z "${{ github.event.before }}" ]; then
-            echo "schema_changed=true" >> $GITHUB_OUTPUT
-            echo "📋 First push - migrations will be run"
-          else
-            # Check if schema.prisma file was modified in this push
-            if git diff --name-only ${{ github.event.before }}..${{ github.sha }} | grep -q "Backend/prisma/schema.prisma"; then
-              echo "schema_changed=true" >> $GITHUB_OUTPUT
-              echo "📋 Prisma schema changes detected - migrations will be run"
-            else
-              echo "schema_changed=false" >> $GITHUB_OUTPUT
-              echo "✅ No schema changes - skipping migrations"
-            fi
-          fi
-
-      # Start your dedicated migration EC2 instance only when schema changes
-      # This is cost-efficient: only run the instance when needed for migrations
-      - name: Start EC2 instance for migrations
-        if: steps.schema-check.outputs.schema_changed == 'true'
-        run: |
-          echo "Starting EC2 instance for database migrations..."
-          # Start the instance using the instance ID from your secrets
-          aws ec2 start-instances --instance-ids ${{ secrets.EC2_INSTANCE_ID }}
-          
-          # Wait for the instance to be fully running before proceeding
-          # This ensures SSM is ready to accept commands
-          aws ec2 wait instance-running --instance-ids ${{ secrets.EC2_INSTANCE_ID }}
-          echo "EC2 instance is running and ready for migrations"
-
-      # This is the core migration step using AWS Systems Manager (SSM)
-      # SSM allows secure command execution without SSH access
-      # This matches your manual process: source profile, navigate to ~/cove, run migrations
-      - name: Run database migrations
-        if: steps.schema-check.outputs.schema_changed == 'true'
-        run: |
-          echo "Running database migrations via SSM..."
-          
-          # Generate migration name using GitHub username and timestamp for uniqueness
-          MIGRATION_NAME="${{ github.actor }}-$(date +%Y%m%d-%H%M%S)"
-          echo "Migration name: $MIGRATION_NAME"
-          
-          # Send a complex shell script to the EC2 instance via SSM
-          # This script matches your manual process exactly
-          COMMAND_ID=$(aws ssm send-command \
-            --document-name "AWS-RunShellScript" \
-            --targets "Key=instanceids,Values=${{ secrets.EC2_INSTANCE_ID }}" \
-            --comment "Database migration from GitHub Actions - Schema changes detected" \
-            --parameters "commands=[
-              \"echo 'Starting migration process...'\",
-              \"source /etc/profile\",
-              \"cd ~/cove || (echo 'cove directory not found' && exit 1)\",
-              \"echo 'Pulling latest code from ${{ github.ref_name }}...'\",
-              \"git fetch origin\",
-              \"git checkout ${{ github.ref_name }}\",
-              \"git pull origin ${{ github.ref_name }}\",
-              \"cd Backend\",
-              \"echo 'Installing/updating dependencies...'\",
-              \"npm ci\",
-              \"echo 'Generating Prisma client...'\",
-              \"npm run prisma:generate\",
-              \"echo 'Getting database credentials from Secrets Manager...'\",
-              \"DB_SECRET=\$(aws secretsmanager get-secret-value --secret-id ${{ secrets.RDS_SECRET_ARN }} --query SecretString --output text)\",
-              \"DB_PASSWORD=\$(echo \$DB_SECRET | jq -r .password)\",
-              \"DB_HOST=\$(echo \$DB_SECRET | jq -r .host)\",
-              \"DB_USER=\$(echo \$DB_SECRET | jq -r .username)\",
-              \"DB_NAME=\$(echo \$DB_SECRET | jq -r .dbname)\",
-              \"export DATABASE_URL=\\\"postgresql://\$DB_USER:\$DB_PASSWORD@\$DB_HOST:5432/\$DB_NAME\\\"\",
-              \"echo 'Creating migration: $MIGRATION_NAME'\",
-              \"echo '$MIGRATION_NAME' | npm run prisma:dev\",
-              \"echo 'Running migration...'\",
-              \"npm run prisma:migrate\",
-              \"echo 'Migration completed successfully!'\",
-              \"echo 'Final status check...'\",
-              \"npx prisma db status\"
-            ]" \
-            --region ${{ env.AWS_REGION }} \
-            --output text --query 'Command.CommandId')
-          
-          echo "Command ID: $COMMAND_ID"
-          
-          # Wait for the migration command to complete
-          # This can take several minutes depending on migration complexity
-          echo "Waiting for migration to complete..."
-          aws ssm wait command-executed \
-            --command-id "$COMMAND_ID" \
-            --instance-id ${{ secrets.EC2_INSTANCE_ID }} \
-            --region ${{ env.AWS_REGION }}
-          
-          # Display the migration output for debugging
-          echo "Migration output:"
-          aws ssm get-command-invocation \
-            --command-id "$COMMAND_ID" \
-            --instance-id ${{ secrets.EC2_INSTANCE_ID }} \
-            --region ${{ env.AWS_REGION }} \
-            --query 'StandardOutputContent' \
-            --output text
-          
-          # Check if the migration succeeded or failed
-          STATUS=$(aws ssm get-command-invocation \
-            --command-id "$COMMAND_ID" \
-            --instance-id ${{ secrets.EC2_INSTANCE_ID }} \
-            --region ${{ env.AWS_REGION }} \
-            --query 'Status' \
-            --output text)
-          
-          # If migration failed, show error details and fail the workflow
-          if [ "$STATUS" != "Success" ]; then
-            echo "Migration failed with status: $STATUS"
-            # Display error output for debugging
-            aws ssm get-command-invocation \
-              --command-id "$COMMAND_ID" \
-              --instance-id ${{ secrets.EC2_INSTANCE_ID }} \
-              --region ${{ env.AWS_REGION }} \
-              --query 'StandardErrorContent' \
-              --output text
-            exit 1  # Fail the workflow
-          fi
-
-      # Deploy the Lambda function
+      # Deploy the Lambda function with the new code
       - name: Deploy Lambda function
         run: |
+          echo "🚀 Deploying Lambda function..."
+          
+          # Update the Lambda function code with the new build
           aws lambda update-function-code \
             --function-name hello-lambda \
             --zip-file fileb://Backend/dist/index.zip \
             --region ${{ env.AWS_REGION }}
           
+          # Wait for the update to complete before finishing
           aws lambda wait function-updated \
             --function-name hello-lambda \
             --region ${{ env.AWS_REGION }}
           
-          echo "✅ Lambda function deployed successfully"
-
-      # Always stop the EC2 instance to save costs, even if previous steps failed
-      # This runs regardless of whether the deployment succeeded or failed
-      # Only runs if we started the instance (i.e., if there were schema changes)
-      - name: Stop EC2 instance
-        if: always() && steps.schema-check.outputs.schema_changed == 'true'
-        run: |
-          echo "Stopping EC2 instance to save costs..."
-          aws ec2 stop-instances --instance-ids ${{ secrets.EC2_INSTANCE_ID }}
-          echo "EC2 instance stopped - this saves money when not doing migrations"
+          echo "✅ Lambda function deployed successfully!"
+          echo "🎉 Backend deployment completed!"
 
  
