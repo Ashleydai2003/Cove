@@ -24,6 +24,8 @@ const s3Client = new S3Client({ region: process.env.AWS_REGION });
  */
 export const handleContacts = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
+    // TODO: temp, remove after testing
+    console.log("Test CI");
     // Check if the request method is POST
     if (event.httpMethod !== 'POST') {
       return {
