@@ -6,7 +6,8 @@ name: Backend Deploy
 
 on:
   push:
-    branches: [main, develop]  # Deploy on pushes to main (prod) and develop (staging)
+    # temp test in ci/test-deploy branch
+    branches: [main, develop, ci/test-deploy]  # Deploy on pushes to main (prod) and develop (staging)
     paths: ['Backend/**']      # Only trigger when Backend files change
   pull_request:
     branches: [main]           # Run tests on PRs to main branch
