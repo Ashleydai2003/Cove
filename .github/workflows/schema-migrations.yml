@@ -1,0 +1,156 @@
+# Database Schema Migrations Workflow
+# This workflow runs database migrations when the Prisma schema changes
+# It uses your existing EC2 instance and replicates your manual migration process
+
+name: Database Migrations
+
+# Only trigger when the Prisma schema file changes
+on:
+  push:
+    branches: [main, develop, ci/test-deploy]
+    paths:
+      - 'Backend/prisma/schema.prisma'  # Only run when schema changes
+  workflow_dispatch:  # Allow manual triggering for testing
+
+# Environment variables
+env:
+  AWS_REGION: 'us-west-1'  # Your AWS region
+
+jobs:
+  # Migration job - starts EC2, runs migrations, stops EC2
+  migrate:
+    name: Run Database Migrations
+    runs-on: ubuntu-latest
+    
+    # Use GitHub environments for deployment protection
+    environment: 
+      name: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
+    
+    # Required permissions for AWS access
+    permissions:
+      id-token: write   # For OIDC authentication
+      contents: read    # To read repository contents
+
+    steps:
+      # Get the code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Authenticate with AWS
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: GitHubActions-Migrations
+
+      # Start your dedicated migration EC2 instance
+      # This is cost-efficient: only run when schema changes
+      - name: Start EC2 instance for migrations
+        run: |
+          echo "🚀 Starting EC2 instance for database migrations..."
+          echo "Schema changes detected in: Backend/prisma/schema.prisma"
+          
+          # Start the instance using the instance ID from your secrets
+          aws ec2 start-instances --instance-ids ${{ secrets.EC2_INSTANCE_ID }}
+          
+          # Wait for the instance to be fully running before proceeding
+          # This ensures SSM is ready to accept commands
+          aws ec2 wait instance-running --instance-ids ${{ secrets.EC2_INSTANCE_ID }}
+          echo "✅ EC2 instance is running and ready for migrations"
+
+      # Run database migrations using AWS Systems Manager (SSM)
+      # This matches your exact manual process
+      - name: Run database migrations
+        run: |
+          echo "📋 Running database migrations via SSM..."
+          
+          # Generate migration name using GitHub username and timestamp for uniqueness
+          MIGRATION_NAME="${{ github.actor }}-$(date +%Y%m%d-%H%M%S)"
+          echo "Migration name: $MIGRATION_NAME"
+          
+          # Send commands to EC2 instance via SSM (matches your manual process)
+          COMMAND_ID=$(aws ssm send-command \
+            --document-name "AWS-RunShellScript" \
+            --targets "Key=instanceids,Values=${{ secrets.EC2_INSTANCE_ID }}" \
+            --comment "Database migration from GitHub Actions - Schema: $MIGRATION_NAME" \
+            --parameters "commands=[
+              \"echo '🔄 Starting migration process...'\",
+              \"source /etc/profile\",
+              \"cd ~/cove || (echo '❌ cove directory not found' && exit 1)\",
+              \"echo '📥 Pulling latest code from ${{ github.ref_name }}...'\",
+              \"git fetch origin\",
+              \"git checkout ${{ github.ref_name }}\",
+              \"git pull origin ${{ github.ref_name }}\",
+              \"cd Backend\",
+              \"echo '📦 Installing/updating dependencies...'\",
+              \"npm ci\",
+              \"echo '🔧 Generating Prisma client...'\",
+              \"npm run prisma:generate\",
+              \"echo '🔐 Getting database credentials from Secrets Manager...'\",
+              \"DB_SECRET=\$(aws secretsmanager get-secret-value --secret-id ${{ secrets.RDS_SECRET_ARN }} --query SecretString --output text)\",
+              \"DB_PASSWORD=\$(echo \$DB_SECRET | jq -r .password)\",
+              \"DB_HOST=\$(echo \$DB_SECRET | jq -r .host)\",
+              \"DB_USER=\$(echo \$DB_SECRET | jq -r .username)\",
+              \"DB_NAME=\$(echo \$DB_SECRET | jq -r .dbname)\",
+              \"export DATABASE_URL=\\\"postgresql://\$DB_USER:\$DB_PASSWORD@\$DB_HOST:5432/\$DB_NAME\\\"\",
+              \"echo '📝 Creating migration: $MIGRATION_NAME'\",
+              \"echo '$MIGRATION_NAME' | npm run prisma:dev\",
+              \"echo '🚀 Running migration...'\",
+              \"npm run prisma:migrate\",
+              \"echo '✅ Migration completed successfully!'\",
+              \"echo '🔍 Final status check...'\",
+              \"npx prisma db status\"
+            ]" \
+            --region ${{ env.AWS_REGION }} \
+            --output text --query 'Command.CommandId')
+          
+          echo "Command ID: $COMMAND_ID"
+          
+          # Wait for the migration command to complete
+          echo "⏳ Waiting for migration to complete..."
+          aws ssm wait command-executed \
+            --command-id "$COMMAND_ID" \
+            --instance-id ${{ secrets.EC2_INSTANCE_ID }} \
+            --region ${{ env.AWS_REGION }}
+          
+          # Display the migration output for debugging
+          echo "📄 Migration output:"
+          aws ssm get-command-invocation \
+            --command-id "$COMMAND_ID" \
+            --instance-id ${{ secrets.EC2_INSTANCE_ID }} \
+            --region ${{ env.AWS_REGION }} \
+            --query 'StandardOutputContent' \
+            --output text
+          
+          # Check if the migration succeeded or failed
+          STATUS=$(aws ssm get-command-invocation \
+            --command-id "$COMMAND_ID" \
+            --instance-id ${{ secrets.EC2_INSTANCE_ID }} \
+            --region ${{ env.AWS_REGION }} \
+            --query 'Status' \
+            --output text)
+          
+          # If migration failed, show error details and fail the workflow
+          if [ "$STATUS" != "Success" ]; then
+            echo "❌ Migration failed with status: $STATUS"
+            echo "Error details:"
+            aws ssm get-command-invocation \
+              --command-id "$COMMAND_ID" \
+              --instance-id ${{ secrets.EC2_INSTANCE_ID }} \
+              --region ${{ env.AWS_REGION }} \
+              --query 'StandardErrorContent' \
+              --output text
+            exit 1  # Fail the workflow
+          fi
+          
+          echo "🎉 Database migration completed successfully!"
+
+      # Always stop the EC2 instance to save costs
+      # This runs even if the migration failed
+      - name: Stop EC2 instance
+        if: always()
+        run: |
+          echo "🛑 Stopping EC2 instance to save costs..."
+          aws ec2 stop-instances --instance-ids ${{ secrets.EC2_INSTANCE_ID }}
+          echo "💰 EC2 instance stopped - costs saved!" 
