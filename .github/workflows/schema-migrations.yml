@@ -101,9 +101,9 @@ jobs:
               \"echo 'DEBUG: In Backend directory, current path:' \$(pwd)\",
               \"npm install\",
               \"npm run prisma:generate\",
-              \"echo 'DEBUG: Creating migration'\",
-              \"echo '$MIGRATION_NAME' | npm run prisma:dev\",
-              \"echo 'DEBUG: Running migration'\",
+              \"echo 'DEBUG: Checking if migrations need to be created'\",
+              \"if [ -n \\\"\$(ls -A prisma/migrations 2>/dev/null)\\\" ]; then echo '✅ Migrations already exist — skipping migrate dev'; else echo '🔧 Running prisma migrate dev (generating new migration)...'; echo '$MIGRATION_NAME' | npm run prisma:dev; fi\",
+              \"echo 'DEBUG: Running migration deploy/apply'\",
               \"npm run prisma:migrate\",
               \"echo 'Migration system now clean and ready for future changes'\",
               \"echo 'SUCCESS: Migration completed'\"
