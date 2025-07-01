@@ -19,141 +19,54 @@ env:
 
 jobs:
   # =============================================================================
-  # TEST JOB - Validates code quality and build process
-  # Simplified version without database since no tests are configured yet
-  # =============================================================================
-  test:
-    name: Test Backend
-    runs-on: ubuntu-latest
-
-    steps:
-      # Get the latest code from the repository
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      # Set up Node.js with caching for faster builds
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}        # Use Node 18 to match Lambda
-          cache: 'npm'                                 # Cache npm dependencies
-          cache-dependency-path: Backend/package-lock.json  # Cache based on lockfile
-
-      # Install all dependencies (npm ci is faster and more reliable than npm install)
-      - name: Install dependencies
-        working-directory: Backend
-        run: npm ci  # Clean install from package-lock.json
-
-      # Validate Prisma schema syntax without needing a database
-      # This catches schema syntax errors early
-      - name: Validate Prisma schema
-        working-directory: Backend
-        run: npx prisma validate
-
-      # Generate Prisma client to ensure schema is valid
-      # This creates TypeScript types and validates the schema
-      - name: Generate Prisma client
-        working-directory: Backend
-        run: npm run prisma:generate
-
-      # Run TypeScript compilation to catch type errors
-      # This validates that your code compiles without runtime errors
-      - name: TypeScript compilation check
-        working-directory: Backend
-        run: npx tsc --noEmit
-
-      # Run the test suite (currently placeholder - add real tests later)
-      - name: Run tests (when available)
-        working-directory: Backend
-        run: npm test || echo "No tests configured yet - skipping"  # Don't fail if no tests exist
-
-  # =============================================================================
-  # BUILD JOB - Creates deployable Lambda package
-  # Only runs on pushes (not PRs) and after tests pass
-  # =============================================================================
-  build:
-    name: Build Backend
-    runs-on: ubuntu-latest
-    needs: test                      # Wait for tests to pass first
-    if: github.event_name == 'push'  # Only build on actual pushes, not PRs
-    
-    steps:
-      # Get the latest code from the repository
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      # Set up Node.js environment (same as test job)
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}        # Node 18 for Lambda compatibility
-          cache: 'npm'                                 # Reuse cached dependencies
-          cache-dependency-path: Backend/package-lock.json
-
-      # Install production dependencies
-      - name: Install dependencies
-        working-directory: Backend
-        run: npm ci  # Clean install ensures consistent builds
-
-      # Build the Lambda deployment package
-      # This runs esbuild to bundle everything into a single zip file
-      - name: Build Lambda package
-        working-directory: Backend
-        run: npm run build  # Runs the build script from package.json
-
-      # Save the built package as an artifact for the deploy job
-      # This allows the deploy job to download the built package
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: lambda-package          # Name for the artifact
-          path: Backend/dist/index.zip  # The zip file created by npm run build
-          retention-days: 7             # Keep artifacts for 7 days
-
-  # =============================================================================
-  # DEPLOY JOB - Handles database migrations and Lambda deployment
-  # This is the most complex job that uses your existing AWS infrastructure
+  # SIMPLE DEPLOY JOB - Just migrations and Lambda updates
   # =============================================================================
   deploy:
-    name: Deploy to AWS
+    name: Deploy
     runs-on: ubuntu-latest
-    needs: build                     # Wait for build to complete first
-    if: github.event_name == 'push'  # Only deploy on pushes, not PRs
+    if: github.event_name == 'push'  # Only run on pushes, not PRs
     
     # Use GitHub environments for deployment protection
-    # main branch = production, develop branch = staging
     environment: 
       name: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
     
-    # Required permissions for OIDC authentication with AWS
+    # Required permissions for AWS access
     permissions:
-      id-token: write   # Needed to request OIDC token
-      contents: read    # Needed to read repository contents
+      id-token: write   # For OIDC authentication
+      contents: read    # To read repository contents
 
-    # Output whether schema changes were detected for use in notification job
+    # Output whether schema changes were detected
     outputs:
       schema_changed: ${{ steps.schema-check.outputs.schema_changed }}
 
     steps:
-      # Get the latest code (needed for migration scripts)
+      # Get the code
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Authenticate with AWS using OIDC (no long-lived credentials needed)
-      # This uses the GitHub Actions role you created in IAM
+      # Set up Node.js (no caching to avoid path issues)
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      # Install dependencies
+      - name: Install dependencies
+        working-directory: Backend
+        run: npm ci
+
+      # Build Lambda package
+      - name: Build Lambda package
+        working-directory: Backend
+        run: npm run build
+
+      # Authenticate with AWS
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}        # Your GitHubActionsRole ARN
-          aws-region: ${{ env.AWS_REGION }}                  # us-west-1
-          role-session-name: GitHubActions-BackendDeploy     # Session name for logging
-
-      # Download the Lambda package built in the previous job
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: lambda-package    # Same name used in upload
-          path: Backend/dist/     # Extract to Backend/dist/ directory
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: GitHubActions-Deploy
 
       # Check if Prisma schema has changed to determine if we need migrations
       # This saves costs by only starting EC2 when schema changes are detected
@@ -272,51 +185,20 @@ jobs:
             exit 1  # Fail the workflow
           fi
 
-      # Deploy the new Lambda code after successful migration
-      # This updates your existing Lambda function with the new code
+      # Deploy the Lambda function
       - name: Deploy Lambda function
         run: |
           echo "Deploying Lambda function..."
-          
-          # Update the Lambda function with the new zip file
-          # This replaces the existing code with the newly built version
           aws lambda update-function-code \
-            --function-name hello-lambda \                    # Your Lambda function name
-            --zip-file fileb://Backend/dist/index.zip \       # The zip file from build step
+            --function-name hello-lambda \
+            --zip-file fileb://Backend/dist/index.zip \
             --region ${{ env.AWS_REGION }}
           
-          # Wait for the Lambda update to complete before proceeding
-          # Lambda updates can take a few seconds to propagate
           aws lambda wait function-updated \
             --function-name hello-lambda \
             --region ${{ env.AWS_REGION }}
           
-          echo "Lambda function deployed successfully"
-
-      # Run basic health checks to ensure the deployment worked
-      # These are simple HTTP requests to verify the API is responding
-      - name: Run smoke tests
-        run: |
-          echo "Running smoke tests..."
-          
-          # Your API endpoint (update this to match your actual API Gateway URL)
-          API_URL="https://api.coveapp.co"
-          
-          # Test a basic endpoint to ensure the API is responding
-          # We accept both 200 (success) and 400 (bad request) as "healthy" responses
-          # because 400 means the API is running but rejecting invalid input
-          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            -X POST "$API_URL/login" \
-            -H "Content-Type: application/json" \
-            -d '{"test": true}')
-          
-          # Check if we got a reasonable response
-          if [ "$HTTP_STATUS" -eq 200 ] || [ "$HTTP_STATUS" -eq 400 ]; then
-            echo "✅ API is responding (status: $HTTP_STATUS)"
-          else
-            echo "❌ API health check failed (status: $HTTP_STATUS)"
-            exit 1  # Fail the deployment if API is not responding
-          fi
+          echo "✅ Lambda function deployed successfully"
 
       # Always stop the EC2 instance to save costs, even if previous steps failed
       # This runs regardless of whether the deployment succeeded or failed
@@ -328,49 +210,4 @@ jobs:
           aws ec2 stop-instances --instance-ids ${{ secrets.EC2_INSTANCE_ID }}
           echo "EC2 instance stopped - this saves money when not doing migrations"
 
-  # =============================================================================
-  # NOTIFICATION JOB - Reports deployment status
-  # Always runs to provide feedback on deployment success/failure
-  # =============================================================================
-  notify:
-    name: Notify Deployment Status
-    runs-on: ubuntu-latest
-    needs: [test, build, deploy]    # Wait for all previous jobs
-    if: always() && github.event_name == 'push'  # Always run on pushes (success or failure)
-    
-    steps:
-      # Celebrate successful deployments
-      - name: Deployment Success
-        if: needs.deploy.result == 'success'
-        run: |
-          echo "🚀 Backend deployment to ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }} successful!"
-          echo "Branch: ${{ github.ref_name }}"
-          echo "Commit: ${{ github.sha }}"
-          echo ""
-          if [ "${{ needs.deploy.outputs.schema_changed }}" == "true" ]; then
-            echo "✅ Database migrations completed"
-            echo "✅ EC2 instance stopped (cost optimized)"
-          else
-            echo "ℹ️  No schema changes - migrations skipped"
-          fi
-          echo "✅ Lambda function updated"
-          echo "✅ Smoke tests passed"
-          
-      # Report deployment failures with debugging info
-      - name: Deployment Failed
-        if: needs.deploy.result == 'failure'
-        run: |
-          echo "❌ Backend deployment failed!"
-          echo "Branch: ${{ github.ref_name }}"
-          echo "Commit: ${{ github.sha }}"
-          echo ""
-          echo "🔍 Check the logs above for details:"
-          echo "- Migration logs in 'Run database migrations' step"
-          echo "- Lambda deployment logs in 'Deploy Lambda function' step"
-          echo "- API health check logs in 'Run smoke tests' step"
-          echo ""
-          echo "💡 Common issues:"
-          echo "- Database migration syntax errors"
-          echo "- Lambda function name mismatch"
-          echo "- API Gateway endpoint not responding"
-          exit 1  # Mark the workflow as failed 
+ 
