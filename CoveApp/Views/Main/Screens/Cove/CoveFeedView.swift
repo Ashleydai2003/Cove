@@ -89,8 +89,9 @@ struct CoveFeedView: View {
                         coveId: value
                     )
                 } else {
-                    // It's an event ID
-                    EventPostView(eventId: value)
+                    // It's an event ID - try to find the event in cove data to get cover photo
+                    let coverPhoto = findEventCoverPhoto(eventId: value)
+                    EventPostView(eventId: value, coveCoverPhoto: coverPhoto)
                 }
             }
         }
@@ -112,6 +113,17 @@ struct CoveFeedView: View {
         } message: {
             Text(coveFeed.errorMessage ?? "")
         }
+    }
+    
+    // Helper function to find event cover photo from cached cove data
+    private func findEventCoverPhoto(eventId: String) -> CoverPhoto? {
+        // Search through all cached cove models to find the event
+        for coveModel in coveFeed.coveModels.values {
+            if let event = coveModel.events.first(where: { $0.id == eventId }) {
+                return event.coveCoverPhoto
+            }
+        }
+        return nil
     }
 }
 
