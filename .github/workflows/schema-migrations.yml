@@ -103,7 +103,7 @@ jobs:
               \"npm run prisma:generate\",
               \"echo 'DEBUG: One-time reset to fix migration drift permanently'\",
               \"echo 'Using force-reset to sync database with current schema and clear migration history'\",
-              \"NODE_ENV=production ts-node -e \\\"const { initializeDatabase } = require('./src/config/database'); initializeDatabase().then(() => console.log('Database connection ready'))\\\"\",
+              \"NODE_ENV=production npx ts-node -e \\\"const { initializeDatabase } = require('./src/config/database'); initializeDatabase().then(() => console.log('Database connection ready'))\\\"\",
               \"npx prisma db push --force-reset\",
               \"echo 'Database reset and synced with current schema'\",
               \"echo 'Creating initial migration from current state using your npm scripts'\",
