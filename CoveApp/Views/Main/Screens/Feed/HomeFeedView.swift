@@ -15,35 +15,43 @@ struct HomeFeedView: View {
     @EnvironmentObject var appController: AppController
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Header
-            CoveBannerView()
-            
-            // Top Tabs
-            PillTabBar(
-                titles: Tab.allCases.map { $0.title },
-                selectedIndex: Binding(
-                    get: { selectedTab.rawValue },
-                    set: { selectedTab = Tab(rawValue: $0) ?? .upcoming }
-                )
-            )
-            .padding(.horizontal, 16)
-            .padding(.bottom, 10)
-            
-            // Tab Content
+        NavigationStack {
             ZStack {
-                switch selectedTab {
-                case .upcoming:
-                    UpcomingView()
-                case .discover:
-                    DiscoverView()
+                Colors.faf8f4
+                    .ignoresSafeArea()
+                
+                VStack(spacing: 0) {
+                    // Header
+                    CoveBannerView()
+                    
+                    // Top Tabs
+                    PillTabBar(
+                        titles: Tab.allCases.map { $0.title },
+                        selectedIndex: Binding(
+                            get: { selectedTab.rawValue },
+                            set: { selectedTab = Tab(rawValue: $0) ?? .upcoming }
+                        )
+                    )
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 10)
+                    
+                    // Tab Content
+                    ZStack {
+                        switch selectedTab {
+                        case .upcoming:
+                            UpcomingView()
+                        case .discover:
+                            DiscoverView()
+                        }
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Colors.faf8f4)
+            .navigationDestination(for: String.self) { eventId in
+                EventPostView(eventId: eventId)
+            }
         }
         .ignoresSafeArea(edges: .bottom)
-        .background(Colors.faf8f4)
         .navigationBarBackButtonHidden()
     }
 }

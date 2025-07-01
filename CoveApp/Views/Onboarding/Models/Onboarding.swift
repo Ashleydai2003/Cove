@@ -250,7 +250,6 @@ class Onboarding {
                                         Task { @MainActor in
                                         AppController.shared.hasCompletedOnboarding = true
                                         clearImages() // Clear stored images after successful upload
-                                        AppController.shared.path = [.yourInvites]
                                         }
                                     } else {
                                         print("❌ Friend request sending failed")
@@ -268,7 +267,6 @@ class Onboarding {
                                 Task { @MainActor in
                                 AppController.shared.hasCompletedOnboarding = true
                                 clearImages() // Clear stored images after successful upload
-                                AppController.shared.path = [.yourInvites]
                                 }
                                 completion(true)
                             }

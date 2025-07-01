@@ -121,22 +121,7 @@ struct CalendarEventsResponse: Decodable {
     let pagination: Pagination?
 }
 
-/// API response for event creation
-struct CreateEventResponse: Decodable {
-    let message: String
-    let event: CreatedEvent
-}
 
-/// CreatedEvent: Used for event creation responses
-struct CreatedEvent: Decodable {
-    let id: String
-    let name: String
-    let description: String?
-    let date: String
-    let location: String
-    let coveId: String
-    let createdAt: String
-}
 
 /// RSVP info for an event
 struct EventRSVP: Decodable {

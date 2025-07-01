@@ -103,6 +103,7 @@ struct EventPostView: View {
     let eventId: String
     @StateObject private var viewModel = EventPostViewModel()
     @EnvironmentObject var appController: AppController
+    @Environment(\.dismiss) private var dismiss
     @State private var showingDeleteAlert = false
     @State private var currentRSVPStatus: String?
     
@@ -115,24 +116,14 @@ struct EventPostView: View {
             } else if let event = viewModel.event {
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 24) {
-                        // Back button and cove photo
+                        // Back button, cove photo and delete button
                         HStack(alignment: .top) {
                             Button {
-                                // More robust navigation back
-                                print("Back button tapped. Navigation stack count: \(appController.path.count)")
-                                if !appController.path.isEmpty {
-                                    appController.path.removeLast()
-                                    print("Successfully removed last item from navigation stack")
-                                } else {
-                                    // Fallback: dismiss the view
-                                    // This handles cases where the navigation stack might be corrupted
-                                    print("Navigation stack empty, attempting to dismiss view")
-                                }
+                                dismiss()
                             } label: {
                                 Images.backArrow
                             }
                             .padding(.top, 16)
-                            .disabled(viewModel.isUpdatingRSVP) // Disable during RSVP updates
                             
                             Spacer()
                             
@@ -351,27 +342,8 @@ struct EventPostView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-        }
-        .navigationBarBackButtonHidden()
-        .gesture(
-            DragGesture()
-                .onEnded { value in
-                    // Swipe from left edge to go back
-                    if value.startLocation.x < 50 && value.translation.width > 100 {
-                        if !appController.path.isEmpty {
-                            appController.path.removeLast()
-                        }
-                    }
                 }
-        )
-        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
-            // Handle app going to background - this can sometimes cause navigation issues
-            print("App going to background, navigation stack count: \(appController.path.count)")
-        }
-        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
-            // Handle app coming back to foreground
-            print("App became active, navigation stack count: \(appController.path.count)")
-        }
+        .navigationBarBackButtonHidden(true)
         .onAppear {
             viewModel.fetchEventDetails(eventId: eventId) {
                 if let event = viewModel.event {
@@ -392,7 +364,7 @@ struct EventPostView: View {
             Button("Delete", role: .destructive) {
                 viewModel.deleteEvent(eventId: eventId) { success in
                     if success {
-                        appController.path.removeLast()
+                        dismiss()
                     }
                 }
             }

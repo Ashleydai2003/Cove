@@ -396,8 +396,8 @@ struct InterestsSection: View {
                     ForEach(interests, id: \.self) { hobby in
                         ZStack {
                             StaticHobbyPill(text: hobby, textColor: Colors.k6F6F73)
-                            
-                            if isEditing {
+                                
+                                if isEditing {
                                 HStack {
                                     Spacer()
                                     Button(action: {
@@ -674,7 +674,7 @@ struct HobbiesSelectionView: View {
                             VStack(alignment: .leading, spacing: 12) {
                                 Text(category.0)
                                     .font(.LeagueSpartan(size: 16))
-                                    .foregroundStyle(Colors.primary)
+                                    .foregroundStyle(Colors.primaryLight)
                                     .padding(.horizontal)
                                 
                                 LazyVGrid(columns: columns, spacing: 12) {
@@ -695,7 +695,7 @@ struct HobbiesSelectionView: View {
                                                     currentSelection.remove(hobby.0)
                                                 } else {
                                                     currentSelection.insert(hobby.0)
-                                                }
+                                            }
                                             }
                                         }
                                     }
@@ -738,7 +738,7 @@ struct ExtraPhotoView: View {
     var body: some View {
         PhotosPicker(selection: $selectedItem, matching: .images) {
             ZStack {
-                if let extraImage = editingImage ?? appController.profileModel.extraUIImages[imageIndex] {
+                if let extraImage = editingImage ?? (appController.profileModel.extraUIImages.indices.contains(imageIndex) ? appController.profileModel.extraUIImages[imageIndex] : nil) {
                     Image(uiImage: extraImage)
                         .resizable()
                         .scaledToFill()
@@ -768,7 +768,7 @@ struct ExtraPhotoView: View {
                         .fill(Color.black.opacity(isPressed ? 0.7 : 0.3))
                         .frame(maxWidth: AppConstants.SystemSize.width*0.8)
                     
-                    Text((editingImage ?? appController.profileModel.extraUIImages[imageIndex]) == nil ? "add picture" : "change")
+                    Text((editingImage ?? (appController.profileModel.extraUIImages.indices.contains(imageIndex) ? appController.profileModel.extraUIImages[imageIndex] : nil)) == nil ? "add picture" : "change")
                         .font(.LibreBodoni(size: 16))
                         .foregroundColor(.white)
                 }
@@ -836,40 +836,40 @@ struct ProfileView: View {
                     HStack(spacing: 18) {
                         // Edit/Save button
                         Button(action: {
-                            if isEditing {
-                                // Show loading spinner immediately
-                                isSaving = true
-                                
-                                // Save changes and wait for completion before toggling
-                                saveChanges { success in
-                                    DispatchQueue.main.async {
-                                        isSaving = false
-                                        if success {
-                                            isEditing = false
-                                        }
-                                        // If failed, stay in editing mode so user can try again
+                        if isEditing {
+                            // Show loading spinner immediately
+                            isSaving = true
+                            
+                            // Save changes and wait for completion before toggling
+                            saveChanges { success in
+                                DispatchQueue.main.async {
+                                    isSaving = false
+                                    if success {
+                                        isEditing = false
                                     }
+                                    // If failed, stay in editing mode so user can try again
                                 }
-                            } else {
-                                // Enter editing mode
-                                isEditing = true
-                                initializeEditingState()
                             }
-                        }) {
-                            if isSaving {
-                                ProgressView()
-                                    .scaleEffect(0.8)
-                                    .foregroundColor(Colors.primaryDark)
-                            } else {
-                                Image(systemName: isEditing ? "checkmark" : "pencil")
-                                    .foregroundColor(Colors.primaryDark)
-                                    .font(.system(size: 20))
-                            }
+                        } else {
+                            // Enter editing mode
+                            isEditing = true
+                            initializeEditingState()
                         }
-                        .disabled(isSaving)
+                        }) {
+                        if isSaving {
+                            ProgressView()
+                                .scaleEffect(0.8)
+                                .foregroundColor(Colors.primaryDark)
+                        } else {
+                            (isEditing ? Image(systemName: "checkmark") : Image("edit_button"))
+                                .foregroundColor(Colors.primaryDark)
+                                .frame(width: 26, height: 26)
+                        }
                     }
+                    .disabled(isSaving)
                 }
-                .padding(.horizontal, 30)
+                }
+                .padding(.horizontal, 10)
                 .padding(.top, 24)
                 .padding(.bottom, 8)
 

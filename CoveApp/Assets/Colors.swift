@@ -8,7 +8,8 @@
 import SwiftUI
 
 enum Colors {
-    static let primary = Color("CovePrimaryColor")
+    // TODO: make this just the opposite 
+    static let primaryLight = Color("CovePrimaryColor")
     static let primaryDark = Color("CovePrimaryDarkColor")
     // tmp for now
     static let k292929 = Color(hex: "292929")

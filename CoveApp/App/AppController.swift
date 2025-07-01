@@ -8,7 +8,7 @@
 import SwiftUI
 import FirebaseAuth
 
-/// Enum representing all possible navigation routes in the app.
+/// Enum representing all possible navigation routes in the onboarding flow.
 enum OnboardingRoute: Hashable {
     case enterPhoneNumber
     case otpVerify
@@ -23,15 +23,9 @@ enum OnboardingRoute: Hashable {
     case profilePics
     case contacts
     case pluggingIn
-    case profile
-    case exploreFriends
-    case friendRequests
-    case yourInvites
-    case home
-    case membersList
-    case eventPost(eventId: String)
-    case feed(coveId: String)
 }
+
+
 
 /// AppController: Manages shared application state and business logic
 /// - Handles authentication state
@@ -43,14 +37,12 @@ class AppController: ObservableObject {
     /// Singleton instance for global access
     static let shared = AppController()
     
-    /// API base URL and login path (used for backend requests)
-    private let apiBaseURL = "https://api.coveapp.co"
-    private let apiLoginPath = "/login"
-    
-    /// Navigation path for NavigationStack
+    /// Navigation path for onboarding NavigationStack
     @Published var path: [OnboardingRoute] = []
     /// Whether the user has completed onboarding (persisted)
     @AppStorage("hasCompletedOnboarding") var hasCompletedOnboarding = false
+    /// Whether the user is logged in and data has been fetched
+    @Published var isLoggedIn = false
     /// Global error message for displaying alerts
     @Published var errorMessage: String = ""
     
@@ -66,24 +58,12 @@ class AppController: ObservableObject {
     /// Shared ProfileModel instance for user profile data
     @Published var profileModel = ProfileModel()
     
-    /// Track the previous tab selection for navigation preservation
-    @Published var previousTabSelection: Int = 1
+
     
     /// Private initializer to enforce singleton pattern
     private init() {}
     
-    // MARK: - Navigation Helpers
-    
-    /**
-     * Navigates to an event while preserving the current tab selection.
-     * This ensures that when the user goes back from the event, they return to the same tab.
-     * 
-     * - Parameter eventId: The ID of the event to navigate to
-     */
-    func navigateToEvent(eventId: String) {
-        print("[AppController] Navigating to event: \(eventId)")
-        path.append(.eventPost(eventId: eventId))
-    }
+    // MARK: - Utility Methods
     
     /**
      * Refreshes cove data across the app when needed.
