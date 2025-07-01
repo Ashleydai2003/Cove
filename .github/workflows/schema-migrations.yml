@@ -100,6 +100,10 @@ jobs:
               \"npm ci || (echo '❌ npm ci failed, trying npm install' && npm install)\",
               \"echo '🔧 Generating Prisma client...'\",
               \"npm run prisma:generate || (echo '❌ Prisma generate failed' && exit 1)\",
+              \"echo 'ℹ️  Node version: \$(node -v)'\",
+              \"echo 'ℹ️  NPM version: \$(npm -v)'\",
+              \"echo 'ℹ️  Checking Prisma version...'\",
+              \"npx prisma -v\",
               \"echo '🔐 Getting database credentials from Secrets Manager...'\",
               \"DB_SECRET=\$(aws secretsmanager get-secret-value --secret-id ${{ secrets.RDS_SECRET_ARN }} --query SecretString --output text) || (echo '❌ Failed to get DB secret' && exit 1)\",
               \"echo '🔍 Parsing database credentials...'\",
@@ -109,10 +113,21 @@ jobs:
               \"DB_NAME=\$(echo \$DB_SECRET | jq -r .dbname) || (echo '❌ Failed to parse dbname' && exit 1)\",
               \"echo '🔗 Setting up database connection (credentials masked)...'\",
               \"export DATABASE_URL=\\\"postgresql://\$DB_USER:\$DB_PASSWORD@\$DB_HOST:5432/\$DB_NAME\\\"\",
+              \"echo 'ℹ️  DATABASE_URL is (masked):'\",
+              \"echo \\\"\$DATABASE_URL\\\" | sed -E 's/(\/\/[^:]+):[^@]+(@[^\/]+)/\\\\1:****\\\\2/'\",
+              \"echo '🧪 Show existing migration files:'\",
+              \"ls -R prisma/migrations || echo '❌ No migrations found'\",
               \"echo '🔍 Testing database connection (output may contain sensitive info - suppressing)...'\",
               \"npx prisma db status >/dev/null 2>&1 && echo '✅ Database connection successful' || echo '⚠️  Database connection test failed (continuing anyway)'\",
+              \"echo '🧠 Bonus sanity check - Current DB:'\",
+              \"psql \\\"\$DATABASE_URL\\\" -c 'SELECT current_database();' || echo '⚠️  Could not connect to verify database name'\",
               \"echo '📝 Creating migration: $MIGRATION_NAME'\",
               \"echo '$MIGRATION_NAME' | npm run prisma:dev || (echo '❌ Migration creation failed' && exit 1)\",
+              \"echo '📄 Migration file contents (after prisma:dev):'\",
+              \"ls -l prisma/migrations\",
+              \"cat prisma/migrations/*/migration.sql || echo '❌ No SQL file found'\",
+              \"echo '📊 Prisma db status (before migrate):'\",
+              \"npx prisma db status || echo '❌ Could not get DB status'\",
               \"echo '🚀 Running migration...'\",
               \"npm run prisma:migrate || (echo '❌ Migration execution failed' && exit 1)\",
               \"echo '✅ Migration completed successfully!'\",
@@ -131,12 +146,23 @@ jobs:
           
           echo "Command ID: $COMMAND_ID"
           
-          # Wait for the migration command to complete
-          echo "⏳ Waiting for migration to complete..."
-          aws ssm wait command-executed \
+          # Wait for the migration command to complete (with timeout)
+          echo "⏳ Waiting for migration to complete (timeout: 10 minutes)..."
+          timeout 600 aws ssm wait command-executed \
             --command-id "$COMMAND_ID" \
             --instance-id ${{ secrets.EC2_INSTANCE_ID }} \
-            --region ${{ env.AWS_REGION }}
+            --region ${{ env.AWS_REGION }} || echo "⚠️ Wait command timed out or failed, checking status manually..."
+          
+          # Check current command status
+          echo "🔍 Checking command status..."
+          STATUS=$(aws ssm get-command-invocation \
+            --command-id "$COMMAND_ID" \
+            --instance-id ${{ secrets.EC2_INSTANCE_ID }} \
+            --region ${{ env.AWS_REGION }} \
+            --query 'Status' \
+            --output text 2>/dev/null || echo "Unknown")
+          
+          echo "📊 Command Status: $STATUS"
           
           # Display the migration output for debugging
           echo "📄 Migration output:"
@@ -145,15 +171,7 @@ jobs:
             --instance-id ${{ secrets.EC2_INSTANCE_ID }} \
             --region ${{ env.AWS_REGION }} \
             --query 'StandardOutputContent' \
-            --output text
-          
-          # Check if the migration succeeded or failed
-          STATUS=$(aws ssm get-command-invocation \
-            --command-id "$COMMAND_ID" \
-            --instance-id ${{ secrets.EC2_INSTANCE_ID }} \
-            --region ${{ env.AWS_REGION }} \
-            --query 'Status' \
-            --output text)
+            --output text 2>/dev/null || echo "No output available yet"
           
           # If migration failed, show error details and fail the workflow
           if [ "$STATUS" != "Success" ]; then
