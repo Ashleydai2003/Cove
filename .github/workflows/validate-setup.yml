@@ -97,7 +97,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: Backend
-        run: npm ci
+        run: npm install
 
       - name: Validate Prisma schema
         working-directory: Backend
