@@ -1,5 +1,15 @@
 # Local Development Guide
 
+## ⚡ Quick Start for iOS Testing
+
+**Before testing iOS app, always run:**
+```bash
+cd Backend && npm run dev
+```
+Then run your iOS app in Xcode simulator.
+
+---
+
 ## 🚀 Getting Started with Local Database
 
 ### Prerequisites
@@ -197,6 +207,49 @@ Your iOS app is **automatically configured** to use the right API:
 - 🏠 **API URL**: `http://localhost:3001` (local server)
 - 🔧 **Environment**: Development
 - ✅ **Automatic**: No configuration needed
+
+#### **⚠️ IMPORTANT: Start Backend Before iOS Testing**
+
+**Before running your iOS app in the simulator, you MUST start the local backend server:**
+
+```bash
+# 1. Navigate to Backend directory
+cd Backend
+
+# 2. Start local development server (REQUIRED for iOS testing)
+npm run dev
+```
+
+**You should see:**
+```
+🚀 Local development server running on http://localhost:3001
+Environment: development
+```
+
+**⚠️ If you forget this step, the iOS app will show connection errors:**
+- ❌ "Could not connect to the server"
+- ❌ "Connection refused"
+- ❌ Network error -1004
+
+#### **Complete iOS Testing Workflow**
+
+```bash
+# Terminal 1: Start database (if testing with real data)
+cd Backend && npm run db:start
+
+# Terminal 2: Start backend API server (REQUIRED)
+cd Backend && npm run dev
+
+# Terminal 3: Run iOS simulator
+# Open Xcode and run your app
+```
+
+#### **Testing Checklist Before Running iOS App**
+
+- [ ] Backend server running on `http://localhost:3001`
+- [ ] Local database running (if testing with data)
+- [ ] iOS app set to Debug configuration
+- [ ] Simulator selected (not physical device)
 
 #### **Release Mode (Device)**
 - 🌐 **API URL**: `https://api.coveapp.co` (production)
