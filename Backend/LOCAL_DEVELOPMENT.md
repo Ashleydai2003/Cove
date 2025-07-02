@@ -189,6 +189,43 @@ curl http://localhost:3001/test-database
 npm run prisma:studio
 ```
 
+### 📱 iOS App Integration
+
+Your iOS app is **automatically configured** to use the right API:
+
+#### **Debug Mode (Simulator)**
+- 🏠 **API URL**: `http://localhost:3001` (local server)
+- 🔧 **Environment**: Development
+- ✅ **Automatic**: No configuration needed
+
+#### **Release Mode (Device)**
+- 🌐 **API URL**: `https://api.coveapp.co` (production)
+- 🚀 **Environment**: Production
+- ✅ **Automatic**: No configuration needed
+
+### 🧪 Complete iOS Testing Workflow
+
+```bash
+# 1. Start your backend services
+cd Backend
+npm run db:start
+npm run dev
+
+# 2. Run iOS app in Xcode
+# - Select iPhone Simulator
+# - Build and Run (Debug mode)
+# - App automatically connects to localhost:3001
+
+# 3. Test in app
+# - Sign up/login flows
+# - Create events, coves, etc.
+# - All data goes to your local database
+
+# 4. Verify in database
+npm run prisma:studio
+# See your test data in the browser GUI
+```
+
 ## 📋 Available Commands
 
 | Command | Purpose |
@@ -267,11 +304,12 @@ docker system prune -a
 
 ## 🔄 Complete Development Workflow
 
+### Backend + Database Development
 ```bash
 # 1. Start development session
 npm run db:start
 
-# 2. Start API server (optional, for testing endpoints)
+# 2. Start API server
 npm run dev
 
 # 3. Make schema changes in prisma/schema.prisma
@@ -292,6 +330,25 @@ git commit -m "Add user profile fields"
 git push origin feature-branch
 
 # 8. End development session
+npm run db:stop
+```
+
+### Full-Stack Development (Backend + iOS)
+```bash
+# 1. Start backend services
+cd Backend
+npm run db:start
+npm run dev
+
+# 2. Open Xcode and run iOS app on simulator
+# App automatically connects to your local server!
+
+# 3. Develop and test:
+# - Make schema changes → Run migrations
+# - Test in iOS app → See data in Prisma Studio
+# - API changes → Test immediately in app
+
+# 4. When done
 npm run db:stop
 ```
 

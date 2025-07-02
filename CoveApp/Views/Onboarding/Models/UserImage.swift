@@ -7,7 +7,7 @@ import Foundation
 
 struct UserImage {
     // MARK: - Configuration
-    private static let baseURL = "https://api.coveapp.co"
+    private static let baseURL = AppConstants.API.baseURL
     private static let uploadPath = "/userImage"
     
     // MARK: - Response Model
