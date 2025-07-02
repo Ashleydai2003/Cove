@@ -10,7 +10,7 @@ const s3Client = new S3Client({ region: process.env.AWS_REGION });
 // Create a new event
 // This endpoint handles event creation with the following requirements:
 // 1. User must be authenticated
-// 2. User must be either the cove creator or an admin
+// 2. User must be a member of the cove
 // 3. Name, date, location, and coveId are required
 // 4. Optional cover photo will be uploaded to S3
 export const handleCreateEvent = async (request: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
@@ -70,7 +70,7 @@ export const handleCreateEvent = async (request: APIGatewayProxyEvent): Promise<
     // Initialize database connection
     const prisma = await initializeDatabase();
 
-    // Check if user is an admin of the cove or the cove creator
+    // Check if user is a member of the cove
     const cove = await prisma.cove.findUnique({
       where: { id: coveId },
       include: {
@@ -92,16 +92,13 @@ export const handleCreateEvent = async (request: APIGatewayProxyEvent): Promise<
       };
     }
 
-    // Check user's permission level in the cove
-    const isCreator = cove.creatorId === user.uid;
-    const isAdmin = cove.members[0]?.role === 'ADMIN';
-
-    // Only cove creators and admins can create events
-    if (!isCreator && !isAdmin) {
+    // Check if user is a member of the cove
+    // Any member of a cove can create events for that cove
+    if (cove.members.length === 0) {
       return {
         statusCode: 403,
         body: JSON.stringify({
-          message: 'Only cove creators and admins can create events'
+          message: 'You must be a member of this cove to create events'
         })
       };
     }
@@ -115,6 +112,16 @@ export const handleCreateEvent = async (request: APIGatewayProxyEvent): Promise<
         location,
         coveId,
         hostId: user.uid,
+      }
+    });
+
+    // Automatically create a "GOING" RSVP for the event host
+    // This ensures the host automatically appears in their own calendar
+    await prisma.eventRSVP.create({
+      data: {
+        eventId: newEvent.id,
+        userId: user.uid,
+        status: 'GOING'
       }
     });
 
@@ -334,7 +341,7 @@ export const handleGetCoveEvents = async (event: APIGatewayProxyEvent): Promise<
       statusCode: 200,
       body: JSON.stringify({
         events: await Promise.all(eventsToReturn.map(async event => {
-          // Get the user's RSVP status
+          // Get the user's RSVP status (will be "GOING" for RSVP'd events, may be null for hosted events)
           const userRsvp = event.rsvps[0];
           
           // Count RSVPs with "GOING" status for this event
@@ -891,10 +898,10 @@ export const handleUpdateEventRSVP = async (event: APIGatewayProxyEvent): Promis
 };
 
 // TODO: In the future, consider handling MAYBE responses as well for a more comprehensive calendar view
-// Get events that the user has RSVP'd "GOING" to (for calendar view)
-// This endpoint handles retrieving events the user has committed to attend with the following requirements:
+// Get events that the user has RSVP'd "GOING" to OR is hosting (for calendar view)
+// This endpoint handles retrieving events the user has committed to attend or is hosting with the following requirements:
 // 1. User must be authenticated
-// 2. Only returns events where user RSVP status is "GOING"
+// 2. Returns events where user RSVP status is "GOING" OR user is the host
 // 3. Events are returned with pagination using cursor-based approach
 // 4. Each event includes the user's RSVP status and cove information
 export const handleGetCalendarEvents = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
@@ -931,16 +938,25 @@ export const handleGetCalendarEvents = async (event: APIGatewayProxyEvent): Prom
     // Initialize database connection
     const prisma = await initializeDatabase();
 
-    // Get events where the user has RSVP'd "GOING"
+    // Get events where the user has RSVP'd "GOING" OR is the host
     // We fetch limit + 1 items to determine if there are more results
     const events = await prisma.event.findMany({
       where: {
-        rsvps: {
-          some: {
-            userId: user.uid,
-            status: 'GOING'
+        OR: [
+          // Events where user RSVP'd "GOING"
+          {
+            rsvps: {
+              some: {
+                userId: user.uid,
+                status: 'GOING'
+              }
+            }
+          },
+          // Events where user is the host
+          {
+            hostId: user.uid
           }
-        }
+        ]
       },
       include: {
         // Only get RSVPs for the current user to return their status
@@ -1002,7 +1018,7 @@ export const handleGetCalendarEvents = async (event: APIGatewayProxyEvent): Prom
       statusCode: 200,
       body: JSON.stringify({
         events: await Promise.all(eventsToReturn.map(async event => {
-          // Get the user's RSVP status (should always be "GOING" for this endpoint)
+          // Get the user's RSVP status (will be "GOING" for RSVP'd events, may be null for hosted events)
           const userRsvp = event.rsvps[0];
           
           // Count RSVPs with "GOING" status for this event

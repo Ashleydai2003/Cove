@@ -15,18 +15,39 @@ class CoveModel: ObservableObject {
     @Published var cove: FeedCoveDetails?
     /// List of events for the current cove
     @Published var events: [CalendarEvent] = []
+    /// List of members for the current cove
+    @Published var members: [CoveMember] = []
     /// Cursor for event pagination
     @Published var nextCursor: String?
+    /// Cursor for member pagination
+    @Published var membersCursor: String?
     /// Whether more events are available
     @Published var hasMore = true
+    /// Whether more members are available
+    @Published var hasMembersMore = true
     /// Loading state for UI
     @Published var isLoading = false
+    /// Loading state specifically for events refresh (separate from main loading)
+    @Published var isRefreshingEvents = false
+    /// Loading state specifically for cove details refresh (separate from main loading)
+    @Published var isRefreshingCoveDetails = false
+    /// Loading state specifically for members refresh
+    @Published var isRefreshingMembers = false
     /// Error message for UI
     @Published var errorMessage: String?
     /// Last time cove details were fetched (for caching)
-    @Published var lastFetchTime: Date?
+    @Published var lastFetched: Date?
+    /// Last time events were fetched (for separate caching)
+    @Published var eventsLastFetched: Date?
+    /// Last time members were fetched (for separate caching)
+    @Published var membersLastFetched: Date?
     /// Whether requests have been cancelled (for cleanup)
     @Published var isCancelled: Bool = false
+    
+    // TODO: Adjust cache durations as needed
+    private let coveDetailsCacheTimeout: TimeInterval = 5 * 60 * 60 // 5 hours for cove details
+    private let eventsCacheTimeout: TimeInterval = 5 * 60 // 5 minutes for events
+    private let membersCacheTimeout: TimeInterval = 30 * 60 // 30 minutes for members
     private let pageSize = 5
     
     /// Checks if we have complete data (both cove details and events)
@@ -38,6 +59,39 @@ class CoveModel: ObservableObject {
         return cove != nil
     }
     
+    /// Checks if we have any cached cove data
+    var hasCachedData: Bool {
+        return cove != nil && lastFetched != nil
+    }
+    
+    /// Checks if we have any cached events data
+    var hasCachedEvents: Bool {
+        return eventsLastFetched != nil
+    }
+    
+    /// Checks if we have any cached members data
+    var hasCachedMembers: Bool {
+        return membersLastFetched != nil
+    }
+    
+    /// Checks if cove details cache is stale (older than cache timeout)
+    var isCacheStale: Bool {
+        guard let lastFetch = lastFetched else { return true }
+        return Date().timeIntervalSince(lastFetch) > coveDetailsCacheTimeout
+    }
+    
+    /// Checks if events cache is stale (older than cache timeout)
+    var isEventsCacheStale: Bool {
+        guard let lastFetch = eventsLastFetched else { return true }
+        return Date().timeIntervalSince(lastFetch) > eventsCacheTimeout
+    }
+    
+    /// Checks if members cache is stale (older than cache timeout)
+    var isMembersCacheStale: Bool {
+        guard let lastFetch = membersLastFetched else { return true }
+        return Date().timeIntervalSince(lastFetch) > membersCacheTimeout
+    }
+    
     init() {
         print("📱 CoveModel initialized")
     }
@@ -46,6 +100,9 @@ class CoveModel: ObservableObject {
     func cancelRequests() {
         isCancelled = true
         isLoading = false
+        isRefreshingEvents = false
+        isRefreshingCoveDetails = false
+        isRefreshingMembers = false
     }
     /// Resets the cancellation flag when starting new requests.
     private func resetCancellationFlag() {
@@ -54,11 +111,7 @@ class CoveModel: ObservableObject {
     /// Fetches cove details with caching support.
     /// Only fetches fresh data if cache is stale or no cached data exists.
     func fetchCoveDetails(coveId: String, forceRefresh: Bool = false) {
-        if !forceRefresh,
-           let lastFetch = lastFetchTime,
-           Date().timeIntervalSince(lastFetch) < 300,
-           cove != nil,
-           cove?.id == coveId {
+        if !forceRefresh && hasCachedData && !isCacheStale && cove?.id == coveId {
             print("📱 CoveModel: Using cached cove data")
             if events.isEmpty {
                 print("📱 CoveModel: Cached cove data found, but no events - fetching events")
@@ -82,7 +135,7 @@ class CoveModel: ObservableObject {
                 case .success(let response):
                     print("✅ CoveModel: Cove details received: \(response.cove)")
                     self.cove = response.cove
-                    self.lastFetchTime = Date()
+                    self.lastFetched = Date()
                     if forceRefresh || self.events.isEmpty {
                         self.events = []
                         self.nextCursor = nil
@@ -106,7 +159,13 @@ class CoveModel: ObservableObject {
         fetchEvents(coveId: coveId)
     }
     /// Fetches events for a specific cove ID (with pagination).
-    func fetchEvents(coveId: String) {
+    func fetchEvents(coveId: String, forceRefresh: Bool = false) {
+        // Check if we should use cached events data
+        if !forceRefresh && hasCachedEvents && !isEventsCacheStale && !events.isEmpty {
+            print("📱 CoveModel: ✅ Using fresh cached events data (\(events.count) events) - NO NETWORK REQUEST")
+            return
+        }
+        
         guard !isLoading && hasMore else { return }
         resetCancellationFlag()
         isLoading = true
@@ -132,6 +191,7 @@ class CoveModel: ObservableObject {
                     self.events.append(contentsOf: response.events)
                     self.hasMore = response.pagination.hasMore
                     self.nextCursor = response.pagination.nextCursor
+                    self.eventsLastFetched = Date()
                 case .failure(let error):
                     print("❌ CoveModel: Events error: \(error.localizedDescription)")
                     self.errorMessage = error.localizedDescription
@@ -139,26 +199,176 @@ class CoveModel: ObservableObject {
             }
         }
     }
-    /// Forces a refresh of cove data, bypassing cache.
+    /// Forces a refresh of both cove data and events, bypassing cache.
     func refreshCoveData() {
         guard let coveId = cove?.id else {
             print("❌ CoveModel: No cove ID available for refresh")
             return
         }
+        print("🔄 CoveModel: refreshCoveData() called for cove \(coveId) - forcing refresh with new data")
         fetchCoveDetails(coveId: coveId, forceRefresh: true)
     }
+    
+    /// Forces a refresh of only cove details (header info), bypassing cache.
+    func refreshCoveDetails() {
+        guard let coveId = cove?.id else {
+            print("❌ CoveModel: No cove ID available for cove details refresh")
+            return
+        }
+        guard !isRefreshingCoveDetails else { return }
+        
+        print("🔄 CoveModel: Refreshing cove details only")
+        isRefreshingCoveDetails = true
+        lastFetched = nil // Clear cache
+        resetCancellationFlag()
+        
+        NetworkManager.shared.get(endpoint: "/cove", parameters: ["coveId": coveId]) { [weak self] (result: Result<FeedCoveResponse, NetworkError>) in
+            guard let self = self else { return }
+            guard !self.isCancelled else {
+                DispatchQueue.main.async { self.isRefreshingCoveDetails = false }
+                return
+            }
+            DispatchQueue.main.async {
+                self.isRefreshingCoveDetails = false
+                switch result {
+                case .success(let response):
+                    print("✅ CoveModel: Cove details refresh completed: \(response.cove.name)")
+                    self.cove = response.cove
+                    self.lastFetched = Date()
+                case .failure(let error):
+                    print("❌ CoveModel: Cove details refresh error: \(error.localizedDescription)")
+                    self.errorMessage = error.localizedDescription
+                }
+            }
+        }
+    }
+    
     /// Refreshes only the events data, keeping the cached cove details.
     func refreshEvents() {
         guard let coveId = cove?.id else {
             print("❌ CoveModel: No cove ID found for events refresh")
             return
         }
-        print("🔄 CoveModel: Refreshing events data")
+        guard !isRefreshingEvents else { return }
+        
+        print("🔄 CoveModel: Refreshing events data only")
+        isRefreshingEvents = true
         events = []
         nextCursor = nil
         hasMore = true
-        fetchEvents(coveId: coveId)
+        eventsLastFetched = nil // Clear events cache
+        
+        resetCancellationFlag()
+        
+        var parameters: [String: Any] = [
+            "coveId": coveId,
+            "limit": pageSize
+        ]
+        
+        NetworkManager.shared.get(endpoint: "/cove-events", parameters: parameters) { [weak self] (result: Result<CoveEventsResponse, NetworkError>) in
+            guard let self = self else { return }
+            guard !self.isCancelled else {
+                DispatchQueue.main.async { self.isRefreshingEvents = false }
+                return
+            }
+            DispatchQueue.main.async {
+                self.isRefreshingEvents = false
+                switch result {
+                case .success(let response):
+                    print("✅ CoveModel: Events refresh completed: \(response.events.count) events")
+                    self.events = response.events
+                    self.hasMore = response.pagination.hasMore
+                    self.nextCursor = response.pagination.nextCursor
+                    self.eventsLastFetched = Date()
+                case .failure(let error):
+                    print("❌ CoveModel: Events refresh error: \(error.localizedDescription)")
+                    self.errorMessage = error.localizedDescription
+                }
+            }
+        }
     }
+    /// Fetches members for a specific cove ID (with pagination).
+    func fetchCoveMembers(coveId: String, forceRefresh: Bool = false) {
+        // Check if we should use cached members data
+        if !forceRefresh && hasCachedMembers && !isMembersCacheStale && !members.isEmpty {
+            print("📱 CoveModel: ✅ Using fresh cached members data (\(members.count) members) - NO NETWORK REQUEST")
+            return
+        }
+        
+        guard !isRefreshingMembers && hasMembersMore else { return }
+        isRefreshingMembers = true
+        resetCancellationFlag()
+        
+        print("🔍 CoveModel: Fetching members...")
+        let parameters: [String: Any] = {
+            var params = [
+                "coveId": coveId,
+                "limit": pageSize
+            ]
+            if let cursor = membersCursor {
+                params["cursor"] = cursor
+            }
+            return params
+        }()
+        
+        NetworkManager.shared.get(endpoint: "/cove-members", parameters: parameters) { [weak self] (result: Result<CoveMembersResponse, NetworkError>) in
+            guard let self = self else { return }
+            guard !self.isCancelled else {
+                DispatchQueue.main.async { self.isRefreshingMembers = false }
+                return
+            }
+            DispatchQueue.main.async {
+                self.isRefreshingMembers = false
+                switch result {
+                case .success(let response):
+                    print("✅ CoveModel: Members received: \(response.members.count) members")
+                    if self.membersCursor == nil {
+                        // First page, replace members
+                        self.members = response.members
+                    } else {
+                        // Append to existing members
+                        self.members.append(contentsOf: response.members)
+                    }
+                    self.hasMembersMore = response.pagination.hasMore
+                    self.membersCursor = response.pagination.nextCursor
+                    self.membersLastFetched = Date()
+                case .failure(let error):
+                    print("❌ CoveModel: Members error: \(error.localizedDescription)")
+                    self.errorMessage = error.localizedDescription
+                }
+            }
+        }
+    }
+    
+    /// Refreshes only the members data, keeping the cached cove details.
+    func refreshMembers() {
+        guard let coveId = cove?.id else {
+            print("❌ CoveModel: No cove ID found for members refresh")
+            return
+        }
+        guard !isRefreshingMembers else { return }
+        
+        print("🔄 CoveModel: Refreshing members data only")
+        members = []
+        membersCursor = nil
+        hasMembersMore = true
+        membersLastFetched = nil // Clear members cache
+        fetchCoveMembers(coveId: coveId, forceRefresh: true)
+    }
+    
+    /// Loads more members if the user scrolls to the end of the list.
+    func loadMoreMembersIfNeeded(currentMember: CoveMember) {
+        if let lastMember = members.last,
+           lastMember.id == currentMember.id,
+           hasMembersMore && !isRefreshingMembers {
+            guard let coveId = cove?.id else {
+                print("❌ CoveModel: No cove ID available for loading more members")
+                return
+            }
+            fetchCoveMembers(coveId: coveId)
+        }
+    }
+    
     /// Loads more events if the user scrolls to the end of the list.
     func loadMoreEventsIfNeeded(currentEvent: CalendarEvent) {
         if let lastEvent = events.last,
@@ -171,12 +381,24 @@ class CoveModel: ObservableObject {
             fetchEvents(coveId: coveId)
         }
     }
-    /// Fetches cove details only if data is missing or stale (older than 5 minutes)
+    /// Fetches cove details only if data is missing or stale
     func fetchCoveDetailsIfStale(coveId: String) {
-        let needsRefresh = lastFetchTime == nil ||
-            Date().timeIntervalSince(lastFetchTime!) > 300
-        if !hasCompleteData || needsRefresh {
+        if !hasCachedData || isCacheStale || cove?.id != coveId {
             fetchCoveDetails(coveId: coveId)
+        } else {
+            print("📱 CoveModel: Using fresh cached cove data")
+            // Still check if events need fetching
+            if !hasCachedEvents || isEventsCacheStale {
+                let reason = !hasCachedEvents ? "no cached events" : "events cache is stale"
+                print("📱 CoveModel: Fetching events (\(reason))")
+                fetchEvents(coveId: coveId)
+            }
+            // Also check if members need fetching
+            if !hasCachedMembers || isMembersCacheStale {
+                let reason = !hasCachedMembers ? "no cached members" : "members cache is stale"
+                print("📱 CoveModel: Fetching members (\(reason))")
+                fetchCoveMembers(coveId: coveId)
+            }
         }
     }
 }
@@ -212,4 +434,6 @@ struct CoveEventsResponse: Decodable {
         let hasMore: Bool
         let nextCursor: String?
     }
-} 
+}
+
+
