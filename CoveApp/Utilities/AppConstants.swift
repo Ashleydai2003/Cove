@@ -20,7 +20,10 @@ struct AppConstants {
         static var baseURL: String {
             #if DEBUG
             // In Debug mode (simulator), use local development server
-            return "http://localhost:3001"
+            // TODO: IMPORTANT make changes to use local development server instead
+            // to do that we need to spin up a publically accessible S3 bucket for dev images
+            // return "http://localhost:3001"
+            return "https://api.coveapp.co"
             #else
             // In Release mode, use production server
             return "https://api.coveapp.co"

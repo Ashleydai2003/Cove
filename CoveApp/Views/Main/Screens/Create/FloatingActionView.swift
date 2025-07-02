@@ -6,11 +6,12 @@
 
 import SwiftUI
 
-/// FloatingActionView: A circular + button that shows event creation option
+/// FloatingActionView: A circular + button that shows event and cove creation options
 struct FloatingActionView: View {
     let coveId: String?
     @State private var showMenu = false
     @State private var showCreateEventSheet = false
+    @State private var showCreateCoveSheet = false
     @EnvironmentObject private var appController: AppController
     
     // MARK: - Initializer
@@ -20,27 +21,52 @@ struct FloatingActionView: View {
     
     var body: some View {
         VStack(alignment: .trailing, spacing: 16) {
-            // Event option - appears above the + button
+            // Menu options - appear above the + button
             if showMenu {
+                VStack(alignment: .trailing, spacing: 12) {
+                    // Cove option
                     Button(action: {
                         showMenu = false
-                    showCreateEventSheet = true
+                        showCreateCoveSheet = true
                     }) {
-                    HStack(spacing: 12) {
-                        Text("event")
-                            .font(.LibreBodoni(size: 20))
+                        HStack(spacing: 12) {
+                            Text("cove")
+                                .font(.LibreBodoni(size: 20))
                                 .foregroundColor(.white)
-                            Image("confetti")
-                            .font(.system(size: 20, weight: .medium))
+                            Image(systemName: "house.fill")
+                                .font(.system(size: 20, weight: .medium))
                                 .foregroundColor(.white)
                         }
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 16)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 16)
                         .background(
-                        RoundedRectangle(cornerRadius: 28)
+                            RoundedRectangle(cornerRadius: 28)
                                 .fill(Colors.primaryDark)
                                 .shadow(color: .black.opacity(0.15), radius: 4, x: 0, y: 2)
                         )
+                    }
+                    
+                    // Event option
+                    Button(action: {
+                        showMenu = false
+                        showCreateEventSheet = true
+                    }) {
+                        HStack(spacing: 12) {
+                            Text("event")
+                                .font(.LibreBodoni(size: 20))
+                                .foregroundColor(.white)
+                            Image("confetti")
+                                .font(.system(size: 20, weight: .medium))
+                                .foregroundColor(.white)
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 28)
+                                .fill(Colors.primaryDark)
+                                .shadow(color: .black.opacity(0.15), radius: 4, x: 0, y: 2)
+                        )
+                    }
                 }
                 .transition(.opacity.combined(with: .scale))
             }
@@ -66,6 +92,9 @@ struct FloatingActionView: View {
         .animation(.easeInOut(duration: 0.2), value: showMenu)
         .sheet(isPresented: $showCreateEventSheet) {
             CreateEventView(coveId: coveId)
+        }
+        .sheet(isPresented: $showCreateCoveSheet) {
+            CreateCoveView()
         }
     }
 }

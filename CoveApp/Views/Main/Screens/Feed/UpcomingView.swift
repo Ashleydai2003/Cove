@@ -33,6 +33,19 @@ struct UpcomingView: View {
                     }
                 }
             }
+            
+            // FloatingActionView - only show for verified/admin users
+            if isUserVerified {
+                VStack {
+                    Spacer()
+                    HStack {
+                        Spacer()
+                        FloatingActionView()
+                            .padding(.trailing, 20)
+                            .padding(.bottom, 20)
+                    }
+                }
+            }
         }
         .navigationBarBackButtonHidden(true)
         .onAppear {
@@ -55,6 +68,13 @@ struct UpcomingView: View {
             get: { upcomingFeed.errorMessage != nil },
             set: { if !$0 { upcomingFeed.errorMessage = nil } }
         )
+    }
+    
+    /// Check if the current user is verified/admin
+    private var isUserVerified: Bool {
+        let verified = appController.profileModel.verified
+        print("🏠 UpcomingView: isUserVerified check - verified = \(verified)")
+        return verified
     }
     
     @ViewBuilder

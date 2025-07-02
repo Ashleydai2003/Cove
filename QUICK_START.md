@@ -18,6 +18,14 @@ npm run dev
 - Select iOS Simulator 
 - Run your app
 
+### **Step 3: Stop Backend Server (When Done)**
+```bash
+# Stop the development server
+pkill -f "ts-node src/local-server.ts"
+
+# Or use Ctrl+C if running in foreground
+```
+
 ### **Troubleshooting**
 If you see "Could not connect to the server":
 - ✅ Make sure you're in the `Backend/` directory

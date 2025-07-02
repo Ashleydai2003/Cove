@@ -72,13 +72,16 @@ struct PluggingYouIn: View {
         // Check if view was cancelled
         guard !isCancelled else { return }
         
-        // First, check if user is in onboarding mode
+        print("🔌 PluggingYouIn: Starting plugInUser - verified = \(appController.profileModel.verified)")
+        
+        // Check if user is in onboarding mode (this should be set during login)
         if appController.profileModel.onboarding {
             print("📱 User is in onboarding mode, completing onboarding...")
             completeOnboarding()
         } else {
             print("📱 User is not in onboarding mode, proceeding with normal flow...")
             fetchUserProfile {
+                print("🔌 PluggingYouIn: After profile fetch - verified = \(self.appController.profileModel.verified)")
                 self.fetchUserCoves()
                 self.fetchCalendarEvents()
                 self.fetchUpcomingEvents()
