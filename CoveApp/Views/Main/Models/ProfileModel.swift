@@ -35,6 +35,7 @@ struct ProfileData: Decodable {
     let name: String
     let phone: String
     let onboarding: Bool
+    let verified: Bool?
     let id: String
     let userId: String
     let age: Int?
@@ -62,6 +63,7 @@ class ProfileModel: ObservableObject {
     @Published var name: String = ""
     @Published var phone: String = ""
     @Published var onboarding: Bool = false
+    @Published var verified: Bool = false
     @Published var id: String = ""
     @Published var userId: String = ""
     @Published var age: Int?
@@ -189,8 +191,19 @@ class ProfileModel: ObservableObject {
         name = profileData.name
         phone = profileData.phone
         onboarding = profileData.onboarding
+        
+        // Only update verified status if it's explicitly provided in the profile response
+        // Otherwise preserve the existing value (which should come from login)
+        if let verifiedFromProfile = profileData.verified {
+            verified = verifiedFromProfile
+            print("📊 ProfileModel: updateFromProfileData - updated verified = \(verifiedFromProfile) (from profile API)")
+        } else {
+            print("📊 ProfileModel: updateFromProfileData - preserving existing verified = \(verified) (profile API didn't include verified field)")
+        }
+        
         id = profileData.id
         userId = profileData.userId
+        
         age = profileData.age
         birthdate = profileData.birthdate
         interests = profileData.interests
@@ -552,9 +565,11 @@ class ProfileModel: ObservableObject {
      * This method is typically called when the user logs out.
      */
     func clearData() {
+        print("🗑️ ProfileModel: clearData called - resetting verified to false")
         name = ""
         phone = ""
         onboarding = false
+        verified = false
         id = ""
         userId = ""
         age = nil
