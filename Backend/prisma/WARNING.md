@@ -1,0 +1,1 @@
+DO NOT EVER DELETE ANYTHING FROM /prisma/migrations

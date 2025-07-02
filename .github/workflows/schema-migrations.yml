@@ -7,7 +7,7 @@ name: Database Migrations
 # Only trigger when migrations are added or modified
 on:
   push:
-    branches: [main, develop, ci/test-deploy]
+    branches: [main]
     paths:
       - 'Backend/prisma/migrations/**'  # Only run when migrations change
   workflow_dispatch:  # Allow manual triggering for testing

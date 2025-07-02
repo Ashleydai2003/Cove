@@ -7,7 +7,7 @@ name: Deploy Backend
 # Trigger this workflow when Backend files are modified (excluding schema)
 on:
   push:
-    branches: [main, develop]
+    branches: [main]
     paths:
       - 'Backend/**'
       - '!Backend/prisma/schema.prisma'  # Exclude schema changes (handled by separate workflow)
