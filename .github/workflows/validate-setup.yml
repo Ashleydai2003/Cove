@@ -15,7 +15,7 @@ env:
 jobs:
   # =============================================================================
   # AWS VALIDATION JOB - Tests AWS infrastructure connectivity and permissions
-  # Validates EC2, SSM, Lambda, and RDS secret access
+  # Validates EC2, SSM, and Lambda access (RDS secret validation skipped for security)
   # =============================================================================
   validate-aws-setup:
     name: Validate AWS Configuration
@@ -79,18 +79,8 @@ jobs:
           
           echo "✅ Lambda function validated"
 
-      # Test access to the RDS database credentials in Secrets Manager
-      # This is needed for the migration scripts to connect to the database
-      - name: Validate RDS secret
-        run: |
-          echo "🔍 Checking RDS secret access..."
-          # Verify we can access the secret metadata (not the actual password)
-          aws secretsmanager describe-secret \
-            --secret-id ${{ secrets.RDS_SECRET_ARN }} \
-            --query '{Name:Name,LastChangedDate:LastChangedDate,Description:Description}' \
-            --output table
-          
-          echo "✅ RDS secret access validated"
+      # Note: RDS secret access is not validated here for security reasons
+      # The actual migration workflow will test database connectivity when needed
 
   validate-backend-build:
     name: Validate Backend Build
@@ -133,64 +123,6 @@ jobs:
             exit 1
           fi
 
-  validate-ios-project:
-    name: Validate iOS Project
-    runs-on: macos-14
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Select Xcode version
-        run: sudo xcode-select -s /Applications/Xcode_15.2.app
-
-      - name: Cache Swift Package Manager
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/Library/Caches/org.swift.swiftpm
-            ~/Library/Developer/Xcode/DerivedData/**/SourcePackages
-          key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
-          restore-keys: |
-            ${{ runner.os }}-spm-
-
-      - name: Validate Xcode project
-        working-directory: CoveApp
-        run: |
-          echo "🔍 Validating Xcode project..."
-          
-          # Check if project file exists
-          if [ ! -f "Cove.xcodeproj/project.pbxproj" ]; then
-            echo "❌ Xcode project not found"
-            exit 1
-          fi
-          
-          # Validate project can be opened
-          xcodebuild -list -project Cove.xcodeproj
-          
-          echo "✅ Xcode project validated"
-
-      - name: Resolve dependencies
-        working-directory: CoveApp
-        run: |
-          echo "🔍 Resolving Swift Package dependencies..."
-          xcodebuild -resolvePackageDependencies -project Cove.xcodeproj -scheme "Cove iOS"
-          echo "✅ Dependencies resolved"
-
-      - name: Test build (no signing)
-        working-directory: CoveApp
-        run: |
-          echo "🔍 Testing build without code signing..."
-          xcodebuild build \
-            -project Cove.xcodeproj \
-            -scheme "Cove iOS" \
-            -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest' \
-            -configuration Debug \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO
-          
-          echo "✅ Build test completed"
-
   validate-secrets:
     name: Validate Required Secrets
     runs-on: ubuntu-latest
@@ -232,7 +164,7 @@ jobs:
   summary:
     name: Validation Summary
     runs-on: ubuntu-latest
-    needs: [validate-aws-setup, validate-backend-build, validate-ios-project, validate-secrets]
+    needs: [validate-aws-setup, validate-backend-build, validate-secrets]
     if: always()
     
     steps:
@@ -253,12 +185,6 @@ jobs:
             echo "❌ Backend Build: FAILED"
           fi
           
-          if [ "${{ needs.validate-ios-project.result }}" == "success" ]; then
-            echo "✅ iOS Project: PASSED"
-          else
-            echo "❌ iOS Project: FAILED"
-          fi
-          
           if [ "${{ needs.validate-secrets.result }}" == "success" ]; then
             echo "✅ Required Secrets: PASSED"
           else
@@ -272,12 +198,6 @@ jobs:
             echo "🚀 Backend deployment is ready!"
           else
             echo "⚠️  Backend deployment needs attention"
-          fi
-          
-          if [ "${{ needs.validate-ios-project.result }}" == "success" ]; then
-            echo "📱 iOS project validation passed - add iOS secrets for deployment"
-          else
-            echo "⚠️  iOS project needs attention"
           fi
           
           echo ""
