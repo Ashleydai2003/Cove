@@ -1,6 +1,6 @@
 # Database Schema Migrations Workflow
-# This workflow runs database migrations when the Prisma schema changes
-# It uses your existing EC2 instance and replicates your manual migration process
+# This workflow deploys database migrations to production when the Prisma schema changes
+# Migrations are created locally with 'npm run prisma:migrate:dev' and deployed here with 'npm run prisma:migrate:deploy'
 
 name: Database Migrations
 
@@ -101,11 +101,9 @@ jobs:
               \"echo 'DEBUG: In Backend directory, current path:' \$(pwd)\",
               \"npm install\",
               \"npm run prisma:generate\",
-              \"echo 'DEBUG: Checking if migrations need to be created'\",
-              \"if [ -n \\\"\$(ls -A prisma/migrations 2>/dev/null)\\\" ]; then echo '✅ Migrations already exist — skipping migrate dev'; else echo '🔧 Running prisma migrate dev (generating new migration)...'; echo '$MIGRATION_NAME' | npm run prisma:dev; fi\",
-              \"echo 'DEBUG: Running migration deploy/apply'\",
-              \"npm run prisma:migrate\",
-              \"echo 'Migration system now clean and ready for future changes'\",
+              \"echo 'DEBUG: Deploying migrations to production database'\",
+              \"npm run prisma:migrate:deploy\",
+              \"echo 'Production database migrations deployed successfully'\",
               \"echo 'SUCCESS: Migration completed'\"
             ]" \
             --region ${{ env.AWS_REGION }} \
