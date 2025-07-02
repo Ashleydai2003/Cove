@@ -115,7 +115,35 @@ export const handleOnboard = async (event: APIGatewayProxyEvent): Promise<APIGat
       gender
     });
 
-    // Step 7: Update user information
+    // Step 7: Check if user is an admin based on phone number
+    const currentUser = await prisma.user.findUnique({
+      where: {
+        id: user.uid
+      },
+      select: {
+        phone: true
+      }
+    });
+
+    if (!currentUser) {
+      return {
+        statusCode: 404,
+        body: JSON.stringify({
+          message: 'User not found'
+        })
+      };
+    }
+
+    // Check if user's phone number is in admin allowlist
+    const adminEntry = await prisma.adminPhoneAllowlist.findUnique({
+      where: {
+        phoneNumber: currentUser.phone
+      }
+    });
+
+    const isAdmin = !!adminEntry;
+
+    // Step 8: Update user information
     await prisma.user.update({
       where: {
         id: user.uid
@@ -123,6 +151,7 @@ export const handleOnboard = async (event: APIGatewayProxyEvent): Promise<APIGat
       data: {
         name: name || null,
         onboarding: false, // Mark onboarding as complete
+        verified: isAdmin, // Set verified to true if user is an admin
         profile: {
           create: {
             birthdate: birthdate ? new Date(birthdate) : null,
@@ -141,9 +170,22 @@ export const handleOnboard = async (event: APIGatewayProxyEvent): Promise<APIGat
       }
     });
 
+    // Step 9: If user is an admin, update the admin allowlist to mark them as active
+    if (isAdmin && adminEntry) {
+      await prisma.adminPhoneAllowlist.update({
+        where: {
+          phoneNumber: currentUser.phone
+        },
+        data: {
+          isActive: true
+        }
+      });
+      console.log('Admin user activated in allowlist:', currentUser.phone);
+    }
+
     console.log('Onboarding complete for user:', user.uid);
 
-    // Step 8: Return success message
+    // Step 10: Return success message
     const response = {
       statusCode: 200,
       body: JSON.stringify({

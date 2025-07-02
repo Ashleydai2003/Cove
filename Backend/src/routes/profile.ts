@@ -103,6 +103,7 @@ export const handleProfile = async (event: APIGatewayProxyEvent): Promise<APIGat
           name: userProfile.name,
           phone: userProfile.phone,
           onboarding: userProfile.onboarding,
+          verified: userProfile.verified,
           ...userProfile.profile, // Include all profile fields
           photos: photoUrls,
           stats: {
