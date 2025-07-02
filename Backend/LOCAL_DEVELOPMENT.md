@@ -106,12 +106,96 @@ git commit -m "Add user email field migration"
 git push origin your-branch
 ```
 
+## 🧪 API Testing with Local Server
+
+### Start Local API Server
+
+```bash
+# Install dependencies (includes Express & CORS for local development)
+npm install
+
+# Start local API server (runs on http://localhost:3001)
+npm run dev
+```
+
+This starts a local Express server that wraps your Lambda handlers, allowing you to test API endpoints locally.
+
+### Test API Endpoints
+
+With your local server running, you can test endpoints using:
+
+#### 1. Browser (for GET requests)
+```
+http://localhost:3001/test-database
+```
+
+#### 2. cURL Commands
+```bash
+# Test database connection
+curl http://localhost:3001/test-database
+
+# Test authenticated endpoint (requires Firebase token)
+curl -X GET \
+  http://localhost:3001/profile \
+  -H "Authorization: Bearer YOUR_FIREBASE_TOKEN"
+
+# Test POST endpoint
+curl -X POST \
+  http://localhost:3001/create-cove \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_FIREBASE_TOKEN" \
+  -d '{"name": "Test Cove", "description": "Testing locally"}'
+```
+
+#### 3. REST Client Tools
+- **Postman**: Import endpoints and set `http://localhost:3001` as base URL
+- **Insomnia**: Create workspace with local base URL
+- **VS Code REST Client**: Create `.http` files for testing
+
+### 🔑 Authentication for Testing
+
+For endpoints that require authentication, you'll need a Firebase token:
+
+1. **Get from iOS app**: Add debug logging to print tokens
+2. **Use Firebase Admin**: Create test tokens programmatically
+3. **Firebase Auth Emulator**: Set up local auth for testing
+
+### 📊 Available Test Endpoints
+
+| Method | Endpoint | Purpose | Auth Required |
+|--------|----------|---------|---------------|
+| GET | `/test-database` | Test DB connection | ❌ |
+| GET | `/profile` | Get user profile | ✅ |
+| POST | `/login` | User login | ✅ |
+| POST | `/onboard` | User onboarding | ✅ |
+| POST | `/create-event` | Create new event | ✅ |
+| POST | `/create-cove` | Create new cove | ✅ |
+| GET | `/friends` | Get user's friends | ✅ |
+| GET | `/upcoming-events` | Get upcoming events | ✅ |
+
+### 💡 Testing Tips
+
+```bash
+# Terminal 1: Start database
+npm run db:start
+
+# Terminal 2: Start API server
+npm run dev
+
+# Terminal 3: Test endpoints
+curl http://localhost:3001/test-database
+
+# Terminal 4: Monitor database
+npm run prisma:studio
+```
+
 ## 📋 Available Commands
 
 | Command | Purpose |
 |---------|---------|
 | `npm run db:start` | Start local PostgreSQL & pgAdmin |
 | `npm run db:stop` | Stop local database containers |
+| `npm run dev` | Start local API server (port 3001) |
 | `npm run prisma:migrate:dev` | Create & apply migrations locally |
 | `npm run prisma:reset` | Reset local database (clears all data) |
 | `npm run prisma:studio` | Open database GUI |
@@ -187,21 +271,27 @@ docker system prune -a
 # 1. Start development session
 npm run db:start
 
-# 2. Make schema changes in prisma/schema.prisma
+# 2. Start API server (optional, for testing endpoints)
+npm run dev
 
-# 3. Create migration
+# 3. Make schema changes in prisma/schema.prisma
+
+# 4. Create migration
 npm run prisma:migrate:dev
 # Enter migration name: "add_user_profile_fields"
 
-# 4. Test changes
+# 5. Test changes
 npm run prisma:studio
 
-# 5. Commit and push
+# 6. Test API endpoints (if needed)
+curl http://localhost:3001/test-database
+
+# 7. Commit and push
 git add prisma/
 git commit -m "Add user profile fields"
 git push origin feature-branch
 
-# 6. End development session
+# 8. End development session
 npm run db:stop
 ```
 
