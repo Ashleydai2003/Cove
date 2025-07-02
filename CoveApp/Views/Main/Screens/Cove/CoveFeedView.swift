@@ -69,12 +69,20 @@ struct CoveFeedView: View {
                                 CoveCardView(cove: cove)
                                     if idx < coveFeed.userCoves.count - 1 {
                                     Divider()
-                                        .padding(.leading, 84)
+                                        .padding(.leading, 100)
+                                        .padding(.trailing, 20)
                                 }
                             }
                         }
                         .padding(.horizontal, 0)
                         .padding(.top, 8)
+                    }
+                    .refreshable {
+                        await withCheckedContinuation { continuation in
+                            coveFeed.refreshUserCoves {
+                                continuation.resume()
+                            }
+                        }
                     }
                     }
                 }
@@ -97,10 +105,8 @@ struct CoveFeedView: View {
         }
         .navigationBarBackButtonHidden()
         .onAppear {
-            // Only fetch if we don't have any coves (they should be fetched during onboarding)
-            if coveFeed.userCoves.isEmpty {
-                coveFeed.fetchUserCoves()
-            }
+            // Only fetch if we don't have any coves or data is stale
+            coveFeed.fetchUserCovesIfStale()
         }
         .onDisappear {
             coveFeed.cancelRequests()

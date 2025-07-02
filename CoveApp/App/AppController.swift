@@ -58,7 +58,14 @@ class AppController: ObservableObject {
     /// Shared ProfileModel instance for user profile data
     @Published var profileModel = ProfileModel()
     
-
+    /// Shared FriendsViewModel instance for friends list and caching logic
+    @Published var friendsViewModel = FriendsViewModel()
+    
+    /// Shared RequestsViewModel instance for friend requests and caching logic
+    @Published var requestsViewModel = RequestsViewModel()
+    
+    /// Shared MutualsViewModel instance for recommended friends and caching logic
+    @Published var mutualsViewModel = MutualsViewModel()
     
     /// Private initializer to enforce singleton pattern
     private init() {}
@@ -73,5 +80,41 @@ class AppController: ObservableObject {
         print("🔄 AppController: Cove data refresh requested")
         // This will be called by views that need to refresh cove data
         // For now, we'll rely on individual view models to handle their own refresh
+    }
+    
+    /**
+     * Force refresh the cove feed after creating a new cove.
+     * Call this after successfully creating a cove to update the UI immediately.
+     */
+    func refreshCoveFeedAfterCreation() {
+        print("🔄 AppController: Force refreshing cove feed after cove creation")
+        coveFeed.refreshUserCoves()
+    }
+    
+    /**
+     * Force refresh calendar and upcoming feeds after creating a new event.
+     * Call this after successfully creating an event to update the UI immediately.
+     */
+    func refreshFeedsAfterEventCreation() {
+        print("🔄 AppController: Force refreshing feeds after event creation")
+        calendarFeed.refreshCalendarEvents()
+        upcomingFeed.refreshUpcomingEvents()
+    }
+    
+    /**
+     * Force refresh a specific cove's events after creating an event in that cove.
+     * Call this after successfully creating an event to update the cove view immediately.
+     * Only refreshes events, not the cove header details.
+     */
+    func refreshCoveAfterEventCreation(coveId: String) {
+        print("🔄 AppController: Force refreshing cove \(coveId) events after event creation")
+        if let coveModel = coveFeed.coveModels[coveId] {
+            print("✅ AppController: Found existing CoveModel for cove \(coveId), calling refreshEvents()")
+            coveModel.refreshEvents()
+        } else {
+            print("⚠️ AppController: No existing CoveModel found for cove \(coveId) - creating new one and triggering events refresh")
+            let newModel = coveFeed.getOrCreateCoveModel(for: coveId)
+            newModel.refreshEvents()
+        }
     }
 }

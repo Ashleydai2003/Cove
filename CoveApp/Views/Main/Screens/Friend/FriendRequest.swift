@@ -6,70 +6,15 @@
 
 import SwiftUI
 
-@MainActor
-class RequestsViewModel: ObservableObject {
-    @Published var requests: [RequestDTO] = []
-    @Published var nextCursor: String?
-    @Published var hasMore = true
-    @Published var isLoading = false {
-        didSet { if isLoading { loadingStart = Date() } }
-    }
-    @Published var errorMessage: String?
-    
-    private let pageSize = 7
-    private var loadingStart: Date?
-    
-    init() {
-        loadNextPage()
-    }
-    
-    func loadNextPage() {
-        guard !isLoading && hasMore else { return }
-        isLoading = true
-        
-        FriendRequests.fetch(cursor: nextCursor, limit: pageSize) { [weak self] result in
-            guard let self = self else { return }
-            self.isLoading = false
-            
-            switch result {
-            case .success(let resp):
-                self.requests.append(contentsOf: resp.requests)
-                self.hasMore = resp.pagination.nextCursor != nil
-                self.nextCursor = resp.pagination.nextCursor
-            case .failure(let error):
-                self.errorMessage = error.localizedDescription
-            }
-        }
-    }
-    
-    func accept(_ req: RequestDTO) {
-        FriendRequests.resolve(requestId: req.id, action: "ACCEPT") { [weak self] result in
-            switch result {
-            case .success:
-                self?.requests.removeAll { $0.id == req.id }
-            case .failure(let error):
-                self?.errorMessage = error.localizedDescription
-            }
-        }
-    }
-    
-    func reject(_ req: RequestDTO) {
-        FriendRequests.resolve(requestId: req.id, action: "REJECT") { [weak self] result in
-            switch result {
-            case .success:
-                self?.requests.removeAll { $0.id == req.id }
-            case .failure(let error):
-                self?.errorMessage = error.localizedDescription
-            }
-        }
-    }
-}
-
 // MARK: — Main View
 
 struct RequestsView: View {
     @EnvironmentObject var appController: AppController
-    @StateObject private var vm = RequestsViewModel()
+    
+    // Use the shared instance from AppController
+    private var vm: RequestsViewModel {
+        appController.requestsViewModel
+    }
     
     var body: some View {
         GeometryReader { _ in
@@ -149,6 +94,9 @@ struct RequestsView: View {
         } message: {
             Text(vm.errorMessage ?? "")
         }
+        .onAppear {
+            vm.loadNextPageIfStale()
+        }
     }
 }
 
@@ -184,24 +132,14 @@ struct RequestRowView: View {
             Spacer()
             
             if let confirm = onConfirm {
-                Button(action: confirm) {
-                    Text("confirm")
-                        .font(.LibreBodoni(size: 10))
-                        .frame(width: 65, height: 20)
-                        .background(Colors.primaryDark)
-                        .foregroundColor(.white)
-                        .cornerRadius(11)
+                ActionButton.confirm {
+                    confirm()
                 }
             }
             
             if let delete = onDelete {
-                Button(action: delete) {
-                    Text("delete")
-                        .font(.LibreBodoni(size: 10))
-                        .frame(width: 65, height: 20)
-                        .background(Colors.primaryDark)
-                        .foregroundColor(.white)
-                        .cornerRadius(11)
+                ActionButton.delete {
+                    delete()
                 }
             }
         }
