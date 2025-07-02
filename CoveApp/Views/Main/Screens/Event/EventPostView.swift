@@ -101,11 +101,17 @@ struct UpdateRSVPResponse: Decodable {
 // MARK: - Main View
 struct EventPostView: View {
     let eventId: String
+    let coveCoverPhoto: CoverPhoto?
     @StateObject private var viewModel = EventPostViewModel()
     @EnvironmentObject var appController: AppController
     @Environment(\.dismiss) private var dismiss
     @State private var showingDeleteAlert = false
     @State private var currentRSVPStatus: String?
+    
+    init(eventId: String, coveCoverPhoto: CoverPhoto? = nil) {
+        self.eventId = eventId
+        self.coveCoverPhoto = coveCoverPhoto
+    }
     
     var body: some View {
         ZStack {
@@ -127,8 +133,9 @@ struct EventPostView: View {
                             
                             Spacer()
                             
+                            // Use provided cover photo first, fallback to fetched event data
                             CachedAsyncImage(
-                                url: URL(string: event.cove.coverPhoto?.url ?? "")
+                                url: URL(string: coveCoverPhoto?.url ?? event.cove.coverPhoto?.url ?? "")
                             ) { image in
                                 image
                                     .resizable()
@@ -168,11 +175,20 @@ struct EventPostView: View {
                         
                         if let urlString = event.coverPhoto?.url, let url = URL(string: urlString) {
                             KFImage(url)
+                                .placeholder {
+                                    Rectangle()
+                                        .fill(Color.gray.opacity(0.2))
+                                        .frame(height: 192)
+                                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                                        .overlay(
+                                            ProgressView()
+                                                .tint(Colors.primaryDark)
+                                        )
+                                }
                                 .onSuccess { result in
                                     print("📸 EventPostView event cover loaded from: \(result.cacheType)")
                                 }
                                 .resizable()
-                                .cancelOnDisappear(true)
                                 .fade(duration: 0.2)
                                 .cacheOriginalImage()
                                 .loadDiskFileSynchronously()
@@ -191,7 +207,7 @@ struct EventPostView: View {
                         VStack(alignment: .leading) {
                             HStack {
                                 Text(event.formattedDate)
-                                    .foregroundStyle(Colors.primaryDark)
+                                    .foregroundStyle(Color.black)
                                     .font(.LibreBodoni(size: 18))
                                 Spacer()
                                 Text(event.formattedTime)
@@ -208,9 +224,14 @@ struct EventPostView: View {
                                     .font(.LibreBodoniBold(size: 16))
                             }
                             
-                            Text("hosted by \(event.host.name)")
+                            HStack {
+                                Text("hosted by")
+                                    .font(.LibreBodoni(size: 18))
+                                    .foregroundColor(Color.black)
+                                Text(event.host.name)
                                 .font(.LibreBodoni(size: 18))
                                 .foregroundColor(Colors.primaryDark)
+                            }
                         }
                         
                         if let description = event.description {
@@ -267,66 +288,38 @@ struct EventPostView: View {
                             }
                         }
                         
-                        HStack(spacing: 24) {
-                            Spacer()
-                            
+                        // Single RSVP button with two states
                             Button {
-                                currentRSVPStatus = "GOING"
-                                viewModel.updateRSVP(eventId: eventId, status: "GOING") { _ in }
-                            } label: {
-                                Text("yes")
-                                    .foregroundStyle(Colors.k070708)
-                                    .font(.LeagueSpartan(size: 12))
-                                    .padding(.horizontal, 24)
-                                    .padding(.vertical, 4)
-                                    .background(
-                                        Capsule()
-                                            .fill((currentRSVPStatus ?? event.rsvpStatus) == "GOING" ? Colors.kE8DFCB : Color.white)
-                                    )
-                            }
-                            .disabled(viewModel.isUpdatingRSVP)
-                            
-                            Button {
-                                currentRSVPStatus = "MAYBE"
-                                viewModel.updateRSVP(eventId: eventId, status: "MAYBE") { _ in }
-                            } label: {
-                                Text("maybe")
-                                    .foregroundStyle(Colors.k070708)
-                                    .font(.LeagueSpartan(size: 12))
-                                    .padding(.horizontal, 24)
-                                    .padding(.vertical, 4)
-                                    .background(
-                                        Capsule()
-                                            .fill((currentRSVPStatus ?? event.rsvpStatus) == "MAYBE" ? Colors.kE8DFCB : Color.white)
-                                    )
-                            }
-                            .disabled(viewModel.isUpdatingRSVP)
-                            
-                            Button {
+                            let currentStatus = currentRSVPStatus ?? event.rsvpStatus
+                            if currentStatus == "GOING" {
+                                // User is going, change to not going
                                 currentRSVPStatus = "NOT_GOING"
                                 viewModel.updateRSVP(eventId: eventId, status: "NOT_GOING") { _ in }
+                            } else {
+                                // User is not going or maybe, change to going
+                                currentRSVPStatus = "GOING"
+                                viewModel.updateRSVP(eventId: eventId, status: "GOING") { _ in }
+                            }
                             } label: {
-                                Text("no")
-                                    .foregroundStyle(Colors.k070708)
-                                    .font(.LeagueSpartan(size: 12))
-                                    .padding(.horizontal, 24)
-                                    .padding(.vertical, 4)
+                            let currentStatus = currentRSVPStatus ?? event.rsvpStatus
+                            let isGoing = currentStatus == "GOING"
+                            
+                            Text(isGoing ? "can't make it..." : "rsvp")
+                                .foregroundStyle(isGoing ? Colors.primaryDark : .white)
+                                .font(.LibreBodoni(size: 25))
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 10)
                                     .background(
-                                        Capsule()
-                                            .fill((currentRSVPStatus ?? event.rsvpStatus) == "NOT_GOING" ? Colors.kE8DFCB : Color.white)
+                                    RoundedRectangle(cornerRadius: 20)
+                                        .fill(isGoing ? Color.white : Colors.primaryDark)
+                                        .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 8)
                                     )
                             }
                             .disabled(viewModel.isUpdatingRSVP)
-                            
-                            Spacer()
-                        }
-                        .padding([.horizontal, .vertical], 16)
-                        .background(Colors.primaryDark)
-                        .clipShape(RoundedRectangle(cornerRadius: 15))
                         
                         Spacer(minLength: 24)
                     }
-                    .padding(.horizontal, 24)
+                    .padding(.horizontal, 50)
                     .padding(.top, 10)
                 }
             } else if let error = viewModel.errorMessage {
@@ -342,7 +335,7 @@ struct EventPostView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-                }
+        }
         .navigationBarBackButtonHidden(true)
         .onAppear {
             viewModel.fetchEventDetails(eventId: eventId) {
@@ -375,5 +368,5 @@ struct EventPostView: View {
 }
 
 #Preview {
-    EventPostView(eventId: "cmb77a64d000ijs086d8sifig")
+    EventPostView(eventId: "cmb77a64d000ijs086d8sifig", coveCoverPhoto: nil)
 }

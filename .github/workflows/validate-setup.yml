@@ -1,0 +1,202 @@
+# CI/CD Setup Validation Workflow
+# This workflow validates that your CI/CD infrastructure is properly configured
+# Run this before attempting actual deployments to catch configuration issues early
+
+name: Validate CI/CD Setup
+
+on:
+  workflow_dispatch:        # Allow manual triggering from GitHub Actions UI
+  pull_request:            # Run when CI/CD configuration files are changed
+    paths: ['.github/workflows/**', 'CI-CD-SETUP.md']  # Only trigger on workflow or doc changes
+
+env:
+  AWS_REGION: us-west-1    # Your AWS region (matches production infrastructure)
+
+jobs:
+  # =============================================================================
+  # AWS VALIDATION JOB - Tests AWS infrastructure connectivity and permissions
+  # Validates EC2, SSM, and Lambda access (RDS secret validation skipped for security)
+  # =============================================================================
+  validate-aws-setup:
+    name: Validate AWS Configuration
+    runs-on: ubuntu-latest
+    
+    # Required permissions for OIDC authentication
+    permissions:
+      id-token: write   # Needed to request OIDC token from GitHub
+      contents: read    # Needed to read repository contents
+
+    steps:
+      # Get the repository code (needed for checkout action)
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Test OIDC authentication with your AWS role
+      # This verifies that the GitHub Actions role is properly configured
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}        # Your GitHubActionsRole ARN
+          aws-region: ${{ env.AWS_REGION }}                  # us-west-1
+          role-session-name: GitHubActions-Validate         # Session name for CloudTrail logs
+
+      # Test that the EC2 instance exists and is accessible
+      # This validates the instance ID and basic EC2 permissions
+      - name: Validate EC2 instance
+        run: |
+          echo "🔍 Checking EC2 instance status..."
+          # Query the instance to verify it exists and get basic info
+          aws ec2 describe-instances \
+            --instance-ids ${{ secrets.EC2_INSTANCE_ID }} \
+            --query 'Reservations[0].Instances[0].{State:State.Name,Type:InstanceType,VPC:VpcId}' \
+            --output table
+          
+          echo "✅ EC2 instance validated"
+
+      # Test SSM (Systems Manager) connectivity to the EC2 instance
+      # This is crucial for running migration commands remotely
+      - name: Validate SSM connectivity
+        run: |
+          echo "🔍 Checking SSM connectivity..."
+          # Check if the instance is registered with SSM and can receive commands
+          aws ssm describe-instance-information \
+            --filters "Key=InstanceIds,Values=${{ secrets.EC2_INSTANCE_ID }}" \
+            --query 'InstanceInformationList[0].{PingStatus:PingStatus,LastPingDateTime:LastPingDateTime,PlatformType:PlatformType}' \
+            --output table
+          
+          echo "✅ SSM connectivity validated"
+
+      # Test that the Lambda function exists and is accessible
+      # This validates the function name and basic Lambda permissions
+      - name: Validate Lambda function
+        run: |
+          echo "🔍 Checking Lambda function..."
+          # Get basic information about the Lambda function
+          aws lambda get-function \
+            --function-name hello-lambda \
+            --query '{FunctionName:Configuration.FunctionName,Runtime:Configuration.Runtime,LastModified:Configuration.LastModified}' \
+            --output table
+          
+          echo "✅ Lambda function validated"
+
+      # Note: RDS secret access is not validated here for security reasons
+      # The actual migration workflow will test database connectivity when needed
+
+  validate-backend-build:
+    name: Validate Backend Build
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        working-directory: Backend
+        run: npm install
+
+      - name: Validate Prisma schema
+        working-directory: Backend
+        run: |
+          echo "🔍 Validating Prisma schema..."
+          npm run prisma:generate
+          echo "✅ Prisma schema validated"
+
+      - name: Test build process
+        working-directory: Backend
+        run: |
+          echo "🔍 Testing build process..."
+          npm run build
+          
+          # Check if build artifacts exist
+          if [ -f "dist/index.zip" ]; then
+            echo "✅ Build artifacts created successfully"
+            ls -la dist/
+          else
+            echo "❌ Build artifacts not found"
+            exit 1
+          fi
+
+  validate-secrets:
+    name: Validate Required Secrets
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Check AWS secrets
+        run: |
+          echo "🔍 Checking AWS secrets..."
+          
+          # Check if required AWS secrets exist
+          if [ -z "${{ secrets.AWS_ROLE_ARN }}" ]; then
+            echo "❌ AWS_ROLE_ARN secret not set"
+            exit 1
+          fi
+          
+          if [ -z "${{ secrets.EC2_INSTANCE_ID }}" ]; then
+            echo "❌ EC2_INSTANCE_ID secret not set"
+            exit 1
+          fi
+          
+          if [ -z "${{ secrets.RDS_SECRET_ARN }}" ]; then
+            echo "❌ RDS_SECRET_ARN secret not set"
+            exit 1
+          fi
+          
+          echo "✅ AWS secrets validated"
+
+      - name: Check iOS secrets (optional)
+        run: |
+          echo "🔍 Checking iOS secrets..."
+          
+          # Check if iOS secrets exist (optional for backend-only validation)
+          if [ -n "${{ secrets.IOS_TEAM_ID }}" ]; then
+            echo "✅ iOS secrets appear to be configured"
+          else
+            echo "⚠️  iOS secrets not configured (required for iOS deployment)"
+          fi
+
+  summary:
+    name: Validation Summary
+    runs-on: ubuntu-latest
+    needs: [validate-aws-setup, validate-backend-build, validate-secrets]
+    if: always()
+    
+    steps:
+      - name: Validation Results
+        run: |
+          echo "## 🎯 CI/CD Setup Validation Results"
+          echo ""
+          
+          if [ "${{ needs.validate-aws-setup.result }}" == "success" ]; then
+            echo "✅ AWS Configuration: PASSED"
+          else
+            echo "❌ AWS Configuration: FAILED"
+          fi
+          
+          if [ "${{ needs.validate-backend-build.result }}" == "success" ]; then
+            echo "✅ Backend Build: PASSED"
+          else
+            echo "❌ Backend Build: FAILED"
+          fi
+          
+          if [ "${{ needs.validate-secrets.result }}" == "success" ]; then
+            echo "✅ Required Secrets: PASSED"
+          else
+            echo "❌ Required Secrets: FAILED"
+          fi
+          
+          echo ""
+          echo "## 📋 Next Steps"
+          
+          if [ "${{ needs.validate-aws-setup.result }}" == "success" ] && [ "${{ needs.validate-backend-build.result }}" == "success" ]; then
+            echo "🚀 Backend deployment is ready!"
+          else
+            echo "⚠️  Backend deployment needs attention"
+          fi
+          
+          echo ""
+          echo "See CI-CD-SETUP.md for detailed setup instructions." 

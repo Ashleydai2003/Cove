@@ -6,11 +6,15 @@ class NetworkManager {
     /// Singleton instance for global access
     static let shared = NetworkManager()
     
-    /// API base URL
-    private let apiBaseURL = "https://api.coveapp.co"
+    /// API base URL - automatically switches between local dev and production
+    private let apiBaseURL = AppConstants.API.baseURL
     
     /// Private initializer to enforce singleton pattern
-    private init() {}
+    private init() {
+        // Log current environment for debugging
+        print("🌐 NetworkManager initialized with \(AppConstants.API.environment) environment")
+        print("🔗 API Base URL: \(apiBaseURL)")
+    }
     
     /// Makes a GET request to the specified endpoint
     /// - Parameters:

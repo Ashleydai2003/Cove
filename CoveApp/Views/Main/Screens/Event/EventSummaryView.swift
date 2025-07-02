@@ -41,7 +41,6 @@ struct EventSummaryView: View {
                                 print("📸 Event cover loaded from: \(result.cacheType)")
                             }
                             .resizable()
-                            .cancelOnDisappear(true)
                             .fade(duration: 0.2)
                             .cacheOriginalImage()
                             .loadDiskFileSynchronously()

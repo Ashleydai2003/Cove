@@ -26,6 +26,13 @@ struct UpcomingView: View {
                     Spacer(minLength: 20)
                 }
             }
+            .refreshable {
+                await withCheckedContinuation { continuation in
+                    upcomingFeed.refreshUpcomingEvents {
+                        continuation.resume()
+                    }
+                }
+            }
         }
         .navigationBarBackButtonHidden(true)
         .onAppear {

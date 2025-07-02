@@ -7,9 +7,13 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "rm -rf dist && prisma generate && esbuild ./src --bundle --platform=node --target=node18 --outfile=dist/index.js --format=cjs && cd dist && cp -r ../node_modules/.prisma . && cp ../node_modules/prisma/build/index.js prisma.js && zip -r index.zip index.js .prisma prisma.js",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "NODE_OPTIONS='--max-old-space-size=4096' NODE_ENV=production ts-node src/scripts/migrate.ts",
-    "prisma:dev": "read -p 'Enter migration name: ' migration_name && NODE_ENV=production ts-node src/scripts/migrate-dev.ts \"$migration_name\"",
-    "prisma:migrate:dev": "NODE_OPTIONS='--max-old-space-size=4096' NODE_ENV=development ts-node src/scripts/migrate.t"
+    "prisma:migrate:dev": "dotenv -e env.development -- prisma migrate dev",
+    "prisma:migrate:deploy": "NODE_ENV=production ts-node src/scripts/migrate.ts",
+    "prisma:studio": "dotenv -e env.development -- prisma studio",
+    "prisma:reset": "dotenv -e env.development -- prisma migrate reset",
+    "db:start": "docker-compose up -d",
+    "db:stop": "docker-compose down",
+    "dev": "dotenv -e env.development -- ts-node src/local-server.ts"
   },
   "keywords": [],
   "author": "",
@@ -30,9 +34,14 @@
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.130",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
     "@types/node": "^22.15.12",
     "@types/pg": "^8.10.9",
+    "cors": "^2.8.5",
+    "dotenv-cli": "^7.3.0",
     "esbuild": "^0.25.2",
+    "express": "^4.18.2",
     "prisma": "^6.8.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"

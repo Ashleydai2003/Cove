@@ -642,6 +642,28 @@ class ProfileModel: ObservableObject {
         profileUIImage = nil
         extraUIImages = [nil, nil]
     }
+    
+    /**
+     * Convenience method to fetch profile and load all images.
+     * This combines fetchProfile() and loadAllImages() for easier use in views.
+     * 
+     * - Parameter completion: Completion handler with result and loaded images status
+     */
+    func fetchProfileWithImages(completion: @escaping (Result<ProfileData, NetworkError>) -> Void) {
+        fetchProfile { result in
+            switch result {
+            case .success(let profileData):
+                // After successful profile fetch, load all images
+                self.loadAllImages {
+                    // Images loaded, call completion with success
+                    completion(.success(profileData))
+                }
+            case .failure(let error):
+                // Profile fetch failed, call completion with error
+                completion(.failure(error))
+            }
+        }
+    }
 }
 
 // MARK: - Supporting Types

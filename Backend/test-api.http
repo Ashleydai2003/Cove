@@ -1,0 +1,99 @@
+# API Testing Examples
+# Use this file with VS Code REST Client extension
+# or copy commands to use with curl/Postman
+
+@baseUrl = http://localhost:3001
+@authToken = YOUR_FIREBASE_TOKEN_HERE
+
+### Test Database Connection (No auth required)
+GET {{baseUrl}}/test-database
+
+### Test S3 Connection (No auth required, but will fail without AWS creds)
+GET {{baseUrl}}/test-s3
+
+### Get User Profile (Auth required)
+GET {{baseUrl}}/profile
+Authorization: Bearer {{authToken}}
+
+### Get User Profile by ID (Auth required)
+GET {{baseUrl}}/profile?userId=USER_ID_HERE
+Authorization: Bearer {{authToken}}
+
+### User Login (Auth required)
+POST {{baseUrl}}/login
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "phoneNumber": "+1234567890"
+}
+
+### Create Cove (Auth required)
+POST {{baseUrl}}/create-cove
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "Test Cove",
+  "description": "A test cove created from local development",
+  "latitude": 37.7749,
+  "longitude": -122.4194,
+  "locationName": "San Francisco, CA"
+}
+
+### Get User's Friends (Auth required)
+GET {{baseUrl}}/friends
+Authorization: Bearer {{authToken}}
+
+### Get Upcoming Events (Auth required)
+GET {{baseUrl}}/upcoming-events
+Authorization: Bearer {{authToken}}
+
+### Send Friend Request (Auth required)
+POST {{baseUrl}}/send-friend-request
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "toUserIds": ["USER_ID_TO_SEND_REQUEST_TO"]
+}
+
+### Get Friend Requests (Auth required)
+GET {{baseUrl}}/friend-requests
+Authorization: Bearer {{authToken}}
+
+### Create Event (Auth required)
+POST {{baseUrl}}/create-event
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "Test Event",
+  "description": "A test event created from local development",
+  "date": "2024-12-31T20:00:00.000Z",
+  "latitude": 37.7749,
+  "longitude": -122.4194,
+  "locationName": "San Francisco, CA",
+  "coveId": "COVE_ID_HERE"
+}
+
+### Get Cove Information (Auth required)
+GET {{baseUrl}}/cove?coveId=COVE_ID_HERE
+Authorization: Bearer {{authToken}}
+
+### Get Event Information (Auth required)
+GET {{baseUrl}}/event?eventId=EVENT_ID_HERE
+Authorization: Bearer {{authToken}}
+
+#####################################
+# How to get Firebase Token for testing:
+# 
+# 1. From iOS app - Add debug logging:
+#    print("Firebase token: \(token)")
+#
+# 2. Using Firebase Admin SDK (create test script):
+#    const customToken = await admin.auth().createCustomToken(uid);
+#
+# 3. Firebase Auth Emulator (for local testing):
+#    firebase emulators:start --only auth
+##################################### 

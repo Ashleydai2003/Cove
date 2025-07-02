@@ -27,7 +27,7 @@ class Onboarding {
     private static var pendingFriendRequests: [String] = []
     private static var adminCove: String?
     
-    private static let apiBaseURL = "https://api.coveapp.co"
+    private static let apiBaseURL = AppConstants.API.baseURL
     private static let apiOnboardPath = "/onboard"
     
     // MARK: - Public Methods
