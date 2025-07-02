@@ -1,43 +1,14 @@
 import SwiftUI
 
-@MainActor
-class FriendsViewModel: ObservableObject {
-    @Published var friends: [FriendDTO] = []
-    @Published var nextCursor: String?
-    @Published var hasMore = true
-    @Published var isLoading = false
-    @Published var errorMessage: String?
-    
-    private let pageSize = 10
-    
-    init() {
-        loadNextPage()
-    }
-    
-    func loadNextPage() {
-        guard !isLoading && hasMore else { return }
-        isLoading = true
-        
-        Friends.fetchFriends(cursor: nextCursor, limit: pageSize) { [weak self] result in
-            guard let self = self else { return }
-            self.isLoading = false
-            
-            switch result {
-            case .success(let resp):
-                self.friends.append(contentsOf: resp.friends)
-                self.hasMore = resp.pagination.nextCursor != nil
-                self.nextCursor = resp.pagination.nextCursor
-            case .failure(let error):
-                self.errorMessage = error.localizedDescription
-            }
-        }
-    }
-}
-
 struct FriendsView: View {
-    @StateObject private var vm = FriendsViewModel()
+    @EnvironmentObject var appController: AppController
     @State private var showMessageAlert = false
     @State private var selectedFriendName: String = ""
+    
+    // Use the shared instance from AppController
+    private var vm: FriendsViewModel {
+        appController.friendsViewModel
+    }
     
     var body: some View {
         GeometryReader { _ in
@@ -111,6 +82,9 @@ struct FriendsView: View {
         .navigationBarBackButtonHidden()
         .navigationTitle("")
         .navigationBarHidden(true)
+        .onAppear {
+            vm.loadNextPageIfStale()
+        }
     }
 }
 
@@ -143,13 +117,8 @@ struct FriendRowView: View {
             Spacer()
             
             if let message = onMessage {
-                Button(action: message) {
-                    Text("message")
-                        .font(.LibreBodoni(size: 10))
-                        .frame(width: 65, height: 20)
-                        .background(Colors.primaryDark)
-                        .foregroundColor(.white)
-                        .cornerRadius(11)
+                ActionButton.message {
+                    message()
                 }
             }
         }

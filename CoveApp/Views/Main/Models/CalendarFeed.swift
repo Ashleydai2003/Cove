@@ -23,21 +23,23 @@ class CalendarFeed: ObservableObject {
     /// Error message for UI
     @Published var errorMessage: String?
     /// Last time events were fetched (for caching)
-    @Published var lastFetchTime: Date?
+    @Published var lastFetched: Date?
     /// Whether requests have been cancelled (for cleanup)
     @Published var isCancelled: Bool = false
     
+    // TODO: Adjust cache duration as needed - currently set to 30 minutes
+    private let cacheTimeout: TimeInterval = 30 * 60 // 30 minutes
     private let pageSize = 10
     
     /// Checks if we have any cached data
     var hasCachedData: Bool {
-        return !events.isEmpty && lastFetchTime != nil
+        return lastFetched != nil // Empty array is still valid cached data
     }
     
     /// Checks if cache is stale (older than 5 minutes)
     var isCacheStale: Bool {
-        guard let lastFetch = lastFetchTime else { return true }
-        return Date().timeIntervalSince(lastFetch) > 300 // 5 minutes
+        guard let lastFetched = lastFetched else { return true }
+        return Date().timeIntervalSince(lastFetched) > cacheTimeout
     }
     
     init() {
@@ -110,7 +112,7 @@ class CalendarFeed: ObservableObject {
                     
                     self.hasMore = response.pagination?.hasMore ?? false
                     self.nextCursor = response.pagination?.nextCursor
-                    self.lastFetchTime = Date()
+                    self.lastFetched = Date()
                     
                     completion?()
                     
@@ -142,9 +144,11 @@ class CalendarFeed: ObservableObject {
     /// Fetches calendar events only if data is missing or stale (older than 5 minutes)
     func fetchCalendarEventsIfStale(completion: (() -> Void)? = nil) {
         if !hasCachedData || isCacheStale {
+            let reason = !hasCachedData ? "no cached data" : "cache is stale"
+            print("📅 CalendarFeed: Fetching calendar events (\(reason))")
             fetchCalendarEvents(forceRefresh: false, completion: completion)
         } else {
-            print("📅 CalendarFeed: Using fresh cached data")
+            print("📅 CalendarFeed: ✅ Using fresh cached calendar events data (\(events.count) events) - NO NETWORK REQUEST")
             completion?()
         }
     }

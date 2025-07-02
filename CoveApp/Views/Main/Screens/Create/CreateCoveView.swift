@@ -27,9 +27,11 @@ struct CreateCoveView: View {
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 8) {
                         coveNameSection
-                        descriptionSection
                         imagePickerSection
+                        
                         locationSection
+                        descriptionSection
+                        inviteButtonSection
                         createButtonView
                     }
                     .padding(.horizontal, 32)
@@ -72,7 +74,7 @@ extension CreateCoveView {
             HStack(alignment: .top) {
                 Spacer()
                 
-                Image("confetti-dark")
+                Image("cove_logo_circle")
                     .resizable()
                     .scaledToFit()
                     .frame(width: 100, height: 100)
@@ -146,25 +148,31 @@ extension CreateCoveView {
             viewModel.showImagePicker = true
         } label: {
             ZStack {
-                if viewModel.coverPhoto == nil {
-                    Text("cover photo (optional)")
-                        .font(.LibreBodoni(size: 16))
-                        .foregroundColor(Colors.primaryDark)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
+                Circle()
+                    .stroke(Color.gray, lineWidth: 1)
+                    .frame(width: 200, height: 200)
+                    .background(
+                        Circle()
+                            .fill(Color.white)
+                    )
                 
-                Image(uiImage: viewModel.coverPhoto ?? UIImage())
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: AppConstants.SystemSize.width-64, height: 200)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                if let coverPhoto = viewModel.coverPhoto {
+                    Image(uiImage: coverPhoto)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 200, height: 200)
+                        .clipShape(Circle())
+                } else {
+                    VStack(spacing: 8) {
+                        Text("choose emoji")
+                            .font(.LibreBodoni(size: 16))
+                            .foregroundColor(.gray)
+                        Text("or upload icon")
+                            .font(.LibreBodoni(size: 16))
+                            .foregroundColor(.gray)
+                    }
+                }
             }
-            .frame(height: 200)
-            .background(Color.white)
-            .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .stroke(Color.black, lineWidth: 1)
-            )
         }
         .padding(.top, 16)
     }
@@ -202,11 +210,40 @@ extension CreateCoveView {
         .padding(.top, 16)
     }
     
+    // MARK: - Invite Button Section
+    private var inviteButtonSection: some View {
+        Button {
+            // TODO: Implement invite functionality
+        } label: {
+            HStack {
+                Image(systemName: "person.2.fill")
+                    .font(.system(size: 20))
+                    .foregroundStyle(Color.white)
+                    .padding(.leading, 24)
+                
+                Text("invite")
+                    .foregroundStyle(Color.white)
+                    .font(.LibreBodoniBold(size: 16))
+                    .padding(.leading, 16)
+                
+                Spacer()
+            }
+            .frame(maxWidth: .infinity, minHeight: 46, maxHeight: 46, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(Color(red: 0.4, green: 0.2, blue: 0.2)) // Dark reddish-brown color
+            )
+        }
+        .padding(.top, 16)
+    }
+    
     // MARK: - Create Button
     private var createButtonView: some View {
         Button {
             viewModel.submitCove { success in
                 if success {
+                    // Refresh the cove feed to show the new cove
+                    appController.refreshCoveFeedAfterCreation()
                     dismiss()
                 }
             }

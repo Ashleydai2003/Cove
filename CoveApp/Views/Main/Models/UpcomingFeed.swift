@@ -23,21 +23,23 @@ class UpcomingFeed: ObservableObject {
     /// Error message for UI
     @Published var errorMessage: String?
     /// Last time events were fetched (for caching)
-    @Published var lastFetchTime: Date?
+    @Published var lastFetched: Date?
     /// Whether requests have been cancelled (for cleanup)
     @Published var isCancelled: Bool = false
     
+    // TODO: Adjust cache duration as needed - currently set to 5 minutes
+    private let cacheTimeout: TimeInterval = 5 * 60 // 5 minutes
     private let pageSize = 10
     
     /// Checks if we have any cached data
     var hasCachedData: Bool {
-        return !events.isEmpty && lastFetchTime != nil
+        return lastFetched != nil // Empty array is still valid cached data
     }
     
     /// Checks if cache is stale (older than 5 minutes)
     var isCacheStale: Bool {
-        guard let lastFetch = lastFetchTime else { return true }
-        return Date().timeIntervalSince(lastFetch) > 300 // 5 minutes
+        guard let lastFetched = lastFetched else { return true }
+        return Date().timeIntervalSince(lastFetched) > cacheTimeout
     }
     
     init() {
@@ -110,7 +112,7 @@ class UpcomingFeed: ObservableObject {
                     
                     self.hasMore = response.pagination?.hasMore ?? false
                     self.nextCursor = response.pagination?.nextCursor
-                    self.lastFetchTime = Date()
+                    self.lastFetched = Date()
                     
                     completion?()
                     
@@ -142,9 +144,11 @@ class UpcomingFeed: ObservableObject {
     /// Fetches upcoming events only if data is missing or stale (older than 5 minutes)
     func fetchUpcomingEventsIfStale(completion: (() -> Void)? = nil) {
         if !hasCachedData || isCacheStale {
+            let reason = !hasCachedData ? "no cached data" : "cache is stale"
+            print("📅 UpcomingFeed: Fetching upcoming events (\(reason))")
             fetchUpcomingEvents(forceRefresh: false, completion: completion)
         } else {
-            print("📅 UpcomingFeed: Using fresh cached data")
+            print("📅 UpcomingFeed: ✅ Using fresh cached upcoming events data (\(events.count) events) - NO NETWORK REQUEST")
             completion?()
         }
     }
