@@ -17,17 +17,31 @@ class CoveFeed: ObservableObject {
     /// The currently selected cove ID (for UI state)
     @Published var selectedCoveId: String?
     /// Last time user coves were fetched (for caching)
-    @Published var lastFetchTime: Date?
+    @Published var lastFetched: Date?
     /// Loading state for UI
     @Published var isLoading = false
     /// Error message for UI
     @Published var errorMessage: String?
+    
+    // TODO: Adjust cache duration as needed - currently set to 30 minutes
+    private let cacheTimeout: TimeInterval = 30 * 60 // 30 minutes
     
     // MARK: - Cancellation Support
     private var isCancelled: Bool = false
     
     /// Dictionary of per-cove feed models (for caching and instant transitions)
     @Published var coveModels: [String: CoveModel] = [:]
+    
+    /// Checks if we have any cached data
+    var hasCachedData: Bool {
+        return lastFetched != nil // Empty array is still valid cached data
+    }
+    
+    /// Checks if cache is stale (older than cache timeout)
+    var isCacheStale: Bool {
+        guard let lastFetch = lastFetched else { return true }
+        return Date().timeIntervalSince(lastFetch) > cacheTimeout
+    }
     
     init() {
         print("📱 CoveFeed initialized")
@@ -50,7 +64,7 @@ class CoveFeed: ObservableObject {
     func setUserCoves(_ coves: [Cove]) {
         print("📱 CoveFeed: Setting user coves directly (\(coves.count) coves)")
         self.userCoves = coves
-        self.lastFetchTime = Date()
+        self.lastFetched = Date()
         
         // Set the first cove as selected if none is selected
         if self.selectedCoveId == nil && !coves.isEmpty {
@@ -58,14 +72,12 @@ class CoveFeed: ObservableObject {
         }
     }
     
-    /// Fetches user coves from the backend, using cache if fresh.
-    /// - Parameter completion: Optional completion handler called when the fetch operation completes
+    /// Fetches user coves from the backend with caching support.
+    /// Only fetches fresh data if cache is stale or no cached data exists.
     func fetchUserCoves(completion: (() -> Void)? = nil) {
-        // Check if we have recent cached data
-        if let lastFetch = lastFetchTime,
-           Date().timeIntervalSince(lastFetch) < 300, // 5 minutes cache
-           !userCoves.isEmpty {
-            print("📱 CoveFeed: Using cached user coves data (", userCoves.count, ")")
+        // Check if we have recent cached data and not forcing refresh
+        if hasCachedData && !isCacheStale {
+            print("📱 CoveFeed: Using cached user coves data (\(userCoves.count) coves)")
             completion?()
             return
         }
@@ -94,7 +106,7 @@ class CoveFeed: ObservableObject {
                 case .success(let response):
                     print("✅ CoveFeed: User coves fetched successfully: \(response.coves.count) coves")
                     self.userCoves = response.coves
-                    self.lastFetchTime = Date()
+                    self.lastFetched = Date()
                     
                     // Set the first cove as selected if none is selected
                     if self.selectedCoveId == nil && !response.coves.isEmpty {
@@ -112,10 +124,22 @@ class CoveFeed: ObservableObject {
         }
     }
     
+    /// Fetches user coves only if data is missing or stale
+    func fetchUserCovesIfStale(completion: (() -> Void)? = nil) {
+        if !hasCachedData || isCacheStale {
+            let reason = !hasCachedData ? "no cached data" : "cache is stale"
+            print("📱 CoveFeed: Fetching user coves (\(reason))")
+            fetchUserCoves(completion: completion)
+        } else {
+            print("📱 CoveFeed: ✅ Using fresh cached user coves data (\(userCoves.count) coves) - NO NETWORK REQUEST")
+            completion?()
+        }
+    }
+    
     /// Forces a refresh of user coves data, bypassing cache.
     func refreshUserCoves(completion: (() -> Void)? = nil) {
         print("🔄 CoveFeed: Forcing refresh of user coves data")
-        lastFetchTime = nil
+        lastFetched = nil
         fetchUserCoves(completion: completion)
     }
     

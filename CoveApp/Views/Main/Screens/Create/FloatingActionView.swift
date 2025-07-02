@@ -31,12 +31,15 @@ struct FloatingActionView: View {
                     }) {
                         HStack(spacing: 12) {
                             Text("cove")
-                                .font(.LibreBodoni(size: 20))
+                                .font(.LibreBodoni(size: 25))
                                 .foregroundColor(.white)
-                            Image(systemName: "house.fill")
-                                .font(.system(size: 20, weight: .medium))
+                            Spacer()
+                            Image("cove_selected")
+                                .resizable()
+                                .frame(maxWidth: 35, maxHeight: 35)
                                 .foregroundColor(.white)
                         }
+                        .frame(maxWidth: .infinity)
                         .padding(.horizontal, 20)
                         .padding(.vertical, 16)
                         .background(
@@ -51,14 +54,17 @@ struct FloatingActionView: View {
                         showMenu = false
                         showCreateEventSheet = true
                     }) {
-                        HStack(spacing: 12) {
+                        HStack() {
                             Text("event")
-                                .font(.LibreBodoni(size: 20))
+                                .font(.LibreBodoni(size: 25))
                                 .foregroundColor(.white)
+                            Spacer()
                             Image("confetti")
-                                .font(.system(size: 20, weight: .medium))
+                                .resizable()
+                                .frame(maxWidth: 35, maxHeight: 35)
                                 .foregroundColor(.white)
                         }
+                        .frame(maxWidth: .infinity)
                         .padding(.horizontal, 20)
                         .padding(.vertical, 16)
                         .background(
@@ -68,6 +74,7 @@ struct FloatingActionView: View {
                         )
                     }
                 }
+                .frame(maxWidth: 160) // Increase width to prevent text wrapping
                 .transition(.opacity.combined(with: .scale))
             }
             

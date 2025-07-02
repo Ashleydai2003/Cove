@@ -5,68 +5,13 @@
 
 import SwiftUI
 
-@MainActor
-class MutualsViewModel: ObservableObject {
-    @Published var mutuals: [RecommendedFriendDTO] = []
-    @Published var nextCursor: String?
-    @Published var hasMore = true
-    @Published var isLoading = false
-    @Published var errorMessage: String?
-    @Published var pendingRequests: Set<String> = []
-    
-    private let pageSize = 10
-    
-    init() {
-        loadNextPage()
-    }
-    
-    func loadNextPage() {
-        guard !isLoading && hasMore else { return }
-        isLoading = true
-        
-        RecommendedFriends.fetchRecommendedFriends(cursor: nextCursor, limit: pageSize) { [weak self] result in
-            guard let self = self else { return }
-            self.isLoading = false
-            
-            switch result {
-            case .success(let response):
-                self.mutuals.append(contentsOf: response.users)
-                self.hasMore = response.pagination.hasMore
-                self.nextCursor = response.pagination.nextCursor
-            case .failure(let error):
-                self.errorMessage = error.localizedDescription
-            }
-        }
-    }
-    
-    func sendFriendRequest(to userId: String) {
-        // Mark as pending immediately for better UX
-        pendingRequests.insert(userId)
-        
-        // Make API call to send friend request
-        NetworkManager.shared.post(
-            endpoint: "/send-friend-request",
-            parameters: ["toUserIds": [userId]]
-        ) { [weak self] (result: Result<SendRequestResponse, NetworkError>) in
-            DispatchQueue.main.async {
-                switch result {
-                case .success:
-                    // Keep it as pending - the user will see it in their friend requests
-                    print("✅ Friend request sent successfully to \(userId)")
-                case .failure(let error):
-                    // Remove from pending if the request failed
-                    self?.pendingRequests.remove(userId)
-                    self?.errorMessage = error.localizedDescription
-                    print("❌ Failed to send friend request: \(error)")
-                }
-            }
-        }
-    }
-}
-
 struct MutualsView: View {
     @EnvironmentObject var appController: AppController
-    @StateObject private var viewModel = MutualsViewModel()
+    
+    // Use the shared instance from AppController
+    private var viewModel: MutualsViewModel {
+        appController.mutualsViewModel
+    }
 
     var body: some View {
         ZStack {
@@ -86,6 +31,7 @@ struct MutualsView: View {
                             .foregroundColor(Colors.primaryDark)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding(.top, 100)
                 } else if let error = viewModel.errorMessage {
                     VStack(spacing: 16) {
                         Image(systemName: "exclamationmark.circle")
@@ -98,6 +44,21 @@ struct MutualsView: View {
                             .multilineTextAlignment(.center)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding(.top, 100)
+                } else if viewModel.mutuals.isEmpty && !viewModel.isLoading {
+                    // No mutuals message
+                    VStack(spacing: 16) {
+                        Image(systemName: "person.2.slash")
+                            .font(.system(size: 40))
+                            .foregroundColor(.gray)
+                        
+                        Text("no mutuals yet!")
+                            .font(.LibreBodoni(size: 16))
+                            .foregroundColor(.gray)
+                            .multilineTextAlignment(.center)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding(.top, 100)
                 } else {
                     ScrollView {
                         VStack(spacing: 30) {
@@ -146,24 +107,10 @@ struct MutualsView: View {
 
                                     // "Request" / "Pending" button
                                     if viewModel.pendingRequests.contains(mutual.id) {
-                                        Text("pending")
-                                            .font(.LibreBodoni(size: 12))
-                                            .fontWeight(.medium)
-                                            .frame(width: 100, height: 30)
-                                            .background(Color.gray.opacity(0.3))
-                                            .foregroundColor(.primary)
-                                            .cornerRadius(11)
+                                        ActionButton.pending()
                                     } else {
-                                        Button {
+                                        ActionButton.request {
                                             viewModel.sendFriendRequest(to: mutual.id)
-                                        } label: {
-                                            Text("request")
-                                                .font(.LibreBodoni(size: 12))
-                                                .fontWeight(.medium)
-                                                .frame(width: 100, height: 30)
-                                                .background(Colors.primaryDark)
-                                                .foregroundColor(.white)
-                                                .cornerRadius(11)
                                         }
                                     }
                                 }
@@ -202,6 +149,9 @@ struct MutualsView: View {
             Button("OK") { viewModel.errorMessage = nil }
         } message: {
             Text(viewModel.errorMessage ?? "")
+        }
+        .onAppear {
+            viewModel.loadNextPageIfStale()
         }
     }
 }

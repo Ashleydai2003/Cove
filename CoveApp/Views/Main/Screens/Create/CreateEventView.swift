@@ -229,6 +229,14 @@ extension CreateEventView {
         Button {
             viewModel.submitEvent { success in
                 if success {
+                    // Refresh calendar and upcoming feeds to show the new event
+                    appController.refreshFeedsAfterEventCreation()
+                    
+                    // If event was created in a specific cove, refresh that cove's data too
+                    if !viewModel.coveId.isEmpty {
+                        appController.refreshCoveAfterEventCreation(coveId: viewModel.coveId)
+                    }
+                    
                     dismiss()
                 }
             }
