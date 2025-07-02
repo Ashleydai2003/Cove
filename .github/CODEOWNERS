@@ -1,0 +1,17 @@
+# CODEOWNERS file for Cove project
+# This file defines who must review and approve changes to different parts of the codebase
+# 
+# Syntax: [file pattern] [owner(s)]
+# Owners can be users (@username) or teams (@org/team-name)
+#
+# For more info: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Global owner - requires approval for ALL changes
+* @ashleydai2003
+
+# Specific ownership patterns (optional - uncomment and modify as needed)
+# /Backend/* @ashleydai2017 @backend-team
+# /CoveApp/* @ashleydai2017 @mobile-team  
+# /Infra/* @ashleydai2017 @devops-team
+# *.md @ashleydai2017 @docs-team
+# .github/* @ashleydai2017 
