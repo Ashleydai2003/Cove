@@ -100,8 +100,14 @@ private static let apiBaseURL = AppConstants.API.baseURL
                     // Store user info in UserDefaults
                     UserDefaults.standard.set(loginResponse.user.uid, forKey: "user_id")
                     
-                    // Update onboarding state
+                    // Update ProfileModel with onboarding status from login response
                     Task { @MainActor in
+                        AppController.shared.profileModel.onboarding = loginResponse.user.onboarding
+                        AppController.shared.profileModel.verified = loginResponse.user.verified
+                        
+                        print("🔐 Login: Set ProfileModel.verified = \(loginResponse.user.verified)")
+                        print("🔐 Login: Set ProfileModel.onboarding = \(loginResponse.user.onboarding)")
+                        
                         if loginResponse.user.onboarding {
                             if loginResponse.user.verified {
                                 print("✅ User is verified")

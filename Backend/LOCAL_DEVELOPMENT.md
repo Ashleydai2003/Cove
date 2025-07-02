@@ -130,6 +130,21 @@ npm run dev
 
 This starts a local Express server that wraps your Lambda handlers, allowing you to test API endpoints locally.
 
+### Stop Local API Server
+
+```bash
+# Method 1: Kill the process (from any directory)
+pkill -f "ts-node src/local-server.ts"
+
+# Method 2: Use Ctrl+C if server is running in foreground
+
+# Method 3: Find and kill by port (if needed)
+lsof -ti :3001 | xargs kill
+
+# Verify server is stopped
+lsof -i :3001 || echo "Port 3001 is free"
+```
+
 ### Test API Endpoints
 
 With your local server running, you can test endpoints using:
@@ -199,6 +214,55 @@ curl http://localhost:3001/test-database
 npm run prisma:studio
 ```
 
+### 🚨 Troubleshooting
+
+#### **500 Server Errors**
+If you see "Server Error: 500" in your iOS app:
+
+**Problem**: Missing environment variables
+```
+Error: EVENT_IMAGE_BUCKET_URL environment variable is not set
+```
+
+**Solution**: The `env.development` file includes all required environment variables with placeholder values for local development. If you're still getting 500 errors:
+
+1. **Restart the server** after any `env.development` changes:
+   ```bash
+   # Stop the server (Ctrl+C) then restart
+   npm run dev
+   ```
+
+2. **Check environment variables are loaded**:
+   ```bash
+   # Test an endpoint that was failing
+   curl http://localhost:3001/calendar-events?limit=10 \
+     -H "Authorization: Bearer YOUR_FIREBASE_TOKEN"
+   ```
+
+#### **iOS Decoding Errors**
+If you see "The data couldn't be read because it is missing" in iOS:
+
+**Problem**: Mismatch between API response format and Swift model
+
+**Solution**: Check that your Swift models match the API response structure. For example, the `/profile` endpoint returns:
+```json
+{
+  "profile": {
+    "name": null,
+    "phone": "+15555555555", 
+    "onboarding": true,
+    "photos": [],
+    "stats": {
+      "friendCount": 0,
+      "requestCount": 0, 
+      "coveCount": 0
+    }
+  }
+}
+```
+
+Make sure your Swift `ProfileResponse` model matches this exact structure.
+
 ### 📱 iOS App Integration
 
 Your iOS app is **automatically configured** to use the right API:
@@ -231,7 +295,7 @@ Environment: development
 - ❌ "Connection refused"
 - ❌ Network error -1004
 
-#### **Complete iOS Testing Workflow**
+#### **Complete iOS Testing Workflow
 
 ```bash
 # Terminal 1: Start database (if testing with real data)
