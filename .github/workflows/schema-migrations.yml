@@ -55,9 +55,39 @@ jobs:
           aws ec2 start-instances --instance-ids ${{ secrets.EC2_INSTANCE_ID }}
           
           # Wait for the instance to be fully running before proceeding
-          # This ensures SSM is ready to accept commands
+          echo "⏳ Waiting for EC2 instance to reach running state..."
           aws ec2 wait instance-running --instance-ids ${{ secrets.EC2_INSTANCE_ID }}
-          echo "✅ EC2 instance is running and ready for migrations"
+          echo "✅ EC2 instance is running"
+          
+          # Wait for SSM agent to be ready (this is the critical step that was missing)
+          echo "⏳ Waiting for SSM agent to be ready for commands..."
+          max_attempts=60  # 5 minutes total (60 * 5 seconds)
+          attempt=0
+          
+          while [ $attempt -lt $max_attempts ]; do
+            # Check if instance is registered with SSM and online
+            ssm_status=$(aws ssm describe-instance-information \
+              --filters "Key=InstanceIds,Values=${{ secrets.EC2_INSTANCE_ID }}" \
+              --query 'InstanceInformationList[0].PingStatus' \
+              --output text 2>/dev/null || echo "NotFound")
+            
+            if [ "$ssm_status" = "Online" ]; then
+              echo "✅ SSM agent is online and ready for commands"
+              break
+            fi
+            
+            echo "⏳ SSM status: $ssm_status (attempt $((attempt + 1))/$max_attempts)"
+            sleep 5
+            attempt=$((attempt + 1))
+          done
+          
+          if [ $attempt -eq $max_attempts ]; then
+            echo "❌ SSM agent failed to come online within 5 minutes"
+            echo "Current SSM status: $ssm_status"
+            exit 1
+          fi
+          
+          echo "🎯 EC2 instance is running and SSM agent is ready for migrations"
 
       # Run database migrations using AWS Systems Manager (SSM)
       # This matches your exact manual process
