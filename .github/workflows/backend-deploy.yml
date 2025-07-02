@@ -1,0 +1,92 @@
+# Backend Deployment Workflow
+# This workflow handles building and deploying the backend Lambda function
+# Database migrations are handled separately by the schema-migrations.yml workflow
+
+name: Deploy Backend
+
+# Trigger this workflow when Backend files are modified (excluding schema)
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'Backend/**'
+      - '!Backend/prisma/schema.prisma'  # Exclude schema changes (handled by separate workflow)
+      - '.github/workflows/backend-deploy.yml'  # Include workflow changes
+  workflow_dispatch:  # Allow manual triggering for testing
+
+# Environment variables used throughout the workflow
+env:
+  NODE_VERSION: '18'    # LTS version for stability
+  AWS_REGION: 'us-west-1'  # Your AWS region
+
+jobs:
+  # Main deployment job - handles Lambda deployment only
+  deploy:
+    name: Deploy Backend Lambda
+    runs-on: ubuntu-latest
+    
+    # Only run on direct pushes, not pull requests
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    
+    # Use GitHub environments for deployment protection
+    environment: 
+      name: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
+    
+    # Required permissions for AWS access
+    permissions:
+      id-token: write   # For OIDC authentication
+      contents: read    # To read repository contents
+
+    steps:
+      # Get the code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Set up Node.js environment
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      # Install dependencies for the backend
+      - name: Install dependencies
+        working-directory: Backend
+        run: |
+          echo "📦 Installing Node.js dependencies..."
+          npm install
+
+      # Build the Lambda deployment package
+      - name: Build Lambda package
+        working-directory: Backend
+        run: |
+          echo "🔨 Building Lambda deployment package..."
+          npm run build
+
+      # Authenticate with AWS using OIDC (no long-lived secrets needed)
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: GitHubActions-Deploy
+
+      # Deploy the Lambda function with the new code
+      - name: Deploy Lambda function
+        run: |
+          echo "🚀 Deploying Lambda function..."
+          
+          # Update the Lambda function code with the new build
+          aws lambda update-function-code \
+            --function-name hello-lambda \
+            --zip-file fileb://Backend/dist/index.zip \
+            --region ${{ env.AWS_REGION }}
+          
+          # Wait for the update to complete before finishing
+          aws lambda wait function-updated \
+            --function-name hello-lambda \
+            --region ${{ env.AWS_REGION }}
+          
+          echo "✅ Lambda function deployed successfully!"
+          echo "🎉 Backend deployment completed!"
+
+ 

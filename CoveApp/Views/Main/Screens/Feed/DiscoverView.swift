@@ -11,7 +11,7 @@ struct DiscoverView: View {
     var body: some View {
         VStack {
             Spacer()
-            Text("coming soon")
+            Text("coming soon!")
                 .font(.LibreBodoni(size: 18))
                 .foregroundColor(.gray)
             Spacer()

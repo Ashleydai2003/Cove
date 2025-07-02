@@ -57,7 +57,6 @@ struct CoveView: View {
                                         print("📸 CoveView cove cover loaded from: \(result.cacheType)")
                                     }
                                     .resizable()
-                                    .cancelOnDisappear(true)
                                     .fade(duration: 0.2)
                                     .cacheOriginalImage()
                                     .loadDiskFileSynchronously()
@@ -119,6 +118,15 @@ struct CoveView: View {
                     }
                     .padding(.horizontal, 24)
                     .padding(.top, 10)
+                }
+                .refreshable {
+                    await withCheckedContinuation { continuation in
+                        viewModel.refreshCoveData()
+                        // Give it a moment to complete the refresh
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            continuation.resume()
+                        }
+                    }
                 }
             } else if let error = viewModel.errorMessage {
                 VStack(spacing: 16) {
@@ -203,7 +211,6 @@ struct EventView: View {
                             print("📸 Event cover loaded from: \(result.cacheType)")
                         }
                         .resizable()
-                        .cancelOnDisappear(true)
                         .fade(duration: 0.2)
                         .cacheOriginalImage()
                         .loadDiskFileSynchronously()

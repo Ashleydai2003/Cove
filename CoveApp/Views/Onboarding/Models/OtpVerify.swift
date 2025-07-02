@@ -3,7 +3,7 @@ import FirebaseAuth
 
 struct OtpVerify {
     /// API base URL and login path
-    private static let apiBaseURL = "https://api.coveapp.co"
+private static let apiBaseURL = AppConstants.API.baseURL
     private static let apiLoginPath = "/login"
     
     /// Verifies the OTP code entered by the user

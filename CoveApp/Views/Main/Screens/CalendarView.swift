@@ -32,13 +32,22 @@ struct CalendarView: View {
                                 Spacer(minLength: 20)
                             }
                         }
+                        .refreshable {
+                            await withCheckedContinuation { continuation in
+                                calendarFeed.refreshCalendarEvents {
+                                    continuation.resume()
+                                }
+                            }
+                        }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
             .navigationDestination(for: String.self) { eventId in
-                EventPostView(eventId: eventId)
+                // Find the event in our calendar data to get the cover photo
+                let event = calendarFeed.events.first { $0.id == eventId }
+                EventPostView(eventId: eventId, coveCoverPhoto: event?.coveCoverPhoto)
                         }
-        }
+                    }
         .ignoresSafeArea(edges: .bottom)
         .navigationBarBackButtonHidden(true)
         .onAppear {
@@ -159,6 +168,9 @@ private struct EventsListView: View {
                     ForEach(calendarFeed.groupedEvents[date] ?? [], id: \ .id) { event in
                         EventSummaryView(event: event, type: .calendar)
                             .padding(.horizontal, 20)
+                            .onAppear {
+                                loadMoreIfNeeded(for: event)
+                            }
                     }
                 }
             }
@@ -183,6 +195,13 @@ private struct EventsListView: View {
             return "tomorrow"
         } else {
             return calendarFeed.formattedDateWithOrdinal(date).lowercased()
+        }
+    }
+    
+    // Load more events if we've reached the last event
+    private func loadMoreIfNeeded(for event: CalendarEvent) {
+        if let lastEvent = calendarFeed.events.last, lastEvent.id == event.id {
+            calendarFeed.loadMoreEventsIfNeeded()
         }
     }
 }
