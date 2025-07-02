@@ -1,15 +1,15 @@
 # Database Schema Migrations Workflow
-# This workflow deploys database migrations to production when the Prisma schema changes
+# This workflow deploys database migrations to production when new migrations are added
 # Migrations are created locally with 'npm run prisma:migrate:dev' and deployed here with 'npm run prisma:migrate:deploy'
 
 name: Database Migrations
 
-# Only trigger when the Prisma schema file changes
+# Only trigger when migrations are added or modified
 on:
   push:
     branches: [main, develop, ci/test-deploy]
     paths:
-      - 'Backend/prisma/schema.prisma'  # Only run when schema changes
+      - 'Backend/prisma/migrations/**'  # Only run when migrations change
   workflow_dispatch:  # Allow manual triggering for testing
 
 # Environment variables
@@ -49,7 +49,7 @@ jobs:
       - name: Start EC2 instance for migrations
         run: |
           echo "🚀 Starting EC2 instance for database migrations..."
-          echo "Schema changes detected in: Backend/prisma/schema.prisma"
+          echo "Migration changes detected in: Backend/prisma/migrations/"
           
           # Start the instance using the instance ID from your secrets
           aws ec2 start-instances --instance-ids ${{ secrets.EC2_INSTANCE_ID }}
@@ -73,7 +73,7 @@ jobs:
           COMMAND_ID=$(aws ssm send-command \
             --document-name "AWS-RunShellScript" \
             --targets "Key=instanceids,Values=${{ secrets.EC2_INSTANCE_ID }}" \
-            --comment "Database migration from GitHub Actions - Schema: $MIGRATION_NAME" \
+            --comment "Database migration from GitHub Actions - Migrations: $MIGRATION_NAME" \
             --parameters "commands=[
               \"set -e\",
               \"echo 'Migration: $MIGRATION_NAME'\",
