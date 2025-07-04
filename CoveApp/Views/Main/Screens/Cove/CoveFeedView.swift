@@ -108,9 +108,6 @@ struct CoveFeedView: View {
             // Only fetch if we don't have any coves or data is stale
             coveFeed.fetchUserCovesIfStale()
         }
-        .onDisappear {
-            coveFeed.cancelRequests()
-        }
         .alert("error", isPresented: Binding(
             get: { coveFeed.errorMessage != nil },
             set: { if !$0 { coveFeed.errorMessage = nil } }

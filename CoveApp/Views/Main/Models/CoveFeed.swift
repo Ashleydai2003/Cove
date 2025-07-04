@@ -26,10 +26,7 @@ class CoveFeed: ObservableObject {
     // TODO: Adjust cache duration as needed - currently set to 30 minutes
     private let cacheTimeout: TimeInterval = 30 * 60 // 30 minutes
     
-    // MARK: - Cancellation Support
-    private var isCancelled: Bool = false
-    
-    /// Dictionary of per-cove feed models (for caching and instant transitions)
+    // Dictionary of per-cove feed models (for caching and instant transitions)
     @Published var coveModels: [String: CoveModel] = [:]
     
     /// Checks if we have any cached data
@@ -45,18 +42,6 @@ class CoveFeed: ObservableObject {
     
     init() {
         print("📱 CoveFeed initialized")
-    }
-    
-    /// Cancels any ongoing requests and resets loading states.
-    func cancelRequests() {
-        print("🛑 CoveFeed: cancelRequests called - cancelling all tasks")
-        isCancelled = true
-        isLoading = false
-    }
-    
-    /// Resets the cancellation flag when starting new requests.
-    private func resetCancellationFlag() {
-        isCancelled = false
     }
     
     /// Sets the user coves directly (used when fetched during onboarding).
@@ -84,20 +69,11 @@ class CoveFeed: ObservableObject {
         
         guard !isLoading else { return }
         
-        resetCancellationFlag()
         isLoading = true
         print("🔍 CoveFeed: Fetching user coves from backend...")
         
         NetworkManager.shared.get(endpoint: "/user-coves") { [weak self] (result: Result<UserCovesResponse, NetworkError>) in
             guard let self = self else { return }
-            
-            // Check if request was cancelled
-            guard !self.isCancelled else {
-                DispatchQueue.main.async {
-                    self.isLoading = false
-                }
-                return
-            }
             
             DispatchQueue.main.async {
                 self.isLoading = false
