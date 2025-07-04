@@ -250,6 +250,13 @@ class ProfileModel: ObservableObject {
         
         // Update fetch time
         lastFetchTime = Date()
+        
+        // Automatically update address if we have location coordinates
+        if let lat = latitude, let lon = longitude, lat != 0, lon != 0 {
+            Task {
+                await updateAddress()
+            }
+        }
     }
     
     /**

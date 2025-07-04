@@ -10,7 +10,7 @@ import Foundation
 // MARK: — Response Models
 
 /// A single recommended friend entry returned from /recommended-friends
-struct RecommendedFriendDTO: Decodable, Identifiable {
+struct RecommendedFriendDTO: Decodable, Identifiable, ContentComparable {
     let id: String
     let name: String
     let profilePhotoUrl: URL?
@@ -19,6 +19,13 @@ struct RecommendedFriendDTO: Decodable, Identifiable {
     // Conform to Identifiable by using `id`
     var identifier: String { id }
     var uuid: UUID { UUID(uuidString: id) ?? UUID() }
+    
+    /// ContentComparable implementation - checks if meaningful content has changed
+    func hasContentChanged(from other: RecommendedFriendDTO) -> Bool {
+        return name != other.name ||
+               profilePhotoUrl != other.profilePhotoUrl ||
+               sharedCoveCount != other.sharedCoveCount
+    }
 }
 
 /// Pagination information for /recommended-friends

@@ -135,10 +135,6 @@ struct HomeView: View {
             // Set default tab selection
                 tabSelection = 1
         })
-        .onDisappear {
-            // Cancel any ongoing requests when HomeView disappears
-            appController.profileModel.cancelAllRequests()
-        }
         .navigationBarBackButtonHidden()
     }
 }

@@ -24,8 +24,6 @@ class UpcomingFeed: ObservableObject {
     @Published var errorMessage: String?
     /// Last time events were fetched (for caching)
     @Published var lastFetched: Date?
-    /// Whether requests have been cancelled (for cleanup)
-    @Published var isCancelled: Bool = false
     
     // TODO: Adjust cache duration as needed - currently set to 5 minutes
     private let cacheTimeout: TimeInterval = 5 * 60 // 5 minutes
@@ -46,18 +44,6 @@ class UpcomingFeed: ObservableObject {
         print("📅 UpcomingFeed initialized")
     }
     
-    /// Cancels any ongoing requests and resets loading states.
-    func cancelRequests() {
-        print("🛑 UpcomingFeed: cancelRequests called - cancelling all tasks")
-        isCancelled = true
-        isLoading = false
-    }
-    
-    /// Resets the cancellation flag when starting new requests.
-    private func resetCancellationFlag() {
-        isCancelled = false
-    }
-    
     /// Fetches upcoming events from the backend, using cache if fresh.
     /// - Parameter forceRefresh: If true, bypasses cache and fetches fresh data
     /// - Parameter completion: Optional completion handler called when the fetch operation completes
@@ -71,7 +57,6 @@ class UpcomingFeed: ObservableObject {
         
         guard !isLoading else { return }
         
-        resetCancellationFlag()
         isLoading = true
         print("🔍 UpcomingFeed: Fetching upcoming events from backend...")
         
@@ -86,14 +71,6 @@ class UpcomingFeed: ObservableObject {
         
         NetworkManager.shared.get(endpoint: "/upcoming-events", parameters: parameters) { [weak self] (result: Result<CalendarEventsResponse, NetworkError>) in
             guard let self = self else { return }
-            
-            // Check if request was cancelled
-            guard !self.isCancelled else {
-                DispatchQueue.main.async {
-                    self.isLoading = false
-                }
-                return
-            }
             
             DispatchQueue.main.async {
                 self.isLoading = false

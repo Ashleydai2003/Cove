@@ -16,6 +16,7 @@ struct CoveMembersView: View {
     let onRefresh: () async -> Void
     @State private var showMessageAlert = false
     @State private var selectedMemberName: String = ""
+    @EnvironmentObject var appController: AppController
     
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
@@ -35,10 +36,16 @@ struct CoveMembersView: View {
                 // Members list
                 LazyVStack(spacing: 12) {
                     ForEach(viewModel.members) { member in
-                        MemberRowView(member: member) {
-                            selectedMemberName = member.name
-                            showMessageAlert = true
-                        }
+                        MemberRowView(
+                            member: member,
+                            currentUserId: appController.profileModel.userId,
+                            friendsViewModel: appController.friendsViewModel,
+                            mutualsViewModel: appController.mutualsViewModel,
+                            onMessage: {
+                                selectedMemberName = member.name
+                                showMessageAlert = true
+                            }
+                        )
                         .onAppear {
                             viewModel.loadMoreMembersIfNeeded(currentMember: member)
                         }
@@ -79,6 +86,7 @@ struct CoveMembersView: View {
         .refreshable {
             await onRefresh()
         }
+        // TODO: make alert 
         .alert("Direct messaging coming soon!", isPresented: $showMessageAlert) {
             Button("OK", role: .cancel) {}
         } message: {
@@ -90,6 +98,9 @@ struct CoveMembersView: View {
 /// MemberRowView: Individual member row component
 struct MemberRowView: View {
     let member: CoveMember
+    let currentUserId: String
+    let friendsViewModel: FriendsViewModel
+    let mutualsViewModel: MutualsViewModel
     let onMessage: () -> Void
     
     var body: some View {
@@ -100,7 +111,7 @@ struct MemberRowView: View {
                     .placeholder {
                         Circle()
                             .fill(Color.gray.opacity(0.2))
-                            .frame(width: 48, height: 48)
+                            .frame(maxWidth: 62, maxHeight: 62)
                             .overlay(
                                 Image(systemName: "person.fill")
                                     .foregroundColor(.gray)
@@ -141,12 +152,47 @@ struct MemberRowView: View {
             
             Spacer()
             
-            // Message button (TODO: implement messaging)
-            ActionButton.message {
-                onMessage()
+            // Smart button logic
+            if member.id == currentUserId {
+                // Don't show any button for the current user
+                EmptyView()
+            } else if isFriend {
+                // Show message button for friends
+                ActionButton.message {
+                    onMessage()
+                }
+            } else if isPendingRequest {
+                // Show pending button for users who already have a pending request
+                ActionButton.pending()
+            } else {
+                // Show request button for non-friends
+                ActionButton.request {
+                    sendFriendRequest()
+                }
             }
         }
         .padding(.vertical, 8)
+    }
+    
+    // MARK: - Computed Properties
+    
+    /// Checks if the member is already a friend
+    private var isFriend: Bool {
+        return friendsViewModel.friends.contains { friend in
+            friend.id == member.id
+        }
+    }
+    
+    /// Checks if there's already a pending friend request for this user
+    private var isPendingRequest: Bool {
+        return mutualsViewModel.pendingRequests.contains(member.id)
+    }
+    
+    // MARK: - Actions
+    
+    /// Sends a friend request to this member
+    private func sendFriendRequest() {
+        mutualsViewModel.sendFriendRequest(to: member.id)
     }
 }
 
