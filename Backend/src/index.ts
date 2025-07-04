@@ -32,6 +32,8 @@ import {
   handleGetRecommendedFriends,
   handleJoinCove,
   handleGetCalendarEvents,
+  handleSendInvite,
+  handleGetInvites,
 } from './routes';
 
 export const handler = async (
@@ -98,6 +100,10 @@ export const handler = async (
         return handleJoinCove(event);
       case '/calendar-events':
         return handleGetCalendarEvents(event);
+      case '/send-invite':
+        return handleSendInvite(event);
+      case '/invites':
+        return handleGetInvites(event);
       default:
         // Handle common web standard files
         switch (event.path) {
