@@ -19,7 +19,7 @@ import Foundation
 // MARK: — Response Models
 
 /// A single friend entry returned from /friends
-struct FriendDTO: Decodable, Identifiable {
+struct FriendDTO: Decodable, Identifiable, ContentComparable {
     let id: String
     let name: String
     let profilePhotoUrl: URL?
@@ -29,6 +29,14 @@ struct FriendDTO: Decodable, Identifiable {
     // Conform to Identifiable by using `friendshipId`
     var identifier: String { friendshipId }
     var uuid: UUID { UUID(uuidString: friendshipId) ?? UUID() }
+    
+    /// ContentComparable implementation - checks if meaningful content has changed
+    func hasContentChanged(from other: FriendDTO) -> Bool {
+        return name != other.name ||
+               profilePhotoUrl != other.profilePhotoUrl ||
+               friendshipId != other.friendshipId ||
+               createdAt != other.createdAt
+    }
 }
 
 /// Pagination information for /friends

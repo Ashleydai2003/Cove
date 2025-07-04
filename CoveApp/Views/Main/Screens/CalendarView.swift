@@ -53,9 +53,6 @@ struct CalendarView: View {
         .onAppear {
             calendarFeed.fetchCalendarEventsIfStale()
         }
-        .onDisappear {
-            calendarFeed.cancelRequests()
-        }
         .alert("error", isPresented: errorBinding) {
             Button("ok") { calendarFeed.errorMessage = nil }
         } message: {

@@ -45,15 +45,23 @@ class MutualsViewModel: ObservableObject {
             
             switch result {
             case .success(let response):
-                if self.nextCursor == nil {
-                    // First page, replace existing data
-                    self.mutuals = response.users
-                } else {
-                    // Append new mutuals to existing data
-                    self.mutuals.append(contentsOf: response.users)
+                // Use smart diffing to only update UI if mutuals data actually changed
+                let newMutuals = (self.nextCursor == nil) ? response.users : self.mutuals + response.users
+                updateIfChanged(
+                    current: self.mutuals,
+                    new: newMutuals
+                ) {
+                    if self.nextCursor == nil {
+                        // First page, replace existing data
+                        self.mutuals = response.users
+                    } else {
+                        // Append new mutuals to existing data
+                        self.mutuals.append(contentsOf: response.users)
+                    }
+                    self.hasMore = response.pagination.hasMore
+                    self.nextCursor = response.pagination.nextCursor
                 }
-                self.hasMore = response.pagination.hasMore
-                self.nextCursor = response.pagination.nextCursor
+                
                 self.lastFetched = Date()
             case .failure(let error):
                 self.errorMessage = error.localizedDescription

@@ -24,8 +24,6 @@ class CalendarFeed: ObservableObject {
     @Published var errorMessage: String?
     /// Last time events were fetched (for caching)
     @Published var lastFetched: Date?
-    /// Whether requests have been cancelled (for cleanup)
-    @Published var isCancelled: Bool = false
     
     // TODO: Adjust cache duration as needed - currently set to 30 minutes
     private let cacheTimeout: TimeInterval = 30 * 60 // 30 minutes
@@ -36,7 +34,7 @@ class CalendarFeed: ObservableObject {
         return lastFetched != nil // Empty array is still valid cached data
     }
     
-    /// Checks if cache is stale (older than 5 minutes)
+    /// Checks if cache is stale (older than 30 minutes)
     var isCacheStale: Bool {
         guard let lastFetched = lastFetched else { return true }
         return Date().timeIntervalSince(lastFetched) > cacheTimeout
@@ -44,18 +42,6 @@ class CalendarFeed: ObservableObject {
     
     init() {
         print("📅 CalendarFeed initialized")
-    }
-    
-    /// Cancels any ongoing requests and resets loading states.
-    func cancelRequests() {
-        print("🛑 CalendarFeed: cancelRequests called - cancelling all tasks")
-        isCancelled = true
-        isLoading = false
-    }
-    
-    /// Resets the cancellation flag when starting new requests.
-    private func resetCancellationFlag() {
-        isCancelled = false
     }
     
     /// Fetches calendar events from the backend, using cache if fresh.
@@ -71,7 +57,6 @@ class CalendarFeed: ObservableObject {
         
         guard !isLoading else { return }
         
-        resetCancellationFlag()
         isLoading = true
         print("🔍 CalendarFeed: Fetching calendar events from backend...")
         
@@ -86,14 +71,6 @@ class CalendarFeed: ObservableObject {
         
         NetworkManager.shared.get(endpoint: "/calendar-events", parameters: parameters) { [weak self] (result: Result<CalendarEventsResponse, NetworkError>) in
             guard let self = self else { return }
-            
-            // Check if request was cancelled
-            guard !self.isCancelled else {
-                DispatchQueue.main.async {
-                    self.isLoading = false
-                }
-                return
-            }
             
             DispatchQueue.main.async {
                 self.isLoading = false
@@ -141,7 +118,7 @@ class CalendarFeed: ObservableObject {
         }
     }
     
-    /// Fetches calendar events only if data is missing or stale (older than 5 minutes)
+    /// Fetches calendar events only if data is missing or stale (older than 30 minutes)
     func fetchCalendarEventsIfStale(completion: (() -> Void)? = nil) {
         if !hasCachedData || isCacheStale {
             let reason = !hasCachedData ? "no cached data" : "cache is stale"

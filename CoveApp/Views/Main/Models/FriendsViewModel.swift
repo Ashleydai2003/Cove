@@ -44,15 +44,23 @@ class FriendsViewModel: ObservableObject {
             
             switch result {
             case .success(let resp):
-                if self.nextCursor == nil {
-                    // First page, replace existing data
-                    self.friends = resp.friends
-                } else {
-                    // Append new friends to existing data
-                    self.friends.append(contentsOf: resp.friends)
+                // Use smart diffing to only update UI if friends data actually changed
+                let newFriends = (self.nextCursor == nil) ? resp.friends : self.friends + resp.friends
+                updateIfChanged(
+                    current: self.friends,
+                    new: newFriends
+                ) {
+                    if self.nextCursor == nil {
+                        // First page, replace existing data
+                        self.friends = resp.friends
+                    } else {
+                        // Append new friends to existing data
+                        self.friends.append(contentsOf: resp.friends)
+                    }
+                    self.hasMore = resp.pagination.nextCursor != nil
+                    self.nextCursor = resp.pagination.nextCursor
                 }
-                self.hasMore = resp.pagination.nextCursor != nil
-                self.nextCursor = resp.pagination.nextCursor
+                
                 self.lastFetched = Date()
             case .failure(let error):
                 self.errorMessage = error.localizedDescription

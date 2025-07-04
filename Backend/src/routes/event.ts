@@ -729,13 +729,23 @@ export const handleGetEvent = async (event: APIGatewayProxyEvent): Promise<APIGa
             coverPhoto: coveCoverPhoto
           },
           rsvpStatus: userRsvp?.status || 'NOT_GOING',
-          rsvps: eventData.rsvps.map(rsvp => ({
-            id: rsvp.id,
-            status: rsvp.status,
-            userId: rsvp.userId,
-            userName: rsvp.user.name,
-            profilePhotoID: rsvp.user.profilePhotoID,
-            createdAt: rsvp.createdAt
+          rsvps: await Promise.all(eventData.rsvps.map(async rsvp => {
+            // Generate profile photo URL if it exists
+            const profilePhotoUrl = rsvp.user.profilePhotoID ? 
+              await getSignedUrl(s3Client, new GetObjectCommand({
+                Bucket: process.env.USER_IMAGE_BUCKET_NAME,
+                Key: `${rsvp.user.id}/${rsvp.user.profilePhotoID}.jpg`
+              }), { expiresIn: 3600 }) : 
+              null;
+
+            return {
+              id: rsvp.id,
+              status: rsvp.status,
+              userId: rsvp.userId,
+              userName: rsvp.user.name,
+              profilePhotoUrl: profilePhotoUrl,
+              createdAt: rsvp.createdAt
+            };
           })),
           coverPhoto,
           isHost: eventData.hostId === user.uid

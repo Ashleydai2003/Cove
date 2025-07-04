@@ -257,19 +257,40 @@ struct EventPostView: View {
                                 HStack {
                                     // Show up to 4 profile photos
                                     ForEach(Array(goingRsvps.prefix(4).enumerated()), id: \.element.id) { index, rsvp in
-                                        if let profilePhotoID = rsvp.profilePhotoID {
-                                            // TODO: Replace with actual profile photo URL when available
-                                            Images.profilePlaceholder
+                                        if let profilePhotoUrl = rsvp.profilePhotoUrl {
+                                            KFImage(profilePhotoUrl)
+                                                .placeholder {
+                                                    Circle()
+                                                        .fill(Color.gray.opacity(0.2))
+                                                        .frame(maxWidth: 62, maxHeight: 62)
+                                                        .overlay(
+                                                            Image(systemName: "person.fill")
+                                                                .foregroundColor(.gray)
+                                                                .font(.system(size: 25))
+                                                        )
+                                                }
+                                                .onSuccess { result in
+                                                    print("📸 Guest profile photo loaded from: \(result.cacheType)")
+                                                }
+                                                .onFailure { error in
+                                                    print("❌ Failed to load profile photo: \(error)")
+                                                }
                                                 .resizable()
-                                                .scaledToFill()
+                                                .fade(duration: 0.2)
+                                                .cacheOriginalImage()
+                                                .loadDiskFileSynchronously()
+                                                .aspectRatio(1, contentMode: .fill)
                                                 .frame(width: 62, height: 62)
                                                 .clipShape(Circle())
                                         } else {
-                                            Images.profilePlaceholder
-                                                .resizable()
-                                                .scaledToFill()
+                                            Circle()
+                                                .fill(Color.gray.opacity(0.2))
                                                 .frame(width: 62, height: 62)
-                                                .clipShape(Circle())
+                                                .overlay(
+                                                    Image(systemName: "person.fill")
+                                                        .foregroundColor(.gray)
+                                                        .font(.system(size: 25))
+                                                )
                                         }
                                     }
                                     
