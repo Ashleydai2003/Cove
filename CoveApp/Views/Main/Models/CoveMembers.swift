@@ -7,7 +7,7 @@
 import Foundation
 
 /// A single cove member entry returned from /cove-members
-struct CoveMember: Decodable, Identifiable {
+struct CoveMember: Decodable, Identifiable, ContentComparable {
     let id: String
     let name: String
     let profilePhotoUrl: URL?
@@ -19,6 +19,14 @@ struct CoveMember: Decodable, Identifiable {
         let inputFormatter = DateFormatter()
         inputFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
         return inputFormatter.date(from: joinedAt) ?? Date()
+    }
+    
+    /// ContentComparable implementation - checks if meaningful content has changed
+    func hasContentChanged(from other: CoveMember) -> Bool {
+        return name != other.name ||
+               role != other.role ||
+               profilePhotoUrl != other.profilePhotoUrl ||
+               joinedAt != other.joinedAt
     }
 }
 

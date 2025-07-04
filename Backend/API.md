@@ -204,6 +204,33 @@ Returns:
   * joinedAt: DateTime
 }
 
+### `/send-invite`
+
+Sends cove invites to phone numbers. Only cove admins can send invites.
+
+Takes Data Parameters:
+* coveId: String (required) - ID of the cove to invite to
+* phoneNumbers: String[] (required) - Array of phone numbers to invite
+* message: String (optional) - Optional invitation message
+
+Duplicate Handling:
+* If an invite already exists for a phone number + cove combination, no duplicate is created
+* The phone number is added to the errors array with message "Invite already exists for this phone number"
+* Processing continues for remaining phone numbers
+* If a user is already a member of the cove, they are also added to the errors array
+
+Returns:
+* message: String - Summary of operation (e.g., "Successfully sent 2 invites")
+* invites: Array<{
+  * id: String
+  * phoneNumber: String
+  * createdAt: DateTime
+}> - Successfully created invites
+* errors: Array<{
+  * phoneNumber: String
+  * error: String
+}> (optional) - Any errors that occurred during invite creation
+
 ## GET
 
 ### `/profile`
@@ -519,4 +546,28 @@ Returns:
     * url: String
   } | null
   * isHost: Boolean - Indicates whether the current user is the host of this event
-} 
+}
+
+### `/invites`
+
+Retrieves all invites for the authenticated user based on their phone number.
+
+Returns:
+* invites: Array<{
+  * id: String
+  * message: String | null
+  * createdAt: DateTime
+  * isOpened: Boolean
+  * cove: {
+    * id: String
+    * name: String
+    * description: String | null
+    * location: String
+    * coverPhotoId: String | null
+  }
+  * sentBy: {
+    * id: String
+    * name: String
+    * profilePhotoId: String | null
+  }
+}> 

@@ -51,9 +51,6 @@ struct UpcomingView: View {
         .onAppear {
             upcomingFeed.fetchUpcomingEventsIfStale()
         }
-        .onDisappear {
-            upcomingFeed.cancelRequests()
-        }
         .alert("error", isPresented: errorBinding) {
             Button("ok") { upcomingFeed.errorMessage = nil }
         } message: {

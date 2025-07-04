@@ -129,10 +129,6 @@ struct CoveView: View {
                 viewModel.fetchCoveMembers(coveId: coveId)
             }
         }
-        .onDisappear {
-            // Cancel any ongoing requests when view disappears
-            viewModel.cancelRequests()
-        }
         .alert("error", isPresented: Binding(
             get: { viewModel.errorMessage != nil },
             set: { if !$0 { viewModel.errorMessage = nil } }

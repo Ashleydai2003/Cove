@@ -969,18 +969,8 @@ struct ProfileView: View {
             print("📸 ProfileModel profileImageURL: \(appController.profileModel.profileImageURL?.absoluteString ?? "nil")")
             print("📸 ProfileModel extraImageURLs: \(appController.profileModel.extraImageURLs.map { $0.absoluteString })")
             
-            // Refresh profile data if needed
-            appController.profileModel.fetchProfile { result in
-                switch result {
-                case .success(_):
-                    // Profile data updated, address will be updated automatically
-                    Task {
-                        await appController.profileModel.updateAddress()
-                    }
-                case .failure(let error):
-                    print("Failed to fetch profile: \(error)")
-                }
-            }
+            // Profile data should already be loaded during login/onboarding
+            // No need to fetch again - this was causing redundant network calls
         }
         .onDisappear {
             // Don't cancel requests here - let ProfileModel handle its own lifecycle

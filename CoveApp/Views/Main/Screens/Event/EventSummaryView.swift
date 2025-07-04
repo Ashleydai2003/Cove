@@ -13,6 +13,7 @@ struct EventSummaryView: View {
     let event: CalendarEvent
     var type: EventSummaryType = .feed // Default type
     @EnvironmentObject private var appController: AppController
+    @State private var imageLoaded = false
     
     var body: some View {
         NavigationLink(value: event.id) {
@@ -39,6 +40,9 @@ struct EventSummaryView: View {
                             }
                             .onSuccess { result in
                                 print("📸 Event cover loaded from: \(result.cacheType)")
+                                withAnimation(.easeIn(duration: 0.3)) {
+                                    imageLoaded = true
+                                }
                             }
                             .resizable()
                             .fade(duration: 0.2)
@@ -48,18 +52,38 @@ struct EventSummaryView: View {
                             .frame(maxWidth: .infinity)
                             .clipShape(RoundedRectangle(cornerRadius: 18))
                     }
-                    // RSVP overlay if not calendar and user is going
-                    if type != .calendar && event.rsvpStatus == "GOING" {
-                        Rectangle()
-                            .fill(Color.black.opacity(0.25))
-                            .clipShape(RoundedRectangle(cornerRadius: 18))
-                        VStack {
-                            Spacer()
-                            Text("you're going!")
-                                .font(.LibreBodoniBold(size: 18))
-                                .foregroundColor(.white)
-                                .shadow(color: .black.opacity(0.5), radius: 4, x: 0, y: 2)
-                            Spacer()
+                    // RSVP overlay if not calendar and user is going or hosting
+                    if type != .calendar && imageLoaded {
+                        if event.hostId == appController.profileModel.userId {
+                            // Show hosting overlay for event hosts
+                            Rectangle()
+                                .fill(Color.black.opacity(0.25))
+                                .clipShape(RoundedRectangle(cornerRadius: 18))
+                            VStack {
+                                Spacer()
+                                Text("you're hosting!")
+                                    .font(.LibreBodoniBold(size: 18))
+                                    .foregroundColor(.white)
+                                    .shadow(color: .black.opacity(0.5), radius: 4, x: 0, y: 2)
+                                Spacer()
+                            }
+                            .opacity(imageLoaded ? 1 : 0)
+                            .animation(.easeIn(duration: 0.3), value: imageLoaded)
+                        } else if event.rsvpStatus == "GOING" {
+                            // Show going overlay for non-host attendees
+                            Rectangle()
+                                .fill(Color.black.opacity(0.25))
+                                .clipShape(RoundedRectangle(cornerRadius: 18))
+                            VStack {
+                                Spacer()
+                                Text("you're going!")
+                                    .font(.LibreBodoniBold(size: 18))
+                                    .foregroundColor(.white)
+                                    .shadow(color: .black.opacity(0.5), radius: 4, x: 0, y: 2)
+                                Spacer()
+                            }
+                            .opacity(imageLoaded ? 1 : 0)
+                            .animation(.easeIn(duration: 0.3), value: imageLoaded)
                         }
                     }
                     // Date label overlay (top left, not for calendar type)
@@ -90,7 +114,7 @@ struct EventSummaryView: View {
                 
                 // Host info
                 HStack(spacing: 4) {
-                    Text("Hosted by")
+                    Text("hosted by")
                         .font(.LibreBodoniSemiBold(size: 13))
                         .foregroundColor(.black)
                     Text(event.hostName)
