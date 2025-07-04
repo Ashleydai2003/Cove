@@ -90,6 +90,13 @@ class CoveModel: ObservableObject {
         return Date().timeIntervalSince(lastFetch) > membersCacheTimeout
     }
     
+    /// Checks if the current user is an admin of this cove
+    var isCurrentUserAdmin: Bool {
+        let currentUserId = AppController.shared.profileModel.userId
+        guard !currentUserId.isEmpty else { return false }
+        return members.first { $0.id == currentUserId }?.role.lowercased() == "admin"
+    }
+    
     init() {
         print("📱 CoveModel initialized")
     }
@@ -237,7 +244,7 @@ class CoveModel: ObservableObject {
         hasMore = true
         eventsLastFetched = nil // Clear events cache
         
-        var parameters: [String: Any] = [
+        let parameters: [String: Any] = [
             "coveId": coveId,
             "limit": pageSize
         ]

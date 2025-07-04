@@ -1,0 +1,119 @@
+{
+  "tests": [
+    {
+      "name": "Send invite - duplicate invite",
+      "method": "POST",
+      "endpoint": "/send-invite",
+      "body": {
+        "coveId": "test-cove-id",
+        "phoneNumbers": ["+1234567890"]
+      },
+      "expectedStatus": 200,
+      "expectedResponse": {
+        "message": "Successfully sent 0 invites",
+        "invites": [],
+        "errors": [
+          {
+            "phoneNumber": "+1234567890",
+            "error": "Invite already exists for this phone number"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Send invite - user already member",
+      "method": "POST",
+      "endpoint": "/send-invite",
+      "body": {
+        "coveId": "test-cove-id",
+        "phoneNumbers": ["+1111111111"]
+      },
+      "expectedStatus": 200,
+      "expectedResponse": {
+        "message": "Successfully sent 0 invites",
+        "invites": [],
+        "errors": [
+          {
+            "phoneNumber": "+1111111111",
+            "error": "User is already a member of this cove"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Send invite - mixed results (success, duplicate, existing member)",
+      "method": "POST",
+      "endpoint": "/send-invite",
+      "body": {
+        "coveId": "test-cove-id",
+        "phoneNumbers": ["+1234567890", "+0987654321", "+1111111111"],
+        "message": "Join our awesome cove!"
+      },
+      "expectedStatus": 200,
+      "expectedResponse": {
+        "message": "Successfully sent 1 invites",
+        "invites": [
+          {
+            "id": "string",
+            "phoneNumber": "+0987654321",
+            "createdAt": "datetime"
+          }
+        ],
+        "errors": [
+          {
+            "phoneNumber": "+1234567890",
+            "error": "Invite already exists for this phone number"
+          },
+          {
+            "phoneNumber": "+1111111111",
+            "error": "User is already a member of this cove"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Send invite - no message",
+      "method": "POST",
+      "endpoint": "/send-invite",
+      "body": {
+        "coveId": "test-cove-id",
+        "phoneNumbers": ["+1234567890"]
+      },
+      "expectedStatus": 200,
+      "expectedResponse": {
+        "message": "Successfully sent 1 invites",
+        "invites": [
+          {
+            "id": "string",
+            "phoneNumber": "+1234567890",
+            "createdAt": "datetime"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Send invite - all duplicates scenario",
+      "method": "POST",
+      "endpoint": "/send-invite",
+      "body": {
+        "coveId": "test-cove-id",
+        "phoneNumbers": ["+1234567890", "+1555555555"]
+      },
+      "expectedStatus": 200,
+      "expectedResponse": {
+        "message": "Successfully sent 0 invites",
+        "invites": [],
+        "errors": [
+          {
+            "phoneNumber": "+1234567890",
+            "error": "Invite already exists for this phone number"
+          },
+          {
+            "phoneNumber": "+1555555555",
+            "error": "Invite already exists for this phone number"
+          }
+        ]
+      }
+    }
+  ]
+} 

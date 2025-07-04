@@ -1,0 +1,66 @@
+{
+  "tests": [
+    {
+      "name": "Get invites - wrong method",
+      "method": "POST",
+      "endpoint": "/invites",
+      "body": {},
+      "expectedStatus": 405,
+      "expectedResponse": {
+        "message": "Method not allowed. Only GET requests are accepted for retrieving invites."
+      }
+    },
+    {
+      "name": "Send invite - wrong method",
+      "method": "GET",
+      "endpoint": "/send-invite",
+      "expectedStatus": 405,
+      "expectedResponse": {
+        "message": "Method not allowed. Only POST requests are accepted for sending invites."
+      }
+    },
+    {
+      "name": "Send invite - no body",
+      "method": "POST",
+      "endpoint": "/send-invite",
+      "expectedStatus": 400,
+      "expectedResponse": {
+        "message": "Request body is required"
+      }
+    },
+    {
+      "name": "Send invite - invalid JSON",
+      "method": "POST",
+      "endpoint": "/send-invite",
+      "body": "invalid json",
+      "expectedStatus": 500,
+      "expectedResponse": {
+        "message": "Error processing send invite request"
+      }
+    },
+    {
+      "name": "Get invites - unauthorized",
+      "method": "GET",
+      "endpoint": "/invites",
+      "skipAuth": true,
+      "expectedStatus": 401,
+      "expectedResponse": {
+        "message": "Unauthorized"
+      }
+    },
+    {
+      "name": "Send invite - unauthorized", 
+      "method": "POST",
+      "endpoint": "/send-invite",
+      "body": {
+        "coveId": "test-cove-id",
+        "phoneNumbers": ["+1234567890"]
+      },
+      "skipAuth": true,
+      "expectedStatus": 401,
+      "expectedResponse": {
+        "message": "Unauthorized"
+      }
+    }
+  ]
+} 

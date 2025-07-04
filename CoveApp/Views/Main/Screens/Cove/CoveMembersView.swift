@@ -16,18 +16,31 @@ struct CoveMembersView: View {
     let onRefresh: () async -> Void
     @State private var showMessageAlert = false
     @State private var selectedMemberName: String = ""
+    @State private var showSendInvites = false
     @EnvironmentObject var appController: AppController
     
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: 16) {
-                // Member count header
+                // Member count header with optional + button for admins
                 if let cove = viewModel.cove {
                     HStack {
                         Text("\(cove.stats.memberCount) members")
                             .foregroundStyle(Colors.primaryDark)
                             .font(.LibreBodoniBold(size: 18))
+                        
                         Spacer()
+                        
+                        // Show + button if current user is admin
+                        if viewModel.isCurrentUserAdmin {
+                            Button(action: {
+                                showSendInvites = true
+                            }) {
+                                Image(systemName: "plus.circle.fill")
+                                    .font(.system(size: 24))
+                                    .foregroundColor(Colors.primaryDark)
+                            }
+                        }
                     }
                     .padding(.horizontal, 24)
                     .padding(.top, 16)
@@ -91,6 +104,14 @@ struct CoveMembersView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text("TODO: implement messaging")
+        }
+        .sheet(isPresented: $showSendInvites) {
+            if let cove = viewModel.cove {
+                SendInvitesView(
+                    coveId: cove.id,
+                    coveName: cove.name
+                )
+            }
         }
     }
 }

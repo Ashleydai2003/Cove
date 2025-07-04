@@ -1,0 +1,96 @@
+{
+  "tests": [
+    {
+      "name": "Get invites - user has invites",
+      "method": "GET", 
+      "endpoint": "/invites",
+      "expectedStatus": 200,
+      "expectedResponse": {
+        "invites": [
+          {
+            "id": "string",
+            "message": "Join our cove!",
+            "createdAt": "datetime",
+            "isOpened": true,
+            "cove": {
+              "id": "string",
+              "name": "Test Cove",
+              "description": "A test cove",
+              "location": "San Francisco, CA",
+              "coverPhotoId": "string"
+            },
+            "sentBy": {
+              "id": "string",
+              "name": "John Doe",
+              "profilePhotoId": "string"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Get invites - no invites",
+      "method": "GET",
+      "endpoint": "/invites", 
+      "expectedStatus": 200,
+      "expectedResponse": {
+        "invites": []
+      }
+    },
+    {
+      "name": "Get invites - user not found",
+      "method": "GET",
+      "endpoint": "/invites",
+      "expectedStatus": 404,
+      "expectedResponse": {
+        "message": "User not found"
+      }
+    },
+    {
+      "name": "Get invites - multiple invites",
+      "method": "GET",
+      "endpoint": "/invites",
+      "expectedStatus": 200,
+      "expectedResponse": {
+        "invites": [
+          {
+            "id": "string",
+            "message": "Join our exclusive cove!",
+            "createdAt": "datetime",
+            "isOpened": true,
+            "cove": {
+              "id": "string",
+              "name": "Elite Cove",
+              "description": "For VIP members only",
+              "location": "New York, NY",
+              "coverPhotoId": null
+            },
+            "sentBy": {
+              "id": "string",
+              "name": "Jane Smith",
+              "profilePhotoId": null
+            }
+          },
+          {
+            "id": "string",
+            "message": null,
+            "createdAt": "datetime",
+            "isOpened": false,
+            "cove": {
+              "id": "string",
+              "name": "Study Group",
+              "description": "Weekly study sessions",
+              "location": "Berkeley, CA",
+              "coverPhotoId": "string"
+            },
+            "sentBy": {
+              "id": "string",
+              "name": "Bob Wilson",
+              "profilePhotoId": "string"
+            }
+          }
+        ]
+      }
+    }
+  ]
+} 

@@ -1,0 +1,81 @@
+{
+  "tests": [
+    {
+      "name": "Send invite to cove",
+      "method": "POST",
+      "endpoint": "/send-invite",
+      "body": {
+        "coveId": "test-cove-id",
+        "phoneNumbers": ["+1234567890", "+0987654321"],
+        "message": "Join our cove!"
+      },
+      "expectedStatus": 200,
+      "expectedResponse": {
+        "message": "Successfully sent 2 invites",
+        "invites": [
+          {
+            "id": "string",
+            "phoneNumber": "+1234567890",
+            "createdAt": "datetime"
+          },
+          {
+            "id": "string",
+            "phoneNumber": "+0987654321",
+            "createdAt": "datetime"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Send invite - missing coveId",
+      "method": "POST",
+      "endpoint": "/send-invite",
+      "body": {
+        "phoneNumbers": ["+1234567890"]
+      },
+      "expectedStatus": 400,
+      "expectedResponse": {
+        "message": "Cove ID and phone numbers array are required"
+      }
+    },
+    {
+      "name": "Send invite - empty phone numbers",
+      "method": "POST",
+      "endpoint": "/send-invite",
+      "body": {
+        "coveId": "test-cove-id",
+        "phoneNumbers": []
+      },
+      "expectedStatus": 400,
+      "expectedResponse": {
+        "message": "Cove ID and phone numbers array are required"
+      }
+    },
+    {
+      "name": "Send invite - cove not found",
+      "method": "POST",
+      "endpoint": "/send-invite",
+      "body": {
+        "coveId": "non-existent-cove-id",
+        "phoneNumbers": ["+1234567890"]
+      },
+      "expectedStatus": 404,
+      "expectedResponse": {
+        "message": "Cove not found"
+      }
+    },
+    {
+      "name": "Send invite - not admin",
+      "method": "POST",
+      "endpoint": "/send-invite",
+      "body": {
+        "coveId": "test-cove-id",
+        "phoneNumbers": ["+1234567890"]
+      },
+      "expectedStatus": 403,
+      "expectedResponse": {
+        "message": "You must be an admin of this cove to send invites"
+      }
+    }
+  ]
+} 
