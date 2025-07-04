@@ -15,6 +15,7 @@ struct CreateCoveView: View {
     @StateObject private var viewModel = NewCoveModel()
     
     @FocusState private var isFocused: Bool
+    @State private var showInviteSheet = false
     
     // MARK: - Body
     var body: some View {
@@ -48,6 +49,20 @@ struct CreateCoveView: View {
             LocationSearchView(completion: { location in
                 viewModel.location = location
             })
+        }
+        .sheet(isPresented: $showInviteSheet) {
+            SendInvitesView(
+                coveId: "", // Will be set during cove creation
+                coveName: viewModel.name.isEmpty ? "Untitled Cove" : viewModel.name,
+                sendAction: {
+                    showInviteSheet = false
+                },
+                onDataSubmit: { phoneNumbers, message in
+                    viewModel.storeInviteData(phoneNumbers: phoneNumbers, message: message)
+                },
+                initialPhoneNumbers: viewModel.invitePhoneNumbers,
+                initialMessage: viewModel.inviteMessage
+            )
         }
         .toolbar {
             ToolbarItem(placement: .keyboard) {
@@ -213,7 +228,7 @@ extension CreateCoveView {
     // MARK: - Invite Button Section
     private var inviteButtonSection: some View {
         Button {
-            // TODO: Implement invite functionality
+            showInviteSheet = true
         } label: {
             HStack {
                 Image(systemName: "person.2.fill")
@@ -227,11 +242,28 @@ extension CreateCoveView {
                     .padding(.leading, 16)
                 
                 Spacer()
+                
+                if viewModel.hasInvites {
+                    HStack(spacing: 8) {
+                        Text("\(viewModel.invitePhoneNumbers.count) added")
+                            .foregroundStyle(Color.white)
+                            .font(.LibreBodoni(size: 14))
+                        
+                        Button(action: {
+                            viewModel.clearInviteData()
+                        }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.system(size: 16))
+                                .foregroundColor(Colors.primaryDark)
+                        }
+                    }
+                    .padding(.trailing, 24)
+                }
             }
             .frame(maxWidth: .infinity, minHeight: 46, maxHeight: 46, alignment: .leading)
             .background(
                 RoundedRectangle(cornerRadius: 10)
-                    .fill(Color(red: 0.4, green: 0.2, blue: 0.2)) // Dark reddish-brown color
+                    .fill(viewModel.hasInvites ? Colors.primaryDark : Color(red: 0.4, green: 0.2, blue: 0.2))
             )
         }
         .padding(.top, 16)
@@ -257,7 +289,7 @@ extension CreateCoveView {
                             .fill(Color.white)
                     )
             } else {
-                Text("create")
+                Text(viewModel.hasInvites ? "create & invite" : "create")
                     .foregroundStyle(!viewModel.isFormValid ? Color.gray : Color.black)
                     .font(.LibreBodoniBold(size: 16))
                     .frame(maxWidth: .infinity, minHeight: 60, maxHeight: 60, alignment: .center)

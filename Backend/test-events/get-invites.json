@@ -1,0 +1,13 @@
+{
+  "tests": [
+    {
+      "name": "Get user invites",
+      "method": "GET",
+      "endpoint": "/invites",
+      "expectedStatus": 200,
+      "expectedResponse": {
+        "invites": []
+      }
+    }
+  ]
+} 

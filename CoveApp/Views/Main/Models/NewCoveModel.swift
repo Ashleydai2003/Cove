@@ -22,9 +22,17 @@ class NewCoveModel: ObservableObject {
     @Published var showImagePicker: Bool = false
     @Published var showLocationPicker: Bool = false
     
+    // Invite Properties
+    @Published var invitePhoneNumbers: [String] = []
+    @Published var inviteMessage: String = ""
+    
     // MARK: - Computed Properties
     var isFormValid: Bool {
         return !name.isEmpty && location != nil
+    }
+    
+    var hasInvites: Bool {
+        return !invitePhoneNumbers.isEmpty
     }
     
     // MARK: - Methods
@@ -39,9 +47,27 @@ class NewCoveModel: ObservableObject {
         errorMessage = nil
         showImagePicker = false
         showLocationPicker = false
+        invitePhoneNumbers = []
+        inviteMessage = ""
     }
     
-    /// Submits the cove to the backend
+    /// Stores phone numbers and message from SendInvitesView
+    func storeInviteData(phoneNumbers: [String], message: String) {
+        // Store the formatted phone numbers (these are already validated and formatted)
+        invitePhoneNumbers = phoneNumbers
+        inviteMessage = message
+        
+        print("📱 Stored invite data: \(phoneNumbers.count) phone numbers, message: '\(message)'")
+    }
+    
+    /// Clears all stored invite data
+    func clearInviteData() {
+        invitePhoneNumbers = []
+        inviteMessage = ""
+        print("📱 Cleared all invite data")
+    }
+    
+    /// Submits the cove to the backend and optionally sends invites
     func submitCove(completion: @escaping (Bool) -> Void) {
         guard isFormValid else {
             errorMessage = "Please fill in all required fields"
@@ -58,10 +84,50 @@ class NewCoveModel: ObservableObject {
         isSubmitting = true
         errorMessage = nil
         
+        // Step 1: Create the cove first
+        createCove { [weak self] success, coveId in
+            guard let self = self else { return }
+            
+            if success, let coveId = coveId {
+                // Step 2: Send invites if there are any
+                if self.hasInvites {
+                    self.sendInvites(coveId: coveId) { inviteSuccess in
+                        DispatchQueue.main.async {
+                            self.isSubmitting = false
+                            if inviteSuccess {
+                                debugPrint("✅ Cove created and invites sent successfully")
+                            } else {
+                                debugPrint("⚠️ Cove created but invites failed")
+                                // Still consider it a success since cove was created
+                            }
+                            self.resetForm()
+                            completion(true)
+                        }
+                    }
+                } else {
+                    // No invites to send
+                    DispatchQueue.main.async {
+                        self.isSubmitting = false
+                        self.resetForm()
+                        completion(true)
+                    }
+                }
+            } else {
+                // Cove creation failed
+                DispatchQueue.main.async {
+                    self.isSubmitting = false
+                    completion(false)
+                }
+            }
+        }
+    }
+    
+    /// Creates the cove via API
+    private func createCove(completion: @escaping (Bool, String?) -> Void) {
         // Prepare parameters - description is optional, coverPhoto is optional
         var params: [String: Any] = [
             "name": name,
-            "location": location
+            "location": location!
         ]
         
         // Add description if not empty
@@ -81,19 +147,46 @@ class NewCoveModel: ObservableObject {
             endpoint: "/create-cove",
             parameters: params
         ) { (result: Result<CreateCoveResponse, NetworkError>) in
-            DispatchQueue.main.async {
-                self.isSubmitting = false
-                
-                switch result {
-                case .success(let response):
-                    debugPrint("✅ Cove created successfully: \(response)")
-                    self.resetForm()
-                    completion(true)
-                case .failure(let error):
-                    debugPrint("❌ Cove creation failed: \(error)")
+            switch result {
+            case .success(let response):
+                debugPrint("✅ Cove created successfully: \(response)")
+                completion(true, response.cove.id)
+            case .failure(let error):
+                debugPrint("❌ Cove creation failed: \(error)")
+                DispatchQueue.main.async {
                     self.errorMessage = "Failed to create cove: \(error.localizedDescription)"
-                    completion(false)
                 }
+                completion(false, nil)
+            }
+        }
+    }
+    
+    /// Sends invites using the SendInvitesModel
+    private func sendInvites(coveId: String, completion: @escaping (Bool) -> Void) {
+        debugPrint("📤 Sending invites for cove: \(coveId)")
+        
+        // Prepare request body
+        var requestBody: [String: Any] = [
+            "coveId": coveId,
+            "phoneNumbers": invitePhoneNumbers
+        ]
+        
+        // Add message if not empty
+        if !inviteMessage.isEmpty {
+            requestBody["message"] = inviteMessage
+        }
+        
+        NetworkManager.shared.post(
+            endpoint: "/send-invite",
+            parameters: requestBody
+        ) { (result: Result<SendInvitesModel.SendInviteResponse, NetworkError>) in
+            switch result {
+            case .success(let response):
+                debugPrint("✅ Invites sent successfully: \(response)")
+                completion(true)
+            case .failure(let error):
+                debugPrint("❌ Invites failed: \(error)")
+                completion(false)
             }
         }
     }
