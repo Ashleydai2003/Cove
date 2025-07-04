@@ -3,6 +3,7 @@ import SwiftUI
 struct CoveBannerView: View {
     var onInbox: (() -> Void)? = nil
     var onPaperPlane: (() -> Void)? = nil
+    @State private var showInvites = false
     
     var body: some View {
         HStack(alignment: .center) {
@@ -11,12 +12,19 @@ struct CoveBannerView: View {
                 .foregroundColor(Colors.primaryDark)
             Spacer()
             HStack(spacing: 18) {
-                Button(action: { onInbox?() }) {
-                    Image(systemName: "envelope")
-                        .resizable()
-                        .frame(width: 28, height: 22)
-                        .foregroundColor(Colors.primaryDark)
+                NavigationLink(destination: InvitesView(), isActive: $showInvites) {
+                    Button(action: { 
+                        showInvites = true
+                        onInbox?() 
+                    }) {
+                        Image(systemName: "envelope")
+                            .resizable()
+                            .frame(width: 28, height: 22)
+                            .foregroundColor(Colors.primaryDark)
+                    }
                 }
+                .buttonStyle(PlainButtonStyle())
+                
                 Button(action: { onPaperPlane?() }) {
                     Image(systemName: "paperplane")
                         .resizable()
