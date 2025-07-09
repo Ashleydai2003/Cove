@@ -34,6 +34,8 @@ import {
   handleGetCalendarEvents,
   handleSendInvite,
   handleGetInvites,
+  handleOpenInvite,
+  handleRejectInvite,
 } from './routes';
 
 export const handler = async (
@@ -104,6 +106,10 @@ export const handler = async (
         return handleSendInvite(event);
       case '/invites':
         return handleGetInvites(event);
+      case '/open-invite':
+        return handleOpenInvite(event);
+      case '/reject-invite':
+        return handleRejectInvite(event);
       default:
         // Handle common web standard files
         switch (event.path) {

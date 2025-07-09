@@ -61,6 +61,10 @@ class MutualsViewModel: ObservableObject {
                     self.hasMore = response.pagination.hasMore
                     self.nextCursor = response.pagination.nextCursor
                 }
+
+                // Prefetch profile photos
+                let urls = response.users.compactMap { $0.profilePhotoUrl?.absoluteString }
+                ImagePrefetcherUtil.prefetch(urlStrings: urls)
                 
                 self.lastFetched = Date()
             case .failure(let error):
@@ -81,24 +85,27 @@ class MutualsViewModel: ObservableObject {
     }
     
     func sendFriendRequest(to userId: String) {
-        // Mark as pending immediately for better UX
-        pendingRequests.insert(userId)
+        print("🔗 MUTUALS: Sending friend request to \(userId)")
         
-        // Make API call to send friend request
+        // Optimistic UI update by assigning NEW Set reference
+        var newSet = pendingRequests
+        newSet.insert(userId)
+        withAnimation { pendingRequests = newSet }
+        
         NetworkManager.shared.post(
             endpoint: "/send-friend-request",
             parameters: ["toUserIds": [userId]]
         ) { [weak self] (result: Result<SendRequestResponse, NetworkError>) in
             DispatchQueue.main.async {
+                guard let self = self else { return }
                 switch result {
                 case .success:
-                    // Keep it as pending - the user will see it in their friend requests
-                    print("✅ Friend request sent successfully to \(userId)")
+                    break // Keep as pending
                 case .failure(let error):
-                    // Remove from pending if the request failed
-                    self?.pendingRequests.remove(userId)
-                    self?.errorMessage = error.localizedDescription
-                    print("❌ Failed to send friend request: \(error)")
+                    var reverted = self.pendingRequests
+                    reverted.remove(userId)
+                    withAnimation { self.pendingRequests = reverted }
+                    self.errorMessage = error.localizedDescription
                 }
             }
         }

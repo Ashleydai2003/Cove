@@ -473,6 +473,7 @@ export const handleGetFriendRequests = async (event: APIGatewayProxyEvent): Prom
 
     // Get the authenticated user's ID
     const userId = authResult.user.uid;
+    console.log('🔍 Getting friend requests for userId:', userId);
 
     // Get pagination parameters
     // cursor: ID of the last request from previous request (for pagination)
@@ -480,9 +481,22 @@ export const handleGetFriendRequests = async (event: APIGatewayProxyEvent): Prom
     const cursor = event.queryStringParameters?.cursor;
     const requestedLimit = parseInt(event.queryStringParameters?.limit || '10');
     const limit = Math.min(requestedLimit, 50); // Enforce maximum limit of 50
+    console.log('📄 Pagination - cursor:', cursor, 'limit:', limit);
 
     // Initialize database connection
     const prisma = await initializeDatabase();
+
+    // First, let's check if there are ANY friend requests for this user at all
+    const allRequestsCount = await prisma.friendRequest.count({
+      where: {
+        toUserId: userId
+      }
+    });
+    console.log('📊 Total friend requests for user:', allRequestsCount);
+
+    // Also check all friend requests in the database 
+    const totalFriendRequests = await prisma.friendRequest.count();
+    console.log('📊 Total friend requests in database:', totalFriendRequests);
 
     // Get friend requests where the user is the recipient
     // We fetch limit + 1 items to determine if there are more results
@@ -519,13 +533,23 @@ export const handleGetFriendRequests = async (event: APIGatewayProxyEvent): Prom
       } : {})
     });
 
+    console.log('🔍 Query results - found', requests.length, 'friend requests');
+    console.log('📝 Friend request details:', requests.map(r => ({ 
+      id: r.id, 
+      fromUserId: r.fromUserId, 
+      toUserId: r.toUserId, 
+      fromUserName: r.fromUser?.name 
+    })));
+
     // Check if there are more results by comparing actual length with requested limit
     const hasMore = requests.length > limit;
     // Remove the extra item we fetched if there are more results
     const requestsToReturn = hasMore ? requests.slice(0, -1) : requests;
+    
+    console.log('✅ Final results - returning', requestsToReturn.length, 'requests, hasMore:', hasMore);
 
     // Return success response with requests and pagination info
-    return {
+    const response = {
       statusCode: 200,
       body: JSON.stringify({
         requests: await Promise.all(requestsToReturn.map(async request => {
@@ -553,6 +577,9 @@ export const handleGetFriendRequests = async (event: APIGatewayProxyEvent): Prom
         }
       })
     };
+    
+    console.log('📤 Response:', JSON.stringify(response, null, 2));
+    return response;
   } catch (error) {
     console.error('Get friend requests error:', error);
     return {
@@ -611,6 +638,7 @@ export const handleGetRecommendedFriends = async (event: APIGatewayProxyEvent): 
     const cursor = event.queryStringParameters?.cursor;
     const requestedLimit = parseInt(event.queryStringParameters?.limit || '10');
     const limit = Math.min(requestedLimit, 50); // Enforce maximum limit of 50
+    console.log('🔍 Pagination params - cursor:', cursor, 'limit:', limit);
 
     // Initialize database connection
     const prisma = await initializeDatabase();
@@ -620,9 +648,11 @@ export const handleGetRecommendedFriends = async (event: APIGatewayProxyEvent): 
       where: { userId: user.uid },
       select: { coveId: true }
     });
+    console.log('🏘️ User is member of', userCoveIds.length, 'coves:', userCoveIds.map(c => c.coveId));
 
     if (userCoveIds.length === 0) {
       // User is not in any coves, return empty result
+      console.log('❌ User not in any coves, returning empty result');
       return {
         statusCode: 200,
         body: JSON.stringify({
@@ -660,6 +690,7 @@ export const handleGetRecommendedFriends = async (event: APIGatewayProxyEvent): 
         joinedAt: 'desc'
       }
     });
+    console.log('👥 Found', allCoveMembers.length, 'cove members (excluding current user)');
 
     // Get users to exclude (friends, sent requests, received requests)
     const [existingFriendships, sentRequests, receivedRequests] = await Promise.all([
@@ -687,6 +718,7 @@ export const handleGetRecommendedFriends = async (event: APIGatewayProxyEvent): 
         select: { fromUserId: true }
       })
     ]);
+    console.log('🚫 Exclusions - Friends:', existingFriendships.length, 'Sent requests:', sentRequests.length, 'Received requests:', receivedRequests.length);
 
     // Create a set of user IDs to exclude
     const excludedUserIds = new Set<string>();
@@ -739,6 +771,8 @@ export const handleGetRecommendedFriends = async (event: APIGatewayProxyEvent): 
     // Convert to array and sort by shared cove count (descending)
     const sortedUsers = Array.from(userCoveCounts.values())
       .sort((a, b) => b.sharedCoveCount - a.sharedCoveCount);
+    console.log('✅ After filtering and sorting, found', sortedUsers.length, 'potential recommended friends');
+    console.log('🎯 Top 3 candidates:', sortedUsers.slice(0, 3).map(u => ({ id: u.user.id, name: u.user.name, sharedCoves: u.sharedCoveCount })));
 
     // Apply pagination
     let startIndex = 0;
@@ -747,11 +781,13 @@ export const handleGetRecommendedFriends = async (event: APIGatewayProxyEvent): 
       if (cursorIndex !== -1) {
         startIndex = cursorIndex + 1;
       }
+      console.log('📄 Cursor pagination - cursor:', cursor, 'startIndex:', startIndex);
     }
 
     const endIndex = startIndex + limit;
     const hasMore = endIndex < sortedUsers.length;
     const usersToReturn = sortedUsers.slice(startIndex, endIndex);
+    console.log('📊 Final result - returning', usersToReturn.length, 'users, hasMore:', hasMore);
 
     // Return success response with users and pagination info
     return {

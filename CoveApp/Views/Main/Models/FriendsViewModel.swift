@@ -60,6 +60,10 @@ class FriendsViewModel: ObservableObject {
                     self.hasMore = resp.pagination.nextCursor != nil
                     self.nextCursor = resp.pagination.nextCursor
                 }
+
+                // Prefetch newly fetched profile photos
+                let photoUrls = resp.friends.compactMap { $0.profilePhotoUrl?.absoluteString }
+                ImagePrefetcherUtil.prefetch(urlStrings: photoUrls)
                 
                 self.lastFetched = Date()
             case .failure(let error):

@@ -5,16 +5,13 @@
 //  Screen of user's friend requests.
 
 import SwiftUI
+import Kingfisher
 
 // MARK: — Main View
 
 struct RequestsView: View {
-    @EnvironmentObject var appController: AppController
-    
-    // Use the shared instance from AppController
-    private var vm: RequestsViewModel {
-        appController.requestsViewModel
-    }
+    @EnvironmentObject private var appController: AppController
+    @ObservedObject private var vm: RequestsViewModel = AppController.shared.requestsViewModel
     
     var body: some View {
         GeometryReader { _ in
@@ -36,43 +33,67 @@ struct RequestsView: View {
                     }
                     
                     // Requests list
-                    ScrollView {
-                        LazyVStack(spacing: 36) {
-                            if vm.requests.isEmpty && !vm.isLoading {
-                                // No requests message
-                                VStack(spacing: 16) {
-                                    Image(systemName: "person.2.slash")
-                                        .font(.system(size: 40))
-                                        .foregroundColor(.gray)
-                                    
-                                    Text("no requests yet!")
-                                        .font(.LibreBodoni(size: 16))
-                                        .foregroundColor(.gray)
-                                        .multilineTextAlignment(.center)
-                                }
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                .padding(.top, 100)
-                            } else {
-                                ForEach(vm.requests) { req in
-                                    RequestRowView(
-                                        name: req.sender.name,
-                                        imageUrl: req.sender.profilePhotoUrl,
-                                        onConfirm: { vm.accept(req) },
-                                        onDelete:  { vm.reject(req) }
-                                    )
-                                    .onAppear {
-                                        if req.id == vm.requests.last?.id {
-                                            vm.loadNextPage()
+                    ScrollView(.vertical, showsIndicators: false) {
+                        VStack(alignment: .leading, spacing: 16) {
+                            // Requests count header
+                            if !vm.requests.isEmpty {
+                                Text("\(vm.requests.count) requests")
+                                    .foregroundStyle(Colors.primaryDark)
+                                    .font(.LibreBodoniBold(size: 18))
+                                    .padding(.horizontal, 24)
+                                    .padding(.top, 16)
+                            }
+                            
+                            // Members list
+                            LazyVStack(spacing: 12) {
+                                if vm.requests.isEmpty && !vm.isLoading {
+                                    // No requests message
+                                    VStack(spacing: 16) {
+                                        Image(systemName: "person.2.slash")
+                                            .font(.system(size: 40))
+                                            .foregroundColor(.gray)
+                                        
+                                        Text("no requests yet!")
+                                            .font(.LibreBodoni(size: 16))
+                                            .foregroundColor(.gray)
+                                            .multilineTextAlignment(.center)
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.top, 100)
+                                } else {
+                                    ForEach(vm.requests) { req in
+                                        RequestRowView(
+                                            name: req.sender.name,
+                                            imageUrl: req.sender.profilePhotoUrl,
+                                            onConfirm: { 
+                                                vm.accept(req) 
+                                            },
+                                            onDelete: { 
+                                                vm.reject(req) 
+                                            }
+                                        )
+                                        .onAppear {
+                                            if req.id == vm.requests.last?.id {
+                                                vm.loadNextPage()
+                                            }
                                         }
                                     }
                                 }
-                                
-                                if vm.isLoading {
-                                    ProgressView().padding()
-                                }
                             }
+                            
+                            // Loading indicator
+                            if vm.isLoading {
+                                HStack {
+                                    Spacer()
+                                    ProgressView()
+                                        .tint(Colors.primaryDark)
+                                    Spacer()
+                                }
+                                .padding(.vertical, 16)
+                            }
+                            
+                            Spacer(minLength: 24)
                         }
-                        .padding(.top, 30)
                     }
                     
                     Spacer(minLength: 0)
@@ -95,6 +116,7 @@ struct RequestsView: View {
             Text(vm.errorMessage ?? "")
         }
         .onAppear {
+            // Load friend requests if not already cached (will use cached data if available)
             vm.loadNextPageIfStale()
         }
     }
@@ -109,41 +131,73 @@ struct RequestRowView: View {
     var onDelete:  (() -> Void)? = nil
     
     var body: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 12) {
+            // Profile photo
             if let url = imageUrl {
-                AsyncImage(url: url) { img in img.resizable() } placeholder: {
-                    Images.smily.resizable()
-                }
-                .scaledToFill()
-                .frame(width: 60, height: 60)
-                .clipShape(Circle())
-            } else {
-                Images.smily
+                KFImage(url)
                     .resizable()
-                    .scaledToFill()
-                    .frame(width: 60, height: 60)
+                    .placeholder {
+                        Circle()
+                            .fill(Color.gray.opacity(0.2))
+                            .overlay(
+                                Image(systemName: "person.fill")
+                                    .foregroundColor(.gray)
+                                    .font(.system(size: 20))
+                            )
+                    }
+                    .aspectRatio(1, contentMode: .fill)
+                    .frame(width: 48, height: 48)
+                    .clipShape(Circle())
+            } else {
+                Image("default_user_pfp")
+                    .resizable()
+                    .aspectRatio(1, contentMode: .fill)
+                    .frame(width: 48, height: 48)
                     .clipShape(Circle())
             }
             
-            Text(name)
-                .font(.LibreBodoni(size: 14))
-                .foregroundStyle(Color.black)
+            // Member info
+            VStack(alignment: .leading, spacing: 4) {
+                Text(name)
+                    .foregroundStyle(Colors.primaryDark)
+                    .font(.LibreBodoniBold(size: 16))
+            }
             
             Spacer()
             
-            if let confirm = onConfirm {
-                ActionButton.confirm {
-                    confirm()
+            // Action buttons - Instagram style (shorter width)
+            HStack(spacing: 8) {
+                if let confirm = onConfirm {
+                    ActionButton(
+                        title: "confirm",
+                        width: 80, // Shorter Instagram-style width
+                        height: 32,
+                        backgroundColor: Colors.primaryDark,
+                        textColor: .white,
+                        font: .LibreBodoni(size: 14),
+                        cornerRadius: 8
+                    ) {
+                        confirm()
+                    }
                 }
-            }
-            
-            if let delete = onDelete {
-                ActionButton.delete {
-                    delete()
+                
+                if let delete = onDelete {
+                    ActionButton(
+                        title: "delete",
+                        width: 80, // Shorter Instagram-style width
+                        height: 32,
+                        backgroundColor: Color.gray.opacity(0.3),
+                        textColor: Colors.primaryDark,
+                        font: .LibreBodoni(size: 14),
+                        cornerRadius: 8
+                    ) {
+                        delete()
+                    }
                 }
             }
         }
-        .padding(.horizontal, 20)
+        .padding(.vertical, 8)
+        .padding(.horizontal, 24)
     }
 }
 

@@ -67,8 +67,66 @@ class AppController: ObservableObject {
     /// Shared MutualsViewModel instance for recommended friends and caching logic
     @Published var mutualsViewModel = MutualsViewModel()
     
+    /// Shared InboxViewModel instance for cove invites and caching logic
+    @Published var inboxViewModel = InboxViewModel()
+    
+    /// Whether to automatically show the inbox on home screen (when there are unopened invites)
+    @Published var shouldAutoShowInbox = false
+    
     /// Private initializer to enforce singleton pattern
     private init() {}
+    
+    // MARK: - Initialization Methods
+    
+    /**
+     * Initializes all data models after successful login/onboarding completion.
+     * Called from PluggingYouIn after all other data has been loaded.
+     */
+    func initializeAfterLogin() {
+        print("🔌 AppController: Initializing data after login...")
+        
+        // Initialize inbox - it will call checkForAutoShowInbox when data loads
+        inboxViewModel.initialize()
+    }
+    
+    /// Called by InboxViewModel when invites are loaded to check if inbox should auto-show
+    func checkForAutoShowInbox() {
+        print("🔌 AppController: checkForAutoShowInbox() called")
+        print("🔌 AppController: Total invites: \(inboxViewModel.invites.count)")
+        print("🔌 AppController: Unopened invites: \(inboxViewModel.unopenedInvites.count)")
+        print("🔌 AppController: hasUnopenedInvites: \(inboxViewModel.hasUnopenedInvites)")
+        print("🔌 AppController: Current shouldAutoShowInbox: \(shouldAutoShowInbox)")
+        
+        if inboxViewModel.hasUnopenedInvites {
+            print("📮 AppController: Found unopened invites, setting shouldAutoShowInbox = true")
+            shouldAutoShowInbox = true
+            print("📮 AppController: shouldAutoShowInbox is now: \(shouldAutoShowInbox)")
+        } else {
+            print("📮 AppController: No unopened invites found")
+        }
+    }
+    
+    /**
+     * Clears all data when user logs out.
+     */
+    func clearAllData() {
+        print("🔌 AppController: Clearing all data on logout...")
+        
+        // Clear all view model data
+        coveFeed = CoveFeed()
+        upcomingFeed = UpcomingFeed()
+        calendarFeed = CalendarFeed()
+        profileModel = ProfileModel()
+        friendsViewModel = FriendsViewModel()
+        requestsViewModel = RequestsViewModel()
+        mutualsViewModel = MutualsViewModel()
+        inboxViewModel.clear()
+        
+        // Reset UI state
+        shouldAutoShowInbox = false
+        isLoggedIn = false
+        errorMessage = ""
+    }
     
     // MARK: - Utility Methods
     

@@ -89,6 +89,10 @@ class UpcomingFeed: ObservableObject {
                     
                     self.hasMore = response.pagination?.hasMore ?? false
                     self.nextCursor = response.pagination?.nextCursor
+
+                    let urls = (response.events ?? []).compactMap { $0.coverPhoto?.url ?? $0.coveCoverPhoto?.url }
+                    ImagePrefetcherUtil.prefetch(urlStrings: urls)
+                    
                     self.lastFetched = Date()
                     
                     completion?()

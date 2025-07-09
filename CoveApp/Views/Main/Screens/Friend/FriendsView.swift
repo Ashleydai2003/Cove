@@ -1,4 +1,5 @@
 import SwiftUI
+import Kingfisher
 
 struct FriendsView: View {
     @EnvironmentObject var appController: AppController
@@ -83,6 +84,7 @@ struct FriendsView: View {
         .navigationTitle("")
         .navigationBarHidden(true)
         .onAppear {
+            // Load friends if not already cached (will use cached data if available)
             vm.loadNextPageIfStale()
         }
     }
@@ -96,14 +98,16 @@ struct FriendRowView: View {
     var body: some View {
         HStack(spacing: 10) {
             if let url = imageUrl {
-                AsyncImage(url: url) { img in img.resizable() } placeholder: {
-                    Images.smily.resizable()
-                }
-                .scaledToFill()
-                .frame(width: 60, height: 60)
-                .clipShape(Circle())
+                KFImage(url)
+                    .resizable()
+                    .placeholder {
+                        Images.smily.resizable()
+                    }
+                    .scaledToFill()
+                    .frame(width: 60, height: 60)
+                    .clipShape(Circle())
             } else {
-                Images.smily
+                Image("default_user_pfp")
                     .resizable()
                     .scaledToFill()
                     .frame(width: 60, height: 60)

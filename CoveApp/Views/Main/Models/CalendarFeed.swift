@@ -89,6 +89,11 @@ class CalendarFeed: ObservableObject {
                     
                     self.hasMore = response.pagination?.hasMore ?? false
                     self.nextCursor = response.pagination?.nextCursor
+
+                    // Prefetch cover photos
+                    let urls = (response.events ?? []).compactMap { $0.coverPhoto?.url ?? $0.coveCoverPhoto?.url }
+                    ImagePrefetcherUtil.prefetch(urlStrings: urls)
+                    
                     self.lastFetched = Date()
                     
                     completion?()
