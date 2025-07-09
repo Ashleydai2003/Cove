@@ -4,14 +4,11 @@
 //
 
 import SwiftUI
+import Kingfisher
 
 struct MutualsView: View {
-    @EnvironmentObject var appController: AppController
-    
-    // Use the shared instance from AppController
-    private var viewModel: MutualsViewModel {
-        appController.mutualsViewModel
-    }
+    @EnvironmentObject private var appController: AppController
+    @ObservedObject private var viewModel: MutualsViewModel = AppController.shared.mutualsViewModel
 
     var body: some View {
         ZStack {
@@ -64,27 +61,23 @@ struct MutualsView: View {
                         VStack(spacing: 30) {
                             ForEach(viewModel.mutuals) { mutual in
                                 HStack(spacing: 16) {
-                                    // Profile image (if URL exists, load with CachedAsyncImage; otherwise placeholder)
+                                    // Profile image (if URL exists, load with KFImage; otherwise placeholder)
                                     if let url = mutual.profilePhotoUrl {
-                                        CachedAsyncImage(
-                                            url: url
-                                        ) { image in
-                                            image
-                                                .resizable()
-                                                .scaledToFill()
-                                        } placeholder: {
-                                            Circle()
-                                                .fill(Color.gray.opacity(0.3))
-                                                .overlay(
-                                                    ProgressView()
-                                                        .tint(.gray)
-                                                )
-                                        }
-                                        .frame(width: 60, height: 60)
-                                        .clipShape(Circle())
+                                        KFImage(url)
+                                            .resizable()
+                                            .placeholder {
+                                                Circle()
+                                                    .fill(Color.gray.opacity(0.3))
+                                                    .overlay(
+                                                        ProgressView()
+                                                            .tint(.gray)
+                                                    )
+                                            }
+                                            .scaledToFill()
+                                            .frame(width: 60, height: 60)
+                                            .clipShape(Circle())
                                     } else {
-                                        // PLACEHOLDER
-                                        Images.profilePlaceholder
+                                        Image("default_user_pfp")
                                             .resizable()
                                             .scaledToFill()
                                             .frame(width: 60, height: 60)
@@ -151,6 +144,7 @@ struct MutualsView: View {
             Text(viewModel.errorMessage ?? "")
         }
         .onAppear {
+            // Load mutuals if not already cached (will use cached data if available)
             viewModel.loadNextPageIfStale()
         }
     }

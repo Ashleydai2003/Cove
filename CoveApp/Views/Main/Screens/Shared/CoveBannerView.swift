@@ -12,16 +12,14 @@ struct CoveBannerView: View {
                 .foregroundColor(Colors.primaryDark)
             Spacer()
             HStack(spacing: 18) {
-                NavigationLink(destination: InvitesView(), isActive: $showInvites) {
-                    Button(action: { 
-                        showInvites = true
-                        onInbox?() 
-                    }) {
-                        Image(systemName: "envelope")
-                            .resizable()
-                            .frame(width: 28, height: 22)
-                            .foregroundColor(Colors.primaryDark)
-                    }
+                Button(action: { 
+                    showInvites = true
+                    onInbox?() 
+                }) {
+                    Image(systemName: "envelope")
+                        .resizable()
+                        .frame(width: 28, height: 22)
+                        .foregroundColor(Colors.primaryDark)
                 }
                 .buttonStyle(PlainButtonStyle())
                 
@@ -36,6 +34,9 @@ struct CoveBannerView: View {
         .padding(.horizontal, 30)
         .padding(.top, 24)
         .padding(.bottom, 8)
+        .sheet(isPresented: $showInvites) {
+            InboxView()
+        }
     }
 }
 

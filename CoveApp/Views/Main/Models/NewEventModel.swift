@@ -29,7 +29,7 @@ class NewEventModel: ObservableObject {
     
     // MARK: - Computed Properties
     var isFormValid: Bool {
-        return !eventName.isEmpty && eventImage != nil && location != nil && !coveId.isEmpty
+        return !eventName.isEmpty && location != nil
     }
     
     // MARK: - Methods

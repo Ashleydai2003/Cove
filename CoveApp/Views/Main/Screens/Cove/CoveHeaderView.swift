@@ -56,9 +56,11 @@ struct CoveHeaderView: View {
                             .frame(maxWidth: 100, maxHeight: 100)
                             .clipShape(Circle())
                     } else {
-                        Circle()
-                            .fill(Color.gray.opacity(0.2))
+                        Image("default_cove_pfp")
+                            .resizable()
+                            .aspectRatio(1, contentMode: .fill)
                             .frame(maxWidth: 100, maxHeight: 100)
+                            .clipShape(Circle())
                     }
                 }
                 
