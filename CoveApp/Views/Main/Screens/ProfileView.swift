@@ -65,7 +65,7 @@ struct ProfileHeader: View {
                             .clipShape(Circle())
                     } else {
                         // default profile photo
-                        Images.profilePlaceholder
+                        Image("default_user_pfp")
                             .resizable()
                             .scaledToFill()
                             .frame(maxWidth: 200, maxHeight: 200)

@@ -24,12 +24,12 @@ struct FriendDTO: Decodable, Identifiable, ContentComparable {
     let name: String
     let profilePhotoUrl: URL?
     let friendshipId: String
-    let createdAt: Date
+    let createdAt: String
 
     // Conform to Identifiable by using `friendshipId`
     var identifier: String { friendshipId }
     var uuid: UUID { UUID(uuidString: friendshipId) ?? UUID() }
-    
+
     /// ContentComparable implementation - checks if meaningful content has changed
     func hasContentChanged(from other: FriendDTO) -> Bool {
         return name != other.name ||

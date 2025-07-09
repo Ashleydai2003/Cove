@@ -677,12 +677,53 @@ export const handleJoinCove = async (event: APIGatewayProxyEvent): Promise<APIGa
       };
     }
 
+    // Get user's phone number to check for invite
+    const userRecord = await prisma.user.findUnique({
+      where: { id: user.uid },
+      select: { phone: true }
+    });
+
+    if (!userRecord) {
+      return {
+        statusCode: 404,
+        body: JSON.stringify({
+          message: 'User not found'
+        })
+      };
+    }
+
+    // Check if user has an invite for this cove
+    const invite = await prisma.invite.findUnique({
+      where: {
+        phoneNumber_coveId: {
+          phoneNumber: userRecord.phone,
+          coveId: coveId
+        }
+      }
+    });
+
+    if (!invite) {
+      return {
+        statusCode: 403,
+        body: JSON.stringify({
+          message: 'You must have an invite to join this cove'
+        })
+      };
+    }
+
     // Add user as a member of the cove
     const newMembership = await prisma.coveMember.create({
       data: {
         coveId: coveId,
         userId: user.uid,
         role: 'MEMBER' // Default role for new members
+      }
+    });
+
+    // Delete the invite since it's no longer needed
+    await prisma.invite.delete({
+      where: {
+        id: invite.id
       }
     });
 
@@ -712,8 +753,8 @@ export const handleJoinCove = async (event: APIGatewayProxyEvent): Promise<APIGa
   }
 };
 
- // TODO: send invite endpoint 
- // Only admin of the cove can send invites for that cove 
+// TODO: send invite endpoint 
+// Only admin of the cove can send invites for that cove 
 
- // TODO: later, request to join a cove endpoint and an approve request endpoint 
- // only admin of the cove can approve requests 
+// TODO: later, request to join a cove endpoint and an approve request endpoint 
+// only admin of the cove can approve requests 

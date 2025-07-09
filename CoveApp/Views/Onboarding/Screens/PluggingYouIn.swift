@@ -11,7 +11,13 @@ struct PluggingYouIn: View {
     @State private var isCovesLoaded = false
     @State private var isCalendarEventsLoaded = false
     @State private var isUpcomingEventsLoaded = false
+    @State private var isInboxLoaded = false
+    @State private var isFriendRequestsLoaded = false
+    @State private var isMutualsLoaded = false
+    @State private var isFriendsLoaded = false
+    @State private var areCoverImagesPrefetched = false
     @State private var animationTimer: Timer?
+    @State private var statusMessage: String = "plugging you in…"
     @State private var isCancelled = false
     
     var body: some View {
@@ -38,10 +44,18 @@ struct PluggingYouIn: View {
                         appController.profileModel.cancelAllRequests()
                     }
                 
-                // App tagline with matching font style
-                Text("plugging you in...")
+                // Static tagline
+                Text("plugging you in…")
                     .font(.LibreBodoni(size: 35))
                     .foregroundColor(Colors.primaryDark)
+
+                // Smaller status message shown under the tagline
+                if statusMessage != "plugging you in…" {
+                    Text(statusMessage)
+                        .font(.LibreBodoni(size: 18))
+                        .foregroundColor(Colors.primaryDark)
+                        .multilineTextAlignment(.center)
+                }
                 
                 Spacer()
             }
@@ -77,6 +91,7 @@ struct PluggingYouIn: View {
         // Check if user is in onboarding mode (this should be set during login)
         if appController.profileModel.onboarding {
             print("📱 User is in onboarding mode, completing onboarding...")
+            statusMessage = "completing onboarding…"
             completeOnboarding()
         } else {
             print("📱 User is not in onboarding mode, proceeding with normal flow...")
@@ -85,6 +100,10 @@ struct PluggingYouIn: View {
                 self.fetchUserCoves()
                 self.fetchCalendarEvents()
                 self.fetchUpcomingEvents()
+                self.fetchInvites()
+                self.fetchFriendRequests()
+                self.fetchMutuals()
+                self.fetchFriends()
             }
         }
     }
@@ -102,6 +121,10 @@ struct PluggingYouIn: View {
                         self.fetchUserCoves()
                         self.fetchCalendarEvents()
                         self.fetchUpcomingEvents()
+                        self.fetchInvites()
+                        self.fetchFriendRequests()
+                        self.fetchMutuals()
+                        self.fetchFriends()
                     }
                 } else {
                     print("❌ Onboarding failed")
@@ -151,11 +174,13 @@ struct PluggingYouIn: View {
                 // Mark as loaded regardless of success/failure
                     self.isCovesLoaded = true
                 
-                // Start background prefetch for cove events (non-blocking)
+                // Prefetch events and cove cover images
+                self.statusMessage = "loading your events…"
                 self.prefetchCoveEvents()
-                    
-                    // Navigate to home after everything is loaded
+                self.prefetchCoveCoverImages {
+                    self.areCoverImagesPrefetched = true
                     self.navigateToHome()
+                }
             }
         }
     }
@@ -165,7 +190,7 @@ struct PluggingYouIn: View {
         guard !isCancelled else { return }
         
         // Only navigate if all critical data is loaded (or failed to load)
-        if isProfileLoaded && isCovesLoaded && isCalendarEventsLoaded && isUpcomingEventsLoaded {
+        if isProfileLoaded && isCovesLoaded && isCalendarEventsLoaded && isUpcomingEventsLoaded && isInboxLoaded && isFriendRequestsLoaded && isMutualsLoaded && isFriendsLoaded && areCoverImagesPrefetched {
             // Stop the animation
             stopAnimation()
             
@@ -190,6 +215,7 @@ struct PluggingYouIn: View {
     }
     
     private func fetchCalendarEvents() {
+        statusMessage = "syncing calendar…"
         appController.calendarFeed.fetchCalendarEventsIfStale {
             DispatchQueue.main.async {
                 // Check if view was cancelled
@@ -212,6 +238,7 @@ struct PluggingYouIn: View {
     }
     
     private func fetchUpcomingEvents() {
+        statusMessage = "finding upcoming events…"
         appController.upcomingFeed.fetchUpcomingEventsIfStale {
             DispatchQueue.main.async {
                 // Check if view was cancelled
@@ -233,6 +260,135 @@ struct PluggingYouIn: View {
         }
     }
     
+    private func fetchInvites() {
+        print("📮 PluggingYouIn: Starting fetchInvites...")
+        // Initialize inbox through AppController method
+        statusMessage = "checking inbox…"
+        appController.initializeAfterLogin()
+        
+        // Monitor the inbox loading state properly
+        let checkInboxCompletion = {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                self.checkInboxLoadingStatus()
+            }
+        }
+        
+        checkInboxCompletion()
+    }
+    
+    private func fetchFriendRequests() {
+        print("📬 PluggingYouIn: Starting fetchFriendRequests...")
+        statusMessage = "checking friend requests…"
+        appController.requestsViewModel.loadNextPage()
+        
+        // Monitor the friend requests loading state
+        let checkRequestsCompletion = {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                self.checkFriendRequestsLoadingStatus()
+            }
+        }
+        
+        checkRequestsCompletion()
+    }
+    
+    private func fetchMutuals() {
+        print("🔗 PluggingYouIn: Starting fetchMutuals...")
+        statusMessage = "looking for friends…"
+        appController.mutualsViewModel.loadNextPage()
+        
+        // Monitor the mutuals loading state
+        let checkMutualsCompletion = {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                self.checkMutualsLoadingStatus()
+            }
+        }
+        
+        checkMutualsCompletion()
+    }
+    
+    private func fetchFriends() {
+        print("👥 PluggingYouIn: Starting fetchFriends...")
+        statusMessage = "loading your friends…"
+        appController.friendsViewModel.loadNextPage()
+        
+        // Monitor the friends loading state
+        let checkFriendsCompletion = {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                self.checkFriendsLoadingStatus()
+            }
+        }
+        
+        checkFriendsCompletion()
+    }
+    
+    private func checkInboxLoadingStatus() {
+        // Check if view was cancelled
+        guard !isCancelled else { return }
+        
+        if !appController.inboxViewModel.isLoading {
+            // Inbox loading is complete (either success or failure)
+            print("📮 PluggingYouIn: Inbox loading completed")
+            isInboxLoaded = true
+            navigateToHome()
+        } else {
+            // Still loading, check again in 0.5 seconds
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                self.checkInboxLoadingStatus()
+            }
+        }
+    }
+    
+    private func checkFriendRequestsLoadingStatus() {
+        // Check if view was cancelled
+        guard !isCancelled else { return }
+        
+        if !appController.requestsViewModel.isLoading {
+            // Friend requests loading is complete (either success or failure)
+            print("📬 PluggingYouIn: Friend requests loading completed")
+            isFriendRequestsLoaded = true
+            navigateToHome()
+        } else {
+            // Still loading, check again in 0.5 seconds
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                self.checkFriendRequestsLoadingStatus()
+            }
+        }
+    }
+    
+    private func checkMutualsLoadingStatus() {
+        // Check if view was cancelled
+        guard !isCancelled else { return }
+        
+        if !appController.mutualsViewModel.isLoading {
+            // Mutuals loading is complete (either success or failure)
+            print("🔗 PluggingYouIn: Mutuals loading completed")
+            isMutualsLoaded = true
+            navigateToHome()
+        } else {
+            // Still loading, check again in 0.5 seconds
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                self.checkMutualsLoadingStatus()
+            }
+        }
+    }
+    
+    private func checkFriendsLoadingStatus() {
+        // Check if view was cancelled
+        guard !isCancelled else { return }
+        
+        if !appController.friendsViewModel.isLoading {
+            // Friends loading is complete (either success or failure)
+            print("👥 PluggingYouIn: Friends loading completed")
+            isFriendsLoaded = true
+            navigateToHome()
+        } else {
+            // Still loading, check again in 0.5 seconds
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                self.checkFriendsLoadingStatus()
+            }
+        }
+    }
+    
     private func prefetchCoveEvents() {
         // Get first 10 coves for prefetching
         let covesToPrefetch = Array(appController.coveFeed.userCoves.prefix(10))
@@ -245,6 +401,12 @@ struct PluggingYouIn: View {
             // This will fetch cove details and first page of events
             coveModel.fetchCoveDetailsIfStale(coveId: cove.id)
         }
+    }
+
+    /// Prefetch the first 10 cove cover images so that home feed looks populated immediately
+    private func prefetchCoveCoverImages(completion: @escaping () -> Void) {
+        let urls = appController.coveFeed.userCoves.prefix(10).compactMap { $0.coverPhoto?.url }
+        ImagePrefetcherUtil.prefetch(urlStrings: urls, completion: completion)
     }
 }
 

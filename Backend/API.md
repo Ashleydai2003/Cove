@@ -231,6 +231,48 @@ Returns:
   * error: String
 }> (optional) - Any errors that occurred during invite creation
 
+## PUT
+
+### `/open-invite`
+
+Marks a cove invite as opened. This endpoint is called when a user taps on an envelope to view the invite details. Only the recipient of the invite can mark it as opened.
+
+Takes Data Parameters:
+* inviteId: String (required) - ID of the invite to mark as opened
+
+Returns:
+* message: String - Confirmation message
+* invite: {
+  * id: String
+  * message: String | null
+  * createdAt: DateTime
+  * isOpened: Boolean - Will be true after successful update
+  * cove: {
+    * id: String
+    * name: String
+    * description: String | null
+    * location: String
+    * coverPhotoId: String | null
+  }
+  * sentBy: {
+    * id: String
+    * name: String
+    * profilePhotoId: String | null
+  }
+} - The updated invite object with full details
+
+## DELETE
+
+### `/reject-invite`
+
+Rejects and deletes a cove invite. Only the recipient of the invite can reject it. This permanently removes the invite from the database.
+
+Takes Data Parameters:
+* inviteId: String (required) - ID of the invite to reject/delete
+
+Returns:
+* message: String - Confirmation message ("Invite rejected successfully")
+
 ## GET
 
 ### `/profile`
@@ -559,6 +601,18 @@ Returns:
   * createdAt: DateTime
   * isOpened: Boolean
   * cove: {
+    * id: String
+    * name: String
+    * description: String | null
+    * location: String
+    * coverPhotoId: String | null
+  }
+  * sentBy: {
+    * id: String
+    * name: String
+    * profilePhotoId: String | null
+  }
+}> 
     * id: String
     * name: String
     * description: String | null

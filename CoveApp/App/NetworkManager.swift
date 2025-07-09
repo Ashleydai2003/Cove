@@ -236,6 +236,224 @@ class NetworkManager {
             task.resume()
         }
     }
+    
+    /// Makes a PUT request to the specified endpoint
+    /// - Parameters:
+    ///   - endpoint: API endpoint path (e.g., "/open-invite")
+    ///   - parameters: Request body parameters
+    ///   - completion: Callback with the decoded response or error
+    func put<T: Decodable>(
+        endpoint: String,
+        parameters: [String: Any],
+        completion: @escaping (Result<T, NetworkError>) -> Void
+    ) {
+        print("🌐 PUT Request - Endpoint: \(endpoint)")
+        print("📝 Request Body: \(parameters)")
+        
+        // Get current Firebase token
+        Auth.auth().currentUser?.getIDToken { token, error in
+            if let error = error {
+                print("❌ Auth Error: \(error.localizedDescription)")
+                completion(.failure(.authError(error)))
+                return
+            }
+            
+            guard let token = token else {
+                print("❌ Missing Auth Token")
+                completion(.failure(.missingToken))
+                return
+            }
+            
+            print("🔑 Auth Token received")
+            
+            // Create URL
+            guard let url = URL(string: "\(self.apiBaseURL)\(endpoint)") else {
+                print("❌ Invalid URL: \(self.apiBaseURL)\(endpoint)")
+                completion(.failure(.invalidURL))
+                return
+            }
+            
+            print("🔗 Request URL: \(url.absoluteString)")
+            
+            // Create request
+            var request = URLRequest(url: url)
+            request.httpMethod = "PUT"
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            
+            // Create request body
+            do {
+                request.httpBody = try JSONSerialization.data(withJSONObject: parameters)
+                print("📦 Request Body: \(String(data: request.httpBody!, encoding: .utf8) ?? "Unable to decode body")")
+            } catch {
+                print("❌ Encoding Error: \(error.localizedDescription)")
+                completion(.failure(.encodingError(error)))
+                return
+            }
+            
+            print("📤 Sending PUT request...")
+            
+            // Make the request
+            let task = URLSession.shared.dataTask(with: request) { data, response, error in
+                DispatchQueue.main.async {
+                    if let error = error {
+                        print("❌ Network Error: \(error.localizedDescription)")
+                        completion(.failure(.networkError(error)))
+                        return
+                    }
+                    
+                    guard let httpResponse = response as? HTTPURLResponse else {
+                        print("❌ Invalid Response: No HTTP response")
+                        completion(.failure(.invalidResponse))
+                        return
+                    }
+                    
+                    print("📥 Response Status: \(httpResponse.statusCode)")
+                    
+                    guard (200...299).contains(httpResponse.statusCode) else {
+                        print("❌ Server Error: \(httpResponse.statusCode)")
+                        completion(.failure(.serverError(httpResponse.statusCode)))
+                        return
+                    }
+                    
+                    guard let data = data else {
+                        print("❌ No Data Received")
+                        completion(.failure(.noData))
+                        return
+                    }
+                    
+                    print("📦 Received Data: \(String(data: data, encoding: .utf8) ?? "Unable to decode data")")
+                    
+                    // Add more detailed logging for debugging
+                    if let jsonString = String(data: data, encoding: .utf8) {
+                        print("🔍 NetworkManager: Raw JSON response:")
+                        print(jsonString)
+                    }
+                    
+                    do {
+                        let decodedResponse = try JSONDecoder().decode(T.self, from: data)
+                        print("✅ Successfully decoded response")
+                        completion(.success(decodedResponse))
+                    } catch {
+                        print("❌ Decoding Error: \(error.localizedDescription)")
+                        print("🔍 NetworkManager: Failed to decode response as \(T.self)")
+                        completion(.failure(.decodingError(error)))
+                    }
+                }
+            }
+            
+            task.resume()
+        }
+    }
+    
+    /// Makes a DELETE request to the specified endpoint
+    /// - Parameters:
+    ///   - endpoint: API endpoint path (e.g., "/reject-invite")
+    ///   - parameters: Request body parameters
+    ///   - completion: Callback with the decoded response or error
+    func delete<T: Decodable>(
+        endpoint: String,
+        parameters: [String: Any],
+        completion: @escaping (Result<T, NetworkError>) -> Void
+    ) {
+        print("🌐 DELETE Request - Endpoint: \(endpoint)")
+        print("📝 Request Body: \(parameters)")
+        
+        // Get current Firebase token
+        Auth.auth().currentUser?.getIDToken { token, error in
+            if let error = error {
+                print("❌ Auth Error: \(error.localizedDescription)")
+                completion(.failure(.authError(error)))
+                return
+            }
+            
+            guard let token = token else {
+                print("❌ Missing Auth Token")
+                completion(.failure(.missingToken))
+                return
+            }
+            
+            print("🔑 Auth Token received")
+            
+            // Create URL
+            guard let url = URL(string: "\(self.apiBaseURL)\(endpoint)") else {
+                print("❌ Invalid URL: \(self.apiBaseURL)\(endpoint)")
+                completion(.failure(.invalidURL))
+                return
+            }
+            
+            print("🔗 Request URL: \(url.absoluteString)")
+            
+            // Create request
+            var request = URLRequest(url: url)
+            request.httpMethod = "DELETE"
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            
+            // Create request body
+            do {
+                request.httpBody = try JSONSerialization.data(withJSONObject: parameters)
+                print("📦 Request Body: \(String(data: request.httpBody!, encoding: .utf8) ?? "Unable to decode body")")
+            } catch {
+                print("❌ Encoding Error: \(error.localizedDescription)")
+                completion(.failure(.encodingError(error)))
+                return
+            }
+            
+            print("📤 Sending DELETE request...")
+            
+            // Make the request
+            let task = URLSession.shared.dataTask(with: request) { data, response, error in
+                DispatchQueue.main.async {
+                    if let error = error {
+                        print("❌ Network Error: \(error.localizedDescription)")
+                        completion(.failure(.networkError(error)))
+                        return
+                    }
+                    
+                    guard let httpResponse = response as? HTTPURLResponse else {
+                        print("❌ Invalid Response: No HTTP response")
+                        completion(.failure(.invalidResponse))
+                        return
+                    }
+                    
+                    print("📥 Response Status: \(httpResponse.statusCode)")
+                    
+                    guard (200...299).contains(httpResponse.statusCode) else {
+                        print("❌ Server Error: \(httpResponse.statusCode)")
+                        completion(.failure(.serverError(httpResponse.statusCode)))
+                        return
+                    }
+                    
+                    guard let data = data else {
+                        print("❌ No Data Received")
+                        completion(.failure(.noData))
+                        return
+                    }
+                    
+                    print("📦 Received Data: \(String(data: data, encoding: .utf8) ?? "Unable to decode data")")
+                    
+                    // Add more detailed logging for debugging
+                    if let jsonString = String(data: data, encoding: .utf8) {
+                        print("🔍 NetworkManager: Raw JSON response:")
+                        print(jsonString)
+                    }
+                    
+                    do {
+                        let decodedResponse = try JSONDecoder().decode(T.self, from: data)
+                        print("✅ Successfully decoded response")
+                        completion(.success(decodedResponse))
+                    } catch {
+                        print("❌ Decoding Error: \(error.localizedDescription)")
+                        print("🔍 NetworkManager: Failed to decode response as \(T.self)")
+                        completion(.failure(.decodingError(error)))
+                    }
+                }
+            }
+            
+            task.resume()
+        }
+    }
 }
 
 /// Network error types

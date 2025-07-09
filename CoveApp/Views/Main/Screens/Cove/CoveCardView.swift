@@ -29,10 +29,11 @@ struct CoveCardView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                         .frame(maxWidth: 80, maxHeight: 80)
                 } else {
-                    Rectangle()
-                        .fill(Color.gray.opacity(0.3))
-                        .frame(maxWidth: 80, maxHeight: 80)
+                    Image("default_cove_pfp")
+                        .resizable()
+                        .aspectRatio(1, contentMode: .fill)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .frame(maxWidth: 80, maxHeight: 80)
                 }
                 
                 VStack(alignment: .leading, spacing: 4) {
