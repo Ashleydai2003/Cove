@@ -54,6 +54,7 @@ struct CoveMembersView: View {
                             currentUserId: appController.profileModel.userId,
                             friendsViewModel: appController.friendsViewModel,
                             mutualsViewModel: appController.mutualsViewModel,
+                            requestsViewModel: appController.requestsViewModel,
                             onMessage: {
                                 selectedMemberName = member.name
                                 showMessageAlert = true
@@ -120,8 +121,9 @@ struct CoveMembersView: View {
 struct MemberRowView: View {
     let member: CoveMember
     let currentUserId: String
-    let friendsViewModel: FriendsViewModel
-    let mutualsViewModel: MutualsViewModel
+    @ObservedObject var friendsViewModel: FriendsViewModel
+    @ObservedObject var mutualsViewModel: MutualsViewModel
+    @ObservedObject var requestsViewModel: RequestsViewModel
     let onMessage: () -> Void
     
     var body: some View {
@@ -150,14 +152,11 @@ struct MemberRowView: View {
                     .frame(width: 48, height: 48)
                     .clipShape(Circle())
             } else {
-                Circle()
-                    .fill(Color.gray.opacity(0.2))
+                Image("default_user_pfp")
+                    .resizable()
+                    .aspectRatio(1, contentMode: .fill)
                     .frame(width: 48, height: 48)
-                    .overlay(
-                        Image(systemName: "person.fill")
-                            .foregroundColor(.gray)
-                            .font(.system(size: 20))
-                    )
+                    .clipShape(Circle())
             }
             
             // Member info
@@ -173,23 +172,42 @@ struct MemberRowView: View {
             
             Spacer()
             
-            // Smart button logic
+            // Smart button logic according to requirements
             if member.id == currentUserId {
-                // Don't show any button for the current user
-                EmptyView()
-            } else if isFriend {
-                // Show message button for friends
-                ActionButton.message {
-                    onMessage()
+                EmptyView() // No button for self
+            } else if let incomingReq = incomingRequest {
+                // They sent us a request → accept / delete options
+                HStack(spacing: 8) {
+                    ActionButton(
+                        title: "accept",
+                        width: 80,
+                        height: 32,
+                        backgroundColor: Colors.primaryDark,
+                        textColor: .white,
+                        font: .LibreBodoni(size: 14),
+                        cornerRadius: 8) {
+                            requestsViewModel.accept(incomingReq)
+                        }
+                    ActionButton(
+                        title: "delete",
+                        width: 80,
+                        height: 32,
+                        backgroundColor: Color.gray.opacity(0.3),
+                        textColor: Colors.primaryDark,
+                        font: .LibreBodoni(size: 14),
+                        cornerRadius: 8) {
+                            requestsViewModel.reject(incomingReq)
+                        }
                 }
-            } else if isPendingRequest {
-                // Show pending button for users who already have a pending request
+            } else if isOutgoingPending {
+                // We already sent request → pending
                 ActionButton.pending()
+            } else if isFriend {
+                // Friends → message button
+                ActionButton.message { onMessage() }
             } else {
-                // Show request button for non-friends
-                ActionButton.request {
-                    sendFriendRequest()
-                }
+                // Not friend and no pending requests → request button
+                ActionButton.request { sendFriendRequest() }
             }
         }
         .padding(.vertical, 8)
@@ -197,16 +215,19 @@ struct MemberRowView: View {
     
     // MARK: - Computed Properties
     
-    /// Checks if the member is already a friend
-    private var isFriend: Bool {
-        return friendsViewModel.friends.contains { friend in
-            friend.id == member.id
-        }
+    /// Outgoing pending request
+    private var isOutgoingPending: Bool {
+        return mutualsViewModel.pendingRequests.contains(member.id)
+    }
+
+    /// Incoming friend request from this member if exists
+    private var incomingRequest: RequestDTO? {
+        return requestsViewModel.requests.first { $0.sender.id == member.id }
     }
     
-    /// Checks if there's already a pending friend request for this user
-    private var isPendingRequest: Bool {
-        return mutualsViewModel.pendingRequests.contains(member.id)
+    /// Checks if the member is already a friend
+    private var isFriend: Bool {
+        return friendsViewModel.friends.contains { $0.id == member.id }
     }
     
     // MARK: - Actions

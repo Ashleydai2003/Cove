@@ -51,6 +51,13 @@ struct EventSummaryView: View {
                             .aspectRatio(16/10, contentMode: .fill)
                             .frame(maxWidth: .infinity)
                             .clipShape(RoundedRectangle(cornerRadius: 18))
+                    } else {
+                        // Default event image
+                        Image("default_event2")
+                            .resizable()
+                            .aspectRatio(16/10, contentMode: .fill)
+                            .frame(maxWidth: .infinity)
+                            .clipShape(RoundedRectangle(cornerRadius: 18))
                     }
                     // RSVP overlay if not calendar and user is going or hosting
                     if type != .calendar && imageLoaded {

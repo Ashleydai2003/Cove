@@ -60,6 +60,9 @@ class RequestsViewModel: ObservableObject {
                 }
                 self.hasMore = resp.pagination.nextCursor != nil
                 self.nextCursor = resp.pagination.nextCursor
+                // Prefetch profile photos for new requests
+                let urls = resp.requests.compactMap { $0.sender.profilePhotoUrl?.absoluteString }
+                ImagePrefetcherUtil.prefetch(urlStrings: urls)
                 self.lastFetched = Date()
             case .failure(let error):
                 self.errorMessage = error.localizedDescription
@@ -79,23 +82,60 @@ class RequestsViewModel: ObservableObject {
     }
     
     func accept(_ req: RequestDTO) {
+        print("✅ RequestsViewModel: Accepting friend request from \(req.sender.name)")
+        
+        withAnimation {
+            requests = requests.filter { $0.id != req.id }
+        }
+        
         FriendRequests.resolve(requestId: req.id, action: "ACCEPT") { [weak self] result in
-            switch result {
-            case .success:
-                self?.requests.removeAll { $0.id == req.id }
-            case .failure(let error):
-                self?.errorMessage = error.localizedDescription
+            guard let self = self else { return }
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let resp):
+                    // Optimistically add to friends list so UI (members) shows message button
+                    let isoFormatter = ISO8601DateFormatter()
+                    let friendDTO = FriendDTO(
+                        id: req.sender.id,
+                        name: req.sender.name,
+                        profilePhotoUrl: req.sender.profilePhotoUrl,
+                        friendshipId: resp.friendship?.id ?? UUID().uuidString,
+                        createdAt: isoFormatter.string(from: Date())
+                    )
+                    var arr = AppController.shared.friendsViewModel.friends
+                    arr.append(friendDTO)
+                    AppController.shared.friendsViewModel.friends = arr
+                    break // Already removed and UI updated
+                case .failure(let error):
+                    // Re-add on failure
+                    var arr = self.requests
+                    arr.append(req)
+                    withAnimation { self.requests = arr }
+                    self.errorMessage = error.localizedDescription
+                }
             }
         }
     }
     
     func reject(_ req: RequestDTO) {
+        print("❌ RequestsViewModel: Rejecting friend request from \(req.sender.name)")
+        
+        withAnimation {
+            requests = requests.filter { $0.id != req.id }
+        }
+        
         FriendRequests.resolve(requestId: req.id, action: "REJECT") { [weak self] result in
-            switch result {
-            case .success:
-                self?.requests.removeAll { $0.id == req.id }
-            case .failure(let error):
-                self?.errorMessage = error.localizedDescription
+            guard let self = self else { return }
+            DispatchQueue.main.async {
+                switch result {
+                case .success:
+                    break
+                case .failure(let error):
+                    var arr = self.requests
+                    arr.append(req)
+                    withAnimation { self.requests = arr }
+                    self.errorMessage = error.localizedDescription
+                }
             }
         }
     }

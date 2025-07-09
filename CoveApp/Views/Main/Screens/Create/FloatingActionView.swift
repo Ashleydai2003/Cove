@@ -24,29 +24,31 @@ struct FloatingActionView: View {
             // Menu options - appear above the + button
             if showMenu {
                 VStack(alignment: .trailing, spacing: 12) {
-                    // Cove option
-                    Button(action: {
-                        showMenu = false
-                        showCreateCoveSheet = true
-                    }) {
-                        HStack(spacing: 12) {
-                            Text("cove")
-                                .font(.LibreBodoni(size: 25))
-                                .foregroundColor(.white)
-                            Spacer()
-                            Image("cove_selected")
-                                .resizable()
-                                .frame(maxWidth: 35, maxHeight: 35)
-                                .foregroundColor(.white)
+                    // Cove option (only for admin users)
+                    if appController.profileModel.adminCove != nil {
+                        Button(action: {
+                            showMenu = false
+                            showCreateCoveSheet = true
+                        }) {
+                            HStack(spacing: 12) {
+                                Text("cove")
+                                    .font(.LibreBodoni(size: 25))
+                                    .foregroundColor(.white)
+                                Spacer()
+                                Image("cove_selected")
+                                    .resizable()
+                                    .frame(maxWidth: 35, maxHeight: 35)
+                                    .foregroundColor(.white)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 16)
+                            .background(
+                                RoundedRectangle(cornerRadius: 28)
+                                    .fill(Colors.primaryDark)
+                                    .shadow(color: .black.opacity(0.15), radius: 4, x: 0, y: 2)
+                            )
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 16)
-                        .background(
-                            RoundedRectangle(cornerRadius: 28)
-                                .fill(Colors.primaryDark)
-                                .shadow(color: .black.opacity(0.15), radius: 4, x: 0, y: 2)
-                        )
                     }
                     
                     // Event option
