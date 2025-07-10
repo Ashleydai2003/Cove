@@ -63,7 +63,7 @@ struct OtpVerifyView: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                OnboardingBackgroundView()
+                Colors.primaryLight.ignoresSafeArea()
                 
                 VStack {
                     // MARK: - Navigation Header
@@ -122,25 +122,7 @@ struct OtpVerifyView: View {
                                         }
                                     }
                                     .onChange(of: otp[index]) { oldValue, newValue in
-                                        // Handle input changes
-                                        if newValue.count > 1 {
-                                            otp[index] = String(newValue.prefix(1))
-                                        }
-                                        
-                                        // Move to next field if a digit is entered
-                                        if !newValue.isEmpty && index < otp.count - 1 {
-                                            focusedIndex = index + 1
-                                        }
-                                        
-                                        // Move to previous field if backspace is pressed
-                                        if newValue.isEmpty && index > 0 {
-                                            focusedIndex = index - 1
-                                        }
-                                        
-                                        // Verify if all digits are entered
-                                        if otp.allSatisfy({ !$0.isEmpty }) {
-                                            verifyOTP()
-                                        }
+                                        handleOTPInput(at: index, oldValue: oldValue, newValue: newValue)
                                     }
                                 
                                 // Bottom divider for each input field
@@ -189,6 +171,62 @@ struct OtpVerifyView: View {
         // Focus on the first input field when the view appears
         .onAppear {
             focusedIndex = 0
+        }
+    }
+    
+    // MARK: - Input Handling Methods
+    
+    /// Handles OTP input with improved focus management and backspace behavior
+    private func handleOTPInput(at index: Int, oldValue: String, newValue: String) {
+        // Handle multiple characters (paste scenario)
+        if newValue.count > 1 {
+            otp[index] = String(newValue.prefix(1))
+        }
+        
+        // Handle backspace on empty field - delete previous digit
+        if oldValue.isEmpty && newValue.isEmpty {
+            // This is backspace on empty field, delete the last filled digit
+            deleteLastDigit()
+            return
+        }
+        
+        // Handle normal input
+        if newValue.isEmpty {
+            // User deleted current digit, move focus to this field
+            focusedIndex = index
+        } else {
+            // User entered a digit, move to next empty field
+            DispatchQueue.main.async {
+                self.updateFocusToNextEmptyField()
+            }
+        }
+        
+        // Auto-verify when all fields are filled
+        if otp.allSatisfy({ !$0.isEmpty }) {
+            verifyOTP()
+        }
+    }
+    
+    /// Deletes the last (rightmost) filled digit and updates focus
+    private func deleteLastDigit() {
+        // Find the last filled digit
+        for i in stride(from: otp.count - 1, through: 0, by: -1) {
+            if !otp[i].isEmpty {
+                otp[i] = ""
+                focusedIndex = i
+                return
+            }
+        }
+    }
+    
+    /// Updates focus to the first empty field, or removes focus if all are filled
+    private func updateFocusToNextEmptyField() {
+        // Find first empty field
+        if let firstEmpty = otp.firstIndex(where: { $0.isEmpty }) {
+            focusedIndex = firstEmpty
+        } else {
+            // All fields are filled, remove focus
+            focusedIndex = nil
         }
     }
     
