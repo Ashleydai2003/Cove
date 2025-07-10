@@ -199,9 +199,11 @@ struct BirthdateView: View {
             return
         }
         
-        // Auto-validate when all 8 digits are entered
+        // Auto-validate when all 8 digits are entered (with small delay)
         if newValue.count == 8 {
-            validateBirthdate()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                validateBirthdate()
+            }
         }
     }
     
