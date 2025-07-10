@@ -16,13 +16,18 @@ struct OtpVerifyView: View {
     /// App controller for managing navigation and shared state
     @EnvironmentObject var appController: AppController
     
-    /// Array to store individual digits of the OTP
-    /// Initialized with 6 empty strings for each digit position
-    @State private var otp: [String] = Array(repeating: "", count: 6)
+    /// Single string to store the complete OTP
+    @State private var otpText: String = ""
     
-    /// Tracks which OTP input field is currently focused
-    /// Used for automatic field advancement and keyboard management
-    @FocusState private var focusedIndex: Int?
+    /// Tracks if the hidden input field is focused
+    @FocusState private var isInputFocused: Bool
+    
+    /// Computed property to get individual digits for display
+    private var otpDigits: [String] {
+        let digits = Array(otpText).map(String.init)
+        let paddedDigits = digits + Array(repeating: "", count: max(0, 6 - digits.count))
+        return Array(paddedDigits.prefix(6))
+    }
     
     /// Tracks whether the OTP verification process is in progress
     @State private var isVerifying = false
@@ -35,12 +40,12 @@ struct OtpVerifyView: View {
         HStack {
             Spacer()
             Button("Done") {
-                focusedIndex = nil
+                isInputFocused = false
             }
             .padding(.trailing, 16)
             .padding(.vertical, 8)
         }
-        .background(Color(.systemGray6))
+        .background(Color.gray.opacity(0.1))
     }
     
     // MARK: - Computed Properties
@@ -63,7 +68,7 @@ struct OtpVerifyView: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                Colors.primaryLight.ignoresSafeArea()
+                OnboardingBackgroundView()
                 
                 VStack {
                     // MARK: - Navigation Header
@@ -102,34 +107,52 @@ struct OtpVerifyView: View {
                     .padding(.top, 40)
                     
                     // MARK: - OTP Input Fields
-                    HStack(spacing: 10) {
-                        ForEach(0..<otp.count, id: \.self) { index in
-                            VStack {
-                                TextField("", text: $otp[index])
-                                    .keyboardType(.numberPad)
-                                    .foregroundStyle(isVerifying ? Colors.k6F6F73 : Color.black)
-                                    .multilineTextAlignment(.center)
-                                    .font(.LibreCaslon(size: 40))
-                                    .textInputAutocapitalization(.never)
-                                    .autocorrectionDisabled()
-                                    .submitLabel(.done)
-                                    .focused($focusedIndex, equals: index)
-                                    .textContentType(.oneTimeCode)
-                                    .disabled(isVerifying)
-                                    .toolbar {
-                                        ToolbarItem(placement: .keyboard) {
-                                            keyboardAccessoryView
+                    ZStack {
+                        // Hidden TextField for actual input
+                        TextField("", text: $otpText)
+                            .keyboardType(.numberPad)
+                            .textContentType(.oneTimeCode)
+                            .focused($isInputFocused)
+                            .opacity(0)
+                            .disabled(isVerifying)
+                            .toolbar {
+                                ToolbarItem(placement: .keyboard) {
+                                    keyboardAccessoryView
+                                }
+                            }
+                            .onChange(of: otpText) { oldValue, newValue in
+                                handleOTPInput(oldValue: oldValue, newValue: newValue)
+                            }
+                        
+                        // Visual representation of OTP fields
+                        HStack(spacing: 10) {
+                            ForEach(0..<6, id: \.self) { index in
+                                VStack {
+                                    ZStack {
+                                        // Display digit or empty space
+                                        Text(otpDigits[index])
+                                            .font(.LibreCaslon(size: 40))
+                                            .foregroundStyle(isVerifying ? Color.gray : Color.black)
+                                            .frame(width: 40, height: 50)
+                                        
+                                        // Show cursor on current field
+                                        if index == otpText.count && isInputFocused && !isVerifying {
+                                            Rectangle()
+                                                .fill(Color.black)
+                                                .frame(width: 2, height: 30)
+                                                .animation(.easeInOut(duration: 0.5).repeatForever(), value: isInputFocused)
                                         }
                                     }
-                                    .onChange(of: otp[index]) { oldValue, newValue in
-                                        handleOTPInput(at: index, oldValue: oldValue, newValue: newValue)
-                                    }
-                                
-                                // Bottom divider for each input field
-                                Divider()
-                                    .frame(height: 2)
-                                    .background(isVerifying ? Colors.k6F6F73 : Color.black.opacity(0.58))
+                                    
+                                    // Bottom divider for each input field
+                                    Divider()
+                                        .frame(height: 2)
+                                        .background(isVerifying ? Color.gray : Color.black.opacity(0.58))
+                                }
                             }
+                        }
+                        .onTapGesture {
+                            isInputFocused = true
                         }
                     }
                     .padding(.top, 50)
@@ -148,7 +171,7 @@ struct OtpVerifyView: View {
                             resendCode()
                         } label: {
                             Text("resend code")
-                                .foregroundStyle(Colors.primaryDark)
+                                .foregroundStyle(Color.blue)
                                 .font(.LeagueSpartan(size: 15))
                         }
                         .disabled(isVerifying)
@@ -168,74 +191,41 @@ struct OtpVerifyView: View {
             }
         }
         .navigationBarBackButtonHidden()  // Hide default back button to prevent accidental navigation
-        // Focus on the first input field when the view appears
+        // Focus on the input field when the view appears
         .onAppear {
-            focusedIndex = 0
+            isInputFocused = true
         }
     }
     
     // MARK: - Input Handling Methods
     
     /// Handles OTP input with improved focus management and backspace behavior
-    private func handleOTPInput(at index: Int, oldValue: String, newValue: String) {
-        // Handle multiple characters (paste scenario)
-        if newValue.count > 1 {
-            otp[index] = String(newValue.prefix(1))
-        }
-        
-        // Handle backspace on empty field - delete previous digit
-        if oldValue.isEmpty && newValue.isEmpty {
-            // This is backspace on empty field, delete the last filled digit
-            deleteLastDigit()
+    private func handleOTPInput(oldValue: String, newValue: String) {
+        // Limit to 6 digits maximum
+        if newValue.count > 6 {
+            otpText = String(newValue.prefix(6))
             return
         }
         
-        // Handle normal input
-        if newValue.isEmpty {
-            // User deleted current digit, move focus to this field
-            focusedIndex = index
-        } else {
-            // User entered a digit, move to next empty field
-            DispatchQueue.main.async {
-                self.updateFocusToNextEmptyField()
-            }
+        // Only allow numeric input
+        let filtered = newValue.filter { $0.isNumber }
+        if filtered != newValue {
+            otpText = filtered
+            return
         }
         
-        // Auto-verify when all fields are filled
-        if otp.allSatisfy({ !$0.isEmpty }) {
+        // Auto-verify when all 6 digits are entered
+        if newValue.count == 6 {
             verifyOTP()
-        }
-    }
-    
-    /// Deletes the last (rightmost) filled digit and updates focus
-    private func deleteLastDigit() {
-        // Find the last filled digit
-        for i in stride(from: otp.count - 1, through: 0, by: -1) {
-            if !otp[i].isEmpty {
-                otp[i] = ""
-                focusedIndex = i
-                return
-            }
-        }
-    }
-    
-    /// Updates focus to the first empty field, or removes focus if all are filled
-    private func updateFocusToNextEmptyField() {
-        // Find first empty field
-        if let firstEmpty = otp.firstIndex(where: { $0.isEmpty }) {
-            focusedIndex = firstEmpty
-        } else {
-            // All fields are filled, remove focus
-            focusedIndex = nil
         }
     }
     
     private func verifyOTP() {
         guard !isVerifying else { return }
         isVerifying = true
-        focusedIndex = nil // Dismiss keyboard
+        isInputFocused = false // Dismiss keyboard
         
-        let code = otp.joined()
+        let code = otpText
         OtpVerify.verifyOTP(code) { success in
             isVerifying = false
             if !success {

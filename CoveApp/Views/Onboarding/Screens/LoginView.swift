@@ -86,6 +86,12 @@ struct SignOnButton: View {
     }
 }
 
+struct OnboardingBackgroundView: View {
+    var body: some View {
+        Color(Colors.primaryLight).ignoresSafeArea()
+    }
+}
+
 /// Preview provider for SwiftUI canvas
 #Preview {
     LoginView()
