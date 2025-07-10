@@ -12,9 +12,19 @@ struct AlmaMaterView: View {
     @EnvironmentObject var appController: AppController
     
     @State private var searchUniversity = ""
+    @State private var gradYear = ""
     
+    @State private var showUniversityDropdown = false
+    @State private var showYearDropdown = false
     @State private var showList: Bool = false
     @State private var universities: [String] = ["Stanford University", "Stanford Graduate School of Business", "Stanford School of Medicine", "Stanford Law School", "Stanford Graduate School of Education"]
+    
+    // Generate years from 2000 to current year + 4
+    private var availableYears: [String] {
+        let currentYear = Calendar.current.component(.year, from: Date())
+        let maxYear = currentYear + 4
+        return Array(2000...maxYear).map { String($0) }.reversed()
+    }
     
     var body: some View {
         ZStack {
@@ -60,7 +70,14 @@ struct AlmaMaterView: View {
                             .foregroundStyle(Colors.k060505)
                             .keyboardType(.alphabet)
                             .onChange(of: searchUniversity) { oldValue, newValue in
-                                searchUniversity = newValue.lowercaseIfNotEmpty
+                                let processedValue = newValue.lowercaseIfNotEmpty
+                                searchUniversity = processedValue
+                                // Only show dropdown if user is typing (length increased or changed but not empty)
+                                if !processedValue.isEmpty && processedValue != oldValue {
+                                    showUniversityDropdown = true
+                                } else if processedValue.isEmpty {
+                                    showUniversityDropdown = false
+                                }
                             }
                     }
                     
@@ -70,14 +87,53 @@ struct AlmaMaterView: View {
                 }
                 .padding(.top, 30)
                 
+                // Graduation year input section
+                VStack(spacing: 8) {
+                    ZStack(alignment: .leading) {
+                        if gradYear.isEmpty {
+                            Text("graduation year...")
+                                .foregroundColor(Colors.k656566)
+                                .font(.LeagueSpartan(size: 30))
+                        }
+                        
+                        TextField("", text: $gradYear)
+                            .font(.LeagueSpartan(size: 30))
+                            .foregroundStyle(Colors.k060505)
+                            .keyboardType(.numberPad)
+                            .onChange(of: gradYear) { oldValue, newValue in
+                                // Only allow numeric input and limit to 4 digits
+                                let filtered = newValue.filter { $0.isNumber }
+                                if filtered.count <= 4 {
+                                    gradYear = filtered
+                                    // Only show dropdown if user is typing (value changed and not empty)
+                                    if !filtered.isEmpty && filtered != oldValue {
+                                        showYearDropdown = true
+                                    } else if filtered.isEmpty {
+                                        showYearDropdown = false
+                                    }
+                                } else {
+                                    gradYear = oldValue
+                                }
+                            }
+                    }
+                    
+                    Divider()
+                        .frame(height: 2)
+                        .background(Colors.k060505)
+                }
+                .padding(.top, 20)
+                
                 // University suggestions list
-                if searchUniversity.count > 0 {
+                if searchUniversity.count > 0 && showUniversityDropdown {
                     VStack(spacing: 0) {
                         ScrollView(.vertical, showsIndicators: false) {
                             VStack(spacing: 0) {
                                 ForEach(filteredUniversities, id: \.self) { university in
                                     Button {
                                         searchUniversity = university
+                                        DispatchQueue.main.async {
+                                            showUniversityDropdown = false
+                                        }
                                     } label: {
                                         Text(university.lowercased())
                                             .font(.LeagueSpartanMedium(size: 18))
@@ -104,6 +160,43 @@ struct AlmaMaterView: View {
                     .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 5)
                 }
                 
+                // Graduation year suggestions list
+                if gradYear.count > 0 && showYearDropdown {
+                    VStack(spacing: 0) {
+                        ScrollView(.vertical, showsIndicators: false) {
+                            VStack(spacing: 0) {
+                                ForEach(filteredYears, id: \.self) { year in
+                                    Button {
+                                        gradYear = year
+                                        DispatchQueue.main.async {
+                                            showYearDropdown = false
+                                        }
+                                    } label: {
+                                        Text(year)
+                                            .font(.LeagueSpartanMedium(size: 18))
+                                            .foregroundColor(Colors.k0F100F)
+                                            .multilineTextAlignment(.leading)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                            .padding(.horizontal, 16)
+                                            .padding(.vertical, 12)
+                                    }
+                                    .background(Color.clear)
+                                    
+                                    if year != filteredYears.last {
+                                        Divider()
+                                            .background(Colors.k060505.opacity(0.2))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    .background(Colors.primaryLight)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .frame(maxHeight: 200)
+                    .padding(.top, 10)
+                    .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 5)
+                }
+                
                 Spacer()
                 
                 // Continue button
@@ -114,9 +207,10 @@ struct AlmaMaterView: View {
                         .frame(width: 52, height: 52)
                         .padding(.bottom, 20)
                         .onTapGesture {
-                            // MARK: - Store alma mater
+                            // MARK: - Store alma mater and grad year
                             // TODO: can consider using university IDs instead of names
                             Onboarding.storeAlmaMater(almaMater: searchUniversity)
+                            // TODO: Store grad year when backend supports it
                             appController.path.append(.moreAboutYou)
                         }
                 }
@@ -131,6 +225,14 @@ struct AlmaMaterView: View {
             return universities
         } else {
             return universities.filter { $0.localizedCaseInsensitiveContains(searchUniversity) }
+        }
+    }
+    
+    var filteredYears: [String] {
+        if gradYear.isEmpty {
+            return availableYears
+        } else {
+            return availableYears.filter { $0.hasPrefix(gradYear) }
         }
     }
 }
