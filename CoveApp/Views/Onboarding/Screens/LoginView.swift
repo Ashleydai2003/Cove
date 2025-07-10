@@ -77,7 +77,6 @@ struct SignOnButton: View {
                 .frame(maxWidth: .infinity)  // Makes button expand to full width
                 .padding()
                 .foregroundStyle(Colors.primaryDark)
-                .background(Color.white)
                 .cornerRadius(16.99)  // Consistent corner radius for rounded appearance
                 .padding(.horizontal, 50)  // Horizontal padding for button container
         }

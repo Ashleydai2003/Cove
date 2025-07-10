@@ -6,12 +6,11 @@
 
 import SwiftUI
 import Combine
-import Inject
 
 /// View for collecting and validating user's phone number during onboarding
 /// Handles country selection, phone number formatting, and navigation to OTP verification
 struct UserPhoneNumberView: View {
-    @ObserveInjection var redraw
+
     
     // MARK: - Environment & State Properties
     
@@ -35,12 +34,12 @@ struct UserPhoneNumberView: View {
         static let countryButtonWidth: CGFloat = 66
         static let countryFlagFontSize: CGFloat = 30
         static let downArrowSize: CGSize = .init(width: 19, height: 14)
-        static let smileySize: CGSize = .init(width: 52, height: 52)
+        static let arrowSize: CGSize = .init(width: 52, height: 52)
         static let horizontalPadding: CGFloat = 20
         static let topPadding: CGFloat = 40
         static let phoneInputTopPadding: CGFloat = 85
-        static let smileyBottomPadding: CGFloat = 60
-        static let smileyTrailingPadding: CGFloat = 20
+        static let arrowBottomPadding: CGFloat = 60
+        static let arrowTrailingPadding: CGFloat = 20
     }
     
     // Custom input accessory view for keyboard
@@ -53,7 +52,7 @@ struct UserPhoneNumberView: View {
             .padding(.trailing, 16)
             .padding(.vertical, 8)
         }
-        .background(Color(.systemGray6))
+        .background(Color.gray.opacity(0.1))
     }
     
     /// Data
@@ -200,14 +199,14 @@ struct UserPhoneNumberView: View {
     var submitButton: some View {
         HStack {
             Spacer()
-            Images.smily
+            Images.next_arrow
                 .resizable()
-                .frame(width: Constants.smileySize.width, 
-                        height: Constants.smileySize.height)
-                .padding(.init(top: 0, 
-                                leading: 0, 
-                                bottom: Constants.smileyBottomPadding, 
-                                trailing: Constants.smileyTrailingPadding))
+                .frame(width: Constants.arrowSize.width, 
+                        height: Constants.arrowSize.height)
+                .padding(EdgeInsets(top: 0, 
+                                    leading: 0, 
+                                    bottom: Constants.arrowBottomPadding, 
+                                    trailing: Constants.arrowTrailingPadding))
                 .onTapGesture {
                     if userPhone.isValidPhoneNumber(userPhone.number, pattern: userPhone.country.pattern) {
                         appController.path.append(.otpVerify)
