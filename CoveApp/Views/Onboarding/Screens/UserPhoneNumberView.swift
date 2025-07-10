@@ -88,7 +88,7 @@ struct UserPhoneNumberView: View {
                 Spacer()
                 
                 // MARK: - Submit Button
-                submitButton
+                //submitButton
             }
             .padding(.horizontal, Constants.horizontalPadding)
             .safeAreaPadding()
