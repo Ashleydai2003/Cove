@@ -18,6 +18,7 @@ struct AlmaMaterView: View {
     
     var body: some View {
         VStack {
+            OnboardingBackgroundView()
             HStack {
                 Button {
                     appController.path.removeLast()
@@ -100,7 +101,6 @@ struct AlmaMaterView: View {
             }
         }
         .padding(.horizontal, 32)
-        .background(Colors.kF5F5F5.edgesIgnoringSafeArea(.all))
         .navigationBarBackButtonHidden()
         
     }

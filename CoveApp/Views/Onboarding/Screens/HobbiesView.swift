@@ -150,9 +150,7 @@ struct HobbiesView: View {
     
     var body: some View {
         ZStack {
-            // Background
-            Color.white
-                .ignoresSafeArea()
+            OnboardingBackgroundView()
             
             // Main content container
             VStack(spacing: 0) {
