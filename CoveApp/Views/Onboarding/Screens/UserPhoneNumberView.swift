@@ -102,6 +102,15 @@ struct UserPhoneNumberView: View {
             NavigationView {
                 List(filteredResorts) { country in
                     Button {
+                        // Clear the phone number if it's not valid for the new country
+                        let currentDigits = userPhone.number.filter { $0.isNumber }
+                        let newCountryMaxDigits = country.pattern.filter { $0 == "#" }.count
+                        
+                        // If current number has more digits than new country allows, clear it
+                        if currentDigits.count > newCountryMaxDigits {
+                            userPhone.number = ""
+                        }
+                        
                         userPhone.country = country
                         presentSheet = false
                         searchCountry = ""
@@ -232,7 +241,10 @@ struct UserPhoneNumberView: View {
         
         userPhone.sendVerificationCode { success in
             isVerifying = false
-            if !success {
+            if success {
+                // Automatically navigate to OTP verification screen
+                appController.path.append(.otpVerify)
+            } else {
                 showError = true
             }
         }
