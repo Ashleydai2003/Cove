@@ -31,7 +31,10 @@ struct LoginView: View {
                 // Initiates the sign-in flow
                 SignOnButton(text: "let's go") {
                     // TODO: DEV ONLY - Remove this and uncomment line below when done testing
-                    appController.path.append(.otpVerify)
+                    appController.path.append(.birthdate)
+                    // appController.path.append(.userDetails)
+                    // appController.path.append(.adminVerify)
+                    // appController.path.append(.otpVerify)
                     // appController.path.append(.enterPhoneNumber) 
                 }
                 .padding(.bottom)
