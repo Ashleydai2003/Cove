@@ -224,6 +224,18 @@ struct BirthdateView: View {
             return
         }
         
+        // Validate month is between 1-12
+        guard monthInt >= 1 && monthInt <= 12 else {
+            errorMessage = "enter a valid birthdate"
+            return
+        }
+        
+        // Validate day is between 1-31 (basic check)
+        guard dayInt >= 1 && dayInt <= 31 else {
+            errorMessage = "enter a valid birthdate"
+            return
+        }
+        
         // Check if year is reasonable (not in future and not too old)
         let currentYear = Calendar.current.component(.year, from: Date())
         guard yearInt <= currentYear && yearInt >= currentYear - 120 else {
@@ -231,19 +243,38 @@ struct BirthdateView: View {
             return
         }
         
-        // Create date components and validate
+        // Create date components and validate the date actually exists
         var dateComponents = DateComponents()
         dateComponents.year = yearInt
         dateComponents.month = monthInt
         dateComponents.day = dayInt
         
-        // Convert DateComponents to Date
+        // Convert DateComponents to Date - this will return nil for invalid dates like Feb 30th
         guard let birthDate = Calendar.current.date(from: dateComponents) else {
             errorMessage = "enter a valid birthdate"
             return
         }
         
-        // If we get here, the date is valid
+        // Verify the created date matches what we input (handles cases like Feb 30 -> Mar 2)
+        let calendar = Calendar.current
+        let createdMonth = calendar.component(.month, from: birthDate)
+        let createdDay = calendar.component(.day, from: birthDate)
+        let createdYear = calendar.component(.year, from: birthDate)
+        
+        guard createdMonth == monthInt && createdDay == dayInt && createdYear == yearInt else {
+            errorMessage = "enter a valid birthdate"
+            return
+        }
+        
+        // Check if user is at least 18 years old
+        let today = Date()
+        let ageComponents = calendar.dateComponents([.year], from: birthDate, to: today)
+        guard let age = ageComponents.year, age >= 18 else {
+            errorMessage = "you must be at least 18 years old"
+            return
+        }
+        
+        // If we get here, the date is valid and user is over 18
         errorMessage = ""
         // TODO: We should still use the smiley as the next button 
         // Store the Date object in UserDefaults
