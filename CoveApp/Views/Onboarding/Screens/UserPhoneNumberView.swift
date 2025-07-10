@@ -188,11 +188,6 @@ struct UserPhoneNumberView: View {
                 .keyboardType(.numberPad)
                 .focused($isFocused)
                 .textContentType(.telephoneNumber)
-                .toolbar {
-                    ToolbarItem(placement: .keyboard) {
-                        keyboardAccessoryView
-                    }
-                }
                 .onChange(of: userPhone.number) { _, newValue in
                     let formattedNumber = userPhone.formatPhoneNumber(newValue, pattern: userPhone.country.pattern)
                     userPhone.number = formattedNumber

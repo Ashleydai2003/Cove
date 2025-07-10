@@ -73,6 +73,7 @@ struct BirthdateView: View {
     
     var body: some View {
         ZStack {
+            OnboardingBackgroundView()
             VStack {
                 // Back button
                 HStack {
