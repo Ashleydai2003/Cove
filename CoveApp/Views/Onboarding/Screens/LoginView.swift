@@ -10,9 +10,7 @@ struct LoginView: View {
     // MARK: - Main View Body
     var body: some View {
         ZStack {
-            // Background image with reduced opacity for better text visibility
-            OnboardingBackgroundView(imageName: "login_background")
-                .opacity(0.6)
+            OnboardingBackgroundView()
             
             VStack {
                 // MARK: - App logo and tagline

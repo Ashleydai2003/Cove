@@ -15,8 +15,7 @@ struct BioView: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                Colors.faf8f4
-                    .ignoresSafeArea()
+                OnboardingBackgroundView()
 
                 VStack {
                     HStack {
@@ -49,7 +48,7 @@ struct BioView: View {
                             .scrollContentBackground(.hidden)
                             .frame(height: 150)
                             .padding(8)
-                            .background(Colors.f3f3f3)
+                            .background(OnboardingBackgroundView())
                             .cornerRadius(10)
                             .font(.LeagueSpartan(size: 14))
                             .foregroundStyle(.primary)

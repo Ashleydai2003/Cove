@@ -48,16 +48,8 @@ struct OnboardingFlow: View {
 }
 
 struct OnboardingBackgroundView: View {
-
-    let imageName: String
-    
     var body: some View {
-        Image(imageName)
-            .resizable()
-            .scaledToFill()
-//            .overlay(Color.white.opacity(0.4))
-            .frame(minWidth: 0, maxWidth: .infinity)
-            .ignoresSafeArea()
+        Color(hex: "F5F0E6").ignoresSafeArea()
     }
 }
 

@@ -63,8 +63,7 @@ struct OtpVerifyView: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                OnboardingBackgroundView(imageName: "otp_background")
-                    .opacity(0.4)
+                OnboardingBackgroundView()
                 
                 VStack {
                     // MARK: - Navigation Header
