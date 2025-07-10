@@ -199,7 +199,7 @@ struct UserPhoneNumberView: View {
     var submitButton: some View {
         HStack {
             Spacer()
-            Images.next_arrow
+            Images.nextArrow
                 .resizable()
                 .frame(width: Constants.arrowSize.width, 
                         height: Constants.arrowSize.height)
