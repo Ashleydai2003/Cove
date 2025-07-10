@@ -205,25 +205,25 @@ struct UserPhoneNumberView: View {
         }
     }
 
-    // Submit Button
-    var submitButton: some View {
-        HStack {
-            Spacer()
-            Images.nextArrow
-                .resizable()
-                .frame(width: Constants.arrowSize.width, 
-                        height: Constants.arrowSize.height)
-                .padding(EdgeInsets(top: 0, 
-                                    leading: 0, 
-                                    bottom: Constants.arrowBottomPadding, 
-                                    trailing: Constants.arrowTrailingPadding))
-                .onTapGesture {
-                    if userPhone.isValidPhoneNumber(userPhone.number, pattern: userPhone.country.pattern) {
-                        appController.path.append(.otpVerify)
-                    }
-                }
-        }
-    }
+    // // Submit Button
+    // var submitButton: some View {
+    //     HStack {
+    //         Spacer()
+    //         Images.nextArrow
+    //             .resizable()
+    //             .frame(width: Constants.arrowSize.width, 
+    //                     height: Constants.arrowSize.height)
+    //             .padding(EdgeInsets(top: 0, 
+    //                                 leading: 0, 
+    //                                 bottom: Constants.arrowBottomPadding, 
+    //                                 trailing: Constants.arrowTrailingPadding))
+    //             .onTapGesture {
+    //                 if userPhone.isValidPhoneNumber(userPhone.number, pattern: userPhone.country.pattern) {
+    //                     appController.path.append(.otpVerify)
+    //                 }
+    //             }
+    //     }
+    // }
 
     // MARK: - Computed Properties
     /// Filters countries based on search input
