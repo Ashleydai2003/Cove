@@ -47,9 +47,3 @@ struct OnboardingFlow: View {
     }
 }
 
-struct OnboardingBackgroundView: View {
-    var body: some View {
-        Color(hex: "F5F0E6").ignoresSafeArea()
-    }
-}
-

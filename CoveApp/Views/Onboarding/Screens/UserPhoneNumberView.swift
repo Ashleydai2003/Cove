@@ -70,6 +70,7 @@ struct UserPhoneNumberView: View {
     // MARK: - Main View Body
     var body: some View {
         ZStack {
+            Colors.primaryLight.ignoresSafeArea()
             VStack {
                 // MARK: - Header Section
                 headerSection
