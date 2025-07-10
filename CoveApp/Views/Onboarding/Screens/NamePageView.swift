@@ -72,7 +72,7 @@ struct NamePageView: View {
                 // MARK: - Navigation Helper
                 HStack {
                     Spacer()
-                    Images.smily
+                    Images.nextArrow
                         .resizable()
                         .frame(width: 52, height: 52)
                         .padding(.init(top: 0, leading: 0, bottom: 60, trailing: 20))

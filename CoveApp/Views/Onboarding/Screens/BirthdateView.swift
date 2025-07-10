@@ -22,20 +22,51 @@ struct BirthdateView: View {
     /// App controller for managing navigation and app state
     @EnvironmentObject var appController: AppController
     
-    /// State variables for birthdate components
-    @State private var date: String = ""
-    @State private var month: String = ""
-    @State private var year: String = ""
+    /// Single string to store the complete birthdate (MMDDYYYY format)
+    @State private var birthdateText: String = ""
     @State private var errorMessage: String = ""
     
-    /// Focus states for each field
-    @FocusState private var isMonthFocused: Bool
-    @FocusState private var isDayFocused: Bool
-    @FocusState private var isYearFocused: Bool
+    /// Tracks if the hidden input field is focused
+    @FocusState private var isInputFocused: Bool
+    
+    /// Computed properties to extract individual components for display
+    private var monthDisplay: String {
+        let digits = Array(birthdateText).map(String.init)
+        if digits.count >= 2 {
+            return digits[0] + digits[1]
+        } else if digits.count >= 1 {
+            return digits[0]
+        }
+        return ""
+    }
+    
+    private var dayDisplay: String {
+        let digits = Array(birthdateText).map(String.init)
+        if digits.count >= 4 {
+            return digits[2] + digits[3]
+        } else if digits.count >= 3 {
+            return digits[2]
+        }
+        return ""
+    }
+    
+    private var yearDisplay: String {
+        let digits = Array(birthdateText).map(String.init)
+        if digits.count >= 8 {
+            return digits[4] + digits[5] + digits[6] + digits[7]
+        } else if digits.count >= 7 {
+            return digits[4] + digits[5] + digits[6]
+        } else if digits.count >= 6 {
+            return digits[4] + digits[5]
+        } else if digits.count >= 5 {
+            return digits[4]
+        }
+        return ""
+    }
     
     /// Computed property to check if all fields are filled
     private var isBirthdateComplete: Bool {
-        month.count == 2 && date.count == 2 && year.count == 4
+        birthdateText.count == 8
     }
     
     // MARK: - Body
@@ -72,61 +103,65 @@ struct BirthdateView: View {
                 
                 // Birthdate input fields
                 VStack(spacing: 8) {
-                    HStack(spacing: 10) {
-                        Spacer()
+                    ZStack {
+                        // Hidden TextField for actual input
+                        TextField("", text: $birthdateText)
+                            .keyboardType(.numberPad)
+                            .focused($isInputFocused)
+                            .opacity(0)
+                            .onChange(of: birthdateText) { oldValue, newValue in
+                                handleBirthdateInput(oldValue: oldValue, newValue: newValue)
+                            }
                         
-                        // Month input
-                        VStack(alignment: .center) {
-                            TextField("mm", text: $month)
-                                .keyboardType(.numberPad)
-                                .foregroundStyle(Color.black)
-                                .multilineTextAlignment(.center)
+                        // Visual representation of birthdate fields
+                        HStack(spacing: 10) {
+                            Spacer()
+                            
+                            // Month display
+                            VStack(alignment: .center) {
+                                Text(monthDisplay.isEmpty ? "mm" : monthDisplay)
+                                    .foregroundStyle(monthDisplay.isEmpty ? Color.gray : Color.black)
+                                    .multilineTextAlignment(.center)
+                                    .font(.LibreCaslon(size: 24))
+                                    .frame(width: 60, height: 30)
+                            }
+                            
+                            Text("/")
                                 .font(.LibreCaslon(size: 24))
-                                .focused($isMonthFocused)
-                                .onChange(of: month) { oldValue, newValue in
-                                    validateMonth(newValue, oldValue: oldValue)
-                                }
-                        }
-                        
-                        Images.lineDiagonal
-                        
-                        // Day input
-                        VStack {
-                            TextField("dd", text: $date)
-                                .keyboardType(.numberPad)
                                 .foregroundStyle(Color.black)
-                                .multilineTextAlignment(.center)
+                            
+                            // Day display
+                            VStack {
+                                Text(dayDisplay.isEmpty ? "dd" : dayDisplay)
+                                    .foregroundStyle(dayDisplay.isEmpty ? Color.gray : Color.black)
+                                    .multilineTextAlignment(.center)
+                                    .font(.LibreCaslon(size: 24))
+                                    .frame(width: 60, height: 30)
+                            }
+                            
+                            Text("/")
                                 .font(.LibreCaslon(size: 24))
-                                .focused($isDayFocused)
-                                .onChange(of: date) { oldValue, newValue in
-                                    validateDate(newValue, oldValue: oldValue)
-                                }
-                        }
-                        
-                        Images.lineDiagonal
-                        
-                        // Year input
-                        VStack {
-                            TextField("yyyy", text: $year)
-                                .keyboardType(.numberPad)
                                 .foregroundStyle(Color.black)
-                                .multilineTextAlignment(.center)
-                                .font(.LibreCaslon(size: 24))
-                                .focused($isYearFocused)
-                                .onChange(of: year) { oldValue, newValue in
-                                    validateYear(newValue, oldValue: oldValue)
-                                    if isBirthdateComplete {
-                                        validateBirthdate()
-                                    }
-                                }
+                            
+                            // Year display
+                            VStack {
+                                Text(yearDisplay.isEmpty ? "yyyy" : yearDisplay)
+                                    .foregroundStyle(yearDisplay.isEmpty ? Color.gray : Color.black)
+                                    .multilineTextAlignment(.center)
+                                    .font(.LibreCaslon(size: 24))
+                                    .frame(width: 80, height: 30)
+                            }
+                            
+                            Spacer()
                         }
-                        
-                        Spacer()
+                        .onTapGesture {
+                            isInputFocused = true
+                        }
                     }
                     
                     if !errorMessage.isEmpty {
                         Text(errorMessage)
-                            .foregroundStyle(Colors.primaryDark)
+                            .foregroundStyle(Color.red)
                             .font(.LibreBodoni(size: 14))
                     }
                 }
@@ -140,69 +175,51 @@ struct BirthdateView: View {
         }
         .navigationBarBackButtonHidden()
         .onAppear {
-            isMonthFocused = true
+            isInputFocused = true
         }
     }
     
     // MARK: - Helper Methods
     
-    /// Validates and formats the month input
-    /// - Parameters:
-    ///   - newValue: The new input value
-    ///   - oldValue: The previous input value
-    private func validateMonth(_ newValue: String, oldValue: String) {
-        if newValue.isEmpty { return }
+    /// Handles birthdate input with improved focus management and backspace behavior
+    private func handleBirthdateInput(oldValue: String, newValue: String) {
+        // Clear error when editing
+        errorMessage = ""
         
-        errorMessage = "" // Clear error when editing
-        let filtered = newValue.filter { $0.isNumber }
-        if filtered.count >= 2 {
-            month = String(filtered.prefix(2))
-            isMonthFocused = false
-            isDayFocused = true
-        } else {
-            month = filtered
+        // Limit to 8 digits maximum (MMDDYYYY)
+        if newValue.count > 8 {
+            birthdateText = String(newValue.prefix(8))
+            return
         }
-    }
-    
-    /// Validates and formats the day input
-    /// - Parameters:
-    ///   - newValue: The new input value
-    ///   - oldValue: The previous input value
-    private func validateDate(_ newValue: String, oldValue: String) {
-        if newValue.isEmpty { return }
         
-        errorMessage = "" // Clear error when editing
+        // Only allow numeric input
         let filtered = newValue.filter { $0.isNumber }
-        if filtered.count >= 2 {
-            date = String(filtered.prefix(2))
-            isDayFocused = false
-            isYearFocused = true
-        } else {
-            date = filtered
+        if filtered != newValue {
+            birthdateText = filtered
+            return
         }
-    }
-    
-    /// Validates and formats the year input
-    /// - Parameters:
-    ///   - newValue: The new input value
-    ///   - oldValue: The previous input value
-    private func validateYear(_ newValue: String, oldValue: String) {
-        if newValue.isEmpty { return }
         
-        errorMessage = "" // Clear error when editing
-        let filtered = newValue.filter { $0.isNumber }
-        if filtered.count >= 4 {
-            year = String(filtered.prefix(4))
-        } else {
-            year = filtered
+        // Auto-validate when all 8 digits are entered
+        if newValue.count == 8 {
+            validateBirthdate()
         }
     }
     
     /// Validates the complete birthdate
     private func validateBirthdate() {
-        guard let monthInt = Int(month),
-              let dayInt = Int(date),
-              let yearInt = Int(year) else {
+        // Extract month, day, year from birthdateText (MMDDYYYY format)
+        guard birthdateText.count == 8 else {
+            errorMessage = "enter a valid birthdate"
+            return
+        }
+        
+        let monthString = String(birthdateText.prefix(2))
+        let dayString = String(birthdateText.dropFirst(2).prefix(2))
+        let yearString = String(birthdateText.suffix(4))
+        
+        guard let monthInt = Int(monthString),
+              let dayInt = Int(dayString),
+              let yearInt = Int(yearString) else {
             errorMessage = "enter a valid birthdate"
             return
         }
