@@ -109,13 +109,8 @@ private static let apiBaseURL = AppConstants.API.baseURL
                         print("🔐 Login: Set ProfileModel.onboarding = \(loginResponse.user.onboarding)")
                         
                         if loginResponse.user.onboarding {
-                            if loginResponse.user.verified {
-                                print("✅ User is verified")
-                                AppController.shared.path.append(.adminVerify)
-                                Onboarding.setAdminCove(adminCove: loginResponse.user.cove ?? "create new cove!")
-                            } else {
-                                AppController.shared.path.append(.userDetails)
-                            }
+                            // Skip admin verification and go directly to user details
+                            AppController.shared.path.append(.userDetails)
                         } else {
                             AppController.shared.path.append(.pluggingIn)
                             AppController.shared.hasCompletedOnboarding = true

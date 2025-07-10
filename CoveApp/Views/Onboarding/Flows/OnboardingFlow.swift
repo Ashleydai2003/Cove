@@ -18,14 +18,10 @@ struct OnboardingFlow: View {
                         UserPhoneNumberView()
                     case .otpVerify:
                         OtpVerifyView()
-                    case .adminVerify:
-                        AdminVerifyView()
                     case .userDetails:
                         NamePageView()
                     case .birthdate:
                         BirthdateView()
-                    case .userLocation:
-                        UserLocationView()
                     case .almaMater:
                         AlmaMaterView()
                     case .moreAboutYou:

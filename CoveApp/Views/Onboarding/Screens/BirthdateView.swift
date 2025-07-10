@@ -282,7 +282,7 @@ struct BirthdateView: View {
         // Store the Date object in UserDefaults
         Onboarding.storeBirthdate(birthDate: birthDate)
         // Navigate to next screen
-        appController.path.append(.userLocation)
+        appController.path.append(.almaMater)
     }
 }
 

@@ -12,10 +12,8 @@ import FirebaseAuth
 enum OnboardingRoute: Hashable {
     case enterPhoneNumber
     case otpVerify
-    case adminVerify
     case userDetails
     case birthdate
-    case userLocation
     case almaMater
     case moreAboutYou
     case hobbies
