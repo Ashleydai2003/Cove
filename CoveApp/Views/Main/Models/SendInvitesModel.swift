@@ -174,7 +174,7 @@ class SendInvitesModel: ObservableObject {
                     
                     let successCount = sendInviteResponse.invites.count
                     let totalCount = validPhoneNumbers.count
-                    let errorCount = sendInviteResponse.errors?.count ?? 0
+                    let _ = sendInviteResponse.errors?.count ?? 0
                     let duplicateCount = sendInviteResponse.errors?.filter { $0.error.contains("already exists") }.count ?? 0
                     let memberCount = sendInviteResponse.errors?.filter { $0.error.contains("already a member") }.count ?? 0
                     

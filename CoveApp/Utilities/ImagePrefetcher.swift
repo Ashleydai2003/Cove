@@ -10,9 +10,9 @@ struct ImagePrefetcherUtil {
             completion?()
             return
         }
-        let prefetcher = ImagePrefetcher(urls: urls) { _, _, _ in
+        let prefetcher = ImagePrefetcher(urls: urls, completionHandler: { _, _, _ in
             DispatchQueue.main.async { completion?() }
-        }
+        })
         prefetcher.start()
     }
     /// Prefetch a single image URL (fire-and-forget).

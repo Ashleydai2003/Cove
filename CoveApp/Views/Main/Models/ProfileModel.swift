@@ -61,6 +61,7 @@ struct ProfileData: Decodable {
  * ProfileModel manages user profile data and provides methods for fetching, updating, and caching profile information.
  * This class serves as the central data store for user profile information used throughout the app.
  */
+@MainActor
 class ProfileModel: ObservableObject {
     // MARK: - Published Properties (Used for both onboarding and profile data)
     @Published var name: String = ""
@@ -617,15 +618,15 @@ class ProfileModel: ObservableObject {
         // Load profile image
         if let profileURL = profileImageURL {
             imageLoadGroup.enter()
-            KingfisherManager.shared.retrieveImage(with: profileURL) { result in
+            KingfisherManager.shared.retrieveImage(with: profileURL) { [weak self] result in
                 DispatchQueue.main.async {
                     switch result {
                     case .success(let imageResult):
-                        self.profileUIImage = imageResult.image
+                        self?.profileUIImage = imageResult.image
                         print("✅ Profile image loaded and stored")
                     case .failure(let error):
                         print("❌ Failed to load profile image: \(error)")
-                        self.profileUIImage = nil
+                        self?.profileUIImage = nil
                     }
                     imageLoadGroup.leave()
                 }
@@ -635,18 +636,18 @@ class ProfileModel: ObservableObject {
         // Load extra images
         for (index, url) in extraImageURLs.enumerated() {
             imageLoadGroup.enter()
-            KingfisherManager.shared.retrieveImage(with: url) { result in
+            KingfisherManager.shared.retrieveImage(with: url) { [weak self] result in
                 DispatchQueue.main.async {
                     switch result {
                     case .success(let imageResult):
-                        if index < self.extraUIImages.count {
-                            self.extraUIImages[index] = imageResult.image
+                        if index < self?.extraUIImages.count ?? 0 {
+                            self?.extraUIImages[index] = imageResult.image
                         }
                         print("✅ Extra image \(index) loaded and stored")
                     case .failure(let error):
                         print("❌ Failed to load extra image \(index): \(error)")
-                        if index < self.extraUIImages.count {
-                            self.extraUIImages[index] = nil
+                        if index < self?.extraUIImages.count ?? 0 {
+                            self?.extraUIImages[index] = nil
                         }
                     }
                     imageLoadGroup.leave()
