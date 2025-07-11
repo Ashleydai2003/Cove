@@ -75,7 +75,7 @@ class NewCoveModel: ObservableObject {
             return
         }
         
-        guard let location = self.location else {
+        guard self.location != nil else {
             errorMessage = "Location is required"
             completion(false)
             return

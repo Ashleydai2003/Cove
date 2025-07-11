@@ -10,6 +10,7 @@ import CoreLocation
 import MapKit
 import PhotosUI
 import Kingfisher
+import FirebaseAuth
 
 // TODO: Default profile picture
 // TODO: Consider a view and edit option up top to swipe like hinge instead
@@ -29,6 +30,7 @@ struct ProfileText: View {
 }
 
 
+@MainActor
 struct ProfileHeader: View {
     let name: String
     let workLocation: String
@@ -53,11 +55,19 @@ struct ProfileHeader: View {
     @EnvironmentObject var appController: AppController
     
     var body: some View {
+        // Capture the @State flag once in a main-actor context; use it everywhere below to avoid
+        // referencing 'isPressed' inside non-isolated view-builder closures.
+        let pressed = isPressed
+
         VStack(spacing: 10) {
             // MARK: - Profile Photo
+            // Pull main-actor data into local constants BEFORE entering the PhotosPicker content closure.
+            let fallbackImage = appController.profileModel.profileUIImage // main-actor safe
             PhotosPicker(selection: $selectedItem, matching: .images) {
+                // The closure passed to PhotosPicker is not main-actor-isolated, so we must avoid directly
+                // touching @MainActor properties inside it. We therefore use the pre-computed values captured above.
                 ZStack {
-                    if let profileImage = editingProfileImage ?? appController.profileModel.profileUIImage {
+                    if let profileImage = editingProfileImage ?? fallbackImage {
                         Image(uiImage: profileImage)
                             .resizable()
                             .scaledToFill()
@@ -79,7 +89,7 @@ struct ProfileHeader: View {
                     // TODO: actually we should have an x up top and a user can only change after they remove their current picture
                     if isEditing {
                         Circle()
-                            .fill(Color.black.opacity(isPressed ? 0.7 : 0.3))
+                            .fill(Color.black.opacity(pressed ? 0.7 : 0.3))
                             .frame(maxWidth: 200, maxHeight: 200)
                         
                         Text("change")
@@ -89,8 +99,8 @@ struct ProfileHeader: View {
                 }
             }
             .disabled(!isEditing)
-            .animation(.easeInOut(duration: 0.1), value: isPressed)
-            .onTapGesture {
+            .animation(.easeInOut(duration: 0.1), value: pressed)
+            .onTapGesture { @MainActor in
                 if isEditing {
                     withAnimation(.easeInOut(duration: 0.1)) {
                         isPressed = true
@@ -421,7 +431,7 @@ struct InterestsSection: View {
                             emoji: "➕",
                             textColor: Colors.primaryDark
                         )
-                        .onTapGesture {
+                        .onTapGesture { @MainActor in
                             showingHobbiesSheet = true
                         }
                     }
@@ -724,7 +734,7 @@ struct HobbiesSelectionView: View {
     }
 }
 
-// MARK: - Extra Photo Component
+@MainActor
 struct ExtraPhotoView: View {
     let imageIndex: Int
     let isEditing: Bool
@@ -736,9 +746,15 @@ struct ExtraPhotoView: View {
     @EnvironmentObject var appController: AppController
     
     var body: some View {
+        // Capture @State and model data in locals so closures below don't access main-actor values directly.
+        let pressed = isPressed
+        let modelImages = appController.profileModel.extraUIImages
+        let fallbackImage = modelImages.indices.contains(imageIndex) ? modelImages[imageIndex] : nil
+        let displayImage = editingImage ?? fallbackImage
+
         PhotosPicker(selection: $selectedItem, matching: .images) {
             ZStack {
-                if let extraImage = editingImage ?? (appController.profileModel.extraUIImages.indices.contains(imageIndex) ? appController.profileModel.extraUIImages[imageIndex] : nil) {
+                if let extraImage = displayImage {
                     Image(uiImage: extraImage)
                         .resizable()
                         .scaledToFill()
@@ -765,19 +781,20 @@ struct ExtraPhotoView: View {
                 
                 if isEditing {
                     Rectangle()
-                        .fill(Color.black.opacity(isPressed ? 0.7 : 0.3))
+                        .fill(Color.black.opacity(pressed ? 0.7 : 0.3))
                         .frame(maxWidth: AppConstants.SystemSize.width*0.8)
                     
-                    Text((editingImage ?? (appController.profileModel.extraUIImages.indices.contains(imageIndex) ? appController.profileModel.extraUIImages[imageIndex] : nil)) == nil ? "add picture" : "change")
+                    Text(displayImage == nil ? "add picture" : "change")
                         .font(.LibreBodoni(size: 16))
                         .foregroundColor(.white)
                 }
             }
         }
         .disabled(!isEditing)
-        .scaleEffect(isPressed ? 0.95 : 1.0)
-        .animation(.easeInOut(duration: 0.1), value: isPressed)
-        .onTapGesture {
+        // Capture @State isPressed into local constant to avoid non-isolated access in modifier.
+        .scaleEffect(pressed ? 0.95 : 1.0)
+        .animation(.easeInOut(duration: 0.1), value: pressed)
+        .onTapGesture { @MainActor in
             if isEditing {
                 withAnimation(.easeInOut(duration: 0.1)) {
                     isPressed = true
@@ -800,7 +817,7 @@ struct ExtraPhotoView: View {
     }
 }
 
-// MARK: - Main Profile View
+@MainActor
 struct ProfileView: View {
     @EnvironmentObject var appController: AppController
     @State private var isEditing = false
@@ -946,6 +963,22 @@ struct ProfileView: View {
                                 isEditing: isEditing,
                                 onInterestsChange: { editingInterests = $0 }
                             )
+
+                            // Logout button shown only when NOT editing
+                            if !isEditing {
+                                Button(action: handleLogout) {
+                                    Text("log out")
+                                        .font(.LibreBodoni(size: 16))
+                                        .foregroundColor(.white)
+                                        .padding(.horizontal, 40)
+                                        .padding(.vertical, 12)
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 10)
+                                                .fill(Colors.primaryDark)
+                                        )
+                                }
+                                .padding(.top, 20)
+                            }
                         }
                         .padding(.vertical, 20)
                     }
@@ -1039,6 +1072,13 @@ struct ProfileView: View {
                 completion(false)
             }
         }
+    }
+
+    // MARK: - Logout Helper
+    private func handleLogout() {
+        // Attempt Firebase sign-out (safe to ignore error for now)
+        try? Auth.auth().signOut()
+        appController.clearAllData()
     }
 }
 
