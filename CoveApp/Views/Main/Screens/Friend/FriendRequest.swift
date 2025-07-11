@@ -51,27 +51,31 @@ struct RequestsView: View {
                                     VStack(spacing: 16) {
                                         Image(systemName: "person.2.slash")
                                             .font(.system(size: 40))
-                                            .foregroundColor(.gray)
+                                            .foregroundColor(Colors.primaryDark)
                                         
-                                        Text("no requests yet!")
+                                        Text("no friend requests – you’re all caught up!")
                                             .font(.LibreBodoni(size: 16))
-                                            .foregroundColor(.gray)
+                                            .foregroundColor(Colors.primaryDark)
                                             .multilineTextAlignment(.center)
                                     }
                                     .frame(maxWidth: .infinity)
                                     .padding(.top, 100)
                                 } else {
                                     ForEach(vm.requests) { req in
-                                        RequestRowView(
-                                            name: req.sender.name,
-                                            imageUrl: req.sender.profilePhotoUrl,
-                                            onConfirm: { 
-                                                vm.accept(req) 
-                                            },
-                                            onDelete: { 
-                                                vm.reject(req) 
-                                            }
-                                        )
+                                        NavigationLink(destination: FriendProfileView(userId: req.sender.id, initialPhotoUrl: req.sender.profilePhotoUrl)) {
+                                            RequestRowView(
+                                                id: req.sender.id,
+                                                name: req.sender.name,
+                                                imageUrl: req.sender.profilePhotoUrl,
+                                                onConfirm: { 
+                                                    vm.accept(req) 
+                                                },
+                                                onDelete: { 
+                                                    vm.reject(req) 
+                                                }
+                                            )
+                                        }
+                                        .buttonStyle(.plain)
                                         .onAppear {
                                             if req.id == vm.requests.last?.id {
                                                 vm.loadNextPage()
@@ -125,6 +129,7 @@ struct RequestsView: View {
 // MARK: — Subview for each row
 
 struct RequestRowView: View {
+    let id: String
     let name: String
     var imageUrl: URL? = nil
     var onConfirm: (() -> Void)? = nil
@@ -198,6 +203,15 @@ struct RequestRowView: View {
         }
         .padding(.vertical, 8)
         .padding(.horizontal, 24)
+        .contentShape(Rectangle())
+        .background(
+            NavigationLink(destination: FriendProfileView(userId: id)) {
+                Color.clear
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+            .buttonStyle(.plain)
+            .opacity(0)
+        )
     }
 }
 
@@ -233,6 +247,7 @@ struct RequestsView_Previews: PreviewProvider {
                         LazyVStack(spacing: 36) {
                             ForEach(sampleRequests) { req in
                                 RequestRowView(
+                                    id: req.sender.id,
                                     name: req.sender.name,
                                     imageUrl: req.sender.profilePhotoUrl,
                                     onConfirm: {},

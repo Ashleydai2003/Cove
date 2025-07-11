@@ -14,7 +14,7 @@ import Kingfisher
 struct CoveMembersView: View {
     @ObservedObject var viewModel: CoveModel
     let onRefresh: () async -> Void
-    @State private var showMessageAlert = false
+    @State private var showMessageBanner = false
     @State private var selectedMemberName: String = ""
     @State private var showSendInvites = false
     @EnvironmentObject var appController: AppController
@@ -49,17 +49,20 @@ struct CoveMembersView: View {
                 // Members list
                 LazyVStack(spacing: 12) {
                     ForEach(viewModel.members) { member in
-                        MemberRowView(
-                            member: member,
-                            currentUserId: appController.profileModel.userId,
-                            friendsViewModel: appController.friendsViewModel,
-                            mutualsViewModel: appController.mutualsViewModel,
-                            requestsViewModel: appController.requestsViewModel,
-                            onMessage: {
-                                selectedMemberName = member.name
-                                showMessageAlert = true
-                            }
-                        )
+                        NavigationLink(destination: FriendProfileView(userId: member.id, initialPhotoUrl: member.profilePhotoUrl)) {
+                            MemberRowView(
+                                member: member,
+                                currentUserId: appController.profileModel.userId,
+                                friendsViewModel: appController.friendsViewModel,
+                                mutualsViewModel: appController.mutualsViewModel,
+                                requestsViewModel: appController.requestsViewModel,
+                                onMessage: {
+                                    selectedMemberName = member.name
+                                    withAnimation { showMessageBanner = true }
+                                }
+                            )
+                        }
+                        .buttonStyle(.plain)
                         .onAppear {
                             viewModel.loadMoreMembersIfNeeded(currentMember: member)
                         }
@@ -83,7 +86,7 @@ struct CoveMembersView: View {
                     VStack(spacing: 16) {
                         Image(systemName: "person.3")
                             .font(.system(size: 40))
-                            .foregroundColor(.gray)
+                            .foregroundColor(Colors.primaryDark)
                         
                         Text("no members found")
                             .font(.LibreBodoni(size: 16))
@@ -100,12 +103,11 @@ struct CoveMembersView: View {
         .refreshable {
             await onRefresh()
         }
-        // TODO: make alert 
-        .alert("Direct messaging coming soon!", isPresented: $showMessageAlert) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text("TODO: implement messaging")
-        }
+        // Messaging placeholder banner
+        .overlay(
+            AlertBannerView(message: "direct messaging coming soon!", isVisible: $showMessageBanner)
+                .animation(.easeInOut, value: showMessageBanner)
+        )
         .sheet(isPresented: $showSendInvites) {
             if let cove = viewModel.cove {
                 SendInvitesView(
