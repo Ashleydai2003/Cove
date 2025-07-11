@@ -19,6 +19,9 @@ struct ProfileStats: Decodable {
     let friendCount: Int
     let requestCount: Int
     let coveCount: Int
+    let sharedCoveCount: Int?
+    let sharedEventCount: Int?
+    let sharedFriendCount: Int?
 }
 
 /**

@@ -129,11 +129,11 @@ private struct EmptyStateView: View {
         VStack(spacing: 16) {
             Image(systemName: "calendar")
                 .font(.system(size: 40))
-                .foregroundColor(.gray)
+                .foregroundColor(Colors.primaryDark)
             
-            Text("no upcoming events")
+            Text("no upcoming events – create something epic!")
                 .font(.LibreBodoni(size: 16))
-                .foregroundColor(.gray)
+                .foregroundColor(Colors.primaryDark)
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

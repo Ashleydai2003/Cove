@@ -47,11 +47,11 @@ struct MutualsView: View {
                     VStack(spacing: 16) {
                         Image(systemName: "person.2.slash")
                             .font(.system(size: 40))
-                            .foregroundColor(.gray)
+                            .foregroundColor(Colors.primaryDark)
                         
-                        Text("no mutuals yet!")
+                        Text("no mutuals yet – discover new connections!")
                             .font(.LibreBodoni(size: 16))
-                            .foregroundColor(.gray)
+                            .foregroundColor(Colors.primaryDark)
                             .multilineTextAlignment(.center)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -60,54 +60,57 @@ struct MutualsView: View {
                     ScrollView {
                         VStack(spacing: 30) {
                             ForEach(viewModel.mutuals) { mutual in
-                                HStack(spacing: 16) {
-                                    // Profile image (if URL exists, load with KFImage; otherwise placeholder)
-                                    if let url = mutual.profilePhotoUrl {
-                                        KFImage(url)
-                                            .resizable()
-                                            .placeholder {
-                                                Circle()
-                                                    .fill(Color.gray.opacity(0.3))
-                                                    .overlay(
-                                                        ProgressView()
-                                                            .tint(.gray)
-                                                    )
+                                NavigationLink(destination: FriendProfileView(userId: mutual.id, initialPhotoUrl: mutual.profilePhotoUrl)) {
+                                    HStack(spacing: 16) {
+                                        // Profile image (if URL exists, load with KFImage; otherwise placeholder)
+                                        if let url = mutual.profilePhotoUrl {
+                                            KFImage(url)
+                                                .resizable()
+                                                .placeholder {
+                                                    Circle()
+                                                        .fill(Color.gray.opacity(0.3))
+                                                        .overlay(
+                                                            ProgressView()
+                                                                .tint(.gray)
+                                                        )
+                                                }
+                                                .scaledToFill()
+                                                .frame(width: 60, height: 60)
+                                                .clipShape(Circle())
+                                        } else {
+                                            Image("default_user_pfp")
+                                                .resizable()
+                                                .scaledToFill()
+                                                .frame(width: 60, height: 60)
+                                                .clipShape(Circle())
+                                        }
+
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            // Friend's name
+                                            Text(mutual.name)
+                                                .font(.LibreBodoni(size: 16))
+                                                .foregroundStyle(Color.black)
+                                            
+                                            // Shared cove count
+                                            Text("\(mutual.sharedCoveCount) shared cove\(mutual.sharedCoveCount == 1 ? "" : "s")")
+                                                .font(.LibreBodoni(size: 12))
+                                                .foregroundStyle(Color.black.opacity(0.6))
+                                        }
+
+                                        Spacer()
+
+                                        // "Request" / "Pending" button
+                                        if viewModel.pendingRequests.contains(mutual.id) {
+                                            ActionButton.pending()
+                                        } else {
+                                            ActionButton.request {
+                                                viewModel.sendFriendRequest(to: mutual.id)
                                             }
-                                            .scaledToFill()
-                                            .frame(width: 60, height: 60)
-                                            .clipShape(Circle())
-                                    } else {
-                                        Image("default_user_pfp")
-                                            .resizable()
-                                            .scaledToFill()
-                                            .frame(width: 60, height: 60)
-                                            .clipShape(Circle())
-                                    }
-
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        // Friend's name
-                                        Text(mutual.name)
-                                            .font(.LibreBodoni(size: 16))
-                                            .foregroundStyle(Color.black)
-                                        
-                                        // Shared cove count
-                                        Text("\(mutual.sharedCoveCount) shared cove\(mutual.sharedCoveCount == 1 ? "" : "s")")
-                                            .font(.LibreBodoni(size: 12))
-                                            .foregroundStyle(Color.black.opacity(0.6))
-                                    }
-
-                                    Spacer()
-
-                                    // "Request" / "Pending" button
-                                    if viewModel.pendingRequests.contains(mutual.id) {
-                                        ActionButton.pending()
-                                    } else {
-                                        ActionButton.request {
-                                            viewModel.sendFriendRequest(to: mutual.id)
                                         }
                                     }
+                                    .padding(.horizontal, 20)
                                 }
-                                .padding(.horizontal, 20)
+                                .buttonStyle(.plain)
                                 .onAppear {
                                     // Load more if this is one of the last items
                                     if mutual.id == viewModel.mutuals.last?.id {

@@ -68,6 +68,14 @@ class LocationSearchViewModel: NSObject, ObservableObject {
         if let state = placemark.administrativeArea {
             addressParts.append(state)
         }
+        
+        if let postalCode = placemark.postalCode {
+            addressParts.append(postalCode)
+        }
+        
+        if let country = placemark.country {
+            addressParts.append(country)
+        }
 
         return addressParts.joined(separator: ", ")
     }

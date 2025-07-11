@@ -206,8 +206,15 @@ struct EventSummaryView: View {
     /// Returns the first part of the location for display
     private func firstLocationPart(_ location: String?) -> String {
         guard let location = location else { return "" }
-        let parts = location.split(separator: ",")
-        return parts.first?.trimmingCharacters(in: .whitespaces) ?? ""
+        let parts = location.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }
+        // Heuristic: return the first segment that DOES NOT contain digits (avoids street numbers)
+        // and is not empty. If none found, fallback to the first segment.
+        for part in parts {
+            if part.rangeOfCharacter(from: CharacterSet.decimalDigits) == nil && !part.isEmpty {
+                return part
+            }
+        }
+        return parts.first ?? ""
     }
     /// Returns the formatted time for display
     private func formattedTime(_ dateString: String) -> String {
