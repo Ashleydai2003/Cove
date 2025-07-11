@@ -26,6 +26,21 @@ struct CoveEventsView: View {
                             }
                         }
                 }
+
+                // Cute empty state
+                if viewModel.events.isEmpty && !viewModel.isLoading && !viewModel.isRefreshingEvents {
+                    VStack(spacing: 16) {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 40))
+                            .foregroundColor(Colors.primaryDark)
+                        Text("no events yet – be the first to host!")
+                            .font(.LibreBodoni(size: 16))
+                            .foregroundColor(Colors.primaryDark)
+                            .multilineTextAlignment(.center)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding(.top, 100)
+                }
                 
                 // Show loading indicator only for events
                 if viewModel.isRefreshingEvents || (viewModel.isLoading && !viewModel.events.isEmpty) {

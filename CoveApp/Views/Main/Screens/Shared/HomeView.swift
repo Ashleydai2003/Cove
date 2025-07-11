@@ -128,8 +128,10 @@ struct HomeView: View {
                 }
             }
 
-            // Tab bar - now won't be recreated on tab switches
-            TabBarView(selectedTab: $tabSelection)
+            // Tab bar - conditionally shown based on global flag so full-screen views can hide it
+            if appController.showTabBar {
+                TabBarView(selectedTab: $tabSelection)
+            }
         }
         .onAppear(perform: {
             // Set default tab selection

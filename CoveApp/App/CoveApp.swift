@@ -56,10 +56,12 @@ struct CoveApp: App {
                 // Main app flow - tab-based navigation
                 HomeView()
                     .environmentObject(appController)
+                    .preferredColorScheme(.light) // TODO: Support dark mode properly later
             } else {
                 // Onboarding flow - linear navigation
             OnboardingFlow()
                 .environmentObject(appController)
+                .preferredColorScheme(.light) // TODO: Support dark mode properly later
             }
         }
     }
