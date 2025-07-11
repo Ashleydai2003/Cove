@@ -64,10 +64,87 @@ export const handleProfile = async (event: APIGatewayProxyEvent): Promise<APIGat
       };
     }
 
-    // Calculate counts
+    // Calculate basic counts
     const friendCount = userProfile.friendships1.length + userProfile.friendships2.length;
     const requestCount = userProfile.receivedFriendRequests.length;
     const coveCount = userProfile.coveMemberships.length;
+
+    // Additional stats when viewing someone else's profile
+    let sharedCoveCount = 0;
+    let sharedEventCount = 0;
+
+    const viewerId = authResult.user.uid;
+    if (viewerId && viewerId !== targetUserId) {
+      // Fetch cove memberships for both users and find overlap
+      const [viewerMemberships, targetMemberships] = await Promise.all([
+        prisma.coveMember.findMany({ where: { userId: viewerId }, select: { coveId: true } }),
+        prisma.coveMember.findMany({ where: { userId: targetUserId }, select: { coveId: true } })
+      ]);
+
+      const viewerCoveIds = new Set(viewerMemberships.map(m => m.coveId));
+      sharedCoveCount = targetMemberships.filter(m => viewerCoveIds.has(m.coveId)).length;
+
+      // Fetch GOING RSVPs for both users and find shared events
+      const GOING = 'GOING';
+      const [viewerRsvps, targetRsvps] = await Promise.all([
+        prisma.eventRSVP.findMany({ where: { userId: viewerId, status: GOING }, select: { eventId: true } }),
+        prisma.eventRSVP.findMany({ where: { userId: targetUserId, status: GOING }, select: { eventId: true } })
+      ]);
+
+      const viewerEventIds = new Set(viewerRsvps.map(r => r.eventId));
+      sharedEventCount = targetRsvps.filter(r => viewerEventIds.has(r.eventId)).length;
+    }
+
+    // Calculate shared friends (mutual friends) between viewer and target
+    let sharedFriendCount = 0;
+    let sharedFriends: { id: string; name: string | null }[] = [];
+
+    if (viewerId && viewerId !== targetUserId) {
+      // 1. Fetch viewer friendships
+      const viewerFriendships = await prisma.friendship.findMany({
+        where: {
+          OR: [
+            { user1Id: viewerId },
+            { user2Id: viewerId }
+          ]
+        },
+        select: { user1Id: true, user2Id: true }
+      });
+
+      const viewerFriendIds = new Set<string>();
+      viewerFriendships.forEach(f => {
+        viewerFriendIds.add(f.user1Id === viewerId ? f.user2Id : f.user1Id);
+      });
+
+      // 2. Fetch target friendships
+      const targetFriendships = await prisma.friendship.findMany({
+        where: {
+          OR: [
+            { user1Id: targetUserId },
+            { user2Id: targetUserId }
+          ]
+        },
+        select: { user1Id: true, user2Id: true }
+      });
+
+      const mutualIds: string[] = [];
+      targetFriendships.forEach(f => {
+        const otherId = f.user1Id === targetUserId ? f.user2Id : f.user1Id;
+        if (viewerFriendIds.has(otherId)) {
+          mutualIds.push(otherId);
+        }
+      });
+
+      sharedFriendCount = mutualIds.length;
+
+      if (sharedFriendCount > 0) {
+        const mutualUsers = await prisma.user.findMany({
+          where: { id: { in: mutualIds } },
+          select: { id: true, name: true }
+        });
+        sharedFriends = mutualUsers;
+      }
+    }
 
     // Step 6: Get S3 URLs for all photos
     const photoUrls = await Promise.all(
@@ -94,24 +171,58 @@ export const handleProfile = async (event: APIGatewayProxyEvent): Promise<APIGat
     );
 
     // Step 7: Return user profile with photo URLs
-    // TODO: if user is private and the authenticated user is not the target user, 
-    // only return name, bio, and profile picture + maybe other information 
+    // TODO: use user's privacy preferences to determine which fields to expose
+    const isOwnProfile = viewerId === targetUserId;
+
+    let profileData: any;
+    if (isOwnProfile) {
+      // Viewer is the profile owner – return full details
+      profileData = {
+        name: userProfile.name,
+        phone: userProfile.phone,
+        onboarding: userProfile.onboarding,
+        verified: userProfile.verified,
+        ...userProfile.profile, // Include all profile fields
+        photos: photoUrls,
+        stats: {
+          friendCount,
+          requestCount,
+          coveCount,
+          sharedCoveCount,
+          sharedEventCount,
+          sharedFriendCount,
+          sharedFriends
+        }
+      };
+    } else {
+      // Viewer is NOT the profile owner – return a limited view
+      // TODO: extend this logic to honour the target user's privacy preferences (e.g., private/public fields)
+      const profilePic = photoUrls.find(p => p.isProfilePic) ?? null;
+
+      profileData = {
+        name: userProfile.name,
+        userId: targetUserId,
+        id: targetUserId,
+        bio: userProfile.profile?.bio,
+        interests: userProfile.profile?.interests ?? [],
+        latitude: userProfile.profile?.latitude,
+        longitude: userProfile.profile?.longitude,
+        photos: profilePic ? [profilePic] : [],
+        stats: {
+          friendCount: 0,
+          requestCount: 0,
+          coveCount: 0,
+          sharedCoveCount,
+          sharedEventCount,
+          sharedFriendCount
+        }
+      };
+    }
+
     const response = {
       statusCode: 200,
       body: JSON.stringify({
-        profile: {
-          name: userProfile.name,
-          phone: userProfile.phone,
-          onboarding: userProfile.onboarding,
-          verified: userProfile.verified,
-          ...userProfile.profile, // Include all profile fields
-          photos: photoUrls,
-          stats: {
-            friendCount,
-            requestCount,
-            coveCount
-          }
-        }
+        profile: profileData
       })
     };
     console.log('Profile response:', response);
