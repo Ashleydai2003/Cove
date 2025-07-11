@@ -31,7 +31,8 @@ struct LoginView: View {
                 // Initiates the sign-in flow
                 SignOnButton(text: "let's go") {
                     // TODO: DEV ONLY - Remove this and uncomment line below when done testing
-                    appController.path.append(.almaMater)
+                    appController.path.append(.hobbies)
+                    // appController.path.append(.almaMater)
                     // appController.path.append(.birthdate)
                     // appController.path.append(.userDetails)
                     // appController.path.append(.otpVerify)
