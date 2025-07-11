@@ -1,11 +1,9 @@
 // Created by Ananya Agarwal
 
 import SwiftUI
-import Inject
 
 /// View for collecting user's hobbies during onboarding
-/// Features a searchable grid of hobby categories with selectable buttons
-/// Allows users to add custom hobbies that don't exist in the predefined list
+/// Simple categorized hobby selection with visual feedback
 struct HobbiesView: View {
     // MARK: - Environment & State Properties
     
@@ -13,138 +11,43 @@ struct HobbiesView: View {
     @EnvironmentObject var appController: AppController
     
     /// Tracks which hobbies are currently selected
-    @State private var selectedButtons: Set<String> = []
+    @State private var selectedHobbies: Set<String> = []
     
-    /// Current search text for filtering hobbies
-    @State private var searchText: String = ""
+    // MARK: - Data
     
-    /// Stores custom hobbies added by the user
-    @State private var customHobbies: [(String, String)] = []
-    
-    /// Enables hot reloading during development
-    @ObserveInjection var inject
-    
-    // MARK: - Layout Configuration
-    
-    /// Grid layout configuration for hobby buttons
-    private let columns = [
-        GridItem(.flexible(), spacing: 12),
-        GridItem(.flexible(), spacing: 12)
-    ]
-    
-    // MARK: - Data Models
-    
-    /// Predefined categories of hobbies with their associated activities and emojis
-    private let hobbyCategories: [(String, [(String, String)])] = [
-        ("Sports & Fitness 🏃‍♀️", [
-            ("Soccer Teams", "⚽️"),
-            ("Basketball Leagues", "🏀"),
-            ("Tennis Groups", "🎾"),
-            ("Hiking Groups", "🥾"),
-            ("Yoga Classes", "🧘‍♀️"),
-            ("Surfing Meetups", "🏄‍♀️"),
-            ("Rock Climbing", "🧗‍♀️"),
-            ("Swimming Clubs", "🏊‍♀️"),
-            ("Running Groups", "🏃‍♀️"),
-            ("Volleyball Teams", "🏐"),
-            ("Spin Classes", "🚴‍♀️"),
-            ("Boxing Clubs", "🥊"),
-            ("CrossFit Groups", "💪"),
-            ("Dance Fitness", "💃"),
-            ("Beach Volleyball", "🏖️"),
-            ("Ultimate Frisbee", "🥏"),
-            ("Pickleball Clubs", "🏓"),
-            ("Golf Leagues", "⛳️")
-        ]),
-        ("Creative Pursuits 🎨", [
-            ("Art Museums", "🖼️"),
-            ("Pottery Classes", "🏺"),
-            ("Dance Studios", "💃"),
-            ("Music Festivals", "🎵"),
-            ("Theater Groups", "🎭"),
-            ("Cooking Classes", "👨‍🍳"),
-            ("Craft Workshops", "✂️"),
-            ("Writing Circles", "✍️"),
-            ("Film Clubs", "🎬"),
-            ("Photography Walks", "📸"),
-            ("Painting Classes", "🎨"),
-            ("Sculpture Workshops", "🗿"),
-            ("Jewelry Making", "💍"),
-            ("Glass Blowing", "🔥"),
-            ("Digital Art Clubs", "🖥️"),
-            ("Street Art Tours", "🎯"),
-            ("Fashion Design", "👗"),
-            ("Woodworking", "🪚")
-        ]),
-        ("Entertainment 🎉", [
+    /// Simple hobby categories with 8 options each
+    private let hobbyData: [(String, [(String, String)])] = [
+        ("Going Out", [
             ("Cocktail Bars", "🍸"),
-            ("Clubs", "🍷"),
             ("Wine Tastings", "🍷"),
             ("Comedy Clubs", "😄"),
+            ("Live Music", "🎸"),
             ("Karaoke Nights", "🎤"),
-            ("Escape Rooms", "🔐"),
-            ("Bowling Leagues", "🎳"),
-            ("Live Music Venues", "🎸"),
-            ("Jazz Clubs", "🎺"),
             ("Rooftop Bars", "🌆"),
-            ("Beer Gardens", "🍺"),
-            ("Game Nights", "🎲"),
             ("Dance Clubs", "💃"),
-            ("Piano Bars", "🎹"),
-            ("Magic Shows", "🎩"),
-            ("Burlesque Shows", "✨"),
-            ("Improv Classes", "🎭"),
-            ("Casino Nights", "🎰")
+            ("Game Nights", "🎲")
         ]),
-        ("Social Activities 🌟", [
-            ("Book Clubs", "📚"),
-            ("Travel Groups", "✈️"),
-            ("Founders Groups", "💻"),
-            ("Chess Clubs", "♟️"),
-            ("Volunteer Groups", "🤝"),
-            ("Language Exchange", "🗣️"),
-            ("Food Tours", "🍽️"),
-            ("Coffee Meetups", "☕️"),
-            ("Tech Meetups", "💻"),
-            ("Gardening Clubs", "🌱"),
-            ("Cultural Events", "🎪"),
-            ("Philosophy Clubs", "🤔"),
-            ("Astronomy Groups", "🔭"),
-            ("Hiking Meetups", "🥾"),
-            ("Wine & Paint", "🎨"),
+        ("Sports", [
+            ("Soccer", "⚽️"),
+            ("Basketball", "🏀"),
+            ("Tennis", "🎾"),
+            ("Hiking", "🥾"),
+            ("Yoga", "🧘‍♀️"),
+            ("Surfing", "🏄‍♀️"),
+            ("Rock Climbing", "🧗‍♀️"),
+            ("Running", "🏃‍♀️")
+        ]),
+        ("Activities", [
+            ("Art Museums", "🖼️"),
+            ("Pottery Classes", "🏺"),
             ("Cooking Classes", "👨‍🍳"),
-            ("Board Game Nights", "🎲"),
-            ("Trivia Teams", "🧠")
+            ("Book Clubs", "📚"),
+            ("Photography", "📸"),
+            ("Travel Groups", "✈️"),
+            ("Coffee Meetups", "☕️"),
+            ("Volunteer Work", "🤝")
         ])
     ]
-    
-    // MARK: - Computed Properties
-    
-    /// Filters categories and hobbies based on search text
-    /// Returns only categories that have matching hobbies
-    private var filteredCategories: [(String, [(String, String)])] {
-        if searchText.isEmpty {
-            return hobbyCategories
-        }
-        
-        return hobbyCategories.compactMap { category in
-            let filteredHobbies = category.1.filter { hobby in
-                hobby.0.lowercased().contains(searchText.lowercased())
-            }
-            
-            if filteredHobbies.isEmpty {
-                return nil
-            }
-            
-            return (category.0, filteredHobbies)
-        }
-    }
-    
-    /// Checks if the current search text matches any existing hobby
-    private var isExistingHobby: Bool {
-        let allHobbies = hobbyCategories.flatMap { $0.1 }
-        return allHobbies.contains { $0.0.lowercased() == searchText.lowercased() }
-    }
     
     // MARK: - View Body
     
@@ -152,8 +55,7 @@ struct HobbiesView: View {
         ZStack {
             OnboardingBackgroundView()
             
-            // Main content container
-            VStack(spacing: 0) {
+            VStack {
                 // Back button
                 HStack {
                     Button {
@@ -168,146 +70,108 @@ struct HobbiesView: View {
                 // Header section
                 VStack(alignment: .leading, spacing: 10) {
                     Text("what are your favorite social pass times?")
-                        .foregroundStyle(Colors.primaryLight)
-                        .font(.LibreBodoni(size: 35))
+                        .foregroundStyle(Colors.primaryDark)
+                        .font(.LibreBodoniMedium(size: 40))
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     
-                    HStack(alignment: .center, spacing: 4) {
-                        Text("select at least 5 activities you wish to see in your area.")
-                            .foregroundStyle(Colors.primaryLight)
-                            .font(.LeagueSpartan(size: 12))
-                        
-                        Image("smiley")
-                            .resizable()
-                            .frame(width: 10, height: 10)
-                    }
+                    Text("select activities you enjoy doing")
+                        .font(.LeagueSpartan(size: 15))
+                        .foregroundColor(Colors.k0B0B0B)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .padding(.top, 20)
-                .padding(.bottom, 20)
+                .padding(.top, 40)
                 
-                // Search section
-                VStack(spacing: 8) {
-                    // Search bar
-                    HStack {
-                        Image(systemName: "magnifyingglass")
-                            .foregroundColor(.gray)
-                        TextField("Search or add activities...", text: $searchText)
-                            .font(.LeagueSpartan(size: 14))
-                            .onChange(of: searchText) { oldValue, newValue in
-                                searchText = newValue.lowercaseIfNotEmpty
-                            }
-                        if !searchText.isEmpty {
-                            Button(action: {
-                                searchText = ""
-                            }) {
-                                Image(systemName: "xmark.circle.fill")
-                                    .foregroundColor(.gray)
-                            }
-                        }
-                    }
-                    .padding(8)
-                    .background(Color.gray.opacity(0.1))
-                    .cornerRadius(10)
-                    
-                    // Add custom hobby button
-                    if !searchText.isEmpty && !isExistingHobby {
-                        Button(action: {
-                            customHobbies.append((searchText, "✨"))
-                            selectedButtons.insert(searchText)
-                            searchText = ""
-                        }) {
-                            HStack {
-                                Text("Add '\(searchText)' as a hobby")
-                                    .font(.LeagueSpartan(size: 14))
-                                Image(systemName: "plus.circle.fill")
-                            }
-                            .foregroundColor(Colors.primaryLight)
-                            .padding(.vertical, 4)
-                        }
-                    }
-                }
-                .padding(.horizontal)
-                .padding(.bottom, 20)
-                
-                // Hobbies grid
+                // Hobbies categories
                 ScrollView(showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: 24) {
-                        // Predefined categories
-                        ForEach(filteredCategories, id: \.0) { category in
-                            VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 30) {
+                        ForEach(hobbyData, id: \.0) { category in
+                            VStack(alignment: .leading, spacing: 15) {
+                                // Category title
                                 Text(category.0)
-                                    .font(.LeagueSpartan(size: 16))
-                                    .foregroundStyle(Colors.primaryLight)
-                                    .padding(.horizontal)
+                                    .font(.LeagueSpartanMedium(size: 18))
+                                    .foregroundColor(Colors.primaryDark)
                                 
-                                LazyVGrid(columns: columns, spacing: 12) {
-                                    ForEach(category.1, id: \.0) { hobby in
-                                        HobbyPill(
-                                            text: hobby.0,
-                                            emoji: hobby.1,
-                                            isSelected: selectedButtons.contains(hobby.0)
-                                        ) {
-                                            if selectedButtons.contains(hobby.0) {
-                                                selectedButtons.remove(hobby.0)
-                                            } else {
-                                                selectedButtons.insert(hobby.0)
+                                // Hobby options in 2x4 grid
+                                VStack(spacing: 12) {
+                                    ForEach(0..<4) { row in
+                                        HStack(spacing: 12) {
+                                            ForEach(0..<2) { col in
+                                                let index = row * 2 + col
+                                                if index < category.1.count {
+                                                    let hobby = category.1[index]
+                                                    HobbyButton(
+                                                        text: hobby.0,
+                                                        emoji: hobby.1,
+                                                        isSelected: selectedHobbies.contains(hobby.0)
+                                                    ) {
+                                                        if selectedHobbies.contains(hobby.0) {
+                                                            selectedHobbies.remove(hobby.0)
+                                                        } else {
+                                                            selectedHobbies.insert(hobby.0)
+                                                        }
+                                                    }
+                                                }
                                             }
                                         }
                                     }
                                 }
-                                .padding(.horizontal)
-                            }
-                        }
-                        
-                        // Custom hobbies section
-                        if !customHobbies.isEmpty {
-                            VStack(alignment: .leading, spacing: 12) {
-                                Text("Custom Hobbies ✨")
-                                    .font(.LeagueSpartan(size: 16))
-                                    .foregroundStyle(Colors.primaryLight)
-                                    .padding(.horizontal)
-                                
-                                LazyVGrid(columns: columns, spacing: 12) {
-                                    ForEach(customHobbies, id: \.0) { hobby in
-                                        HobbyPill(
-                                            text: hobby.0,
-                                            emoji: hobby.1,
-                                            isSelected: selectedButtons.contains(hobby.0)
-                                        ) {
-                                            if selectedButtons.contains(hobby.0) {
-                                                selectedButtons.remove(hobby.0)
-                                            } else {
-                                                selectedButtons.insert(hobby.0)
-                                            }
-                                        }
-                                    }
-                                }
-                                .padding(.horizontal)
                             }
                         }
                     }
+                    .padding(.top, 30)
                 }
                 
                 Spacer()
                 
-                // Navigation helper
+                // Continue button
                 HStack {
                     Spacer()
-                    Images.smily
+                    Images.nextArrow
                         .resizable()
                         .frame(width: 52, height: 52)
-                        .padding(.init(top: 0, leading: 0, bottom: 20, trailing: 20))
+                        .padding(.bottom, 20)
                         .onTapGesture {
                             // MARK: - Store hobbies
-                            Onboarding.storeHobbies(hobbies: selectedButtons)
-                            appController.path.append(.bio)
+                            Onboarding.storeHobbies(hobbies: selectedHobbies)
+                            appController.path.append(.profilePics)
                         }
                 }
             }
-            .padding(.horizontal, 20)
-            .safeAreaPadding()
+            .padding(.horizontal, 32)
         }
         .navigationBarBackButtonHidden()
-        .enableInjection()
+    }
+}
+
+// MARK: - Hobby Button Component
+
+struct HobbyButton: View {
+    let text: String
+    let emoji: String
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                Text(emoji)
+                    .font(.system(size: 16))
+                
+                Text(text)
+                    .font(.LeagueSpartan(size: 14))
+                    .foregroundColor(isSelected ? .white : Colors.primaryDark)
+                
+                Spacer()
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(isSelected ? Colors.primaryDark : Colors.primaryLight)
+            .cornerRadius(25)
+            .overlay(
+                RoundedRectangle(cornerRadius: 25)
+                    .stroke(Colors.primaryDark, lineWidth: 1)
+            )
+        }
     }
 }
 

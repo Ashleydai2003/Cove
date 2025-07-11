@@ -213,7 +213,7 @@ struct AlmaMaterView: View {
                             // TODO: can consider using university IDs instead of names
                             Onboarding.storeAlmaMater(almaMater: searchUniversity)
                             // TODO: Store grad year when backend supports it
-                            appController.path.append(.moreAboutYou)
+                            appController.path.append(.hobbies)
                         }
                 }
             }
