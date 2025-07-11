@@ -17,6 +17,7 @@ struct AlmaMaterView: View {
     @State private var showUniversityDropdown = false
     @State private var showYearDropdown = false
     @State private var showList: Bool = false
+    @FocusState private var isUniversityFocused: Bool
     @State private var universities: [String] = ["Stanford University", "Stanford Graduate School of Business", "Stanford School of Medicine", "Stanford Law School", "Stanford Graduate School of Education"]
     
     // Generate years from 2000 to current year + 4
@@ -69,6 +70,7 @@ struct AlmaMaterView: View {
                             .font(.LeagueSpartan(size: 30))
                             .foregroundStyle(Colors.k060505)
                             .keyboardType(.alphabet)
+                            .focused($isUniversityFocused)
                             .onChange(of: searchUniversity) { oldValue, newValue in
                                 let processedValue = newValue.lowercaseIfNotEmpty
                                 searchUniversity = processedValue
@@ -155,7 +157,7 @@ struct AlmaMaterView: View {
                     }
                     .background(Colors.primaryLight)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .frame(maxHeight: 200)
+                    .frame(height: min(CGFloat(filteredUniversities.count * 44), 200))
                     .padding(.top, 10)
                     .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 5)
                 }
@@ -192,7 +194,7 @@ struct AlmaMaterView: View {
                     }
                     .background(Colors.primaryLight)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .frame(maxHeight: 200)
+                    .frame(height: min(CGFloat(filteredYears.count * 44), 200))
                     .padding(.top, 10)
                     .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 5)
                 }
@@ -218,6 +220,9 @@ struct AlmaMaterView: View {
             .padding(.horizontal, 32)
         }
         .navigationBarBackButtonHidden()
+        .onAppear {
+            isUniversityFocused = true
+        }
     }
     
     var filteredUniversities: [String] {
