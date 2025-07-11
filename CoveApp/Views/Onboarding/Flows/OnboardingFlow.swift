@@ -28,8 +28,6 @@ struct OnboardingFlow: View {
                         HobbiesView()
                     case .profilePics:
                         ProfilePicView()
-                    case .contacts:
-                        ContactsView()
                     case .pluggingIn:
                         PluggingYouIn()
                     }
