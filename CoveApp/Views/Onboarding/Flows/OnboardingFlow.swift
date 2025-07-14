@@ -24,6 +24,8 @@ struct OnboardingFlow: View {
                         BirthdateView()
                     case .almaMater:
                         AlmaMaterView()
+                    case .citySelection:
+                        CitySelectionView()
                     case .hobbies:
                         HobbiesView()
                     case .profilePics:
