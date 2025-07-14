@@ -23,9 +23,9 @@ struct HobbiesView: View {
         ("going out", "🍻", [
             ("bars", "🍸", [
                 ("dive bars", "🍺"),
-                ("cocktail bars", "🍸")
+                ("cocktail bars", "🍸"),
+                ("karaoke", "🎤")
             ]),
-            ("karaoke", "🎤", []),
             ("nightclubs", "💃", [
                 ("reggaeton", "🎵"),
                 ("house", "🏠"),
@@ -41,51 +41,55 @@ struct HobbiesView: View {
         ]),
         ("fitness", "🏃‍♀️", [
             ("running", "🏃‍♀️", [
-                ("casual", "🚶‍♀️"),
-                ("advanced", "🏃‍♂️")
+                ("casual", "🏃"),
+                ("marathons", "🏃"),
+                ("trail running", "🏃")
             ]),
-            ("triathlon", "🏊‍♀️", [
-                ("beginner", "🆕"),
-                ("advanced", "💪")
+            ("triathlon", "💪🏼", [
+                ("newbie", "💪🏼"),
+                ("competitive", "💪🏼")
             ]),
-            ("cycling", "🚴‍♀️", [
-                ("beginner", "🆕"),
-                ("advanced", "💪")
-            ]),
+            ("cycling", "🚴‍♀️", []),
             ("pickleball", "🥎", []),
-            ("soccer", "⚽️", []),
+            ("soccer", "⚽️", [
+                ("casual", "⚽️"),
+                ("competitive", "⚽️")
+            ]),
             ("swimming", "🏊‍♀️", [
                 ("casual", "🏊‍♀️"),
-                ("competitive", "🏆")
+                ("competitive", "🏊‍♀️")
             ]),
             ("basketball", "🏀", []),
             ("volleyball", "🏐", []),
             ("tennis", "🎾", [
-                ("casual", "🎾"),
-                ("competitive", "🏆")
+                ("casual tennis", "🎾"),
+                ("competitive tennis", "🎾")
             ]),
-            ("workout classes", "💪", [
+            ("workout classes", "🏋🏽‍♀️", [
                 ("yoga", "🧘‍♀️"),
                 ("pilates", "🤸‍♀️"),
                 ("strength", "💪"),
                 ("dance", "💃")
             ]),
             ("hiking", "🥾", [
-                ("casual", "🚶‍♀️"),
-                ("intense", "🏔️")
+                ("casual", "🥾"),
+                ("intense", "🥾")
             ]),
             ("surfing", "🏄‍♀️", [
-                ("beginner", "🆕"),
-                ("dawn patrol", "🌅")
+                ("beginner", "🏄‍♀️"),
+                ("dawn patrol", "🏄‍♀️")
             ]),
             ("climbing", "🧗‍♀️", [
-                ("indoor", "🏢"),
-                ("outdoor", "🏔️")
+                ("indoor", "🧗‍♀️"),
+                ("outdoor", "🧗‍♀️")
             ])
         ]),
         ("activities", "🎨", [
             ("board games", "🎲", []),
-            ("poker", "♠️", []),
+            ("poker", "♠️", [
+                ("casual", "♠️"),
+                ("serious", "♠️")
+            ]),
             ("art classes", "🖼️", [
                 ("drawing", "✏️"),
                 ("painting", "🎨"),
@@ -217,7 +221,8 @@ struct HobbiesView: View {
                                     HobbyButton(
                                         text: buttonData.text,
                                         emoji: buttonData.emoji,
-                                        isSelected: selectedHobbies.contains(buttonData.text)
+                                        isSelected: selectedHobbies.contains(buttonData.text),
+                                        borderWidth: buttonData.isTopLevel ? 2 : 1
                                     ) {
                                         if buttonData.isTopLevel {
                                             // Top-level button: toggle expansion and selection
@@ -279,6 +284,7 @@ struct HobbyButton: View {
     let text: String
     let emoji: String
     let isSelected: Bool
+    let borderWidth: CGFloat
     let action: () -> Void
     
     var body: some View {
@@ -299,7 +305,7 @@ struct HobbyButton: View {
             .cornerRadius(25)
             .overlay(
                 RoundedRectangle(cornerRadius: 25)
-                    .stroke(Colors.primaryDark, lineWidth: 1)
+                    .stroke(Colors.primaryDark, lineWidth: borderWidth)
             )
         }
     }
