@@ -21,6 +21,7 @@ struct NamePageView: View {
     var body: some View {
         ZStack {
             // Main content container
+            OnboardingBackgroundView()
             VStack {
                 // MARK: - Header Section
                 VStack(alignment: .leading) {

@@ -17,35 +17,34 @@ struct HobbiesView: View {
     
     /// Simple hobby categories with 8 options each
     private let hobbyData: [(String, [(String, String)])] = [
-        ("Going Out", [
-            ("Cocktail Bars", "🍸"),
-            ("Wine Tastings", "🍷"),
-            ("Comedy Clubs", "😄"),
+        ("Activities", [
+            ("Bars", "🍸"),
+            ("Nightclubs", "💃"),
             ("Live Music", "🎸"),
-            ("Karaoke Nights", "🎤"),
-            ("Rooftop Bars", "🌆"),
-            ("Dance Clubs", "💃"),
-            ("Game Nights", "🎲")
+            ("Music Festivals", "🎶"),
+            ("Art Classes", "🖼️"),
+            ("Cooking Classes", "👨‍🍳"),
+            ("Board Games", "🎲"),
+            ("Poker", "♠️"),
         ]),
-        ("Sports", [
+        ("Fitness", [
+            ("Running", "🏃‍♀️"),
             ("Soccer", "⚽️"),
             ("Basketball", "🏀"),
+            ("Pickleball", "🥎"),
             ("Tennis", "🎾"),
             ("Hiking", "🥾"),
             ("Yoga", "🧘‍♀️"),
+            ("Pilates", "💪"),
             ("Surfing", "🏄‍♀️"),
-            ("Rock Climbing", "🧗‍♀️"),
-            ("Running", "🏃‍♀️")
+            ("Cycling", "🚴‍♀️"),
+            ("Climbing", "🧗‍♀️"),
         ]),
-        ("Activities", [
-            ("Art Museums", "🖼️"),
-            ("Pottery Classes", "🏺"),
-            ("Cooking Classes", "👨‍🍳"),
+        ("Groups", [
             ("Book Clubs", "📚"),
-            ("Photography", "📸"),
-            ("Travel Groups", "✈️"),
-            ("Coffee Meetups", "☕️"),
-            ("Volunteer Work", "🤝")
+            ("Remote work & Cafe", "☕️"),
+            ("Founders", "👨‍💻"),
+            ("Technies and Hackers", "👨‍💻"),
         ])
     ]
     
@@ -69,12 +68,12 @@ struct HobbiesView: View {
                 
                 // Header section
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("what are your favorite social pass times?")
+                    Text("What do you want to do in your city?")
                         .foregroundStyle(Colors.primaryDark)
                         .font(.LibreBodoniMedium(size: 40))
                         .frame(maxWidth: .infinity, alignment: .leading)
                     
-                    Text("select activities you enjoy doing")
+                    Text("select whatever stands out to you")
                         .font(.LeagueSpartan(size: 15))
                         .foregroundColor(Colors.k0B0B0B)
                         .frame(maxWidth: .infinity, alignment: .leading)

@@ -69,7 +69,6 @@ struct OtpVerifyView: View {
         GeometryReader { geometry in
             ZStack {
                 OnboardingBackgroundView()
-                
                 VStack {
                     // MARK: - Navigation Header
                     HStack {
