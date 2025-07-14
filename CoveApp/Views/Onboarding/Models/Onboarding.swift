@@ -16,6 +16,7 @@ class Onboarding {
     private static var userAlmaMater: String?
     private static var profilePic: UIImage?
     private static var pendingFriendRequests: [String] = []
+    private static var adminCove: String?
     
     private static let apiBaseURL = AppConstants.API.baseURL
     private static let apiOnboardPath = "/onboard"
@@ -35,6 +36,15 @@ class Onboarding {
 
     static func storeAlmaMater(almaMater: String) -> Void {
         userAlmaMater = almaMater
+    }
+
+    // MARK: - Admin Functions
+    static func setAdminCove(adminCove: String) -> Void {
+        self.adminCove = adminCove
+    }
+
+    static func getAdminCove() -> String? {
+        return adminCove
     }
     
     // MARK: - Friend Requests 
@@ -87,7 +97,7 @@ class Onboarding {
     static func getAllImages() -> [(UIImage, Bool)] {
         var images: [(UIImage, Bool)] = []
         if let profile = profilePic {
-            images.append((profile, true)) // true indicates it's a profile pic
+            images.append((profile, true))
         }
         return images
     }
@@ -117,6 +127,7 @@ class Onboarding {
     static func completeOnboarding(completion: @escaping (Bool) -> Void) {
         if isOnboardingComplete() {
             print("📱 Starting onboarding completion")
+            // Note: We're already on the pluggingIn screen, so no need to navigate there
             
             // Move all heavy operations to background
             DispatchQueue.global(qos: .userInitiated).async {
@@ -172,13 +183,13 @@ class Onboarding {
                                     if friendRequestSuccess {
                                         print("✅ All operations completed successfully")
                                         Task { @MainActor in
-                                            AppController.shared.hasCompletedOnboarding = true
-                                            clearImages() // Clear stored images after successful upload
+                                        AppController.shared.hasCompletedOnboarding = true
+                                        clearImages() // Clear stored images after successful upload
                                         }
                                     } else {
                                         print("❌ Friend request sending failed")
                                         Task { @MainActor in
-                                            AppController.shared.errorMessage = "Failed to send friend requests"
+                                        AppController.shared.errorMessage = "Failed to send friend requests"
                                         }
                                     }
                                     completion(friendRequestSuccess)
@@ -189,8 +200,8 @@ class Onboarding {
                             DispatchQueue.main.async {
                                 print("✅ Onboarding completed without friend requests")
                                 Task { @MainActor in
-                                    AppController.shared.hasCompletedOnboarding = true
-                                    clearImages() // Clear stored images after successful upload
+                                AppController.shared.hasCompletedOnboarding = true
+                                clearImages() // Clear stored images after successful upload
                                 }
                                 completion(true)
                             }
@@ -206,8 +217,8 @@ class Onboarding {
         } else {
             print("❌ Onboarding incomplete, missing required fields")
             Task { @MainActor in
-                AppController.shared.errorMessage = "Onboarding process incomplete"
-                AppController.shared.path = [.pluggingIn]
+            AppController.shared.errorMessage = "Onboarding process incomplete"
+            AppController.shared.path = [.pluggingIn]
             }
             completion(false)
         }
@@ -229,7 +240,7 @@ class Onboarding {
         dateFormatter.dateFormat = "yyyy-MM-dd"
         let formattedDate = userBirthdate.map { dateFormatter.string(from: $0) } ?? ""
         
-        // Create request parameters with only the fields we actually collect
+        // Create request parameters with only the data we actually collect
         let parameters: [String: Any] = [
             "name": userName ?? "",
             "birthdate": formattedDate,
@@ -247,7 +258,7 @@ class Onboarding {
                 completion(true)
             case .failure(let error):
                 Task { @MainActor in
-                    AppController.shared.errorMessage = "Onboarding failed: \(error.localizedDescription)"
+                AppController.shared.errorMessage = "Onboarding failed: \(error.localizedDescription)"
                 }
                 completion(false)
             }
