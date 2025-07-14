@@ -33,27 +33,27 @@ struct AlmaMaterView: View {
             
             VStack {
                 // Back button
-                HStack {
-                    Button {
-                        appController.path.removeLast()
-                    } label: {
-                        Images.backArrow
-                    }
-                    Spacer()
+            HStack {
+                Button {
+                    appController.path.removeLast()
+                } label: {
+                    Images.backArrow
                 }
-                .padding(.top, 10)
-                
+                Spacer()
+            }
+            .padding(.top, 10)
+            
                 // Header section
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("what is your alma \nmater?")
-                        .foregroundStyle(Colors.primaryDark)
-                        .font(.LibreBodoniMedium(size: 40))
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    
-                    Text("find people from within your network, then others. (optional)")
-                        .font(.LeagueSpartan(size: 15))
-                        .foregroundColor(Colors.k0B0B0B)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+            Text("what is your alma \nmater?")
+                .foregroundStyle(Colors.primaryDark)
+                .font(.LibreBodoniMedium(size: 40))
+                .frame(maxWidth: .infinity, alignment: .leading)
+            
+            Text("find people from within your network, then others. (optional)")
+                .font(.LeagueSpartan(size: 15))
+                .foregroundColor(Colors.k0B0B0B)
+                .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .padding(.top, 40)
                 
@@ -66,12 +66,12 @@ struct AlmaMaterView: View {
                                 .font(.LeagueSpartan(size: 30))
                         }
                         
-                        TextField("", text: $searchUniversity)
-                            .font(.LeagueSpartan(size: 30))
-                            .foregroundStyle(Colors.k060505)
-                            .keyboardType(.alphabet)
+                TextField("", text: $searchUniversity)
+                    .font(.LeagueSpartan(size: 30))
+                    .foregroundStyle(Colors.k060505)
+                    .keyboardType(.alphabet)
                             .focused($isUniversityFocused)
-                            .onChange(of: searchUniversity) { oldValue, newValue in
+                    .onChange(of: searchUniversity) { oldValue, newValue in
                                 let processedValue = newValue.lowercaseIfNotEmpty
                                 searchUniversity = processedValue
                                 // Only show dropdown if user is typing (length increased or changed but not empty)
@@ -82,11 +82,11 @@ struct AlmaMaterView: View {
                                 }
                             }
                     }
-                    
-                    Divider()
-                        .frame(height: 2)
-                        .background(Colors.k060505)
-                }
+                
+                Divider()
+                    .frame(height: 2)
+                    .background(Colors.k060505)
+            }
                 .padding(.top, 30)
                 
                 // Graduation year input section
@@ -130,18 +130,18 @@ struct AlmaMaterView: View {
                     VStack(spacing: 0) {
                         ScrollView(.vertical, showsIndicators: false) {
                             VStack(spacing: 0) {
-                                ForEach(filteredUniversities, id: \.self) { university in
-                                    Button {
-                                        searchUniversity = university
+                        ForEach(filteredUniversities, id: \.self) { university in
+                            Button {
+                                searchUniversity = university
                                         DispatchQueue.main.async {
                                             showUniversityDropdown = false
                                         }
-                                    } label: {
+                            } label: {
                                         Text(university.lowercased())
                                             .font(.LeagueSpartanMedium(size: 18))
-                                            .foregroundColor(Colors.k0F100F)
-                                            .multilineTextAlignment(.leading)
-                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                    .foregroundColor(Colors.k0F100F)
+                                    .multilineTextAlignment(.leading)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
                                             .padding(.horizontal, 16)
                                             .padding(.vertical, 12)
                                     }
@@ -150,9 +150,9 @@ struct AlmaMaterView: View {
                                     if university != filteredUniversities.last {
                                         Divider()
                                             .background(Colors.k060505.opacity(0.2))
-                                    }
-                                }
                             }
+                        }
+                    }
                         }
                     }
                     .background(Colors.primaryLight)
@@ -197,27 +197,27 @@ struct AlmaMaterView: View {
                     .frame(height: min(CGFloat(filteredYears.count * 44), 200))
                     .padding(.top, 10)
                     .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 5)
-                }
-                
-                Spacer()
-                
+            }
+            
+            Spacer()
+            
                 // Continue button
-                HStack {
-                    Spacer()
+            HStack {
+                Spacer()
                     Images.nextArrow
-                        .resizable()
-                        .frame(width: 52, height: 52)
-                        .padding(.bottom, 20)
-                        .onTapGesture {
+                    .resizable()
+                    .frame(width: 52, height: 52)
+                    .padding(.bottom, 20)
+                    .onTapGesture {
                             // MARK: - Store alma mater and grad year
-                            // TODO: can consider using university IDs instead of names
-                            Onboarding.storeAlmaMater(almaMater: searchUniversity)
+                        // TODO: can consider using university IDs instead of names
+                        Onboarding.storeAlmaMater(almaMater: searchUniversity)
                             // TODO: Store grad year when backend supports it
                             appController.path.append(.citySelection)
-                        }
-                }
+                    }
             }
-            .padding(.horizontal, 32)
+        }
+        .padding(.horizontal, 32)
         }
         .navigationBarBackButtonHidden()
         .onAppear {

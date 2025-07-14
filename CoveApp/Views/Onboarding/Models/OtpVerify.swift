@@ -110,7 +110,7 @@ private static let apiBaseURL = AppConstants.API.baseURL
                         
                         if loginResponse.user.onboarding {
                             // Skip admin verification and go directly to user details
-                            AppController.shared.path.append(.userDetails)
+                                AppController.shared.path.append(.userDetails)
                         } else {
                             AppController.shared.path.append(.pluggingIn)
                             AppController.shared.hasCompletedOnboarding = true

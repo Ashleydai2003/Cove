@@ -3,7 +3,7 @@
 import SwiftUI
 
 /// View for collecting user's hobbies during onboarding
-/// Simple categorized hobby selection with visual feedback
+/// Dynamic expandable hobby selection with visual feedback
 struct HobbiesView: View {
     // MARK: - Environment & State Properties
     
@@ -13,40 +13,150 @@ struct HobbiesView: View {
     /// Tracks which hobbies are currently selected
     @State private var selectedHobbies: Set<String> = []
     
+    /// Tracks which top-level buttons are expanded
+    @State private var expandedButtons: Set<String> = []
+    
     // MARK: - Data
     
-    /// Simple hobby categories with 8 options each
-    private let hobbyData: [(String, [(String, String)])] = [
-        ("Activities", [
-            ("Bars", "🍸"),
-            ("Nightclubs", "💃"),
-            ("Live Music", "🎸"),
-            ("Music Festivals", "🎶"),
-            ("Art Classes", "🖼️"),
-            ("Cooking Classes", "👨‍🍳"),
-            ("Board Games", "🎲"),
-            ("Poker", "♠️"),
+    /// Sections with their respective hobby buttons
+    private let hobbyDataSections: [(String, String, [(String, String, [(String, String)])])] = [
+        ("going out", "🍻", [
+            ("bars", "🍸", [
+                ("dive bars", "🍺"),
+                ("cocktail bars", "🍸")
+            ]),
+            ("karaoke", "🎤", []),
+            ("nightclubs", "💃", [
+                ("reggaeton", "🎵"),
+                ("house", "🏠"),
+                ("techno", "🔊"),
+                ("pop", "🎶"),
+                ("afro", "🌍")
+            ]),
+            ("live music", "🎸", [
+                ("indie", "🎸"),
+                ("rock", "🤘"),
+                ("country", "🤠")
+            ])
         ]),
-        ("Fitness", [
-            ("Running", "🏃‍♀️"),
-            ("Soccer", "⚽️"),
-            ("Basketball", "🏀"),
-            ("Pickleball", "🥎"),
-            ("Tennis", "🎾"),
-            ("Hiking", "🥾"),
-            ("Yoga", "🧘‍♀️"),
-            ("Pilates", "💪"),
-            ("Surfing", "🏄‍♀️"),
-            ("Cycling", "🚴‍♀️"),
-            ("Climbing", "🧗‍♀️"),
+        ("fitness", "🏃‍♀️", [
+            ("running", "🏃‍♀️", [
+                ("casual", "🚶‍♀️"),
+                ("advanced", "🏃‍♂️")
+            ]),
+            ("triathlon", "🏊‍♀️", [
+                ("beginner", "🆕"),
+                ("advanced", "💪")
+            ]),
+            ("cycling", "🚴‍♀️", [
+                ("beginner", "🆕"),
+                ("advanced", "💪")
+            ]),
+            ("pickleball", "🥎", []),
+            ("soccer", "⚽️", []),
+            ("swimming", "🏊‍♀️", [
+                ("casual", "🏊‍♀️"),
+                ("competitive", "🏆")
+            ]),
+            ("basketball", "🏀", []),
+            ("volleyball", "🏐", []),
+            ("tennis", "🎾", [
+                ("casual", "🎾"),
+                ("competitive", "🏆")
+            ]),
+            ("workout classes", "💪", [
+                ("yoga", "🧘‍♀️"),
+                ("pilates", "🤸‍♀️"),
+                ("strength", "💪"),
+                ("dance", "💃")
+            ]),
+            ("hiking", "🥾", [
+                ("casual", "🚶‍♀️"),
+                ("intense", "🏔️")
+            ]),
+            ("surfing", "🏄‍♀️", [
+                ("beginner", "🆕"),
+                ("dawn patrol", "🌅")
+            ]),
+            ("climbing", "🧗‍♀️", [
+                ("indoor", "🏢"),
+                ("outdoor", "🏔️")
+            ])
         ]),
-        ("Groups", [
-            ("Book Clubs", "📚"),
-            ("Remote work & Cafe", "☕️"),
-            ("Founders", "👨‍💻"),
-            ("Technies and Hackers", "👨‍💻"),
+        ("activities", "🎨", [
+            ("board games", "🎲", []),
+            ("poker", "♠️", []),
+            ("art classes", "🖼️", [
+                ("drawing", "✏️"),
+                ("painting", "🎨"),
+                ("ceramics", "🏺")
+            ])
+        ]),
+        ("career", "💼", [
+            ("founders groups", "👨‍💻", [
+                ("aspiring founders", "💡"),
+                ("current founders", "🚀")
+            ]),
+            ("remote work & cafe", "☕️", []),
+            ("interview prep", "💼", []),
+            ("leetcode", "💻", []),
+            ("consulting", "📊", []),
+            ("finance", "💰", [])
         ])
     ]
+    
+    /// Flattened hobby data for existing logic compatibility
+    private var hobbyData: [(String, String, [(String, String)])] {
+        hobbyDataSections.flatMap { section in
+            section.2.map { (name, emoji, subOptions) in
+                (name, emoji, subOptions)
+            }
+        }
+    }
+    
+    /// Data structure for unified button display
+    private struct ButtonData: Identifiable {
+        let id: String
+        let text: String
+        let emoji: String
+        let isTopLevel: Bool
+        
+        init(id: String, text: String, emoji: String, isTopLevel: Bool) {
+            self.id = id
+            self.text = text
+            self.emoji = emoji
+            self.isTopLevel = isTopLevel
+        }
+    }
+    
+    /// Helper function to get buttons for a specific section
+    private func getSectionButtonsToShow(for sectionName: String, buttons: [(String, String, [(String, String)])]) -> [ButtonData] {
+        var sectionButtons: [ButtonData] = []
+        
+        for (topLevelName, topLevelEmoji, subOptions) in buttons {
+            // Add the top-level button
+            sectionButtons.append(ButtonData(
+                id: topLevelName,
+                text: topLevelName,
+                emoji: topLevelEmoji,
+                isTopLevel: true
+            ))
+            
+            // Add sub-buttons if expanded
+            if expandedButtons.contains(topLevelName) {
+                for (subName, subEmoji) in subOptions {
+                    sectionButtons.append(ButtonData(
+                        id: "\(topLevelName)-\(subName)",
+                        text: subName,
+                        emoji: subEmoji,
+                        isTopLevel: false
+                    ))
+                }
+            }
+        }
+        
+        return sectionButtons
+    }
     
     // MARK: - View Body
     
@@ -68,7 +178,7 @@ struct HobbiesView: View {
                 
                 // Header section
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("What do you want to do in your city?")
+                    Text("what do you want to do in your city?")
                         .foregroundStyle(Colors.primaryDark)
                         .font(.LibreBodoniMedium(size: 40))
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -80,36 +190,57 @@ struct HobbiesView: View {
                 }
                 .padding(.top, 40)
                 
-                // Hobbies categories
+                // Dynamic expandable hobby buttons organized by sections
                 ScrollView(showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: 30) {
-                        ForEach(hobbyData, id: \.0) { category in
-                            VStack(alignment: .leading, spacing: 15) {
-                                // Category title
-                                Text(category.0)
-                                    .font(.LeagueSpartanMedium(size: 18))
+                    VStack(spacing: 0) {
+                        ForEach(Array(hobbyDataSections.enumerated()), id: \.offset) { sectionIndex, section in
+                            let (sectionName, sectionEmoji, sectionButtons) = section
+                            
+                            // Section header on its own line
+                            HStack {
+                                Text("\(sectionEmoji) \(sectionName)")
+                                    .font(.LeagueSpartan(size: 18))
+                                    .fontWeight(.semibold)
                                     .foregroundColor(Colors.primaryDark)
-                                
-                                // Hobby options in 2x4 grid
-                                VStack(spacing: 12) {
-                                    ForEach(0..<4) { row in
-                                        HStack(spacing: 12) {
-                                            ForEach(0..<2) { col in
-                                                let index = row * 2 + col
-                                                if index < category.1.count {
-                                                    let hobby = category.1[index]
-                                                    HobbyButton(
-                                                        text: hobby.0,
-                                                        emoji: hobby.1,
-                                                        isSelected: selectedHobbies.contains(hobby.0)
-                                                    ) {
-                                                        if selectedHobbies.contains(hobby.0) {
-                                                            selectedHobbies.remove(hobby.0)
-                                                        } else {
-                                                            selectedHobbies.insert(hobby.0)
-                                                        }
-                                                    }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                Spacer()
+                            }
+                            .padding(.top, sectionIndex == 0 ? 0 : 20)
+                            .padding(.bottom, 8)
+                            
+                            // Buttons for this section in a grid
+                            LazyVGrid(columns: [
+                                GridItem(.flexible(), spacing: 12),
+                                GridItem(.flexible(), spacing: 12)
+                            ], spacing: 12) {
+                                ForEach(getSectionButtonsToShow(for: sectionName, buttons: sectionButtons), id: \.id) { buttonData in
+                                    HobbyButton(
+                                        text: buttonData.text,
+                                        emoji: buttonData.emoji,
+                                        isSelected: selectedHobbies.contains(buttonData.text)
+                                    ) {
+                                        if buttonData.isTopLevel {
+                                            // Top-level button: toggle expansion and selection
+                                            withAnimation(.easeInOut(duration: 0.3)) {
+                                                if expandedButtons.contains(buttonData.text) {
+                                                    expandedButtons.remove(buttonData.text)
+                                                } else {
+                                                    expandedButtons.insert(buttonData.text)
                                                 }
+                                            }
+                                            
+                                            // Also toggle selection
+                                            if selectedHobbies.contains(buttonData.text) {
+                                                selectedHobbies.remove(buttonData.text)
+                                            } else {
+                                                selectedHobbies.insert(buttonData.text)
+                                            }
+                                        } else {
+                                            // Sub-level button: only toggle selection
+                                            if selectedHobbies.contains(buttonData.text) {
+                                                selectedHobbies.remove(buttonData.text)
+                                            } else {
+                                                selectedHobbies.insert(buttonData.text)
                                             }
                                         }
                                     }
