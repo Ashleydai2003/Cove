@@ -22,10 +22,10 @@ struct ProfilePicView: View {
         
         var body: some View {
             ZStack {
-                Circle()
-                    .fill(Colors.f3f3f3)
-                    .frame(width: size.width, height: size.height)
-                    .overlay(Circle().stroke(Color.black, lineWidth: 0.5))
+                    Circle()
+                        .fill(Colors.f3f3f3)
+                        .frame(width: size.width, height: size.height)
+                        .overlay(Circle().stroke(Color.black, lineWidth: 0.5))
                 
                 if let message = message {
                     Text(message)
@@ -102,7 +102,7 @@ struct ProfilePicView: View {
                                 }
                             }
                         }
-                        
+
                         Text("tap to select profile picture")
                             .font(.LeagueSpartan(size: 14))
                             .foregroundColor(.gray)

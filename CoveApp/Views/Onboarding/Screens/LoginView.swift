@@ -31,7 +31,7 @@ struct LoginView: View {
                 // Initiates the sign-in flow
                 SignOnButton(text: "let's go") {
                     // TODO: DEV ONLY - Skipping phone and OTP for now
-                    appController.path.append(.userDetails)
+                    appController.path.append(.hobbies)
                     // appController.path.append(.enterPhoneNumber)
                 }
                 .padding(.bottom)
