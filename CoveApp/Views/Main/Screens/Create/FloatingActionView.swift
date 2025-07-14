@@ -9,14 +9,16 @@ import SwiftUI
 /// FloatingActionView: A circular + button that shows event and cove creation options
 struct FloatingActionView: View {
     let coveId: String?
+    var onEventCreated: (() -> Void)? = nil
     @State private var showMenu = false
     @State private var showCreateEventSheet = false
     @State private var showCreateCoveSheet = false
     @EnvironmentObject private var appController: AppController
     
     // MARK: - Initializer
-    init(coveId: String? = nil) {
+    init(coveId: String? = nil, onEventCreated: (() -> Void)? = nil) {
         self.coveId = coveId
+        self.onEventCreated = onEventCreated
     }
     
     var body: some View {
@@ -24,8 +26,8 @@ struct FloatingActionView: View {
             // Menu options - appear above the + button
             if showMenu {
                 VStack(alignment: .trailing, spacing: 12) {
-                    // Cove option (only for admin users)
-                    if appController.profileModel.adminCove != nil {
+                    // Cove option – available to verified users
+                    if appController.profileModel.verified {
                         Button(action: {
                             showMenu = false
                             showCreateCoveSheet = true
@@ -100,7 +102,7 @@ struct FloatingActionView: View {
         }
         .animation(.easeInOut(duration: 0.2), value: showMenu)
         .sheet(isPresented: $showCreateEventSheet) {
-            CreateEventView(coveId: coveId)
+            CreateEventView(coveId: coveId, onEventCreated: onEventCreated)
         }
         .sheet(isPresented: $showCreateCoveSheet) {
             CreateCoveView()
@@ -109,6 +111,6 @@ struct FloatingActionView: View {
 }
 
 #Preview {
-    FloatingActionView(coveId: nil)
+    FloatingActionView(coveId: nil, onEventCreated: nil)
         .environmentObject(AppController.shared)
 } 

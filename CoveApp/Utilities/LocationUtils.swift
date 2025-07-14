@@ -14,7 +14,7 @@ enum LocationUtils {
                 return "\(city), \(state)"
             }
         } catch {
-            print("Geocoding error: \(error.localizedDescription)")
+            Log.error("Geocoding error: \(error.localizedDescription)")
         }
         return ""
     }

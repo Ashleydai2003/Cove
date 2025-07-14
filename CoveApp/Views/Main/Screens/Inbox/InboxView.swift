@@ -80,11 +80,11 @@ struct InboxView: View {
                                         InviteView(
                                             invite: invite,
                                             onAccept: {
-                                                print("📭 InboxView: Accept tapped for invite \(invite.id)")
+                                                Log.debug("📭 InboxView: Accept tapped for invite \(invite.id)")
                                                 viewModel.acceptInvite(invite)
                                             },
                                             onDecline: {
-                                                print("📭 InboxView: Decline tapped for invite \(invite.id)")
+                                                Log.debug("📭 InboxView: Decline tapped for invite \(invite.id)")
                                                 viewModel.declineInvite(invite)
                                             }
                                         )
@@ -95,7 +95,7 @@ struct InboxView: View {
                                     } else {
                                         // Show envelope for unopened invites
                                         InviteEnvelopeView(invite: invite) {
-                                            print("📭 InboxView: Opening invite: \(invite.id)")
+                                            Log.debug("📭 InboxView: Opening invite: \(invite.id)")
                                             viewModel.openInvite(invite)
                                         }
                                         .frame(width: 260, height: 200)
@@ -118,7 +118,7 @@ struct InboxView: View {
         .onAppear {
             // Don't call loadInvites() since we're using the shared viewModel
             // that's already been initialized and loaded during login
-            print("📭 InboxView: onAppear - using shared viewModel with \(viewModel.invites.count) invites")
+            Log.debug("📭 InboxView: onAppear - using shared viewModel with \(viewModel.invites.count) invites")
         }
     }
 }

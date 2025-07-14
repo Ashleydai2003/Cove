@@ -75,9 +75,8 @@ private struct NoMatchesView: View {
                     .foregroundStyle(.black)
                 
                 Button(action: {
-                    // Navigate to PluggingYouIn instead of completing onboarding directly
-                    appController.path.append(.pluggingIn)
-                    onDismiss()
+                    // Complete onboarding and navigate to data loading
+                    completeOnboarding()
                 }) {
                     Text("send invite")
                         .font(.LeagueSpartan(size: 16))
@@ -100,6 +99,21 @@ private struct NoMatchesView: View {
                 ProgressView()
                     .padding()
                     .background(Color.white.cornerRadius(10))
+            }
+        }
+    }
+    
+    private func completeOnboarding() {
+        Onboarding.completeOnboarding { success in
+            DispatchQueue.main.async {
+                if success {
+                    // Navigate to data loading screen
+                    appController.path = [.pluggingIn]
+                    onDismiss()
+                } else {
+                    // Show error if onboarding fails
+                    showError = true
+                }
             }
         }
     }
@@ -145,9 +159,8 @@ struct AddFriendsSheet: View {
                     }
                     
                     Button(action: {
-                        // Navigate to PluggingYouIn instead of completing onboarding directly
-                        appController.path.append(.pluggingIn)
-                        onDismiss()
+                        // Complete onboarding and navigate to data loading
+                        completeOnboarding()
                     }) {
                         Text("done")
                             .font(.LeagueSpartan(size: 16))
@@ -166,6 +179,21 @@ struct AddFriendsSheet: View {
                             onDismiss()
                         })
                     }
+                }
+            }
+        }
+    }
+    
+    private func completeOnboarding() {
+        Onboarding.completeOnboarding { success in
+            DispatchQueue.main.async {
+                if success {
+                    // Navigate to data loading screen
+                    appController.path = [.pluggingIn]
+                    onDismiss()
+                } else {
+                    // Show error if onboarding fails
+                    showError = true
                 }
             }
         }

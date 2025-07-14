@@ -1,9 +1,7 @@
-//
 //  CoveApp.swift
 //  Cove
 //
 //  Created by Ashley Dai on 4/14/25.
-//
 
 import SwiftUI
 import UIKit
@@ -38,27 +36,36 @@ struct CoveApp: App {
             UITabBar.appearance().scrollEdgeAppearance = tabBarAppearance
         }
         
-        // NOTE: Previously we force-reset the onboarding flag on every launch for
-        // development. This caused fully-onboarded users to be treated as new
-        // users and skip the data-loading flow. The line is now removed so the
-        // persisted onboarding status returned from the backend is respected.
+        // For development: always reset onboarding status
+        UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
         
+        for family in UIFont.familyNames {
+            Log.debug("Font family: \(family)")
+            for name in UIFont.fontNames(forFamilyName: family) {
+                Log.debug("   \(name)")
+            }
+        }
     }
     
     var body: some Scene {
         WindowGroup {
-            if appController.isLoggedIn {
-                // Main app flow - tab-based navigation
-                HomeView()
-                    .environmentObject(appController)
-                    .preferredColorScheme(.light) // TODO: Support dark mode properly later
-            } else {
-                // Onboarding flow - linear navigation
-            OnboardingFlow()
-                .environmentObject(appController)
-                .preferredColorScheme(.light) // TODO: Support dark mode properly later
+            // Use Group & transitions for smoother authentication switches
+            Group {
+                if appController.isLoggedIn {
+                    // Main app flow - tab-based navigation
+                    HomeView()
+                        .environmentObject(appController)
+                        .preferredColorScheme(.light)
+                        .transition(.opacity)
+                } else {
+                    // Onboarding flow - linear navigation
+                    OnboardingFlow()
+                        .environmentObject(appController)
+                        .preferredColorScheme(.light)
+                        .transition(.opacity)
+                }
             }
+            .animation(.easeInOut(duration: 0.35), value: appController.isLoggedIn)
         }
     }
-}
-
+} 

@@ -70,11 +70,10 @@ func updateIfChanged<T: ContentComparable & Identifiable>(
     update updateAction: () -> Void
 ) -> Bool {
     if newData.hasContentChanged(from: currentData) {
-        print("📊 Data has changes detected - updating UI")
+        Log.debug("DataDiffing: Data changed – refreshing UI")
         updateAction()
         return true
     } else {
-        print("📊 No meaningful changes detected - skipping UI update")
         return false
     }
 }
@@ -87,11 +86,10 @@ func updateIfChanged<T: Equatable>(
     update updateAction: () -> Void
 ) -> Bool {
     if newData.hasChanged(from: currentData) {
-        print("📊 Data has changes detected - updating UI")
+        Log.debug("Data has changes detected - updating UI")
         updateAction()
         return true
     } else {
-        print("📊 No changes detected - skipping UI update")
         return false
     }
 }
@@ -105,16 +103,15 @@ func updateIfChanged<T: ContentComparable>(
 ) -> Bool {
     if let current = currentData {
         if newData.hasContentChanged(from: current) {
-            print("📊 Object has changes detected - updating UI")
+            Log.debug("Object has changes detected - updating UI")
             updateAction()
             return true
         } else {
-            print("📊 No meaningful changes detected - skipping UI update")
             return false
         }
     } else {
         // No current data, always update
-        print("📊 No existing data - updating UI")
+        Log.debug("No existing data - updating UI")
         updateAction()
         return true
     }
