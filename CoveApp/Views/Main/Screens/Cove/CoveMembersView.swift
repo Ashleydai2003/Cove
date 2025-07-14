@@ -144,7 +144,6 @@ struct MemberRowView: View {
                             )
                     }
                     .onSuccess { result in
-                        print("📸 Member profile photo loaded from: \(result.cacheType)")
                     }
                     .resizable()
                     .fade(duration: 0.2)

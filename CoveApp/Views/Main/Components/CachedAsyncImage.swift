@@ -63,7 +63,7 @@ struct CachedAsyncImage<Content: View, Placeholder: View>: View {
                 }
             }
         } catch {
-            print("Error loading image: \(error)")
+            Log.debug("Error loading image: \(error)")
         }
     }
 } 

@@ -132,8 +132,8 @@ class SendInvitesModel: ObservableObject {
             requestBody["message"] = message
         }
         
-        print("📤 Sending invites request")
-        print("📤 Request body: \(requestBody)")
+        Log.debug("📤 Sending invites request")
+        Log.debug("📤 Request body: \(requestBody)")
         
         // Use NetworkManager to make the request
         NetworkManager.shared.post(
@@ -208,7 +208,7 @@ class SendInvitesModel: ObservableObject {
                     self.showResults = true
                     
                 case .failure(let error):
-                    print("❌ Send invites error: \(error)")
+                    Log.debug("❌ Send invites error: \(error)")
                     self.errorMessage = "Failed to send invites: \(error.localizedDescription)"
                 }
             }

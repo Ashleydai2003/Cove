@@ -84,9 +84,28 @@ struct TabBarView: View {
                                 .stroke(Color(hex: "F5F0E6"), lineWidth: selectedTab == 5 ? 3 : 0)
                         )
                         .animation(nil, value: selectedTab)
+                } else if appController.profileModel.isProfileImageLoading {
+                    // Show loading state with proper circular shape
+                    Circle()
+                        .fill(Color.gray.opacity(0.3))
+                        .frame(maxWidth: 40, maxHeight: 40)
+                        .overlay(
+                            ProgressView()
+                                .scaleEffect(0.7)
+                                .tint(Color.white)
+                        )
+                        .overlay(
+                            Circle()
+                                .stroke(Color(hex: "F5F0E6"), lineWidth: selectedTab == 5 ? 3 : 0)
+                        )
+                        .animation(nil, value: selectedTab)
                 } else {
+                    // Show default placeholder only if not loading
                     Image("default_user_pfp")
-                        .tabBarIcon(isSelected: selectedTab == 5)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(maxWidth: 40, maxHeight: 40)
+                        .clipShape(Circle())
                         .overlay(
                             Circle()
                                 .stroke(Color(hex: "F5F0E6"), lineWidth: selectedTab == 5 ? 3 : 0)
@@ -136,35 +155,35 @@ struct HomeView: View {
         .onAppear(perform: {
             // Set default tab selection
             tabSelection = 1
-            print("🏠 HomeView: onAppear - shouldAutoShowInbox = \(appController.shouldAutoShowInbox)")
-            print("🏠 HomeView: onAppear - inboxViewModel.hasUnopenedInvites = \(appController.inboxViewModel.hasUnopenedInvites)")
-            print("🏠 HomeView: onAppear - inboxViewModel.invites.count = \(appController.inboxViewModel.invites.count)")
+            Log.debug("🏠 HomeView: onAppear - shouldAutoShowInbox = \(appController.shouldAutoShowInbox)")
+            Log.debug("🏠 HomeView: onAppear - inboxViewModel.hasUnopenedInvites = \(appController.inboxViewModel.hasUnopenedInvites)")
+            Log.debug("🏠 HomeView: onAppear - inboxViewModel.invites.count = \(appController.inboxViewModel.invites.count)")
             
             // Check for auto-show inbox in case we missed the initial trigger
             if appController.inboxViewModel.hasUnopenedInvites && !appController.shouldAutoShowInbox {
-                print("🏠 HomeView: Found unopened invites on appear, triggering auto-show")
+                Log.debug("🏠 HomeView: Found unopened invites on appear, triggering auto-show")
                 appController.shouldAutoShowInbox = true
             }
             
             // Fallback check after 2 seconds in case initial data loading is still in progress
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                 if appController.inboxViewModel.hasUnopenedInvites && !showInboxAutomatically && !appController.shouldAutoShowInbox {
-                    print("🏠 HomeView: Fallback check - found unopened invites, triggering auto-show")
+                    Log.debug("🏠 HomeView: Fallback check - found unopened invites, triggering auto-show")
                     appController.shouldAutoShowInbox = true
                 }
             }
         })
         .onChange(of: appController.shouldAutoShowInbox) { _, shouldShow in
-            print("🏠 HomeView: shouldAutoShowInbox changed to: \(shouldShow)")
+            Log.debug("🏠 HomeView: shouldAutoShowInbox changed to: \(shouldShow)")
             if shouldShow {
-                print("🏠 HomeView: Setting showInboxAutomatically = true")
+                Log.debug("🏠 HomeView: Setting showInboxAutomatically = true")
                 showInboxAutomatically = true
                 // Reset the flag so it doesn't show again
                 appController.shouldAutoShowInbox = false
             }
         }
         .onChange(of: showInboxAutomatically) { _, show in
-            print("🏠 HomeView: showInboxAutomatically changed to: \(show)")
+            Log.debug("🏠 HomeView: showInboxAutomatically changed to: \(show)")
         }
         .sheet(isPresented: $showInboxAutomatically) {
             InboxView()

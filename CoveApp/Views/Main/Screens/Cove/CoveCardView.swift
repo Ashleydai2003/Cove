@@ -19,7 +19,6 @@ struct CoveCardView: View {
                                 .overlay(ProgressView().tint(.gray))
                         }
                         .onSuccess { result in
-                            print("📸 Cove cover loaded from: \(result.cacheType)")
                         }
                         .resizable()
                         .fade(duration: 0.2)

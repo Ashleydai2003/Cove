@@ -1,5 +1,6 @@
 import SwiftUI
 import Foundation
+import FirebaseAuth
 
 // MARK: - Friend Profile DTOs
 struct FriendProfilePhoto: Decodable {
@@ -69,7 +70,7 @@ class FriendProfileModel: ObservableObject {
     var actionState: ActionState {
         // Determine friendship state from AppController shared view models
         guard let profile = profileData else { return .loading }
-        let currentId = AppController.shared.profileModel.userId
+        let currentId = Auth.auth().currentUser?.uid ?? AppController.shared.profileModel.userId
         if currentId == profile.userId { return .none }
 
         let friendsVM = AppController.shared.friendsViewModel

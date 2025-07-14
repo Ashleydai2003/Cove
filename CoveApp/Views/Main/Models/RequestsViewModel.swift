@@ -38,7 +38,7 @@ class RequestsViewModel: ObservableObject {
     }
     
     init() {
-        print("📬 RequestsViewModel initialized")
+        Log.debug("RequestsViewModel initialized")
     }
     
     func loadNextPage() {
@@ -74,15 +74,15 @@ class RequestsViewModel: ObservableObject {
     func loadNextPageIfStale() {
         if !hasCachedData || isCacheStale {
             let reason = !hasCachedData ? "no cached data" : "cache is stale"
-            print("📬 RequestsViewModel: Loading requests data (\(reason))")
+            Log.debug("RequestsViewModel: Loading requests data (\(reason))")
             loadNextPage()
         } else {
-            print("📬 RequestsViewModel: ✅ Using fresh cached requests data (\(requests.count) requests) - NO NETWORK REQUEST")
+            Log.debug("RequestsViewModel: using cached data – count=\(requests.count)")
         }
     }
     
     func accept(_ req: RequestDTO) {
-        print("✅ RequestsViewModel: Accepting friend request from \(req.sender.name)")
+        Log.debug("Accepting friend request from \(req.sender.name)")
         
         withAnimation {
             requests = requests.filter { $0.id != req.id }
@@ -91,7 +91,7 @@ class RequestsViewModel: ObservableObject {
         FriendRequests.resolve(requestId: req.id, action: "ACCEPT") { [weak self] result in
             guard let self = self else { return }
             DispatchQueue.main.async {
-                switch result {
+            switch result {
                 case .success(let resp):
                     // Optimistically add to friends list so UI (members) shows message button
                     let isoFormatter = ISO8601DateFormatter()
@@ -106,7 +106,7 @@ class RequestsViewModel: ObservableObject {
                     arr.append(friendDTO)
                     AppController.shared.friendsViewModel.friends = arr
                     break // Already removed and UI updated
-                case .failure(let error):
+            case .failure(let error):
                     // Re-add on failure
                     var arr = self.requests
                     arr.append(req)
@@ -118,7 +118,7 @@ class RequestsViewModel: ObservableObject {
     }
     
     func reject(_ req: RequestDTO) {
-        print("❌ RequestsViewModel: Rejecting friend request from \(req.sender.name)")
+        Log.debug("Rejecting friend request from \(req.sender.name)")
         
         withAnimation {
             requests = requests.filter { $0.id != req.id }
@@ -127,10 +127,10 @@ class RequestsViewModel: ObservableObject {
         FriendRequests.resolve(requestId: req.id, action: "REJECT") { [weak self] result in
             guard let self = self else { return }
             DispatchQueue.main.async {
-                switch result {
-                case .success:
+            switch result {
+            case .success:
                     break
-                case .failure(let error):
+            case .failure(let error):
                     var arr = self.requests
                     arr.append(req)
                     withAnimation { self.requests = arr }
@@ -143,7 +143,7 @@ class RequestsViewModel: ObservableObject {
     /// Call this method when a push notification is received for a new friend request
     /// TODO: Implement this when push notifications are added
     func handleNewRequestNotification() {
-        print("📬 RequestsViewModel: New friend request notification received - refreshing data")
+        Log.debug("RequestsViewModel: new friend request notification – refreshing")
         // Force refresh to get the latest requests
         lastFetched = nil
         loadNextPage()

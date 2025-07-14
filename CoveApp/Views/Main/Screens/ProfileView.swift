@@ -73,15 +73,24 @@ struct ProfileHeader: View {
                             .scaledToFill()
                             .frame(maxWidth: 200, maxHeight: 200)
                             .clipShape(Circle())
+                    } else if appController.profileModel.isProfileImageLoading {
+                        // Show loading state with proper circular shape
+                        Circle()
+                            .fill(Color.gray.opacity(0.3))
+                            .frame(maxWidth: 200, maxHeight: 200)
+                            .overlay(
+                                ProgressView()
+                                    .scaleEffect(1.5)
+                                    .tint(Color.white)
+                            )
                     } else {
-                        // default profile photo
+                        // default profile photo only if not loading
                         Image("default_user_pfp")
                             .resizable()
                             .scaledToFill()
                             .frame(maxWidth: 200, maxHeight: 200)
                             .clipShape(Circle())
                             .onAppear {
-                                print("📸 ProfileHeader: Displaying placeholder image")
                             }
                     }
                     
@@ -267,10 +276,8 @@ struct ProfileHeader: View {
             }
         }
         .onAppear {
-            print("📸 ProfileHeader: profileImage=\(profileImageURL != nil ? "loaded" : "nil")")
         }
         .onChange(of: profileImageURL) { _, newURL in
-            print("📸 ProfileHeader: profileImage changed to \(newURL != nil ? "loaded" : "nil")")
         }
     }
 }
@@ -528,7 +535,7 @@ struct LocationSelectionView: View {
                 return "\(city), \(state)"
             }
         } catch {
-            print("Geocoding error: \(error.localizedDescription)")
+            Log.debug("Geocoding error: \(error.localizedDescription)")
         }
         return ""
     }
@@ -769,13 +776,11 @@ struct ExtraPhotoView: View {
                                 .stroke(Color.gray.opacity(0.3), lineWidth: 1)
                         )
                         .onAppear {
-                            print("📸 ExtraPhotoView: Displaying empty space (editing mode)")
                         }
                 } else {
                     // Show nothing when not editing and no image
                     EmptyView()
                         .onAppear {
-                            print("📸 ExtraPhotoView: No image to display (not editing)")
                         }
                 }
                 
@@ -920,10 +925,8 @@ struct ProfileView: View {
                                 onProfileImageChange: { editingProfileImage = $0 }
                             ).frame(maxWidth: 270)
                             .onAppear {
-                                print("📸 ProfileHeader: profileImage=\(appController.profileModel.profileImageURL != nil ? "loaded" : "nil")")
                             }
                             .onChange(of: appController.profileModel.profileImageURL) { _, newURL in
-                                print("📸 ProfileHeader: profileImage changed to \(newURL != nil ? "loaded" : "nil")")
                             }
                             
                             ExtraPhotoView(
@@ -933,10 +936,8 @@ struct ProfileView: View {
                                 onImageChange: { editingExtraImages[0] = $0 }
                             )
                             .onAppear {
-                                print("📸 ExtraPhotoView 1: imageURL=\(appController.profileModel.extraImageURLs.first?.absoluteString ?? "nil")")
                             }
                             .onChange(of: appController.profileModel.extraImageURLs.first) { _, newURL in
-                                print("📸 ExtraPhotoView 1: imageURL changed to \(newURL?.absoluteString ?? "nil")")
                             }
                             
                             BioSection(
@@ -952,10 +953,8 @@ struct ProfileView: View {
                                 onImageChange: { editingExtraImages[1] = $0 }
                             )
                             .onAppear {
-                                print("📸 ExtraPhotoView 2: imageURL=\(appController.profileModel.extraImageURLs.dropFirst().first?.absoluteString ?? "nil")")
                             }
                             .onChange(of: appController.profileModel.extraImageURLs.dropFirst().first) { _, newURL in
-                                print("📸 ExtraPhotoView 2: imageURL changed to \(newURL?.absoluteString ?? "nil")")
                             }
                             
                             InterestsSection(
@@ -998,9 +997,6 @@ struct ProfileView: View {
             )
         }
         .task {
-            print("📸 ProfileView: Current ProfileModel state:")
-            print("📸 ProfileModel profileImageURL: \(appController.profileModel.profileImageURL?.absoluteString ?? "nil")")
-            print("📸 ProfileModel extraImageURLs: \(appController.profileModel.extraImageURLs.map { $0.absoluteString })")
             
             // Profile data should already be loaded during login/onboarding
             // No need to fetch again - this was causing redundant network calls
@@ -1042,7 +1038,7 @@ struct ProfileView: View {
                         editingExtraImages.contains { $0 != nil }
         
         if !hasChanges {
-            print("📱 No changes detected in ProfileView, skipping save")
+            Log.debug("📱 No changes detected in ProfileView, skipping save")
             completion(true) // Return success since there's nothing to save
             return
         }
@@ -1063,11 +1059,11 @@ struct ProfileView: View {
         ) { result in
             switch result {
             case .success:
-                print("✅ Profile updated successfully")
+                Log.debug("✅ Profile updated successfully")
                 // The ProfileModel will automatically update its properties after successful backend call
                 completion(true)
             case .failure(let error):
-                print("❌ Failed to update profile: \(error)")
+                Log.debug("❌ Failed to update profile: \(error)")
                 // TODO: Show error message to user
                 completion(false)
             }

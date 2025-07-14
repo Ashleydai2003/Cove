@@ -2,6 +2,7 @@ import SwiftUI
 import Foundation
 import CoreLocation
 import Kingfisher
+import FirebaseAuth
 
 /**
  * Photo model for user profile images
@@ -70,6 +71,11 @@ class ProfileModel: ObservableObject {
     @Published var verified: Bool = false
     @Published var id: String = ""
     @Published var userId: String = ""
+    
+    /// Computed property to get the current user ID from Firebase Auth
+    var currentUserId: String {
+        return Auth.auth().currentUser?.uid ?? userId
+    }
     @Published var age: Int?
     @Published var birthdate: String?
     @Published var interests: [String] = []
@@ -101,6 +107,7 @@ class ProfileModel: ObservableObject {
     // MARK: - Loading States
     @Published var isLoading: Bool = false
     @Published var lastFetchTime: Date?
+    @Published var isProfileImageLoading: Bool = false
     
     // MARK: - Cancellation Support
     private var currentDataTask: URLSessionDataTask?
@@ -200,13 +207,14 @@ class ProfileModel: ObservableObject {
         // Otherwise preserve the existing value (which should come from login)
         if let verifiedFromProfile = profileData.verified {
             verified = verifiedFromProfile
-            print("📊 ProfileModel: updateFromProfileData - updated verified = \(verifiedFromProfile) (from profile API)")
+                    // Profile verified status updated from API
         } else {
-            print("📊 ProfileModel: updateFromProfileData - preserving existing verified = \(verified) (profile API didn't include verified field)")
+        // Preserving existing verified status
         }
         
         id = profileData.id
-        userId = profileData.userId
+        // Use Firebase Auth current user ID for consistency and security
+        userId = Auth.auth().currentUser?.uid ?? profileData.userId
         
         age = profileData.age
         birthdate = profileData.birthdate
@@ -223,17 +231,7 @@ class ProfileModel: ObservableObject {
         photos = profileData.photos
         stats = profileData.stats
         
-        // Debug logging for photos
-        print("📸 Profile photos received: \(photos.count) total")
-        print("📸 Photos array: \(photos)")
-        
-        if photos.isEmpty {
-            print("⚠️ WARNING: No photos found in profile!")
-        } else {
-            for (index, photo) in photos.enumerated() {
-                print("📸 Photo \(index): id=\(photo.id), isProfilePic=\(photo.isProfilePic), url=\(photo.url)")
-            }
-        }
+        // Profile photos processed
         
         // Store photo IDs
         profilePhotoId = profileData.photos.first { $0.isProfilePic }?.id
@@ -245,9 +243,7 @@ class ProfileModel: ObservableObject {
             }
         }
         
-        print("📸 Photo categorization: profilePhotoId=\(profilePhotoId ?? "nil"), extraPhotoIds=\(extraPhotoIds)")
-        print("📸 Profile image URL: \(profileImageURL?.absoluteString ?? "nil")")
-        print("📸 Extra image URLs: \(extraImageURLs.map { $0.absoluteString })")
+        // Photo categorization updated
         
         // Load all images automatically when profile data is updated
         loadAllImages()
@@ -268,7 +264,6 @@ class ProfileModel: ObservableObject {
      * This should be called when views are dismissed to prevent loading states from persisting.
      */
     func cancelAllRequests() {
-        print("🛑 cancelAllRequests called - cancelling all tasks")
         isCancelled = true
         
         // Cancel current data task
@@ -565,7 +560,7 @@ class ProfileModel: ObservableObject {
                 address = "\(city), \(state)"
             }
         } catch {
-            print("Geocoding error: \(error.localizedDescription)")
+            Log.debug("Geocoding error: \(error.localizedDescription)")
         }
     }
     
@@ -576,13 +571,13 @@ class ProfileModel: ObservableObject {
      * This method is typically called when the user logs out.
      */
     func clearData() {
-        print("🗑️ ProfileModel: clearData called - resetting verified to false")
+        Log.debug("ProfileModel: clearData resetting verified flag")
         name = ""
         phone = ""
         onboarding = false
         verified = false
         id = ""
-        userId = ""
+        // Don't clear userId since we're using Firebase Auth
         age = nil
         birthdate = nil
         interests = []
@@ -614,6 +609,7 @@ class ProfileModel: ObservableObject {
      */
     func loadAllImages(completion: (() -> Void)? = nil) {
         let imageLoadGroup = DispatchGroup()
+        isProfileImageLoading = true
         
         // Load profile image
         if let profileURL = profileImageURL {
@@ -623,14 +619,17 @@ class ProfileModel: ObservableObject {
                     switch result {
                     case .success(let imageResult):
                         self?.profileUIImage = imageResult.image
-                        print("✅ Profile image loaded and stored")
+                        Log.debug("Profile image loaded and stored")
                     case .failure(let error):
-                        print("❌ Failed to load profile image: \(error)")
+                        Log.error("Failed to load profile image: \(error.localizedDescription)")
                         self?.profileUIImage = nil
                     }
+                    self?.isProfileImageLoading = false
                     imageLoadGroup.leave()
                 }
             }
+        } else {
+            isProfileImageLoading = false
         }
         
         // Load extra images
@@ -643,9 +642,9 @@ class ProfileModel: ObservableObject {
                         if index < self?.extraUIImages.count ?? 0 {
                             self?.extraUIImages[index] = imageResult.image
                         }
-                        print("✅ Extra image \(index) loaded and stored")
+                        Log.debug("Extra image \(index) loaded and stored")
                     case .failure(let error):
-                        print("❌ Failed to load extra image \(index): \(error)")
+                        Log.error("Failed to load extra image \(index): \(error.localizedDescription)")
                         if index < self?.extraUIImages.count ?? 0 {
                             self?.extraUIImages[index] = nil
                         }

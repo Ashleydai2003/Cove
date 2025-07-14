@@ -13,10 +13,7 @@ import IQKeyboardManagerSwift
 class FirebaseSetup: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
-        print("Initializing Firebase...")
-        
         FirebaseApp.configure()
-        print("Firebase configured successfully")
         
         // Enable IQKeyboardManager to prevent issues of keyboard sliding up
         IQKeyboardManager.shared.enable = true
@@ -24,17 +21,14 @@ class FirebaseSetup: NSObject, UIApplicationDelegate {
         // Request notification permissions
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
             if let error = error {
-                print("Error requesting notification permissions: \(error)")
+                Log.error("Notification permission error: \(error.localizedDescription)")
                 return
             }
             
             if granted {
-                print("Notification permissions granted")
                 DispatchQueue.main.async {
                     application.registerForRemoteNotifications()
                 }
-            } else {
-                print("Notification permissions denied")
             }
         }
         
@@ -43,24 +37,23 @@ class FirebaseSetup: NSObject, UIApplicationDelegate {
     
     // Handle remote notification registration
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
-        print("Successfully registered for remote notifications")
         Auth.auth().setAPNSToken(deviceToken, type: .prod)
     }
     
     func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
-        print("Failed to register for remote notifications: \(error)")
+        Log.error("Failed to register for remote notifications: \(error.localizedDescription)")
     }
     
     // Handle incoming remote notifications
     func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable: Any],
                     fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
-        print("Received remote notification")
+        Log.debug("Received remote notification")
         if Auth.auth().canHandleNotification(userInfo) {
-            print("Firebase handled the notification")
+            Log.debug("Firebase handled the notification")
             completionHandler(.noData)
             return
         }
-        print("Firebase did not handle the notification")
+        Log.debug("Firebase did not handle the notification")
         completionHandler(.noData)
     }
 }

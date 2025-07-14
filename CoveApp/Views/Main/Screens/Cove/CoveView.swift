@@ -113,7 +113,9 @@ struct CoveView: View {
                 Spacer()
                 HStack {
                     Spacer()
-                    FloatingActionView(coveId: coveId)
+                    FloatingActionView(coveId: coveId, onEventCreated: {
+                        viewModel.refreshEvents()
+                    })
                         .padding(.trailing, 24)
                         .padding(.bottom, 30) 
                 }

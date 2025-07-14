@@ -5,20 +5,30 @@ struct PluggingYouIn: View {
     
     /// AppController environment object used for navigation and app state management
     @EnvironmentObject var appController: AppController
+
+    /// Static list of preset fun loading messages. The view will cycle through these instead of reflecting real-time progress.
+    private static let presetMessages: [String] = [
+        "finding good vibes…",
+        "loading your profile…",
+        "syncing your calendar…",
+        "checking for the next big event…",
+        "connecting to server…",
+        "dusting off invites…",
+        "bringing your friends over…",
+        "checking inbox…",
+        "almost there…",
+        "good vibes loading…"
+    ]
+
+    /// Index into `presetMessages` currently displayed
+    @State private var messageIndex = 0
+    /// Timer for cycling through preset messages
+    @State private var messageTimer: Timer?
     @State private var rotation: Double = 0
-    @State private var errorMessage: String?
-    @State private var isProfileLoaded = false
-    @State private var isCovesLoaded = false
-    @State private var isCalendarEventsLoaded = false
-    @State private var isUpcomingEventsLoaded = false
-    @State private var isInboxLoaded = false
-    @State private var isFriendRequestsLoaded = false
-    @State private var isMutualsLoaded = false
-    @State private var isFriendsLoaded = false
-    @State private var areCoverImagesPrefetched = false
     @State private var animationTimer: Timer?
-    @State private var statusMessage: String = "plugging you in…"
-    @State private var isCancelled = false
+    @State private var statusMessage: String = PluggingYouIn.presetMessages[0]
+    @State private var isLoading = true
+    @State private var profileImagesPrefetched = false
     
     var body: some View {
         ZStack {
@@ -35,13 +45,10 @@ struct PluggingYouIn: View {
                     .rotationEffect(.degrees(rotation))
                     .onAppear {
                         startContinuousAnimation()
-                        plugInUser()
+                        loadUserData()
                     }
                     .onDisappear {
                         stopAnimation()
-                        isCancelled = true
-                        // Cancel any ongoing profile requests
-                        appController.profileModel.cancelAllRequests()
                     }
                 
                 // Static tagline
@@ -75,85 +82,89 @@ struct PluggingYouIn: View {
                 rotation += 180
             }
         }
+
+        // Start the message-cycling timer (every ~2.5 seconds)
+        messageTimer = Timer.scheduledTimer(withTimeInterval: 2.5, repeats: true) { _ in
+            // Advance to next preset message with a gentle fade
+            withAnimation(.easeInOut(duration: 1)) {
+                messageIndex = (messageIndex + 1) % PluggingYouIn.presetMessages.count
+                statusMessage = PluggingYouIn.presetMessages[messageIndex]
+            }
+        }
     }
     
     private func stopAnimation() {
         animationTimer?.invalidate()
         animationTimer = nil
+
+        messageTimer?.invalidate()
+        messageTimer = nil
     }
     
-    private func plugInUser() {
-        // Check if view was cancelled
-        guard !isCancelled else { return }
+    private func loadUserData() {
+        Log.debug("🔌 PluggingYouIn: Starting data load")
         
-        print("🔌 PluggingYouIn: Starting plugInUser - verified = \(appController.profileModel.verified)")
+        // Initialize AppController data
+        appController.initializeAfterLogin()
         
-        // Check if user is in onboarding mode (this should be set during login)
-        if appController.profileModel.onboarding {
-            print("📱 User is in onboarding mode, completing onboarding...")
-            statusMessage = "completing onboarding…"
-            completeOnboarding()
-        } else {
-            print("📱 User is not in onboarding mode, proceeding with normal flow...")
-            fetchUserProfile {
-                print("🔌 PluggingYouIn: After profile fetch - verified = \(self.appController.profileModel.verified)")
-                self.fetchUserCoves()
-                self.fetchCalendarEvents()
-                self.fetchUpcomingEvents()
-                self.fetchInvites()
-                self.fetchFriendRequests()
-                self.fetchMutuals()
-                self.fetchFriends()
+        // Start all data fetches in parallel
+        fetchUserProfile()
+        fetchUserCoves()
+        fetchCalendarEvents()
+        fetchUpcomingEvents()
+        fetchInvites()
+        fetchFriendRequests()
+        fetchMutuals()
+        fetchFriends()
+        
+        // Set a reasonable timeout to prevent infinite loading
+        DispatchQueue.main.asyncAfter(deadline: .now() + 15.0) {
+            if isLoading && !profileImagesPrefetched {
+                Log.debug("🔌 PluggingYouIn: Loading timeout reached without profile images, proceeding to main app")
+                completeLoading()
             }
         }
     }
     
-    private func completeOnboarding() {
-        Onboarding.completeOnboarding { success in
-            DispatchQueue.main.async {
-                // Check if view was cancelled
-                guard !self.isCancelled else { return }
-                
-                if success {
-                    print("✅ Onboarding completed successfully")
-                    // After onboarding is complete, fetch profile and coves
-                    self.fetchUserProfile {
-                        self.fetchUserCoves()
-                        self.fetchCalendarEvents()
-                        self.fetchUpcomingEvents()
-                        self.fetchInvites()
-                        self.fetchFriendRequests()
-                        self.fetchMutuals()
-                        self.fetchFriends()
-                    }
-                } else {
-                    print("❌ Onboarding failed")
-                    self.errorMessage = "Failed to complete onboarding"
-                    // Stay on this screen if onboarding fails
-                }
+    private func completeLoading() {
+        guard isLoading else { return }
+        isLoading = false
+        
+        // Stop the animation
+        stopAnimation()
+        
+        // Complete the current rotation smoothly
+        withAnimation(.easeInOut(duration: 0.3)) {
+            rotation = Double(Int(rotation / 180) + 1) * 180.0 // Complete to next 180-degree increment
+        }
+        
+        // Navigate to main app after animation
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+            // Ensure profile images continue loading even after timeout
+            if !self.profileImagesPrefetched {
+                Log.debug("🖼️ Profile images not yet prefetched, continuing to load in background")
+                self.prefetchProfileImages()
             }
+            
+            appController.isLoggedIn = true
         }
     }
     
-    private func fetchUserProfile(completion: @escaping () -> Void) {
+    private func fetchUserProfile() {
         appController.profileModel.fetchProfileWithImages { result in
             DispatchQueue.main.async {
-                // Check if view was cancelled
-                guard !self.isCancelled else { return }
-                
                 switch result {
                 case .success(_):
-                    print("✅ Profile and images loaded successfully")
-                            self.isProfileLoaded = true
-                            completion()
-                    
+                    Log.debug("✅ Profile and images loaded successfully")
+                    // Prefetch profile images after successful load
+                    self.prefetchProfileImages()
                 case .failure(let error):
-                    print("❌ Profile fetch failed: \(error.localizedDescription)")
-                    self.errorMessage = "Failed to fetch profile: \(error.localizedDescription)"
-                    // Still mark as loaded even if profile fetch fails
-                    self.isProfileLoaded = true
-                    completion()
+                    Log.debug("❌ Profile fetch failed: \(error.localizedDescription)")
+                    // Still try to prefetch profile images even if fetch failed
+                    // (in case there are cached images or partial data)
+                    self.prefetchProfileImages()
                 }
+                self.checkIfAllDataLoaded()
             }
         }
     }
@@ -161,252 +172,178 @@ struct PluggingYouIn: View {
     private func fetchUserCoves() {
         appController.coveFeed.fetchUserCoves { 
             DispatchQueue.main.async {
-                // Check if view was cancelled
-                guard !self.isCancelled else { return }
-                
                 if let error = self.appController.coveFeed.errorMessage {
-                    print("❌ User coves fetch failed: \(error)")
-                    self.errorMessage = "Failed to fetch user coves: \(error)"
+                    Log.debug("❌ User coves fetch failed: \(error)")
                 } else {
-                    print("✅ User coves fetched successfully")
+                    Log.debug("✅ User coves fetched successfully")
+                    // Prefetch cove cover images after successful load
+                    self.prefetchCoveCoverImages()
+                    // Start background prefetching of cove events
+                    self.prefetchCoveEvents()
                 }
-                
-                // Mark as loaded regardless of success/failure
-                    self.isCovesLoaded = true
-                
-                // Prefetch events and cove cover images
-                self.statusMessage = "loading your events…"
-                self.prefetchCoveEvents()
-                self.prefetchCoveCoverImages {
-                    self.areCoverImagesPrefetched = true
-                    self.navigateToHome()
-                }
-            }
-        }
-    }
-    
-    private func navigateToHome() {
-        // Check if view was cancelled
-        guard !isCancelled else { return }
-        
-        // Only navigate if all critical data is loaded (or failed to load)
-        if isProfileLoaded && isCovesLoaded && isCalendarEventsLoaded && isUpcomingEventsLoaded && isInboxLoaded && isFriendRequestsLoaded && isMutualsLoaded && isFriendsLoaded && areCoverImagesPrefetched {
-            // Stop the animation
-            stopAnimation()
-            
-            // Complete the current rotation smoothly
-            withAnimation(.easeInOut(duration: 0.5)) {
-                rotation = Double(Int(rotation / 180) + 1) * 180.0 // Complete to next 180-degree increment
-            }
-            
-            // Wait for animation to complete, then navigate
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-                // Check if view was cancelled before navigating
-                guard !self.isCancelled else { return }
-                
-                if let error = errorMessage {
-                    appController.errorMessage = error
-                }
-                
-                // Mark as logged in - this will switch to the main app flow
-                appController.isLoggedIn = true
+                self.checkIfAllDataLoaded()
             }
         }
     }
     
     private func fetchCalendarEvents() {
-        statusMessage = "syncing calendar…"
         appController.calendarFeed.fetchCalendarEventsIfStale {
             DispatchQueue.main.async {
-                // Check if view was cancelled
-                guard !self.isCancelled else { return }
-                
                 if let error = self.appController.calendarFeed.errorMessage {
-                    print("❌ Calendar events fetch failed: \(error)")
-                    self.errorMessage = "Failed to fetch calendar events: \(error)"
+                    Log.debug("❌ Calendar events fetch failed: \(error)")
                 } else {
-                    print("✅ Calendar events fetched successfully")
+                    Log.debug("✅ Calendar events fetched successfully")
                 }
-                
-                // Mark as loaded regardless of success/failure
-                self.isCalendarEventsLoaded = true
-                
-                // Navigate to home after everything is loaded
-                self.navigateToHome()
+                self.checkIfAllDataLoaded()
             }
         }
     }
     
     private func fetchUpcomingEvents() {
-        statusMessage = "finding upcoming events…"
         appController.upcomingFeed.fetchUpcomingEventsIfStale {
             DispatchQueue.main.async {
-                // Check if view was cancelled
-                guard !self.isCancelled else { return }
-                
                 if let error = self.appController.upcomingFeed.errorMessage {
-                    print("❌ Upcoming events fetch failed: \(error)")
-                    self.errorMessage = "Failed to fetch upcoming events: \(error)"
+                    Log.debug("❌ Upcoming events fetch failed: \(error)")
                 } else {
-                    print("✅ Upcoming events fetched successfully")
+                    Log.debug("✅ Upcoming events fetched successfully")
+                    // Prefetch upcoming event cover photos
+                    self.prefetchUpcomingEventImages()
                 }
-                
-                // Mark as loaded regardless of success/failure
-                self.isUpcomingEventsLoaded = true
-                
-                // Navigate to home after everything is loaded
-                self.navigateToHome()
+                self.checkIfAllDataLoaded()
             }
         }
     }
     
     private func fetchInvites() {
-        print("📮 PluggingYouIn: Starting fetchInvites...")
+        Log.debug("📮 PluggingYouIn: Starting fetchInvites...")
         // Initialize inbox through AppController method
-        statusMessage = "checking inbox…"
         appController.initializeAfterLogin()
         
-        // Monitor the inbox loading state properly
-        let checkInboxCompletion = {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                self.checkInboxLoadingStatus()
+        // Use a simple timeout instead of polling
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            DispatchQueue.main.async {
+                Log.debug("📮 PluggingYouIn: Inbox loading timeout completed")
+                self.checkIfAllDataLoaded()
             }
         }
-        
-        checkInboxCompletion()
     }
     
     private func fetchFriendRequests() {
-        print("📬 PluggingYouIn: Starting fetchFriendRequests...")
-        statusMessage = "checking friend requests…"
+        Log.debug("📬 PluggingYouIn: Starting fetchFriendRequests...")
         appController.requestsViewModel.loadNextPage()
         
-        // Monitor the friend requests loading state
-        let checkRequestsCompletion = {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                self.checkFriendRequestsLoadingStatus()
+        // Use a simple timeout instead of polling
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            DispatchQueue.main.async {
+                Log.debug("📬 PluggingYouIn: Friend requests loading timeout completed")
+                self.checkIfAllDataLoaded()
             }
         }
-        
-        checkRequestsCompletion()
     }
     
     private func fetchMutuals() {
-        print("🔗 PluggingYouIn: Starting fetchMutuals...")
-        statusMessage = "looking for friends…"
+        Log.debug("🔗 PluggingYouIn: Starting fetchMutuals...")
         appController.mutualsViewModel.loadNextPage()
         
-        // Monitor the mutuals loading state
-        let checkMutualsCompletion = {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                self.checkMutualsLoadingStatus()
+        // Use a simple timeout instead of polling
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            DispatchQueue.main.async {
+                Log.debug("🔗 PluggingYouIn: Mutuals loading timeout completed")
+                self.checkIfAllDataLoaded()
             }
         }
-        
-        checkMutualsCompletion()
     }
     
     private func fetchFriends() {
-        print("👥 PluggingYouIn: Starting fetchFriends...")
-        statusMessage = "bringing your friends over…"
+        Log.debug("👥 PluggingYouIn: Starting fetchFriends...")
         appController.friendsViewModel.loadNextPage()
         
-        // Monitor the friends loading state
-        let checkFriendsCompletion = {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                self.checkFriendsLoadingStatus()
+        // Use a simple timeout instead of polling
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            DispatchQueue.main.async {
+                Log.debug("👥 PluggingYouIn: Friends loading timeout completed")
+                self.checkIfAllDataLoaded()
             }
         }
-        
-        checkFriendsCompletion()
     }
     
-    private func checkInboxLoadingStatus() {
-        // Check if view was cancelled
-        guard !isCancelled else { return }
+    private func checkIfAllDataLoaded() {
+        // For now, we'll rely on the timeout to complete loading
+        // This prevents the screen from getting stuck if some data fails to load
+        // The timeout ensures users don't wait forever
+    }
+    
+    // MARK: - Image Prefetching
+    
+    /// Prefetch profile images so they appear immediately on the home screen
+    private func prefetchProfileImages() {
+        let profileImages = appController.profileModel.photos
+        let urls = profileImages.compactMap { $0.url.absoluteString }
         
-        if !appController.inboxViewModel.isLoading {
-            // Inbox loading is complete (either success or failure)
-            print("📮 PluggingYouIn: Inbox loading completed")
-            isInboxLoaded = true
-            navigateToHome()
+        Log.debug("🖼️ Profile prefetching: Found \(profileImages.count) profile images, \(urls.count) valid URLs")
+        
+        if !urls.isEmpty {
+            Log.debug("🖼️ Prefetching \(urls.count) profile images: \(urls)")
+            ImagePrefetcherUtil.prefetch(urlStrings: urls) {
+                Log.debug("🖼️ Profile images prefetching completed")
+                DispatchQueue.main.async {
+                    self.profileImagesPrefetched = true
+                    self.checkIfReadyToComplete()
+                }
+            }
         } else {
-            // Still loading, check again in 0.5 seconds
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                self.checkInboxLoadingStatus()
+            Log.debug("🖼️ No profile images to prefetch - photos array is empty or has no valid URLs")
+            // Mark as completed even if no images to prefetch
+            DispatchQueue.main.async {
+                self.profileImagesPrefetched = true
+                self.checkIfReadyToComplete()
             }
         }
     }
     
-    private func checkFriendRequestsLoadingStatus() {
-        // Check if view was cancelled
-        guard !isCancelled else { return }
+    private func checkIfReadyToComplete() {
+        // Wait for profile images to be prefetched before completing
+        if profileImagesPrefetched && isLoading {
+            Log.debug("🖼️ Profile images prefetched, completing loading")
+            completeLoading()
+        }
+    }
+    
+    /// Prefetch the first 5 cove cover images so that home feed looks populated immediately
+    private func prefetchCoveCoverImages() {
+        let urls = appController.coveFeed.userCoves.prefix(6).compactMap { $0.coverPhoto?.url }
         
-        if !appController.requestsViewModel.isLoading {
-            // Friend requests loading is complete (either success or failure)
-            print("📬 PluggingYouIn: Friend requests loading completed")
-            isFriendRequestsLoaded = true
-            navigateToHome()
-        } else {
-            // Still loading, check again in 0.5 seconds
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                self.checkFriendRequestsLoadingStatus()
-            }
+        if !urls.isEmpty {
+            Log.debug("🖼️ Prefetching \(urls.count) cove cover images")
+            ImagePrefetcherUtil.prefetch(urlStrings: urls)
         }
     }
     
-    private func checkMutualsLoadingStatus() {
-        // Check if view was cancelled
-        guard !isCancelled else { return }
-        
-        if !appController.mutualsViewModel.isLoading {
-            // Mutuals loading is complete (either success or failure)
-            print("🔗 PluggingYouIn: Mutuals loading completed")
-            isMutualsLoaded = true
-            navigateToHome()
-        } else {
-            // Still loading, check again in 0.5 seconds
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                self.checkMutualsLoadingStatus()
-            }
-        }
-    }
-    
-    private func checkFriendsLoadingStatus() {
-        // Check if view was cancelled
-        guard !isCancelled else { return }
-        
-        if !appController.friendsViewModel.isLoading {
-            // Friends loading is complete (either success or failure)
-            print("👥 PluggingYouIn: Friends loading completed")
-            isFriendsLoaded = true
-            navigateToHome()
-        } else {
-            // Still loading, check again in 0.5 seconds
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                self.checkFriendsLoadingStatus()
-            }
-        }
-    }
-    
+    /// Prefetch cove events in the background for faster navigation
     private func prefetchCoveEvents() {
-        // Get first 10 coves for prefetching
-        let covesToPrefetch = Array(appController.coveFeed.userCoves.prefix(10))
+        // Get first 6 coves for prefetching (just enough for a nice landing state)
+        let covesToPrefetch = Array(appController.coveFeed.userCoves.prefix(6))
         
-        print("🔄 Starting background prefetch for \(covesToPrefetch.count) coves")
-        
-        // Start background prefetch for each cove (non-blocking)
-        for cove in covesToPrefetch {
-            let coveModel = appController.coveFeed.getOrCreateCoveModel(for: cove.id)
-            // This will fetch cove details and first page of events
-            coveModel.fetchCoveDetailsIfStale(coveId: cove.id)
+        if !covesToPrefetch.isEmpty {
+            Log.debug("🔄 Starting background prefetch for \(covesToPrefetch.count) coves")
+            
+            // Start background prefetch for each cove (non-blocking)
+            for cove in covesToPrefetch {
+                let coveModel = appController.coveFeed.getOrCreateCoveModel(for: cove.id)
+                // This will fetch cove details and first page of events
+                coveModel.fetchCoveDetailsIfStale(coveId: cove.id)
+            }
         }
     }
-
-    /// Prefetch the first 10 cove cover images so that home feed looks populated immediately
-    private func prefetchCoveCoverImages(completion: @escaping () -> Void) {
-        let urls = appController.coveFeed.userCoves.prefix(10).compactMap { $0.coverPhoto?.url }
-        ImagePrefetcherUtil.prefetch(urlStrings: urls, completion: completion)
+    
+    /// Prefetch upcoming event cover photos for the home feed
+    private func prefetchUpcomingEventImages() {
+        let urls = appController.upcomingFeed.events.prefix(5).compactMap { $0.coveCoverPhoto?.url }
+        
+        if !urls.isEmpty {
+            Log.debug("🖼️ Prefetching \(urls.count) upcoming event cover images")
+            ImagePrefetcherUtil.prefetch(urlStrings: urls)
+        }
     }
 }
 
@@ -414,3 +351,4 @@ struct PluggingYouIn: View {
     PluggingYouIn()
         .environmentObject(AppController.shared)
 }
+

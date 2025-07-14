@@ -46,7 +46,6 @@ struct CoveHeaderView: View {
                                     .overlay(ProgressView().tint(.gray))
                             }
                             .onSuccess { result in
-                                print("📸 CoveHeaderView cove cover loaded from: \(result.cacheType)")
                             }
                             .resizable()
                             .fade(duration: 0.2)

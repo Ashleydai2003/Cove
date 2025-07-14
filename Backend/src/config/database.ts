@@ -1,16 +1,16 @@
 // This file is responsible for initializing the database connection
 
 import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
+// NOTE: We will import the shared Prisma singleton only *after* DATABASE_URL
+// is guaranteed to be set (important for production where we fetch the secret).
 
 const isDevelopment = process.env.NODE_ENV === 'development';
 
 export const initializeDatabase = async () => {
   try {
     if (isDevelopment) {
-      // In development, use the local database URL from .env
-      console.log('Using development database configuration...');
-      const { PrismaClient } = await import('@prisma/client');
-      const prisma = new PrismaClient();
+      // In dev we simply return the shared singleton – no extra connections
+      const { prisma } = await import('../prisma/client');
       return prisma;
     }
 
@@ -39,13 +39,13 @@ export const initializeDatabase = async () => {
 
     // Construct database URL for Prisma
     console.log('Constructing database URL...');
-    const databaseUrl = `postgresql://${process.env.DB_USER}:${encodedPassword}@${process.env.DB_HOST}:5432/${process.env.DB_NAME}?schema=public&sslmode=require`;
+    // Use connection_limit=1 to avoid exhausting DB connections per Lambda container.
+    const databaseUrl = `postgresql://${process.env.DB_USER}:${encodedPassword}@${process.env.DB_HOST}:5432/${process.env.DB_NAME}?schema=public&sslmode=require&connection_limit=1`;
     process.env.DATABASE_URL = databaseUrl;
     
-    // Import Prisma after setting DATABASE_URL in production
-    const { PrismaClient } = await import('@prisma/client');
-    const prisma = new PrismaClient();
-    
+    // After constructing DATABASE_URL, import the singleton (first import will
+    // read the now-set DATABASE_URL) and return it.
+    const { prisma } = await import('../prisma/client');
     return prisma;
   } catch (error) {
     console.error('Database initialization error:', error);

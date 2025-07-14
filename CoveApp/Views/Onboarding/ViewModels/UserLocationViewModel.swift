@@ -29,7 +29,7 @@ final class UserLocationViewModel: BaseViewModel {
         CLGeocoder().reverseGeocodeLocation(location) { placemarks, error in
             if let placemark = placemarks?.first {
                 self.placemark = placemark
-                print("State: \(placemark)")
+                Log.debug("State: \(placemark)")
                 
                 if let state = placemark.administrativeArea {
                     self.state = state
@@ -42,7 +42,7 @@ final class UserLocationViewModel: BaseViewModel {
                 }
                 
             } else {
-                print("Error getting placemark:", error?.localizedDescription ?? "Unknown error")
+                Log.debug("Error getting placemark: \(error?.localizedDescription ?? "Unknown error")")
             }
         }
     }

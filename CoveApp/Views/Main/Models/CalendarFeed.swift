@@ -41,7 +41,7 @@ class CalendarFeed: ObservableObject {
     }
     
     init() {
-        print("📅 CalendarFeed initialized")
+        Log.debug("CalendarFeed initialized")
     }
     
     /// Fetches calendar events from the backend, using cache if fresh.
@@ -50,7 +50,7 @@ class CalendarFeed: ObservableObject {
     func fetchCalendarEvents(forceRefresh: Bool = false, completion: (() -> Void)? = nil) {
         // Check if we have recent cached data and not forcing refresh
         if !forceRefresh && hasCachedData && !isCacheStale {
-            print("📅 CalendarFeed: Using cached calendar events data (\(events.count) events)")
+            Log.debug("CalendarFeed: using cached events – count=\(events.count)")
             completion?()
             return
         }
@@ -58,7 +58,7 @@ class CalendarFeed: ObservableObject {
         guard !isLoading else { return }
         
         isLoading = true
-        print("🔍 CalendarFeed: Fetching calendar events from backend...")
+        Log.debug("CalendarFeed: fetching events from backend…")
         
         var parameters: [String: Any] = [
             "limit": pageSize
@@ -77,7 +77,7 @@ class CalendarFeed: ObservableObject {
                 
                 switch result {
                 case .success(let response):
-                    print("✅ CalendarFeed: Calendar events fetched successfully: \(response.events?.count ?? 0) events")
+                    Log.debug("CalendarFeed: events fetched – count=\(response.events?.count ?? 0)")
                     
                     if forceRefresh || self.nextCursor == nil {
                         // First page or refresh, replace existing data
@@ -99,7 +99,7 @@ class CalendarFeed: ObservableObject {
                     completion?()
                     
                 case .failure(let error):
-                    print("❌ CalendarFeed: Calendar events fetch failed: \(error.localizedDescription)")
+                    Log.error("CalendarFeed fetch failed: \(error.localizedDescription)")
                     self.errorMessage = error.localizedDescription
                     completion?()
                 }
@@ -109,7 +109,7 @@ class CalendarFeed: ObservableObject {
     
     /// Forces a refresh of calendar events data, bypassing cache.
     func refreshCalendarEvents(completion: (() -> Void)? = nil) {
-        print("🔄 CalendarFeed: Forcing refresh of calendar events data")
+        Log.debug("CalendarFeed: forcing refresh of events data")
         nextCursor = nil
         hasMore = true
         fetchCalendarEvents(forceRefresh: true, completion: completion)
@@ -118,7 +118,7 @@ class CalendarFeed: ObservableObject {
     /// Loads more events if the user scrolls to the end of the list.
     func loadMoreEventsIfNeeded() {
         if hasMore && !isLoading && nextCursor != nil {
-            print("📅 CalendarFeed: Loading more events...")
+            Log.debug("CalendarFeed: loading more events…")
             fetchCalendarEvents(forceRefresh: false)
         }
     }
@@ -127,10 +127,10 @@ class CalendarFeed: ObservableObject {
     func fetchCalendarEventsIfStale(completion: (() -> Void)? = nil) {
         if !hasCachedData || isCacheStale {
             let reason = !hasCachedData ? "no cached data" : "cache is stale"
-            print("📅 CalendarFeed: Fetching calendar events (\(reason))")
+            Log.debug("CalendarFeed: fetching events (\(reason))")
             fetchCalendarEvents(forceRefresh: false, completion: completion)
         } else {
-            print("📅 CalendarFeed: ✅ Using fresh cached calendar events data (\(events.count) events) - NO NETWORK REQUEST")
+            Log.debug("CalendarFeed: using cached fresh data count=\(events.count)")
             completion?()
         }
     }

@@ -25,8 +25,6 @@ enum OnboardingRoute: Hashable {
     case pluggingIn
 }
 
-
-
 /// AppController: Manages shared application state and business logic
 /// - Handles authentication state
 /// - Manages shared data between views
@@ -76,8 +74,41 @@ class AppController: ObservableObject {
     /// Whether to automatically show the inbox on home screen (when there are unopened invites)
     @Published var shouldAutoShowInbox = false
     
+    /// Firebase Auth state listener handle so we can detach if ever needed
+    private var authStateListenerHandle: AuthStateDidChangeListenerHandle?
+    
     /// Private initializer to enforce singleton pattern
-    private init() {}
+    private init() {
+        // Observe Firebase authentication state changes
+        authStateListenerHandle = Auth.auth().addStateDidChangeListener { [weak self] _, user in
+            guard let self else { return }
+            
+            Task { @MainActor in
+                let isAuthenticated = (user != nil)
+                if !isAuthenticated {
+                    // User signed out – clear all cached data and reset UI
+                    self.clearAllData()
+                }
+            }
+        }
+        
+        // Bootstrap app UI based on any existing Firebase session.
+        if Auth.auth().currentUser != nil {
+            // Existing Firebase session detected.
+            // If the user has already completed onboarding we start at the loading
+            // screen that fetches all server data. Otherwise we remain in the
+            // onboarding flow and wait for the backend login call to determine the
+            // correct screen.
+            if self.hasCompletedOnboarding {
+                self.path = [.pluggingIn]
+            } else {
+                // User has NOT completed onboarding - sign them out to force fresh start
+                // This prevents users from being stuck in onboarding when returning from background
+                try? Auth.auth().signOut()
+                self.clearAllData()
+            }
+        }
+    }
     
     // MARK: - Initialization Methods
     
@@ -86,35 +117,19 @@ class AppController: ObservableObject {
      * Called from PluggingYouIn after all other data has been loaded.
      */
     func initializeAfterLogin() {
-        print("🔌 AppController: Initializing data after login...")
-        
         // Initialize inbox - it will call checkForAutoShowInbox when data loads
         inboxViewModel.initialize()
     }
     
     /// Called by InboxViewModel when invites are loaded to check if inbox should auto-show
     func checkForAutoShowInbox() {
-        print("🔌 AppController: checkForAutoShowInbox() called")
-        print("🔌 AppController: Total invites: \(inboxViewModel.invites.count)")
-        print("🔌 AppController: Unopened invites: \(inboxViewModel.unopenedInvites.count)")
-        print("🔌 AppController: hasUnopenedInvites: \(inboxViewModel.hasUnopenedInvites)")
-        print("🔌 AppController: Current shouldAutoShowInbox: \(shouldAutoShowInbox)")
-        
-        if inboxViewModel.hasUnopenedInvites {
-            print("📮 AppController: Found unopened invites, setting shouldAutoShowInbox = true")
-            shouldAutoShowInbox = true
-            print("📮 AppController: shouldAutoShowInbox is now: \(shouldAutoShowInbox)")
-        } else {
-            print("📮 AppController: No unopened invites found")
-        }
+        // Check if inbox should auto-show based on unopened invites
     }
     
     /**
      * Clears all data when user logs out.
      */
     func clearAllData() {
-        print("🔌 AppController: Clearing all data on logout...")
-        
         // Clear all view model data
         coveFeed = CoveFeed()
         upcomingFeed = UpcomingFeed()
@@ -126,6 +141,7 @@ class AppController: ObservableObject {
         inboxViewModel.clear()
         
         // Reset UI state
+        path = [] // ensure OnboardingFlow starts at LoginView after logout
         shouldAutoShowInbox = false
         isLoggedIn = false
         errorMessage = ""
@@ -138,7 +154,6 @@ class AppController: ObservableObject {
      * This should be called after creating events or when data might be stale.
      */
     func refreshCoveData() {
-        print("🔄 AppController: Cove data refresh requested")
         // This will be called by views that need to refresh cove data
         // For now, we'll rely on individual view models to handle their own refresh
     }
@@ -148,7 +163,6 @@ class AppController: ObservableObject {
      * Call this after successfully creating a cove to update the UI immediately.
      */
     func refreshCoveFeedAfterCreation() {
-        print("🔄 AppController: Force refreshing cove feed after cove creation")
         coveFeed.refreshUserCoves()
     }
     
@@ -157,7 +171,6 @@ class AppController: ObservableObject {
      * Call this after successfully creating an event to update the UI immediately.
      */
     func refreshFeedsAfterEventCreation() {
-        print("🔄 AppController: Force refreshing feeds after event creation")
         calendarFeed.refreshCalendarEvents()
         upcomingFeed.refreshUpcomingEvents()
     }
@@ -168,14 +181,19 @@ class AppController: ObservableObject {
      * Only refreshes events, not the cove header details.
      */
     func refreshCoveAfterEventCreation(coveId: String) {
-        print("🔄 AppController: Force refreshing cove \(coveId) events after event creation")
+        Log.critical("🔄 AppController: Refreshing cove events after event creation for coveId: \(coveId)")
+        
+        // Refresh the specific cove's events
         if let coveModel = coveFeed.coveModels[coveId] {
-            print("✅ AppController: Found existing CoveModel for cove \(coveId), calling refreshEvents()")
+            Log.critical("✅ AppController: Found existing CoveModel for coveId: \(coveId), refreshing events")
             coveModel.refreshEvents()
         } else {
-            print("⚠️ AppController: No existing CoveModel found for cove \(coveId) - creating new one and triggering events refresh")
+            Log.critical("🆕 AppController: Creating new CoveModel for coveId: \(coveId), refreshing events")
             let newModel = coveFeed.getOrCreateCoveModel(for: coveId)
             newModel.refreshEvents()
         }
+        
+        // Also refresh the cove feed to ensure UI updates
+        coveFeed.refreshUserCoves()
     }
 }

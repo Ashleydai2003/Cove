@@ -57,14 +57,14 @@ class NewCoveModel: ObservableObject {
         invitePhoneNumbers = phoneNumbers
         inviteMessage = message
         
-        print("📱 Stored invite data: \(phoneNumbers.count) phone numbers, message: '\(message)'")
+        Log.debug("Stored invite data: count=\(phoneNumbers.count)")
     }
     
     /// Clears all stored invite data
     func clearInviteData() {
         invitePhoneNumbers = []
         inviteMessage = ""
-        print("📱 Cleared all invite data")
+        Log.debug("Cleared invite data")
     }
     
     /// Submits the cove to the backend and optionally sends invites
@@ -95,9 +95,9 @@ class NewCoveModel: ObservableObject {
                         DispatchQueue.main.async {
                             self.isSubmitting = false
                             if inviteSuccess {
-                                debugPrint("✅ Cove created and invites sent successfully")
+                                Log.debug("Cove created and invites sent successfully")
                             } else {
-                                debugPrint("⚠️ Cove created but invites failed")
+                                Log.error("Cove created but invites failed to send")
                                 // Still consider it a success since cove was created
                             }
                             self.resetForm()
@@ -141,7 +141,7 @@ class NewCoveModel: ObservableObject {
             params["coverPhoto"] = coverPhotoData.base64EncodedString()
         }
         
-        debugPrint("🏠 Creating cove with params: \(params.keys)")
+        Log.debug("Creating cove with params: \(params.keys)")
         
         NetworkManager.shared.post(
             endpoint: "/create-cove",
@@ -149,10 +149,10 @@ class NewCoveModel: ObservableObject {
         ) { (result: Result<CreateCoveResponse, NetworkError>) in
             switch result {
             case .success(let response):
-                debugPrint("✅ Cove created successfully: \(response)")
+                Log.debug("Cove created successfully")
                 completion(true, response.cove.id)
             case .failure(let error):
-                debugPrint("❌ Cove creation failed: \(error)")
+                Log.error("Cove creation failed: \(error.localizedDescription)")
                 DispatchQueue.main.async {
                     self.errorMessage = "Failed to create cove: \(error.localizedDescription)"
                 }
@@ -163,7 +163,7 @@ class NewCoveModel: ObservableObject {
     
     /// Sends invites using the SendInvitesModel
     private func sendInvites(coveId: String, completion: @escaping (Bool) -> Void) {
-        debugPrint("📤 Sending invites for cove: \(coveId)")
+        Log.debug("Sending invites for cove: \(coveId)")
         
         // Prepare request body
         var requestBody: [String: Any] = [
@@ -182,10 +182,10 @@ class NewCoveModel: ObservableObject {
         ) { (result: Result<SendInvitesModel.SendInviteResponse, NetworkError>) in
             switch result {
             case .success(let response):
-                debugPrint("✅ Invites sent successfully: \(response)")
+                Log.debug("Invites sent successfully")
                 completion(true)
             case .failure(let error):
-                debugPrint("❌ Invites failed: \(error)")
+                Log.error("Invites failed: \(error.localizedDescription)")
                 completion(false)
             }
         }

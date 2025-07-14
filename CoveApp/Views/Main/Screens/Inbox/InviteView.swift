@@ -51,18 +51,15 @@ struct InviteView: View {
                                     )
                             }
                             .onSuccess { result in
-                                print("✅ InviteView: Successfully loaded cove cover photo from \(coverPhotoUrlString)")
+                                Log.debug("✅ InviteView: Successfully loaded cove cover photo from \(coverPhotoUrlString)")
                             }
                             .onFailure { error in
-                                print("❌ InviteView: Failed to load cove cover photo from \(coverPhotoUrlString): \(error)")
+                                Log.debug("❌ InviteView: Failed to load cove cover photo from \(coverPhotoUrlString): \(error)")
                             }
                             .resizable()
                             .aspectRatio(3/2, contentMode: .fill)
                             .clipped()
                             .onAppear {
-                                print("📸 InviteView: Photo loading attempt for invite \(invite.id)")
-                                print("📸 InviteView: Cover Photo URL: \(coverPhotoUrlString)")
-                                print("📸 InviteView: Invite opened status: \(invite.isOpened)")
                             }
                     } else {
                         Image("default_cove_pfp")
@@ -70,7 +67,7 @@ struct InviteView: View {
                             .aspectRatio(3/2, contentMode: .fill)
                             .clipped()
                             .onAppear {
-                                print("🔄 InviteView: Using default cover photo placeholder (no URL) for invite \(invite.id)")
+                                Log.debug("🔄 InviteView: Using default cover photo placeholder (no URL) for invite \(invite.id)")
                             }
                     }
                 }
@@ -112,7 +109,7 @@ struct InviteView: View {
                     // Action buttons
                     HStack(spacing: 12) {
                         Button(action: {
-                            print("🟢 ACCEPT BUTTON TAPPED for invite: \(invite.id)")
+                            Log.debug("🟢 ACCEPT BUTTON TAPPED for invite: \(invite.id)")
                             onAccept()
                         }) {
                             Text("join now")
@@ -126,7 +123,7 @@ struct InviteView: View {
                         .buttonStyle(.plain)
                         
                         Button(action: {
-                            print("🔴 DECLINE BUTTON TAPPED for invite: \(invite.id)")
+                            Log.debug("🔴 DECLINE BUTTON TAPPED for invite: \(invite.id)")
                             onDecline()
                         }) {
                             Text("decline")
