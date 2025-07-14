@@ -30,12 +30,8 @@ struct LoginView: View {
                 // MARK: - Main call-to-action button
                 // Initiates the sign-in flow
                 SignOnButton(text: "let's go") {
-                    // TODO: DEV ONLY - Skip onboarding entirely and go directly to home
-                    appController.isLoggedIn = true
-                    
-                    // Original onboarding flow (commented out for dev):
-                    // appController.path.append(.hobbies)
-                    // appController.path.append(.enterPhoneNumber)
+                    // Start the proper onboarding flow
+                    appController.path.append(.enterPhoneNumber)
                 }
                 .padding(.bottom)
                      
