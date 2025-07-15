@@ -2,15 +2,12 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { authMiddleware } from '../middleware/auth';
 import { initializeDatabase } from '../config/database';
 import {
-  S3Client,
   ListObjectsV2Command,
   DeleteObjectsCommand,
   _Object,
   ListObjectsV2CommandOutput
 } from '@aws-sdk/client-s3';
-
-// Initialize S3 client for image deletion
-const s3Client = new S3Client({ region: process.env.AWS_REGION });
+import { s3Client } from '../config/s3';
 
 /**
  * Deletes all objects in S3 with a given prefix
