@@ -306,7 +306,6 @@ struct OtpVerifyView: View {
         guard !isVerifying else { return }
         
         isVerifying = true
-        isInputFocused = false // Dismiss keyboard
         otpErrorMessage = "" // Clear previous error
         statusMessage = "Verifying..."
         messageType = .none
@@ -316,17 +315,21 @@ struct OtpVerifyView: View {
             isVerifying = false
             
             if success {
-                // Success - will navigate to next screen
+                // Success - dismiss keyboard since we're navigating away
+                isInputFocused = false
                 statusMessage = ""
                 messageType = .none
                 otpErrorMessage = ""
             } else {
-                // Show inline error below OTP digits
+                // Show inline error below OTP digits - keep keyboard active for immediate editing
                 otpErrorMessage = errorMessage ?? "Incorrect code. Please check and try again."
                 statusMessage = ""
                 messageType = .none
-                // Re-enable focus so user can immediately backspace/edit
-                isInputFocused = true
+                // Reset focus to last digit for immediate backspace
+                isInputFocused = false
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    isInputFocused = true
+                }
             }
         }
     }
@@ -350,6 +353,7 @@ struct OtpVerifyView: View {
                 statusMessage = "Code sent!"
                 messageType = .success
                 otpText = "" // Clear OTP input
+                isInputFocused = true // Focus on first digit
                 
             case .invalidPhoneNumber:
                 statusMessage = "Failure to send code, check that your phone number is correct."
