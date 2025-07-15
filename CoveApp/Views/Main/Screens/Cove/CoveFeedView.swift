@@ -54,11 +54,11 @@ struct CoveFeedView: View {
                     VStack(spacing: 16) {
                         Image(systemName: "house")
                             .font(.system(size: 40))
-                            .foregroundColor(.gray)
+                            .foregroundColor(Colors.primaryDark)
                         
                         Text("no coves found")
                             .font(.LibreBodoni(size: 16))
-                            .foregroundColor(.gray)
+                            .foregroundColor(Colors.primaryDark)
                             .multilineTextAlignment(.center)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)

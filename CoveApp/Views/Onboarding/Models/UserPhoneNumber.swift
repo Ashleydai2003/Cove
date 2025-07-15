@@ -94,7 +94,6 @@ struct UserPhoneNumber {
     /// - Parameter completion: Callback with result status
     func sendVerificationCode(completion: @escaping (CodeSendResult) -> Void) {
         let fullPhoneNumber = getFullPhoneNumber()
-        print("📱 Attempting to send verification code to: \(fullPhoneNumber)")
         
         // Disable reCAPTCHA verification
         // TODO: REMOVE THIS AFTER GETTING TOKEN FOR TESTING!!!!
@@ -103,25 +102,22 @@ struct UserPhoneNumber {
         PhoneAuthProvider.provider().verifyPhoneNumber(fullPhoneNumber, uiDelegate: nil) { verificationID, error in
             DispatchQueue.main.async {
                 if let error = error {
-                    print("❌ Firebase Auth Error: \(error.localizedDescription)")
-                    print("❌ Error details: \(error)")
-                    
-                    // Categorize Firebase errors
+                    Log.error("Firebase Auth Error: \(error.localizedDescription)")
+                    AppController.shared.errorMessage = error.localizedDescription
                     let result = self.categorizeFirebaseError(error)
                     completion(result)
                     return
                 }
                 
                 if let verificationID = verificationID {
-                    print("✅ Successfully received verification ID")
                     // Store the full phone number in UserDefaults
-                    UserDefaults.standard.set(self.getFullPhoneNumber(), forKey: "UserPhoneNumber")
-                    print("✅ UserDefault set: \(UserDefaults.standard.string(forKey: "UserPhoneNumber") ?? "N/A")")
+                    UserDefaults.standard.set(getFullPhoneNumber(), forKey: "UserPhoneNumber")
                     // Store the verification ID in UserDefaults
                     UserDefaults.standard.set(verificationID, forKey: "verification_id")
                     completion(.success)
                 } else {
-                    print("❌ Failed to get verification ID - no error but no ID received")
+                    Log.error("Failed to get verification ID - no error but no ID received")
+                    AppController.shared.errorMessage = "Failed to get verification ID"
                     completion(.unknownError("Failed to get verification ID"))
                 }
             }

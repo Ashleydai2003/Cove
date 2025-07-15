@@ -311,7 +311,7 @@ struct OtpVerifyView: View {
         messageType = .none
         
         let code = otpText
-        OtpVerify.verifyOTP(code) { success, errorMessage in
+        OtpVerify.verifyOTP(code) { success in
             isVerifying = false
             
             if success {
@@ -322,7 +322,7 @@ struct OtpVerifyView: View {
                 otpErrorMessage = ""
             } else {
                 // Show inline error below OTP digits - keep keyboard active for immediate editing
-                otpErrorMessage = errorMessage ?? "Incorrect code. Please check and try again."
+                otpErrorMessage = "Incorrect code. Please check and try again."
                 statusMessage = ""
                 messageType = .none
                 // Reset focus to last digit for immediate backspace

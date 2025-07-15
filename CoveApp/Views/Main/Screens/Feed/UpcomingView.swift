@@ -40,7 +40,9 @@ struct UpcomingView: View {
                     Spacer()
                     HStack {
                         Spacer()
-                        FloatingActionView()
+                        FloatingActionView(onEventCreated: {
+                            upcomingFeed.refreshUpcomingEvents()
+                        })
                             .padding(.trailing, 20)
                             .padding(.bottom, 20)
                     }
@@ -70,7 +72,6 @@ struct UpcomingView: View {
     /// Check if the current user is verified/admin
     private var isUserVerified: Bool {
         let verified = appController.profileModel.verified
-        print("🏠 UpcomingView: isUserVerified check - verified = \(verified)")
         return verified
     }
     

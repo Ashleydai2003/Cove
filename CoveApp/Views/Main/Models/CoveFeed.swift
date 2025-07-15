@@ -41,13 +41,12 @@ class CoveFeed: ObservableObject {
     }
     
     init() {
-        print("📱 CoveFeed initialized")
+        // CoveFeed initialized
     }
     
     /// Sets the user coves directly (used when fetched during onboarding).
     /// This bypasses the loading state and cache checks.
     func setUserCoves(_ coves: [Cove]) {
-        print("📱 CoveFeed: Setting user coves directly (\(coves.count) coves)")
         self.userCoves = coves
         self.lastFetched = Date()
         
@@ -62,7 +61,6 @@ class CoveFeed: ObservableObject {
     func fetchUserCoves(completion: (() -> Void)? = nil) {
         // Check if we have recent cached data and not forcing refresh
         if hasCachedData && !isCacheStale {
-            print("📱 CoveFeed: Using cached user coves data (\(userCoves.count) coves)")
             completion?()
             return
         }
@@ -70,7 +68,6 @@ class CoveFeed: ObservableObject {
         guard !isLoading else { return }
         
         isLoading = true
-        print("🔍 CoveFeed: Fetching user coves from backend...")
         
         NetworkManager.shared.get(endpoint: "/user-coves") { [weak self] (result: Result<UserCovesResponse, NetworkError>) in
             guard let self = self else { return }
@@ -80,7 +77,6 @@ class CoveFeed: ObservableObject {
                 
                 switch result {
                 case .success(let response):
-                    print("✅ CoveFeed: User coves fetched successfully: \(response.coves.count) coves")
                     self.userCoves = response.coves
                     self.lastFetched = Date()
                     
@@ -92,7 +88,7 @@ class CoveFeed: ObservableObject {
                     completion?()
                     
                 case .failure(let error):
-                    print("❌ CoveFeed: User coves fetch failed: \(error.localizedDescription)")
+                    Log.error("CoveFeed: User coves fetch failed: \(error.localizedDescription)", category: "network")
                     self.errorMessage = error.localizedDescription
                     completion?()
                 }
@@ -103,18 +99,14 @@ class CoveFeed: ObservableObject {
     /// Fetches user coves only if data is missing or stale
     func fetchUserCovesIfStale(completion: (() -> Void)? = nil) {
         if !hasCachedData || isCacheStale {
-            let reason = !hasCachedData ? "no cached data" : "cache is stale"
-            print("📱 CoveFeed: Fetching user coves (\(reason))")
             fetchUserCoves(completion: completion)
         } else {
-            print("📱 CoveFeed: ✅ Using fresh cached user coves data (\(userCoves.count) coves) - NO NETWORK REQUEST")
             completion?()
         }
     }
     
     /// Forces a refresh of user coves data, bypassing cache.
     func refreshUserCoves(completion: (() -> Void)? = nil) {
-        print("🔄 CoveFeed: Forcing refresh of user coves data")
         lastFetched = nil
         fetchUserCoves(completion: completion)
     }

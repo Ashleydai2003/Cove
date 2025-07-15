@@ -30,9 +30,12 @@ struct CreateEventView: View {
     
     @FocusState private var isFocused: Bool
     
+    var onEventCreated: (() -> Void)? = nil
+    
     // MARK: - Initializer
-    init(coveId: String? = nil) {
+    init(coveId: String? = nil, onEventCreated: (() -> Void)? = nil) {
         self.coveId = coveId
+        self.onEventCreated = onEventCreated
     }
     
     // MARK: - Body
@@ -74,7 +77,7 @@ struct CreateEventView: View {
                 .presentationDetents([.height(400)])
         }
         .sheet(isPresented: $viewModel.showTimePicker) {
-            DatePicker("", selection: $viewModel.eventTime, in: Date()..., displayedComponents: [.hourAndMinute])
+            DatePicker("", selection: $viewModel.eventTime, displayedComponents: [.hourAndMinute])
                 .datePickerStyle(.wheel)
                 .presentationDetents([.height(200)])
         }
@@ -231,12 +234,11 @@ extension CreateEventView {
                 if success {
                     // Refresh calendar and upcoming feeds to show the new event
                     appController.refreshFeedsAfterEventCreation()
-                    
                     // If event was created in a specific cove, refresh that cove's data too
                     if !viewModel.coveId.isEmpty {
                         appController.refreshCoveAfterEventCreation(coveId: viewModel.coveId)
                     }
-                    
+                    onEventCreated?()
                     dismiss()
                 }
             }

@@ -5,6 +5,7 @@
 //  Created by Ananya Agarwal
 import SwiftUI
 import Kingfisher
+import FirebaseAuth
 
 // MARK: - View Model
 // TODO: insn't this the same as what is being down in feed? 
@@ -74,6 +75,61 @@ class EventPostViewModel: ObservableObject {
             }
         }
     }
+    
+    /// Updates the local event state to reflect RSVP changes without fetching from server
+    func updateLocalRSVPStatus(status: String) {
+        guard let currentEvent = event else { return }
+        
+        // Update the current user's RSVP status in the local event
+        if let currentUserId = Auth.auth().currentUser?.uid {
+            // Create a new RSVPs array with the updated status
+            var updatedRsvps = currentEvent.rsvps
+            
+            // Find and update existing RSVP or add new one
+            if let index = updatedRsvps.firstIndex(where: { $0.userId == currentUserId }) {
+                // Create a new RSVP with updated status
+                let updatedRSVP = EventRSVP(
+                    id: updatedRsvps[index].id,
+                    status: status,
+                    userId: currentUserId,
+                    userName: updatedRsvps[index].userName,
+                    profilePhotoUrl: updatedRsvps[index].profilePhotoUrl,
+                    createdAt: updatedRsvps[index].createdAt
+                )
+                updatedRsvps[index] = updatedRSVP
+            } else {
+                // Add new RSVP for current user
+                let newRSVP = EventRSVP(
+                    id: UUID().uuidString, // Temporary ID
+                    status: status,
+                    userId: currentUserId,
+                    userName: "You", // Placeholder name
+                    profilePhotoUrl: nil,
+                    createdAt: ISO8601DateFormatter().string(from: Date())
+                )
+                updatedRsvps.append(newRSVP)
+            }
+            
+            // Create a new Event instance with updated RSVPs
+            let updatedEvent = Event(
+                id: currentEvent.id,
+                name: currentEvent.name,
+                description: currentEvent.description,
+                date: currentEvent.date,
+                location: currentEvent.location,
+                coveId: currentEvent.coveId,
+                host: currentEvent.host,
+                cove: currentEvent.cove,
+                rsvpStatus: status,
+                rsvps: updatedRsvps,
+                coverPhoto: currentEvent.coverPhoto,
+                isHost: currentEvent.isHost
+            )
+            
+            // Update the published event
+            event = updatedEvent
+        }
+    }
 }
 
 // Add EventResponse struct to match the API response
@@ -134,9 +190,9 @@ struct EventPostView: View {
                             Spacer()
                             
                             // Use provided cover photo first, fallback to fetched event data
-                            CachedAsyncImage(
-                                url: URL(string: coveCoverPhoto?.url ?? event.cove.coverPhoto?.url ?? "")
-                            ) { image in
+                            let covePhotoUrl = coveCoverPhoto?.url ?? event.cove.coverPhoto?.url
+                            if let urlString = covePhotoUrl, !urlString.isEmpty, let url = URL(string: urlString) {
+                                CachedAsyncImage(url: url) { image in
                                 image
                                     .resizable()
                                     .scaledToFill()
@@ -150,6 +206,14 @@ struct EventPostView: View {
                             }
                             .frame(width: 100, height: 100)
                             .clipShape(Circle())
+                            } else {
+                                // Default cove image when no cover photo is available
+                                Image("default_cove_pfp")
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(width: 100, height: 100)
+                                    .clipShape(Circle())
+                            }
                             
                             Spacer()
                             
@@ -186,7 +250,6 @@ struct EventPostView: View {
                                         )
                                 }
                                 .onSuccess { result in
-                                    print("📸 EventPostView event cover loaded from: \(result.cacheType)")
                                 }
                                 .resizable()
                                 .fade(duration: 0.2)
@@ -197,11 +260,13 @@ struct EventPostView: View {
                                 .frame(height: 192)
                                 .clipped()
                         } else {
-                            // fallback placeholder
-                            Rectangle()
-                                .fill(Color.gray.opacity(0.2))
+                            // Default event image
+                            Image("default_event2")
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
                                 .frame(height: 192)
                                 .clipShape(RoundedRectangle(cornerRadius: 10))
+                                .clipped()
                         }
                         
                         VStack(alignment: .leading) {
@@ -270,10 +335,9 @@ struct EventPostView: View {
                                                         )
                                                 }
                                                 .onSuccess { result in
-                                                    print("📸 Guest profile photo loaded from: \(result.cacheType)")
                                                 }
                                                 .onFailure { error in
-                                                    print("❌ Failed to load profile photo: \(error)")
+                                                    Log.debug("❌ Failed to load profile photo: \(error)")
                                                 }
                                                 .resizable()
                                                 .fade(duration: 0.2)
@@ -315,11 +379,21 @@ struct EventPostView: View {
                             if currentStatus == "GOING" {
                                 // User is going, change to not going
                                 currentRSVPStatus = "NOT_GOING"
-                                viewModel.updateRSVP(eventId: eventId, status: "NOT_GOING") { _ in }
+                                viewModel.updateRSVP(eventId: eventId, status: "NOT_GOING") { success in
+                                    if success {
+                                        // Update local event state to reflect RSVP change
+                                        viewModel.updateLocalRSVPStatus(status: "NOT_GOING")
+                                    }
+                                }
                             } else {
                                 // User is not going or maybe, change to going
                                 currentRSVPStatus = "GOING"
-                                viewModel.updateRSVP(eventId: eventId, status: "GOING") { _ in }
+                                viewModel.updateRSVP(eventId: eventId, status: "GOING") { success in
+                                    if success {
+                                        // Update local event state to reflect RSVP change
+                                        viewModel.updateLocalRSVPStatus(status: "GOING")
+                                    }
+                                }
                             }
                             } label: {
                             let currentStatus = currentRSVPStatus ?? event.rsvpStatus

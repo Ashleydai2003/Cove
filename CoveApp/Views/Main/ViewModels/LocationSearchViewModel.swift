@@ -38,7 +38,7 @@ class LocationSearchViewModel: NSObject, ObservableObject {
         let search = MKLocalSearch(request: request)
         search.start { response, error in
             if let placemark = response?.mapItems.first?.placemark {
-                print("Full address: \(self.formattedAddress(from: placemark))")
+                Log.debug("Full address: \(self.formattedAddress(from: placemark))")
                 let location = self.formattedAddress(from: placemark)
                 onResult(location)
             } else {
@@ -90,6 +90,6 @@ extension LocationSearchViewModel: MKLocalSearchCompleterDelegate {
     }
 
     func completer(_ completer: MKLocalSearchCompleter, didFailWithError error: Error) {
-        print("Search completer error: \(error.localizedDescription)")
+        Log.error("Search completer error: \(error.localizedDescription)")
     }
 }

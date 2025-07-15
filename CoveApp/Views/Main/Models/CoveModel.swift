@@ -5,6 +5,7 @@
 //  Refactored and documented for maintainability and best practices
 
 import SwiftUI
+import FirebaseAuth
 
 /// CoveModel: Manages the details and events for a specific cove.
 /// - Handles event pagination, caching, and error/loading state.
@@ -92,36 +93,36 @@ class CoveModel: ObservableObject {
     
     /// Checks if the current user is an admin of this cove
     var isCurrentUserAdmin: Bool {
-        let currentUserId = AppController.shared.profileModel.userId
+        let currentUserId = Auth.auth().currentUser?.uid ?? AppController.shared.profileModel.userId
         guard !currentUserId.isEmpty else { return false }
         return members.first { $0.id == currentUserId }?.role.lowercased() == "admin"
     }
     
     init() {
-        print("📱 CoveModel initialized")
+        Log.debug("📱 CoveModel initialized")
     }
     
     /// Fetches cove details with caching support.
     /// Only fetches fresh data if cache is stale or no cached data exists.
     func fetchCoveDetails(coveId: String, forceRefresh: Bool = false) {
         if !forceRefresh && hasCachedData && !isCacheStale && cove?.id == coveId {
-            print("📱 CoveModel: Using cached cove data")
+            Log.debug("📱 CoveModel: Using cached cove data")
             if events.isEmpty {
-                print("📱 CoveModel: Cached cove data found, but no events - fetching events")
+                Log.debug("📱 CoveModel: Cached cove data found, but no events - fetching events")
                 fetchEvents(coveId: coveId)
             }
             return
         }
         guard !isLoading else { return }
         isLoading = true
-        print("🔍 CoveModel: Fetching cove details for cove ID: \(coveId)")
+        Log.debug("🔍 CoveModel: Fetching cove details for cove ID: \(coveId)")
         NetworkManager.shared.get(endpoint: "/cove", parameters: ["coveId": coveId]) { [weak self] (result: Result<FeedCoveResponse, NetworkError>) in
             guard let self = self else { return }
             DispatchQueue.main.async {
                 self.isLoading = false
                 switch result {
                 case .success(let response):
-                    print("✅ CoveModel: Cove details received: \(response.cove)")
+                    Log.debug("✅ CoveModel: Cove details received: \(response.cove)")
                     self.cove = response.cove
                     self.lastFetched = Date()
                     if forceRefresh || self.events.isEmpty {
@@ -131,7 +132,7 @@ class CoveModel: ObservableObject {
                         self.fetchEvents(coveId: coveId)
                     }
                 case .failure(let error):
-                    print("❌ CoveModel: Cove details error: \(error.localizedDescription)")
+                    Log.debug("❌ CoveModel: Cove details error: \(error.localizedDescription)")
                     self.errorMessage = error.localizedDescription
                 }
             }
@@ -140,7 +141,7 @@ class CoveModel: ObservableObject {
     /// Fetches events for the current cove.
     func fetchEvents() {
         guard let coveId = cove?.id else {
-            print("❌ CoveModel: No cove ID available")
+            Log.debug("❌ CoveModel: No cove ID available")
             errorMessage = "No cove ID available"
             return
         }
@@ -150,13 +151,13 @@ class CoveModel: ObservableObject {
     func fetchEvents(coveId: String, forceRefresh: Bool = false) {
         // Check if we should use cached events data
         if !forceRefresh && hasCachedEvents && !isEventsCacheStale && !events.isEmpty {
-            print("📱 CoveModel: ✅ Using fresh cached events data (\(events.count) events) - NO NETWORK REQUEST")
+            Log.debug("📱 CoveModel: ✅ Using fresh cached events data (\(events.count) events) - NO NETWORK REQUEST")
             return
         }
         
         guard !isLoading && hasMore else { return }
         isLoading = true
-        print("🔍 CoveModel: Fetching events...")
+        Log.debug("🔍 CoveModel: Fetching events...")
         var parameters: [String: Any] = [
             "coveId": coveId,
             "limit": pageSize
@@ -170,13 +171,13 @@ class CoveModel: ObservableObject {
                 self.isLoading = false
                 switch result {
                 case .success(let response):
-                    print("✅ CoveModel: Events received: \(response.events.count) events")
+                    Log.debug("✅ CoveModel: Events received: \(response.events.count) events")
                     self.events.append(contentsOf: response.events)
                     self.hasMore = response.pagination.hasMore
                     self.nextCursor = response.pagination.nextCursor
                     self.eventsLastFetched = Date()
                 case .failure(let error):
-                    print("❌ CoveModel: Events error: \(error.localizedDescription)")
+                    Log.debug("❌ CoveModel: Events error: \(error.localizedDescription)")
                     self.errorMessage = error.localizedDescription
                 }
             }
@@ -185,22 +186,22 @@ class CoveModel: ObservableObject {
     /// Forces a refresh of both cove data and events, bypassing cache.
     func refreshCoveData() {
         guard let coveId = cove?.id else {
-            print("❌ CoveModel: No cove ID available for refresh")
+            Log.debug("❌ CoveModel: No cove ID available for refresh")
             return
         }
-        print("🔄 CoveModel: refreshCoveData() called for cove \(coveId) - forcing refresh with new data")
+        Log.debug("🔄 CoveModel: refreshCoveData() called for cove \(coveId) - forcing refresh with new data")
         fetchCoveDetails(coveId: coveId, forceRefresh: true)
     }
     
     /// Forces a refresh of only cove details (header info), bypassing cache.
     func refreshCoveDetails() {
         guard let coveId = cove?.id else {
-            print("❌ CoveModel: No cove ID available for cove details refresh")
+            Log.debug("❌ CoveModel: No cove ID available for cove details refresh")
             return
         }
         guard !isRefreshingCoveDetails else { return }
         
-        print("🔄 CoveModel: Refreshing cove details only")
+        Log.debug("🔄 CoveModel: Refreshing cove details only")
         isRefreshingCoveDetails = true
         lastFetched = nil // Clear cache
         
@@ -210,7 +211,7 @@ class CoveModel: ObservableObject {
                 self.isRefreshingCoveDetails = false
                 switch result {
                 case .success(let response):
-                    print("✅ CoveModel: Cove details refresh completed: \(response.cove.name)")
+                    Log.debug("✅ CoveModel: Cove details refresh completed: \(response.cove.name)")
                     
                     // Use smart diffing to only update UI if content actually changed
                     updateIfChanged(
@@ -222,7 +223,7 @@ class CoveModel: ObservableObject {
                     
                     self.lastFetched = Date()
                 case .failure(let error):
-                    print("❌ CoveModel: Cove details refresh error: \(error.localizedDescription)")
+                    Log.debug("❌ CoveModel: Cove details refresh error: \(error.localizedDescription)")
                     self.errorMessage = error.localizedDescription
                 }
             }
@@ -232,12 +233,12 @@ class CoveModel: ObservableObject {
     /// Refreshes only the events data, keeping the cached cove details.
     func refreshEvents() {
         guard let coveId = cove?.id else {
-            print("❌ CoveModel: No cove ID found for events refresh")
+            Log.debug("❌ CoveModel: No cove ID found for events refresh")
             return
         }
         guard !isRefreshingEvents else { return }
         
-        print("🔄 CoveModel: Refreshing events data only")
+        Log.critical("🔄 CoveModel: Refreshing events data for coveId: \(coveId)")
         isRefreshingEvents = true
         events = []
         nextCursor = nil
@@ -255,7 +256,7 @@ class CoveModel: ObservableObject {
                 self.isRefreshingEvents = false
                 switch result {
                 case .success(let response):
-                    print("✅ CoveModel: Events refresh completed: \(response.events.count) events")
+                    Log.debug("✅ CoveModel: Events refresh completed: \(response.events.count) events")
                     
                     // Use smart diffing to only update UI if events actually changed
                     updateIfChanged(
@@ -269,7 +270,7 @@ class CoveModel: ObservableObject {
                     
                     self.eventsLastFetched = Date()
                 case .failure(let error):
-                    print("❌ CoveModel: Events refresh error: \(error.localizedDescription)")
+                    Log.debug("❌ CoveModel: Events refresh error: \(error.localizedDescription)")
                     self.errorMessage = error.localizedDescription
                 }
             }
@@ -279,14 +280,14 @@ class CoveModel: ObservableObject {
     func fetchCoveMembers(coveId: String, forceRefresh: Bool = false) {
         // Check if we should use cached members data
         if !forceRefresh && hasCachedMembers && !isMembersCacheStale && !members.isEmpty {
-            print("📱 CoveModel: ✅ Using fresh cached members data (\(members.count) members) - NO NETWORK REQUEST")
+            Log.debug("📱 CoveModel: ✅ Using fresh cached members data (\(members.count) members) - NO NETWORK REQUEST")
             return
         }
         
         guard !isRefreshingMembers && hasMembersMore else { return }
         isRefreshingMembers = true
         
-        print("🔍 CoveModel: Fetching members...")
+        Log.debug("🔍 CoveModel: Fetching members...")
         let parameters: [String: Any] = {
             var params = [
                 "coveId": coveId,
@@ -304,7 +305,7 @@ class CoveModel: ObservableObject {
                 self.isRefreshingMembers = false
                 switch result {
                 case .success(let response):
-                    print("✅ CoveModel: Members received: \(response.members.count) members")
+                    Log.debug("✅ CoveModel: Members received: \(response.members.count) members")
                     
                     // Use smart diffing to only update UI if members actually changed
                     let newMembers = (self.membersCursor == nil) ? response.members : self.members + response.members
@@ -325,7 +326,7 @@ class CoveModel: ObservableObject {
                     
                     self.membersLastFetched = Date()
                 case .failure(let error):
-                    print("❌ CoveModel: Members error: \(error.localizedDescription)")
+                    Log.debug("❌ CoveModel: Members error: \(error.localizedDescription)")
                     self.errorMessage = error.localizedDescription
                 }
             }
@@ -335,12 +336,12 @@ class CoveModel: ObservableObject {
     /// Refreshes only the members data, keeping the cached cove details.
     func refreshMembers() {
         guard let coveId = cove?.id else {
-            print("❌ CoveModel: No cove ID found for members refresh")
+            Log.debug("❌ CoveModel: No cove ID found for members refresh")
             return
         }
         guard !isRefreshingMembers else { return }
         
-        print("🔄 CoveModel: Refreshing members data only")
+        Log.debug("🔄 CoveModel: Refreshing members data only")
         members = []
         membersCursor = nil
         hasMembersMore = true
@@ -354,7 +355,7 @@ class CoveModel: ObservableObject {
            lastMember.id == currentMember.id,
            hasMembersMore && !isRefreshingMembers {
             guard let coveId = cove?.id else {
-                print("❌ CoveModel: No cove ID available for loading more members")
+                Log.debug("❌ CoveModel: No cove ID available for loading more members")
                 return
             }
             fetchCoveMembers(coveId: coveId)
@@ -367,7 +368,7 @@ class CoveModel: ObservableObject {
            lastEvent.id == currentEvent.id,
            hasMore && !isLoading {
             guard let coveId = cove?.id else {
-                print("❌ CoveModel: No cove ID available for loading more events")
+                Log.debug("❌ CoveModel: No cove ID available for loading more events")
                 return
             }
             fetchEvents(coveId: coveId)
@@ -378,17 +379,17 @@ class CoveModel: ObservableObject {
         if !hasCachedData || isCacheStale || cove?.id != coveId {
             fetchCoveDetails(coveId: coveId)
         } else {
-            print("📱 CoveModel: Using fresh cached cove data")
+            Log.debug("📱 CoveModel: Using fresh cached cove data")
             // Still check if events need fetching
             if !hasCachedEvents || isEventsCacheStale {
                 let reason = !hasCachedEvents ? "no cached events" : "events cache is stale"
-                print("📱 CoveModel: Fetching events (\(reason))")
+                Log.debug("📱 CoveModel: Fetching events (\(reason))")
                 fetchEvents(coveId: coveId)
             }
             // Also check if members need fetching
             if !hasCachedMembers || isMembersCacheStale {
                 let reason = !hasCachedMembers ? "no cached members" : "members cache is stale"
-                print("📱 CoveModel: Fetching members (\(reason))")
+                Log.debug("📱 CoveModel: Fetching members (\(reason))")
                 fetchCoveMembers(coveId: coveId)
             }
         }

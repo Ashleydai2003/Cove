@@ -87,10 +87,10 @@ struct FriendRequests {
             DispatchQueue.main.async {
                 switch result {
                 case .success(let resp):
-                    print("✅ fetch succeeded: \(resp.requests.count) requests, hasMore = \(resp.pagination.hasMore)")
+                    Log.debug("✅ fetch succeeded: \(resp.requests.count) requests, hasMore = \(resp.pagination.hasMore)")
                     completion(.success(resp))
                 case .failure(let error):
-                    print("❌ fetch failed: \(error.localizedDescription)")
+                    Log.debug("❌ fetch failed: \(error.localizedDescription)")
                     completion(.failure(error))
                 }
             }
@@ -111,10 +111,10 @@ struct FriendRequests {
             DispatchQueue.main.async {
                 switch result {
                 case .success(let resp):
-                    print("✅ send succeeded: message = '\(resp.message)', new request id = \(resp.requestIds.first ?? "–")")
+                    Log.debug("✅ send succeeded: message = '\(resp.message)', new request id = \(resp.requestIds.first ?? "–")")
                     completion(.success(resp))
                 case .failure(let error):
-                    print("❌ send failed: \(error.localizedDescription)")
+                    Log.debug("❌ send failed: \(error.localizedDescription)")
                     completion(.failure(error))
                 }
             }
@@ -139,10 +139,10 @@ struct FriendRequests {
             DispatchQueue.main.async {
                 switch result {
                 case .success(let resp):
-                    print("✅ resolve \(action.lowercased()) succeeded: message = '\(resp.message)'\(action == "ACCEPT" ? ", friendship id = \(resp.friendship?.id ?? "–")" : "")")
+                    Log.debug("✅ resolve \(action.lowercased()) succeeded: message = '\(resp.message)'\(action == "ACCEPT" ? ", friendship id = \(resp.friendship?.id ?? "–")" : "")")
                     completion(.success(resp))
                 case .failure(let error):
-                    print("❌ resolve \(action.lowercased()) failed: \(error.localizedDescription)")
+                    Log.debug("❌ resolve \(action.lowercased()) failed: \(error.localizedDescription)")
                     completion(.failure(error))
                 }
             }

@@ -753,8 +753,8 @@ export const handleJoinCove = async (event: APIGatewayProxyEvent): Promise<APIGa
   }
 };
 
-// TODO: send invite endpoint 
-// Only admin of the cove can send invites for that cove 
+ // TODO: send invite endpoint 
+ // Only admin of the cove can send invites for that cove 
 
-// TODO: later, request to join a cove endpoint and an approve request endpoint 
-// only admin of the cove can approve requests 
+ // TODO: later, request to join a cove endpoint and an approve request endpoint 
+ // only admin of the cove can approve requests 

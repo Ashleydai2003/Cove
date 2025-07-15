@@ -1,9 +1,7 @@
-//
 //  CoveApp.swift
 //  Cove
 //
 //  Created by Ashley Dai on 4/14/25.
-//
 
 import SwiftUI
 import UIKit
@@ -18,6 +16,8 @@ struct CoveApp: App {
     @StateObject private var appController = AppController.shared
     
     init() {
+        Log.debug("🔐 CoveApp: App initialization starting")
+        
         // For Injection (hot reloading)
         // Note flags -Xlinker -interposable under Other Linker Flags are for Injection
         #if DEBUG
@@ -42,6 +42,8 @@ struct CoveApp: App {
         // development. This caused fully-onboarded users to be treated as new
         // users and skip the data-loading flow. The line is now removed so the
         // persisted onboarding status returned from the backend is respected.
+        
+        Log.debug("🔐 CoveApp: App initialization complete")
     }
     
     var body: some Scene {
@@ -53,23 +55,16 @@ struct CoveApp: App {
                     HomeView()
                         .environmentObject(appController)
                         .preferredColorScheme(.light)
-                        .transition(.asymmetric(
-                            insertion: .move(edge: .trailing).combined(with: .opacity),
-                            removal: .move(edge: .leading).combined(with: .opacity)
-                        ))
+                        .transition(.opacity)
                 } else {
                     // Onboarding flow - linear navigation
                     OnboardingFlow()
                         .environmentObject(appController)
                         .preferredColorScheme(.light)
-                        .transition(.asymmetric(
-                            insertion: .move(edge: .leading).combined(with: .opacity),
-                            removal: .move(edge: .trailing).combined(with: .opacity)
-                        ))
+                        .transition(.opacity)
                 }
             }
-            .animation(.easeInOut(duration: 0.45), value: appController.isLoggedIn)
+            .animation(.easeInOut(duration: 0.35), value: appController.isLoggedIn)
         }
     }
-}
-
+} 

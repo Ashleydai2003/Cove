@@ -9,6 +9,9 @@ struct SendInvitesView: View {
     @StateObject private var viewModel: SendInvitesModel
     @Environment(\.dismiss) private var dismiss
     @FocusState private var focusedField: Int?
+    @State private var presentCountrySheet = false
+    @State private var searchCountry: String = ""
+    @State private var selectedFieldIndex: Int = 0 // Track which field's country is being selected
     
     init(coveId: String, coveName: String, sendAction: (() -> Void)? = nil, onDataSubmit: (([String], String) -> Void)? = nil, initialPhoneNumbers: [String] = [], initialMessage: String = "") {
         self.coveId = coveId
@@ -16,6 +19,19 @@ struct SendInvitesView: View {
         self.sendAction = sendAction
         self.onDataSubmit = onDataSubmit
         self._viewModel = StateObject(wrappedValue: SendInvitesModel(coveId: coveId, initialPhoneNumbers: initialPhoneNumbers, initialMessage: initialMessage))
+    }
+    
+    // Custom input accessory view for keyboard (exactly like UserPhoneNumberView)
+    private var keyboardAccessoryView: some View {
+        HStack {
+            Spacer()
+            Button("Done") {
+                focusedField = nil
+            }
+            .padding(.trailing, 16)
+            .padding(.vertical, 8)
+        }
+        .background(Color(.systemGray6))
     }
     
     var body: some View {
@@ -62,22 +78,24 @@ struct SendInvitesView: View {
                                 }
                                 .padding(.horizontal, 24)
                                 
-                                // Phone number inputs
+                                // Phone number inputs (exactly like UserPhoneNumberView structure)
                                 ForEach(Array(viewModel.phoneNumbers.enumerated()), id: \.offset) { index, phoneNumber in
                                     PhoneNumberInputView(
-                                        phoneNumber: phoneNumber,
-                                        countryCode: viewModel.countryCode,
+                                        phoneNumber: Binding(
+                                            get: { viewModel.phoneNumbers[index] },
+                                            set: { viewModel.phoneNumbers[index] = $0 }
+                                        ),
+                                        selectedCountry: index < viewModel.countries.count ? viewModel.countries[index] : Country(id: "0235", name: "USA", flag: "🇺🇸", code: "US", dial_code: "+1", pattern: "### ### ####", limit: 17),
                                         index: index,
                                         canRemove: viewModel.phoneNumbers.count > 1,
-                                        onUpdatePhoneNumber: { newValue in
-                                            viewModel.updatePhoneNumber(at: index, with: newValue)
-                                        },
-                                        onUpdateCountryCode: { newCode in
-                                            viewModel.countryCode = newCode
+                                        onCountryTapped: {
+                                            selectedFieldIndex = index
+                                            presentCountrySheet = true
                                         },
                                         onRemove: {
                                             viewModel.removePhoneNumber(at: index)
-                                        }
+                                        },
+                                        keyboardAccessoryView: keyboardAccessoryView
                                     )
                                     .focused($focusedField, equals: index)
                                 }
@@ -172,9 +190,43 @@ struct SendInvitesView: View {
                 }
             }
         }
+        // Country selection sheet (exactly like UserPhoneNumberView)
+        .sheet(isPresented: $presentCountrySheet) {
+            NavigationView {
+                List(filteredCountries) { country in
+                    Button {
+                        viewModel.updateCountry(at: selectedFieldIndex, with: country)
+                        presentCountrySheet = false
+                        searchCountry = ""
+                    } label: {
+                        HStack {
+                            Text(country.flag)
+                            Text(country.name)
+                                .font(.body)
+                            Spacer()
+                            Text(country.dial_code)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .listRowBackground(Color.white.opacity(0.08))
+                }
+                .listStyle(.plain)
+                .searchable(text: $searchCountry, prompt: "Your country")
+            }
+            .presentationDetents([.medium, .large])
+        }
         .onAppear {
             // Focus on first field when view appears
             focusedField = 0
+        }
+    }
+    
+    /// Filters countries based on search input (exactly like UserPhoneNumberView)
+    var filteredCountries: [Country] {
+        if searchCountry.isEmpty {
+            return viewModel.availableCountries
+        } else {
+            return viewModel.availableCountries.filter { $0.name.localizedCaseInsensitiveContains(searchCountry) }
         }
     }
 }
@@ -218,59 +270,115 @@ struct SendInviteButton: View {
     }
 }
 
-/// Individual phone number input field with country code
+/// Individual phone number input field (exactly like UserPhoneNumberView structure)
 struct PhoneNumberInputView: View {
-    let phoneNumber: String
-    let countryCode: String
+    @Binding var phoneNumber: String
+    let selectedCountry: Country
     let index: Int
     let canRemove: Bool
-    let onUpdatePhoneNumber: (String) -> Void
-    let onUpdateCountryCode: (String) -> Void
+    let onCountryTapped: () -> Void
     let onRemove: () -> Void
+    let keyboardAccessoryView: AnyView
+    
+    private enum Constants {
+        static let countryButtonWidth: CGFloat = 66
+        static let countryFlagFontSize: CGFloat = 30
+        static let phoneInputFontSize: CGFloat = 25
+        static let downArrowSize: CGSize = .init(width: 19, height: 14)
+    }
+    
+    init(phoneNumber: Binding<String>, selectedCountry: Country, index: Int, canRemove: Bool, onCountryTapped: @escaping () -> Void, onRemove: @escaping () -> Void, keyboardAccessoryView: some View) {
+        self._phoneNumber = phoneNumber
+        self.selectedCountry = selectedCountry
+        self.index = index
+        self.canRemove = canRemove
+        self.onCountryTapped = onCountryTapped
+        self.onRemove = onRemove
+        self.keyboardAccessoryView = AnyView(keyboardAccessoryView)
+    }
+    
+    /// Formats a phone number according to the provided pattern (exactly like UserPhoneNumber)
+    /// - Parameters:
+    ///   - number: Raw phone number string
+    ///   - pattern: Format pattern (e.g., "### ### ####")
+    /// - Returns: Formatted phone number string
+    private func formatPhoneNumber(_ number: String, pattern: String) -> String {
+        // Input validation
+        guard !number.isEmpty else { return "" }
+        
+        // Remove all non-digit characters
+        let cleanNumber = number.filter { $0.isNumber }
+        
+        // Get the maximum number of digits allowed by the pattern
+        let maxDigits = pattern.filter { $0 == "#" }.count
+        
+        // Truncate the number if it exceeds the pattern's limit
+        let truncatedNumber = String(cleanNumber.prefix(maxDigits))
+        
+        var result = ""
+        var numberIndex = truncatedNumber.startIndex
+        
+        // Iterate through the pattern
+        for patternChar in pattern {
+            if patternChar == "#" {
+                if numberIndex < truncatedNumber.endIndex {
+                    result.append(truncatedNumber[numberIndex])
+                    numberIndex = truncatedNumber.index(after: numberIndex)
+                }
+            } else {
+                // Only add the separator if we have more digits to come
+                if numberIndex < truncatedNumber.endIndex {
+                    result.append(patternChar)
+                }
+            }
+        }
+        
+        return result
+    }
     
     var body: some View {
-        HStack(spacing: 12) {
-            // Country code input
-            TextField("+1", text: .init(
-                get: { countryCode },
-                set: onUpdateCountryCode
-            ))
-            .font(.LibreBodoni(size: 16))
-            .foregroundColor(Colors.k292929)
-            .keyboardType(.phonePad)
-            .textContentType(.telephoneNumber)
-            .frame(width: 60)
-            .padding(16)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.white)
-                    .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-            )
+        HStack(alignment: .lastTextBaseline, spacing: 16) {
+            // Country Selection Button (exactly like UserPhoneNumberView)
+            Button {
+                onCountryTapped()
+            } label: {
+                HStack {
+                    Text(selectedCountry.flag)
+                        .foregroundStyle(Color.black)
+                        .font(.LibreBodoni(size: Constants.countryFlagFontSize))
+                    
+                    Image(systemName: "chevron.down")
+                        .resizable()
+                        .frame(width: Constants.downArrowSize.width, 
+                                height: Constants.downArrowSize.height)
+                        .foregroundColor(.secondary)
+                }
+            }
+            .frame(width: Constants.countryButtonWidth)
             
-            // Phone number input
-            TextField("phone number", text: .init(
-                get: { phoneNumber },
-                set: onUpdatePhoneNumber
-            ))
-            .font(.LibreBodoni(size: 16))
-            .foregroundColor(Colors.k292929)
-            .keyboardType(.phonePad)
-            .textContentType(.telephoneNumber)
-            .padding(16)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.white)
-                    .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-            )
+            // Country code display (exactly like UserPhoneNumberView)
+            Text(selectedCountry.dial_code)
+                .foregroundStyle(Color.black)
+                .font(.LibreCaslon(size: Constants.phoneInputFontSize))
             
+            // Phone number input (exactly like UserPhoneNumberView)
+            TextField(selectedCountry.pattern, text: $phoneNumber)
+                .font(.LibreCaslon(size: Constants.phoneInputFontSize))
+                .foregroundStyle(Color.black)
+                .keyboardType(.numberPad)
+                .textContentType(.telephoneNumber)
+                .toolbar {
+                    ToolbarItem(placement: .keyboard) {
+                        keyboardAccessoryView
+                    }
+                }
+                .onChange(of: phoneNumber) { _, newValue in
+                    // Format the phone number exactly like UserPhoneNumberView
+                    let formattedNumber = formatPhoneNumber(newValue, pattern: selectedCountry.pattern)
+                    phoneNumber = formattedNumber
+                }
+            
+            // Remove button (if applicable)
             if canRemove {
                 Button(action: onRemove) {
                     Image(systemName: "minus.circle.fill")
