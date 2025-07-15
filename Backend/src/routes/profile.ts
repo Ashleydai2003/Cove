@@ -4,11 +4,10 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { authMiddleware } from '../middleware/auth';
 import { initializeDatabase } from '../config/database';
-import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
+import { GetObjectCommand } from '@aws-sdk/client-s3';
 // used to generate a temporary, secure URL for accessing the user's photos 
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-
-const s3Client = new S3Client({ region: process.env.AWS_REGION });
+import { s3Client } from '../config/s3';
 
 export const handleProfile = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {

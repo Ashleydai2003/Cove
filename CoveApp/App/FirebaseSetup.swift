@@ -15,12 +15,11 @@ class FirebaseSetup: NSObject, UIApplicationDelegate {
         // Configure Firebase
         FirebaseApp.configure()
         
-        // Check if user is already authenticated
-        if let currentUser = Auth.auth().currentUser {
-            // User is already signed in
-        } else {
-            // No user signed in
-        }
+        #if DEBUG
+        // Use Firebase Auth emulator for local development
+        Auth.auth().useEmulator(withHost: "localhost", port: 9099)
+        print("[Firebase] Using Auth emulator at localhost:9099")
+        #endif
         
         return true
     }

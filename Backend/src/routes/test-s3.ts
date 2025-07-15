@@ -1,7 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { S3Client, HeadBucketCommand } from '@aws-sdk/client-s3';
-
-const s3Client = new S3Client({ region: process.env.AWS_REGION });
+import { HeadBucketCommand } from '@aws-sdk/client-s3';
+import { s3Client } from '../config/s3';
 
 export const handleTestS3 = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
