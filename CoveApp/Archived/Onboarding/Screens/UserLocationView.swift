@@ -142,7 +142,7 @@ struct UserLocationView: View {
             
         }
         .padding(.horizontal, 32)
-        .background(Colors.kF5F5F5.edgesIgnoringSafeArea(.all))
+        .background(OnboardingBackgroundView())
         .onAppear {
             viewModel.startUpdatingLocation()
         }

@@ -25,5 +25,6 @@ enum Images {
     static let coves = Image("coves-icon")
     static let home = Image("home_icon")
     static let magnifyingglass = Image("magnifyingglass-icon")
+    static let nextArrow = Image("next_arrow")
 }
 

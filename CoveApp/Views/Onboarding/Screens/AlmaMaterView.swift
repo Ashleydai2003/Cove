@@ -12,12 +12,27 @@ struct AlmaMaterView: View {
     @EnvironmentObject var appController: AppController
     
     @State private var searchUniversity = ""
+    @State private var gradYear = ""
     
+    @State private var showUniversityDropdown = false
+    @State private var showYearDropdown = false
     @State private var showList: Bool = false
+    @FocusState private var isUniversityFocused: Bool
     @State private var universities: [String] = ["Stanford University", "Stanford Graduate School of Business", "Stanford School of Medicine", "Stanford Law School", "Stanford Graduate School of Education"]
     
+    // Generate years from 2000 to current year + 4
+    private var availableYears: [String] {
+        let currentYear = Calendar.current.component(.year, from: Date())
+        let maxYear = currentYear + 4
+        return Array(2000...maxYear).map { String($0) }.reversed()
+    }
+    
     var body: some View {
-        VStack {
+        ZStack {
+            OnboardingBackgroundView()
+            
+            VStack {
+                // Back button
             HStack {
                 Button {
                     appController.path.removeLast()
@@ -28,81 +43,186 @@ struct AlmaMaterView: View {
             }
             .padding(.top, 10)
             
+                // Header section
+                VStack(alignment: .leading, spacing: 10) {
             Text("what is your alma \nmater?")
                 .foregroundStyle(Colors.primaryDark)
                 .font(.LibreBodoniMedium(size: 40))
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.top, 20)
             
             Text("find people from within your network, then others. (optional)")
                 .font(.LeagueSpartan(size: 15))
                 .foregroundColor(Colors.k0B0B0B)
                 .frame(maxWidth: .infinity, alignment: .leading)
-            
-            VStack {
+                }
+                .padding(.top, 40)
+                
+                // Search input section
+                VStack(spacing: 8) {
+                    ZStack(alignment: .leading) {
+                        if searchUniversity.isEmpty {
+                            Text("search universities...")
+                                .foregroundColor(Colors.k656566)
+                                .font(.LeagueSpartan(size: 30))
+                        }
+                        
                 TextField("", text: $searchUniversity)
                     .font(.LeagueSpartan(size: 30))
                     .foregroundStyle(Colors.k060505)
                     .keyboardType(.alphabet)
+                            .focused($isUniversityFocused)
                     .onChange(of: searchUniversity) { oldValue, newValue in
-                        searchUniversity = newValue.lowercaseIfNotEmpty
+                                let processedValue = newValue.lowercaseIfNotEmpty
+                                searchUniversity = processedValue
+                                // Only show dropdown if user is typing (length increased or changed but not empty)
+                                if !processedValue.isEmpty && processedValue != oldValue {
+                                    showUniversityDropdown = true
+                                } else if processedValue.isEmpty {
+                                    showUniversityDropdown = false
+                                }
+                            }
                     }
                 
                 Divider()
                     .frame(height: 2)
                     .background(Colors.k060505)
             }
-            .padding(.top, 40)
-            
-            if searchUniversity.count > 0 {
-                VStack(spacing: 5) {
-                    Spacer().frame(height: 5)
+                .padding(.top, 30)
+                
+                // Graduation year input section
+                VStack(spacing: 8) {
+                    ZStack(alignment: .leading) {
+                        if gradYear.isEmpty {
+                            Text("graduation year...")
+                                .foregroundColor(Colors.k656566)
+                                .font(.LeagueSpartan(size: 30))
+                        }
+                        
+                        TextField("", text: $gradYear)
+                            .font(.LeagueSpartan(size: 30))
+                            .foregroundStyle(Colors.k060505)
+                            .keyboardType(.numberPad)
+                            .onChange(of: gradYear) { oldValue, newValue in
+                                // Only allow numeric input and limit to 4 digits
+                                let filtered = newValue.filter { $0.isNumber }
+                                if filtered.count <= 4 {
+                                    gradYear = filtered
+                                    // Only show dropdown if user is typing (value changed and not empty)
+                                    if !filtered.isEmpty && filtered != oldValue {
+                                        showYearDropdown = true
+                                    } else if filtered.isEmpty {
+                                        showYearDropdown = false
+                                    }
+                                } else {
+                                    gradYear = oldValue
+                                }
+                            }
+                    }
                     
-                    ScrollView(.vertical) {
+                    Divider()
+                        .frame(height: 2)
+                        .background(Colors.k060505)
+                }
+                .padding(.top, 20)
+                
+                // University suggestions list
+                if searchUniversity.count > 0 && showUniversityDropdown {
+                    VStack(spacing: 0) {
+                        ScrollView(.vertical, showsIndicators: false) {
+                            VStack(spacing: 0) {
                         ForEach(filteredUniversities, id: \.self) { university in
                             Button {
                                 searchUniversity = university
+                                        DispatchQueue.main.async {
+                                            showUniversityDropdown = false
+                                        }
                             } label: {
-                                Text(university)
-                                    .font(.LeagueSpartanMedium(size: 20))
+                                        Text(university.lowercased())
+                                            .font(.LeagueSpartanMedium(size: 18))
                                     .foregroundColor(Colors.k0F100F)
                                     .multilineTextAlignment(.leading)
                                     .frame(maxWidth: .infinity, alignment: .leading)
-                                    .padding([.horizontal], 10)
-                                    .padding(.vertical, 5)
+                                            .padding(.horizontal, 16)
+                                            .padding(.vertical, 12)
+                                    }
+                                    .background(Color.clear)
+                                    
+                                    if university != filteredUniversities.last {
+                                        Divider()
+                                            .background(Colors.k060505.opacity(0.2))
                             }
                         }
                     }
-                    
-                    Spacer().frame(height: 5)
+                        }
+                    }
+                    .background(Colors.primaryLight)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .frame(height: min(CGFloat(filteredUniversities.count * 44), 200))
+                    .padding(.top, 10)
+                    .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 5)
                 }
-                .background(Color.white)
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-                .frame(height: 185)
-                .padding(.top, 5)
-                .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
+                
+                // Graduation year suggestions list
+                if gradYear.count > 0 && showYearDropdown {
+                    VStack(spacing: 0) {
+                        ScrollView(.vertical, showsIndicators: false) {
+                            VStack(spacing: 0) {
+                                ForEach(filteredYears, id: \.self) { year in
+                                    Button {
+                                        gradYear = year
+                                        DispatchQueue.main.async {
+                                            showYearDropdown = false
+                                        }
+                                    } label: {
+                                        Text(year)
+                                            .font(.LeagueSpartanMedium(size: 18))
+                                            .foregroundColor(Colors.k0F100F)
+                                            .multilineTextAlignment(.leading)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                            .padding(.horizontal, 16)
+                                            .padding(.vertical, 12)
+                                    }
+                                    .background(Color.clear)
+                                    
+                                    if year != filteredYears.last {
+                                        Divider()
+                                            .background(Colors.k060505.opacity(0.2))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    .background(Colors.primaryLight)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .frame(height: min(CGFloat(filteredYears.count * 44), 200))
+                    .padding(.top, 10)
+                    .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 5)
             }
             
             Spacer()
             
+                // Continue button
             HStack {
                 Spacer()
-                Images.smily
+                    Images.nextArrow
                     .resizable()
                     .frame(width: 52, height: 52)
                     .padding(.bottom, 20)
                     .onTapGesture {
-                        // MARK: - Store alma mater
+                            // MARK: - Store alma mater and grad year
                         // TODO: can consider using university IDs instead of names
                         Onboarding.storeAlmaMater(almaMater: searchUniversity)
-                        appController.path.append(.moreAboutYou)
+                            // TODO: Store grad year when backend supports it
+                            appController.path.append(.citySelection)
                     }
             }
         }
         .padding(.horizontal, 32)
-        .background(Colors.kF5F5F5.edgesIgnoringSafeArea(.all))
+        }
         .navigationBarBackButtonHidden()
-        
+        .onAppear {
+            isUniversityFocused = true
+        }
     }
     
     var filteredUniversities: [String] {
@@ -113,6 +233,13 @@ struct AlmaMaterView: View {
         }
     }
     
+    var filteredYears: [String] {
+        if gradYear.isEmpty {
+            return availableYears
+        } else {
+            return availableYears.filter { $0.hasPrefix(gradYear) }
+        }
+    }
 }
 
 #Preview {
