@@ -107,7 +107,7 @@ struct ContactsView: View {
     
     var body: some View {
         ZStack {
-            Colors.faf8f4.ignoresSafeArea()
+            OnboardingBackgroundView()
             
             VStack(alignment: .leading, spacing: 10) {
                 HStack {

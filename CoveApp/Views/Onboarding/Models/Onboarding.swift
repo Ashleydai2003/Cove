@@ -13,17 +13,8 @@ class Onboarding {
     private static var userName: String?
     private static var userBirthdate: Date?
     private static var userHobbies: Set<String> = []
-    private static var userBio: String?
-    private static var userLatitude: Double?
-    private static var userLongitude: Double?
     private static var userAlmaMater: String?
-    private static var userJob: String?
-    private static var userWorkLocation: String?
-    private static var userRelationStatus: String?
-    private static var userInterestedInto: String?
-    private static var userGender: String?
     private static var profilePic: UIImage?
-    private static var extraPics: [UIImage] = []
     private static var pendingFriendRequests: [String] = []
     private static var adminCove: String?
     
@@ -43,27 +34,11 @@ class Onboarding {
         userHobbies = hobbies
     }
 
-    static func storeBio(bio: String) -> Void {
-        userBio = bio
-    }
-
-    static func storeLocation(latitude: Double, longitude: Double) -> Void {
-        userLatitude = latitude
-        userLongitude = longitude
-    }
-
     static func storeAlmaMater(almaMater: String) -> Void {
         userAlmaMater = almaMater
     }
 
-    static func storeMoreAboutYou(job: String, workLocation: String, relationStatus: String, interestedInto: String, gender: String) -> Void {
-        userJob = job
-        userWorkLocation = workLocation
-        userRelationStatus = relationStatus
-        userInterestedInto = interestedInto
-        userGender = gender
-    }
-
+    // MARK: - Admin Functions
     static func setAdminCove(adminCove: String) -> Void {
         self.adminCove = adminCove
     }
@@ -112,21 +87,8 @@ class Onboarding {
         profilePic = image
     }
     
-    static func storeExtraPic(_ image: UIImage, at index: Int) {
-        if index >= extraPics.count {
-            extraPics.append(image)
-        } else {
-            extraPics[index] = image
-        }
-        // Ensure we only keep 2 extra pics
-        if extraPics.count > 2 {
-            extraPics = Array(extraPics.prefix(2))
-        }
-    }
-    
     static func clearImages() {
         profilePic = nil
-        extraPics.removeAll()
     }
     
     static func getAllImages() -> [(UIImage, Bool)] {
@@ -134,7 +96,6 @@ class Onboarding {
         if let profile = profilePic {
             images.append((profile, true))
         }
-        images.append(contentsOf: extraPics.map { ($0, false) })
         return images
     }
     
@@ -149,14 +110,6 @@ class Onboarding {
     
     static func getHobbies() -> Set<String> {
         return userHobbies
-    }
-
-    static func getBio() -> String? {
-        return userBio
-    }
-
-    static func getLocation() -> (Double?, Double?) {
-        return (userLatitude, userLongitude)
     }
 
     static func getAlmaMater() -> String? {
@@ -181,7 +134,7 @@ class Onboarding {
     
     // MARK: - Validation
     static func isOnboardingComplete() -> Bool {
-        return userName != nil && userBirthdate != nil && !userHobbies.isEmpty && userBio != nil && userLatitude != nil && userLongitude != nil
+        return userName != nil && userBirthdate != nil && !userHobbies.isEmpty
     }
 
     /// Completes the onboarding process by updating the user's onboarding status
@@ -203,6 +156,13 @@ class Onboarding {
             } else {
                 completion(false)
             }
+        } else {
+            print("❌ Onboarding incomplete, missing required fields")
+            Task { @MainActor in
+            AppController.shared.errorMessage = "Onboarding process incomplete"
+            AppController.shared.path = [.pluggingIn]
+            }
+            completion(false)
         }
     }
 
@@ -222,20 +182,12 @@ class Onboarding {
         dateFormatter.dateFormat = "yyyy-MM-dd"
         let formattedDate = userBirthdate.map { dateFormatter.string(from: $0) } ?? ""
         
-        // Create request parameters
+        // Create request parameters with only the data we actually collect
         let parameters: [String: Any] = [
             "name": userName ?? "",
             "birthdate": formattedDate,
             "hobbies": Array(userHobbies),  // Convert Set to Array for JSON serialization
-            "bio": userBio ?? "",
-            "latitude": userLatitude ?? 0,
-            "longitude": userLongitude ?? 0,
-            "almaMater": userAlmaMater ?? "",
-            "job": userJob ?? "",
-            "workLocation": userWorkLocation ?? "",
-            "relationStatus": userRelationStatus ?? "",
-            "sexuality": userInterestedInto ?? "",
-            "gender": userGender ?? ""
+            "almaMater": userAlmaMater ?? ""
         ]
         
         NetworkManager.shared.post(

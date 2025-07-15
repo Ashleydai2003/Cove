@@ -3,6 +3,14 @@
 import Foundation
 import FirebaseAuth
 
+enum CodeSendResult {
+    case success
+    case invalidPhoneNumber
+    case networkError
+    case rateLimited
+    case unknownError(String)
+}
+
 struct UserPhoneNumber {
     var number: String
     var country: Country
@@ -83,8 +91,8 @@ struct UserPhoneNumber {
     }
     
     /// Sends verification code to the provided phone number
-    /// - Parameter completion: Callback with success status
-    func sendVerificationCode(completion: @escaping (Bool) -> Void) {
+    /// - Parameter completion: Callback with result status
+    func sendVerificationCode(completion: @escaping (CodeSendResult) -> Void) {
         let fullPhoneNumber = getFullPhoneNumber()
         
         // Disable reCAPTCHA verification
@@ -105,12 +113,41 @@ struct UserPhoneNumber {
                     UserDefaults.standard.set(getFullPhoneNumber(), forKey: "UserPhoneNumber")
                     // Store the verification ID in UserDefaults
                     UserDefaults.standard.set(verificationID, forKey: "verification_id")
-                    completion(true)
+                    completion(.success)
                 } else {
                     Log.error("Failed to get verification ID - no error but no ID received")
                     AppController.shared.errorMessage = "Failed to get verification ID"
                     completion(false)
                 }
+            }
+        }
+    }
+    
+    /// Categorizes Firebase errors into user-friendly error types
+    /// - Parameter error: The Firebase error
+    /// - Returns: Appropriate CodeSendResult
+    private func categorizeFirebaseError(_ error: Error) -> CodeSendResult {
+        let errorCode = (error as NSError).code
+        let errorMessage = error.localizedDescription.lowercased()
+        
+        // Firebase Auth error codes
+        switch errorCode {
+        case 17010: // Invalid phone number
+            return .invalidPhoneNumber
+        case 17025: // Too many requests
+            return .rateLimited
+        case 17020: // Network error
+            return .networkError
+        default:
+            // Check error message for common patterns
+            if errorMessage.contains("invalid phone number") || errorMessage.contains("phone number") {
+                return .invalidPhoneNumber
+            } else if errorMessage.contains("too many") || errorMessage.contains("quota") || errorMessage.contains("rate") {
+                return .rateLimited
+            } else if errorMessage.contains("network") || errorMessage.contains("connection") {
+                return .networkError
+            } else {
+                return .unknownError(error.localizedDescription)
             }
         }
     }

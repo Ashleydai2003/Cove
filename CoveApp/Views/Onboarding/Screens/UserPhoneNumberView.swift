@@ -6,12 +6,11 @@
 
 import SwiftUI
 import Combine
-import Inject
 
 /// View for collecting and validating user's phone number during onboarding
 /// Handles country selection, phone number formatting, and navigation to OTP verification
 struct UserPhoneNumberView: View {
-    @ObserveInjection var redraw
+
     
     // MARK: - Environment & State Properties
     
@@ -22,9 +21,19 @@ struct UserPhoneNumberView: View {
     @State private var presentSheet = false
     @State private var searchCountry: String = ""
     @FocusState private var isFocused: Bool
-    @State private var isVerifying = false
+    @State private var isCodeSending = false
     @State private var showError = false
     @State private var userPhone = UserPhoneNumber(number: "",country: Country(id: "0235", name: "USA", flag: "🇺🇸", code: "US", dial_code: "+1", pattern: "### ### ####", limit: 17))
+    
+    // Status messaging
+    @State private var statusMessage: String = ""
+    @State private var messageType: MessageType = .none
+    
+    enum MessageType {
+        case none
+        case success
+        case error
+    }
     
     // MARK: - Constants
     
@@ -35,12 +44,12 @@ struct UserPhoneNumberView: View {
         static let countryButtonWidth: CGFloat = 66
         static let countryFlagFontSize: CGFloat = 30
         static let downArrowSize: CGSize = .init(width: 19, height: 14)
-        static let smileySize: CGSize = .init(width: 52, height: 52)
+        static let arrowSize: CGSize = .init(width: 52, height: 52)
         static let horizontalPadding: CGFloat = 20
         static let topPadding: CGFloat = 40
         static let phoneInputTopPadding: CGFloat = 85
-        static let smileyBottomPadding: CGFloat = 60
-        static let smileyTrailingPadding: CGFloat = 20
+        static let arrowBottomPadding: CGFloat = 60
+        static let arrowTrailingPadding: CGFloat = 20
     }
     
     // Custom input accessory view for keyboard
@@ -53,7 +62,7 @@ struct UserPhoneNumberView: View {
             .padding(.trailing, 16)
             .padding(.vertical, 8)
         }
-        .background(Color(.systemGray6))
+        .background(Color.gray.opacity(0.1))
     }
     
     /// Data
@@ -68,9 +77,27 @@ struct UserPhoneNumberView: View {
         return digitsOnly.count == expectedLength
     }
     
+    // MARK: - Status Message Display
+    
+    private var statusMessageView: some View {
+        HStack {
+            if !statusMessage.isEmpty {
+                Text(statusMessage)
+                    .font(.LeagueSpartan(size: 14))
+                    .foregroundColor(messageType == .success ? .green : 
+                                   messageType == .error ? .red : Colors.primaryDark)
+            }
+            Spacer()
+        }
+        .padding(.horizontal, Constants.horizontalPadding)
+        .padding(.top, 8)
+        .animation(.easeInOut(duration: 0.3), value: statusMessage)
+    }
+    
     // MARK: - Main View Body
     var body: some View {
         ZStack {
+            OnboardingBackgroundView()
             VStack {
                 // MARK: - Header Section
                 headerSection
@@ -85,10 +112,13 @@ struct UserPhoneNumberView: View {
                 }
                 .padding(.top, Constants.phoneInputTopPadding)
                 
+                // MARK: - Status Message
+                statusMessageView
+                
                 Spacer()
                 
                 // MARK: - Submit Button
-                submitButton
+                //submitButton
             }
             .padding(.horizontal, Constants.horizontalPadding)
             .safeAreaPadding()
@@ -101,72 +131,89 @@ struct UserPhoneNumberView: View {
         // MARK: - Country Selection Sheet
         .sheet(isPresented: $presentSheet) {
             NavigationView {
-                List(filteredResorts) { country in
-                    Button {
-                        userPhone.country = country
-                        presentSheet = false
-                        searchCountry = ""
-                    } label: {
+                List {
+                    ForEach(filteredResorts, id: \.id) { country in
                         HStack {
                             Text(country.flag)
+                                .font(.system(size: Constants.countryFlagFontSize))
                             Text(country.name)
-                                .font(.body)
+                                .font(.LeagueSpartan(size: 16))
                             Spacer()
                             Text(country.dial_code)
-                                .foregroundColor(.secondary)
+                                .font(.LeagueSpartan(size: 16))
+                        }
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            userPhone.country = country
+                            presentSheet = false
                         }
                     }
-                    .listRowBackground(Color.white.opacity(0.08))
                 }
-                .listStyle(.plain)
-                .searchable(text: $searchCountry, prompt: "Your country")
+                .listStyle(PlainListStyle())
+                .navigationTitle("Select Country")
+                .navigationBarTitleDisplayMode(.inline)
+                .searchable(text: $searchCountry, prompt: "Search country")
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button("Done") {
+                            presentSheet = false
+                        }
+                    }
+                }
             }
-            .presentationDetents([.medium, .large])
         }
-        .navigationBarBackButtonHidden()
         .onAppear {
+            // Auto-focus on phone number input
             isFocused = true
+            
+            // Auto-send code if phone number is complete when returning from OTP screen
+            if checkPhoneNumberCompletion(userPhone.number) && statusMessage.isEmpty {
+                sendVerificationCodeWithFeedback()
+            }
         }
     }
-
+    
     // MARK: - View Components
-    // Header Section
+    
+    /// Header section with title and subtitle
     var headerSection: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            Text("what's your phone number?")
+        VStack(alignment: .leading) {
+            Text("enter your \nphone number")
                 .foregroundStyle(Colors.primaryDark)
                 .font(.LibreBodoni(size: Constants.titleFontSize))
                 .frame(maxWidth: .infinity, alignment: .leading)
             
-            Text("verification code will be sent to the following number. message and data rates may apply.")
-                .foregroundStyle(Color.black)
+            Text("we'll send you a verification code")
+                .foregroundStyle(Colors.primaryDark)
                 .font(.LeagueSpartan(size: Constants.subtitleFontSize))
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(.top, Constants.topPadding)
-        .enableInjection()
     }
-
-    // Country Selection Button
+    
+    /// Country selection button
     var countrySelectionButton: some View {
         Button {
             presentSheet = true
         } label: {
-            HStack {
+            HStack(spacing: 8) {
                 Text(userPhone.country.flag)
-                    .foregroundStyle(Color.black)
-                    .font(.LibreBodoni(size: Constants.countryFlagFontSize))
-                
+                    .font(.system(size: Constants.countryFlagFontSize))
                 Images.downArrowSolid
                     .resizable()
                     .frame(width: Constants.downArrowSize.width, 
                             height: Constants.downArrowSize.height)
             }
+            .frame(width: Constants.countryButtonWidth)
         }
-        .frame(width: Constants.countryButtonWidth)
+        .toolbar {
+            ToolbarItem(placement: .keyboard) {
+                keyboardAccessoryView
+            }
+        }
     }
-
-    // Phone Number Input Field
+    
+    /// Phone number input field
     var phoneNumberInputField: some View {
         HStack {
             Text(userPhone.country.dial_code)
@@ -179,38 +226,20 @@ struct UserPhoneNumberView: View {
                 .keyboardType(.numberPad)
                 .focused($isFocused)
                 .textContentType(.telephoneNumber)
-                .toolbar {
-                    ToolbarItem(placement: .keyboard) {
-                        keyboardAccessoryView
-                    }
-                }
+                .tint(.clear) // Hide cursor
                 .onChange(of: userPhone.number) { _, newValue in
                     let formattedNumber = userPhone.formatPhoneNumber(newValue, pattern: userPhone.country.pattern)
                     userPhone.number = formattedNumber
                     
-                    // Send verification code when number is complete
-                    if checkPhoneNumberCompletion(formattedNumber) && !isVerifying {
-                        sendVerificationCode()
+                    // Only clear messages if we're not in the middle of sending
+                    if !isCodeSending {
+                        statusMessage = ""
+                        messageType = .none
                     }
-                }
-        }
-    }
-
-    // Submit Button
-    var submitButton: some View {
-        HStack {
-            Spacer()
-            Images.smily
-                .resizable()
-                .frame(width: Constants.smileySize.width, 
-                        height: Constants.smileySize.height)
-                .padding(.init(top: 0, 
-                                leading: 0, 
-                                bottom: Constants.smileyBottomPadding, 
-                                trailing: Constants.smileyTrailingPadding))
-                .onTapGesture {
-                    if userPhone.isValidPhoneNumber(userPhone.number, pattern: userPhone.country.pattern) {
-                        appController.path.append(.otpVerify)
+                    
+                    // Send verification code when number is complete
+                    if checkPhoneNumberCompletion(formattedNumber) && !isCodeSending {
+                        sendVerificationCodeWithFeedback()
                     }
                 }
         }
@@ -227,14 +256,38 @@ struct UserPhoneNumberView: View {
     }
     
     // MARK: - Private Methods
-    private func sendVerificationCode() {
-        guard !isVerifying else { return }
-        isVerifying = true
+    private func sendVerificationCodeWithFeedback() {
+        guard !isCodeSending else { return }
         
-        userPhone.sendVerificationCode { success in
-            isVerifying = false
-            if !success {
-                showError = true
+        isCodeSending = true
+        statusMessage = "Sending code..."
+        messageType = .none
+        
+        userPhone.sendVerificationCode { result in
+            isCodeSending = false
+            
+            switch result {
+            case .success:
+                statusMessage = "Code sent!"
+                messageType = .success
+                // Navigate to OTP view
+                appController.path.append(.otpVerify)
+                
+            case .invalidPhoneNumber:
+                statusMessage = "Failure to send code, check that your phone number is correct."
+                messageType = .error
+                
+            case .networkError:
+                statusMessage = "Network error. Please check your connection and try again."
+                messageType = .error
+                
+            case .rateLimited:
+                statusMessage = "Wait just a few seconds and try to resend again."
+                messageType = .error
+                
+            case .unknownError(let message):
+                statusMessage = "Code failed to send—try another phone number."
+                messageType = .error
             }
         }
     }

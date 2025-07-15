@@ -18,46 +18,24 @@ struct OnboardingFlow: View {
                         UserPhoneNumberView()
                     case .otpVerify:
                         OtpVerifyView()
-                    case .adminVerify:
-                        AdminVerifyView()
                     case .userDetails:
                         NamePageView()
                     case .birthdate:
                         BirthdateView()
-                    case .userLocation:
-                        UserLocationView()
                     case .almaMater:
                         AlmaMaterView()
-                    case .moreAboutYou:
-                        MoreAboutYouView()
+                    case .citySelection:
+                        CitySelectionView()
                     case .hobbies:
                         HobbiesView()
-                    case .bio:
-                        BioView()
                     case .profilePics:
                         ProfilePicView()
-                    case .contacts:
-                        ContactsView()
                     case .pluggingIn:
                         PluggingYouIn()
                     }
                 }
         }
         .ignoresSafeArea(.keyboard)
-    }
-}
-
-struct OnboardingBackgroundView: View {
-
-    let imageName: String
-    
-    var body: some View {
-        Image(imageName)
-            .resizable()
-            .scaledToFill()
-//            .overlay(Color.white.opacity(0.4))
-            .frame(minWidth: 0, maxWidth: .infinity)
-            .ignoresSafeArea()
     }
 }
 
