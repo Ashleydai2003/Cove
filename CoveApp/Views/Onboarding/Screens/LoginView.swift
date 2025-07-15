@@ -31,7 +31,7 @@ struct LoginView: View {
                 // Initiates the sign-in flow
                 SignOnButton(text: "let's go") {
                     // Start the proper onboarding flow
-                    appController.path.append(.enterPhoneNumber)
+                    appController.path.append(.enterPhoneNumber) 
                 }
                 .padding(.bottom)
                      

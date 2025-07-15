@@ -21,9 +21,19 @@ struct UserPhoneNumberView: View {
     @State private var presentSheet = false
     @State private var searchCountry: String = ""
     @FocusState private var isFocused: Bool
-    @State private var isVerifying = false
+    @State private var isCodeSending = false
     @State private var showError = false
     @State private var userPhone = UserPhoneNumber(number: "",country: Country(id: "0235", name: "USA", flag: "🇺🇸", code: "US", dial_code: "+1", pattern: "### ### ####", limit: 17))
+    
+    // Status messaging
+    @State private var statusMessage: String = ""
+    @State private var messageType: MessageType = .none
+    
+    enum MessageType {
+        case none
+        case success
+        case error
+    }
     
     // MARK: - Constants
     
@@ -67,6 +77,22 @@ struct UserPhoneNumberView: View {
         return digitsOnly.count == expectedLength
     }
     
+    // MARK: - Status Message Display
+    
+    private var statusMessageView: some View {
+        HStack {
+            if !statusMessage.isEmpty {
+                Text(statusMessage)
+                    .font(.LeagueSpartan(size: 14))
+                    .foregroundColor(messageType == .success ? .green : .red)
+            }
+            Spacer()
+        }
+        .padding(.horizontal, Constants.horizontalPadding)
+        .padding(.top, 8)
+        .animation(.easeInOut(duration: 0.3), value: statusMessage)
+    }
+    
     // MARK: - Main View Body
     var body: some View {
         ZStack {
@@ -85,6 +111,9 @@ struct UserPhoneNumberView: View {
                 }
                 .padding(.top, Constants.phoneInputTopPadding)
                 
+                // MARK: - Status Message
+                statusMessageView
+                
                 Spacer()
                 
                 // MARK: - Submit Button
@@ -101,81 +130,86 @@ struct UserPhoneNumberView: View {
         // MARK: - Country Selection Sheet
         .sheet(isPresented: $presentSheet) {
             NavigationView {
-                List(filteredResorts) { country in
-                    Button {
-                        // Clear the phone number if it's not valid for the new country
-                        let currentDigits = userPhone.number.filter { $0.isNumber }
-                        let newCountryMaxDigits = country.pattern.filter { $0 == "#" }.count
-                        
-                        // If current number has more digits than new country allows, clear it
-                        if currentDigits.count > newCountryMaxDigits {
-                            userPhone.number = ""
-                        }
-                        
-                        userPhone.country = country
-                        presentSheet = false
-                        searchCountry = ""
-                    } label: {
+                List {
+                    ForEach(filteredResorts, id: \.id) { country in
                         HStack {
                             Text(country.flag)
+                                .font(.system(size: Constants.countryFlagFontSize))
                             Text(country.name)
-                                .font(.body)
+                                .font(.LeagueSpartan(size: 16))
                             Spacer()
                             Text(country.dial_code)
-                                .foregroundColor(.secondary)
+                                .font(.LeagueSpartan(size: 16))
+                        }
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            userPhone.country = country
+                            presentSheet = false
                         }
                     }
-                    .listRowBackground(Color.white.opacity(0.08))
                 }
-                .listStyle(.plain)
-                .searchable(text: $searchCountry, prompt: "Your country")
+                .listStyle(PlainListStyle())
+                .navigationTitle("Select Country")
+                .navigationBarTitleDisplayMode(.inline)
+                .searchable(text: $searchCountry, prompt: "Search country")
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button("Done") {
+                            presentSheet = false
+                        }
+                    }
+                }
             }
-            .presentationDetents([.medium, .large])
         }
-        .navigationBarBackButtonHidden()
         .onAppear {
-            isFocused = true
+            // Auto-send code if phone number is complete when returning from OTP screen
+            if checkPhoneNumberCompletion(userPhone.number) && statusMessage.isEmpty {
+                sendVerificationCodeWithFeedback()
+            }
         }
     }
-
+    
     // MARK: - View Components
-    // Header Section
+    
+    /// Header section with title and subtitle
     var headerSection: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            Text("what's your phone number?")
+        VStack(alignment: .leading) {
+            Text("enter your \nphone number")
                 .foregroundStyle(Colors.primaryDark)
                 .font(.LibreBodoni(size: Constants.titleFontSize))
                 .frame(maxWidth: .infinity, alignment: .leading)
             
-            Text("verification code will be sent to the following number. message and data rates may apply.")
-                .foregroundStyle(Color.black)
+            Text("we'll send you a verification code")
+                .foregroundStyle(Colors.primaryDark)
                 .font(.LeagueSpartan(size: Constants.subtitleFontSize))
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(.top, Constants.topPadding)
-        .enableInjection()
     }
-
-    // Country Selection Button
+    
+    /// Country selection button
     var countrySelectionButton: some View {
         Button {
             presentSheet = true
         } label: {
-            HStack {
+            HStack(spacing: 8) {
                 Text(userPhone.country.flag)
-                    .foregroundStyle(Color.black)
-                    .font(.LibreBodoni(size: Constants.countryFlagFontSize))
-                
+                    .font(.system(size: Constants.countryFlagFontSize))
                 Images.downArrowSolid
                     .resizable()
                     .frame(width: Constants.downArrowSize.width, 
                             height: Constants.downArrowSize.height)
             }
+            .frame(width: Constants.countryButtonWidth)
         }
-        .frame(width: Constants.countryButtonWidth)
+        .toolbar {
+            ToolbarItem(placement: .keyboard) {
+                keyboardAccessoryView
+            }
+        }
     }
-
-    // Phone Number Input Field
+    
+    /// Phone number input field
     var phoneNumberInputField: some View {
         HStack {
             Text(userPhone.country.dial_code)
@@ -192,33 +226,19 @@ struct UserPhoneNumberView: View {
                     let formattedNumber = userPhone.formatPhoneNumber(newValue, pattern: userPhone.country.pattern)
                     userPhone.number = formattedNumber
                     
+                    // Only clear messages if we're not in the middle of sending
+                    if !isCodeSending {
+                        statusMessage = ""
+                        messageType = .none
+                    }
+                    
                     // Send verification code when number is complete
-                    if checkPhoneNumberCompletion(formattedNumber) && !isVerifying {
-                        sendVerificationCode()
+                    if checkPhoneNumberCompletion(formattedNumber) && !isCodeSending {
+                        sendVerificationCodeWithFeedback()
                     }
                 }
         }
     }
-
-    // // Submit Button
-    // var submitButton: some View {
-    //     HStack {
-    //         Spacer()
-    //         Images.nextArrow
-    //             .resizable()
-    //             .frame(width: Constants.arrowSize.width, 
-    //                     height: Constants.arrowSize.height)
-    //             .padding(EdgeInsets(top: 0, 
-    //                                 leading: 0, 
-    //                                 bottom: Constants.arrowBottomPadding, 
-    //                                 trailing: Constants.arrowTrailingPadding))
-    //             .onTapGesture {
-    //                 if userPhone.isValidPhoneNumber(userPhone.number, pattern: userPhone.country.pattern) {
-    //                     appController.path.append(.otpVerify)
-    //                 }
-    //             }
-    //     }
-    // }
 
     // MARK: - Computed Properties
     /// Filters countries based on search input
@@ -231,17 +251,38 @@ struct UserPhoneNumberView: View {
     }
     
     // MARK: - Private Methods
-    private func sendVerificationCode() {
-        guard !isVerifying else { return }
-        isVerifying = true
+    private func sendVerificationCodeWithFeedback() {
+        guard !isCodeSending else { return }
         
-        userPhone.sendVerificationCode { success in
-            isVerifying = false
-            if success {
-                // Automatically navigate to OTP verification screen
+        isCodeSending = true
+        statusMessage = "Sending code..."
+        messageType = .none
+        
+        userPhone.sendVerificationCode { result in
+            isCodeSending = false
+            
+            switch result {
+            case .success:
+                statusMessage = "Code sent!"
+                messageType = .success
+                // Navigate to OTP view
                 appController.path.append(.otpVerify)
-            } else {
-                showError = true
+                
+            case .invalidPhoneNumber:
+                statusMessage = "Failure to send code, check that your phone number is correct."
+                messageType = .error
+                
+            case .networkError:
+                statusMessage = "Network error. Please check your connection and try again."
+                messageType = .error
+                
+            case .rateLimited:
+                statusMessage = "Too many attempts. Please wait before trying again."
+                messageType = .error
+                
+            case .unknownError(let message):
+                statusMessage = "Error: \(message)"
+                messageType = .error
             }
         }
     }
