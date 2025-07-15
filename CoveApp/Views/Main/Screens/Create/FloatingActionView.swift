@@ -53,29 +53,31 @@ struct FloatingActionView: View {
                         }
                     }
                     
-                    // Event option
-                    Button(action: {
-                        showMenu = false
-                        showCreateEventSheet = true
-                    }) {
-                        HStack() {
-                            Text("event")
-                                .font(.LibreBodoni(size: 25))
-                                .foregroundColor(.white)
-                            Spacer()
-                            Image("confetti")
-                                .resizable()
-                                .frame(maxWidth: 35, maxHeight: 35)
-                                .foregroundColor(.white)
+                    // Event option - only show when there's a cove context
+                    if coveId != nil {
+                        Button(action: {
+                            showMenu = false
+                            showCreateEventSheet = true
+                        }) {
+                            HStack() {
+                                Text("event")
+                                    .font(.LibreBodoni(size: 25))
+                                    .foregroundColor(.white)
+                                Spacer()
+                                Image("confetti")
+                                    .resizable()
+                                    .frame(maxWidth: 35, maxHeight: 35)
+                                    .foregroundColor(.white)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 16)
+                            .background(
+                                RoundedRectangle(cornerRadius: 28)
+                                    .fill(Colors.primaryDark)
+                                    .shadow(color: .black.opacity(0.15), radius: 4, x: 0, y: 2)
+                            )
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 16)
-                        .background(
-                            RoundedRectangle(cornerRadius: 28)
-                                .fill(Colors.primaryDark)
-                                .shadow(color: .black.opacity(0.15), radius: 4, x: 0, y: 2)
-                        )
                     }
                 }
                 .frame(maxWidth: 160) // Increase width to prevent text wrapping
