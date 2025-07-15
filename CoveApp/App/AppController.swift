@@ -12,16 +12,12 @@ import FirebaseAuth
 enum OnboardingRoute: Hashable {
     case enterPhoneNumber
     case otpVerify
-    case adminVerify
     case userDetails
     case birthdate
-    case userLocation
     case almaMater
-    case moreAboutYou
+    case citySelection
     case hobbies
-    case bio
     case profilePics
-    case contacts
     case pluggingIn
 }
 
@@ -86,9 +82,6 @@ class AppController: ObservableObject {
     
     /// Shared InboxViewModel instance for cove invites and caching logic
     @Published var inboxViewModel = InboxViewModel()
-
-    /// Controls visibility of the custom tab bar used in HomeView. Child views (e.g., FriendProfileView) can toggle this when they need full-screen presentation.
-    @Published var showTabBar: Bool = true
     
     /// Whether to automatically show the inbox on home screen (when there are unopened invites)
     @Published var shouldAutoShowInbox = false

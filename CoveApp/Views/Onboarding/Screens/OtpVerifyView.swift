@@ -9,20 +9,25 @@
 import SwiftUI
 
 /// View for handling OTP (One-Time Password) verification during user onboarding
-/// Manages a 5-digit verification code input with automatic field advancement
+/// Manages a 6-digit verification code input with automatic field advancement
 struct OtpVerifyView: View {
     // MARK: - Properties
     
     /// App controller for managing navigation and shared state
     @EnvironmentObject var appController: AppController
     
-    /// Array to store individual digits of the OTP
-    /// Initialized with 6 empty strings for each digit position
-    @State private var otp: [String] = Array(repeating: "", count: 6)
+    /// Single string to store the complete OTP
+    @State private var otpText: String = ""
     
-    /// Tracks which OTP input field is currently focused
-    /// Used for automatic field advancement and keyboard management
-    @FocusState private var focusedIndex: Int?
+    /// Tracks if the hidden input field is focused
+    @FocusState private var isInputFocused: Bool
+    
+    /// Computed property to get individual digits for display
+    private var otpDigits: [String] {
+        let digits = Array(otpText).map(String.init)
+        let paddedDigits = digits + Array(repeating: "", count: max(0, 6 - digits.count))
+        return Array(paddedDigits.prefix(6))
+    }
     
     /// Tracks whether the OTP verification process is in progress
     @State private var isVerifying = false
@@ -30,17 +35,35 @@ struct OtpVerifyView: View {
     /// Tracks whether an error should be shown
     @State private var showError = false
     
+    /// Inline error message below OTP digits
+    @State private var otpErrorMessage: String = ""
+    
+    /// Status messaging
+    @State private var statusMessage: String = ""
+    @State private var messageType: MessageType = .none
+    
+    /// Rate limiting for resend
+    @State private var lastResendTime: Date = Date.distantPast
+    @State private var resendCooldownRemaining: Int = 0
+    @State private var cooldownTimer: Timer?
+    
+    enum MessageType {
+        case none
+        case success
+        case error
+    }
+    
     // Custom input accessory view for keyboard
     private var keyboardAccessoryView: some View {
         HStack {
             Spacer()
             Button("Done") {
-                focusedIndex = nil
+                isInputFocused = false
             }
             .padding(.trailing, 16)
             .padding(.vertical, 8)
         }
-        .background(Color(.systemGray6))
+        .background(Color.gray.opacity(0.1))
     }
     
     // MARK: - Computed Properties
@@ -58,18 +81,43 @@ struct OtpVerifyView: View {
         return phoneNumber
     }
     
+    // MARK: - Status Message Display
+    
+    private var statusMessageView: some View {
+        HStack {
+            if !statusMessage.isEmpty {
+                Text(statusMessage)
+                    .font(.LeagueSpartan(size: 14))
+                    .foregroundColor(messageType == .success ? .green : 
+                                   messageType == .error ? .red : Colors.primaryDark)
+            }
+            Spacer()
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 8)
+        .animation(.easeInOut(duration: 0.3), value: statusMessage)
+    }
+    
     // MARK: - View Body
     
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                OnboardingBackgroundView(imageName: "otp_background")
-                    .opacity(0.4)
-                
+                OnboardingBackgroundView()
                 VStack {
                     // MARK: - Navigation Header
                     HStack {
                         Button {
+                            // Clear verification state but keep phone number
+                            OtpVerify.clearVerificationState()
+                            
+                            // Reset local state
+                            statusMessage = ""
+                            messageType = .none
+                            otpErrorMessage = ""
+                            otpText = ""
+                            
+                            // Navigate back (UserPhoneNumberView will auto-send again)
                             appController.path.removeLast()
                         } label: {
                             Images.backArrow
@@ -103,55 +151,71 @@ struct OtpVerifyView: View {
                     .padding(.top, 40)
                     
                     // MARK: - OTP Input Fields
-                    HStack(spacing: 10) {
-                        ForEach(0..<otp.count, id: \.self) { index in
-                            VStack {
-                                TextField("", text: $otp[index])
-                                    .keyboardType(.numberPad)
-                                    .foregroundStyle(isVerifying ? Colors.k6F6F73 : Color.black)
-                                    .multilineTextAlignment(.center)
-                                    .font(.LibreCaslon(size: 40))
-                                    .textInputAutocapitalization(.never)
-                                    .autocorrectionDisabled()
-                                    .submitLabel(.done)
-                                    .focused($focusedIndex, equals: index)
-                                    .textContentType(.oneTimeCode)
-                                    .disabled(isVerifying)
-                                    .toolbar {
-                                        ToolbarItem(placement: .keyboard) {
-                                            keyboardAccessoryView
-                                        }
-                                    }
-                                    .onChange(of: otp[index]) { oldValue, newValue in
-                                        // Handle input changes
-                                        if newValue.count > 1 {
-                                            otp[index] = String(newValue.prefix(1))
-                                        }
-                                        
-                                        // Move to next field if a digit is entered
-                                        if !newValue.isEmpty && index < otp.count - 1 {
-                                            focusedIndex = index + 1
-                                        }
-                                        
-                                        // Move to previous field if backspace is pressed
-                                        if newValue.isEmpty && index > 0 {
-                                            focusedIndex = index - 1
-                                        }
-                                        
-                                        // Verify if all digits are entered
-                                        if otp.allSatisfy({ !$0.isEmpty }) {
-                                            verifyOTP()
-                                        }
-                                    }
-                                
-                                // Bottom divider for each input field
-                                Divider()
-                                    .frame(height: 2)
-                                    .background(isVerifying ? Colors.k6F6F73 : Color.black.opacity(0.58))
+                    ZStack {
+                        // Hidden TextField for actual input
+                        TextField("", text: $otpText)
+                            .keyboardType(.numberPad)
+                            .textContentType(.oneTimeCode)
+                            .focused($isInputFocused)
+                            .opacity(0)
+                            .disabled(isVerifying)
+                            .toolbar {
+                                ToolbarItem(placement: .keyboard) {
+                                    keyboardAccessoryView
+                                }
                             }
+                            .onChange(of: otpText) { oldValue, newValue in
+                                handleOTPInput(oldValue: oldValue, newValue: newValue)
+                            }
+                        
+                        // Visual representation of OTP fields
+                        HStack(spacing: 10) {
+                            ForEach(0..<6, id: \.self) { index in
+                                VStack {
+                                    ZStack {
+                                        // Display digit or empty space
+                                        Text(otpDigits[index])
+                                            .font(.LibreCaslon(size: 40))
+                                            .foregroundStyle(isVerifying ? Color.gray : Color.black)
+                                            .frame(width: 40, height: 50)
+                                        
+                                        // Show cursor on current field
+                                        if index == otpText.count && isInputFocused && !isVerifying {
+                                            Rectangle()
+                                                .fill(Color.black)
+                                                .frame(width: 2, height: 30)
+                                                .animation(.easeInOut(duration: 0.5).repeatForever(), value: isInputFocused)
+                                        }
+                                    }
+                                    
+                                    // Bottom divider for each input field
+                                    Divider()
+                                        .frame(height: 2)
+                                        .background(isVerifying ? Color.gray : Color.black.opacity(0.58))
+                                }
+                            }
+                        }
+                        .onTapGesture {
+                            isInputFocused = true
                         }
                     }
                     .padding(.top, 50)
+                    
+                    // MARK: - OTP Error Message (inline below digits)
+                    if !otpErrorMessage.isEmpty {
+                        HStack {
+                            Text(otpErrorMessage)
+                                .font(.LeagueSpartan(size: 12))
+                                .foregroundColor(.red)
+                                .padding(.top, 8)
+                            Spacer()
+                        }
+                        .padding(.horizontal, 20)
+                        .animation(.easeInOut(duration: 0.3), value: otpErrorMessage)
+                    }
+                    
+                    // MARK: - Status Message
+                    statusMessageView
                     
                     // MARK: - Loading Indicator
                     if isVerifying {
@@ -163,14 +227,7 @@ struct OtpVerifyView: View {
                     // MARK: - Resend Code Button
                     HStack {
                         Spacer()
-                        Button {
-                            resendCode()
-                        } label: {
-                            Text("resend code")
-                                .foregroundStyle(Colors.primaryDark)
-                                .font(.LeagueSpartan(size: 15))
-                        }
-                        .disabled(isVerifying)
+                        resendButton
                     }
                     .padding(.top, 5)
                     
@@ -178,7 +235,7 @@ struct OtpVerifyView: View {
                 }
                 .padding(.horizontal, 20)
                 .safeAreaPadding()
-                // Error alert
+                // Error alert (fallback)
                 .alert("Error", isPresented: $showError) {
                     Button("OK", role: .cancel) { }
                 } message: {
@@ -187,39 +244,157 @@ struct OtpVerifyView: View {
             }
         }
         .navigationBarBackButtonHidden()  // Hide default back button to prevent accidental navigation
-        // Focus on the first input field when the view appears
+        // Focus on the input field when the view appears
         .onAppear {
-            focusedIndex = 0
+            isInputFocused = true
+        }
+        .onDisappear {
+            // Clean up timer when view disappears
+            cooldownTimer?.invalidate()
+            cooldownTimer = nil
+        }
+    }
+    
+    // MARK: - Resend Button
+    
+    private var resendButton: some View {
+        Button {
+            resendCodeWithCooldown()
+        } label: {
+            if resendCooldownRemaining > 0 {
+                Text("resend code (\(resendCooldownRemaining)s)")
+                    .foregroundColor(.gray)
+                    .font(.LeagueSpartan(size: 15))
+            } else {
+                Text("resend code")
+                    .foregroundColor(.blue)
+                    .font(.LeagueSpartan(size: 15))
+            }
+        }
+        .disabled(resendCooldownRemaining > 0 || isVerifying)
+    }
+    
+    // MARK: - Input Handling Methods
+    
+    /// Handles OTP input with improved focus management and backspace behavior
+    private func handleOTPInput(oldValue: String, newValue: String) {
+        // Clear error message when user starts typing (especially on backspace)
+        if newValue.count < oldValue.count && !otpErrorMessage.isEmpty {
+            otpErrorMessage = ""
+        }
+        
+        // Limit to 6 digits maximum
+        if newValue.count > 6 {
+            otpText = String(newValue.prefix(6))
+            return
+        }
+        
+        // Only allow numeric input
+        let filtered = newValue.filter { $0.isNumber }
+        if filtered != newValue {
+            otpText = filtered
+            return
+        }
+        
+        // Auto-verify when all 6 digits are entered
+        if newValue.count == 6 {
+            verifyOTP()
         }
     }
     
     private func verifyOTP() {
         guard !isVerifying else { return }
-        isVerifying = true
-        focusedIndex = nil // Dismiss keyboard
         
-        let code = otp.joined()
-        OtpVerify.verifyOTP(otp: code) { success in
+        isVerifying = true
+        otpErrorMessage = "" // Clear previous error
+        statusMessage = "Verifying..."
+        messageType = .none
+        
+        let code = otpText
+        OtpVerify.verifyOTP(code) { success, errorMessage in
             isVerifying = false
-            if !success {
-                showError = true
+            
+            if success {
+                // Success - dismiss keyboard since we're navigating away
+                isInputFocused = false
+                statusMessage = ""
+                messageType = .none
+                otpErrorMessage = ""
+            } else {
+                // Show inline error below OTP digits - keep keyboard active for immediate editing
+                otpErrorMessage = errorMessage ?? "Incorrect code. Please check and try again."
+                statusMessage = ""
+                messageType = .none
+                // Reset focus to last digit for immediate backspace
+                isInputFocused = false
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    isInputFocused = true
+                }
             }
         }
     }
     
-    private func resendCode() {
+    private func resendCodeWithCooldown() {
+        guard resendCooldownRemaining == 0 else { return }
+        
+        // Start cooldown
+        lastResendTime = Date()
+        resendCooldownRemaining = 5
+        startCooldownTimer()
+        
+        // Clear previous messages
+        otpErrorMessage = ""
+        statusMessage = "Sending code..."
+        messageType = .none
+        
+        resendCode { result in
+            switch result {
+            case .success:
+                statusMessage = "Code sent!"
+                messageType = .success
+                otpText = "" // Clear OTP input
+                isInputFocused = true // Focus on first digit
+                
+            case .invalidPhoneNumber:
+                statusMessage = "Failure to send code, check that your phone number is correct."
+                messageType = .error
+                
+            case .networkError:
+                statusMessage = "Network error. Please check your connection and try again."
+                messageType = .error
+                
+            case .rateLimited:
+                statusMessage = "Wait just a few seconds and try to resend again."
+                messageType = .error
+                
+            case .unknownError(let message):
+                statusMessage = "Code failed to send—try another phone number."
+                messageType = .error
+            }
+        }
+    }
+    
+    private func startCooldownTimer() {
+        cooldownTimer?.invalidate()
+        cooldownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+            if resendCooldownRemaining > 0 {
+                resendCooldownRemaining -= 1
+            } else {
+                cooldownTimer?.invalidate()
+                cooldownTimer = nil
+            }
+        }
+    }
+    
+    private func resendCode(completion: @escaping (CodeSendResult) -> Void) {
         guard let phoneNumber = UserDefaults.standard.string(forKey: "UserPhoneNumber") else {
-            appController.errorMessage = "No phone number found"
-            showError = true
+            completion(.unknownError("No phone number found"))
             return
         }
         
         let userPhone = UserPhoneNumber(number: phoneNumber, country: Country(id: "0235", name: "USA", flag: "🇺🇸", code: "US", dial_code: "+1", pattern: "### ### ####", limit: 17))
-        userPhone.sendVerificationCode { success in
-            if !success {
-                appController.errorMessage = "Failed to resend verification code"
-                showError = true
-            }
+        userPhone.sendVerificationCode { result in
+            completion(result)
         }
     }
 }

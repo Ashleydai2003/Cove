@@ -3,29 +3,48 @@ import FirebaseAuth
 
 struct OtpVerify {
     /// API base URL and login path
-private static let apiBaseURL = AppConstants.API.baseURL
+    private static let apiBaseURL = AppConstants.API.baseURL
     private static let apiLoginPath = "/login"
     
     /// Verifies the OTP code entered by the user
     /// - Parameters:
     ///   - code: The OTP code to verify
     ///   - completion: Callback with success status
-    static func verifyOTP(otp: String, completion: @escaping (Bool) -> Void) {
+    static func verifyOTP(_ code: String, completion: @escaping (Bool) -> Void) {
+        print("Attempting to verify OTP code")
+        
         let credential = PhoneAuthProvider.provider().credential(
             withVerificationID: UserDefaults.standard.string(forKey: "verification_id") ?? "",
             verificationCode: otp
         )
         
         Auth.auth().signIn(with: credential) { authResult, error in
-            if let error = error {
-                Log.error("Firebase OTP verification failed: \(error.localizedDescription)")
-                completion(false)
-                return
-            }
-            
-            // Firebase auth successful, now make backend login request
-            makeLoginRequest { success in
-                completion(success)
+            DispatchQueue.main.async {
+                if let error = error {
+                    print("❌ Firebase Auth Error: \(error.localizedDescription)")
+                    print("❌ Error details: \(error)")
+                    AppController.shared.errorMessage = error.localizedDescription
+                    completion(false)
+                    return
+                }
+                
+                // Only print user if needed, don't bind unused
+                if authResult?.user != nil {
+                    print("✅ Successfully verified OTP and signed in")
+                    // Make login request to backend
+                    makeLoginRequest { success in
+                        if success {
+                            completion(true)
+                        } else {
+                            AppController.shared.errorMessage = "Failed to login to backend"
+                            completion(false)
+                        }
+                    }
+                } else {
+                    print("❌ Failed to verify OTP - no error but no auth result")
+                    AppController.shared.errorMessage = "Failed to verify OTP"
+                    completion(false)
+                }
             }
         }
     }
@@ -33,6 +52,7 @@ private static let apiBaseURL = AppConstants.API.baseURL
     /// Handles authentication failure by resetting relevant state
     static func handleAuthFailure() {
         // Clear the stored phone number
+        print(("User Default Removed!"))
         UserDefaults.standard.removeObject(forKey: "UserPhoneNumber")
         
         // Clear the stored verification ID
@@ -81,15 +101,12 @@ private static let apiBaseURL = AppConstants.API.baseURL
                         AppController.shared.profileModel.verified = loginResponse.user.verified
                         
                         if loginResponse.user.onboarding {
-                            // User is still in onboarding - navigate to appropriate onboarding screen
                             if loginResponse.user.verified {
-                                // Admin user - go to admin verification
+                                print("✅ User is verified")
                                 AppController.shared.path.append(.adminVerify)
                                 Onboarding.setAdminCove(adminCove: loginResponse.user.cove ?? "create new cove!")
                             } else {
-                                // Regular user - go to user details
                                 AppController.shared.path.append(.userDetails)
-                            }
                         } else {
                             // User has completed onboarding - go to data loading screen
                             AppController.shared.path = [.pluggingIn]
@@ -98,7 +115,8 @@ private static let apiBaseURL = AppConstants.API.baseURL
                     }
                     completion(true)
                 case .failure(let error):
-                    Log.error("Backend login failed: \(error.localizedDescription)")
+                    print("❌ Backend login error: \(error.localizedDescription)")
+                    AppController.shared.errorMessage = error.localizedDescription
                     completion(false)
                 }
             }

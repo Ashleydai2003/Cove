@@ -12,11 +12,14 @@ let tabIconSize: CGFloat = 10
 
 // MARK: - Image Extension for Tab Bar Icons
 extension Image {
-    func tabBarIcon(isSelected: Bool = false) -> some View {
-        self
+    func tabBarIcon(isSelected: Bool = false, isMiddleButton: Bool = false) -> some View {
+        let baseSize: CGFloat = isMiddleButton ? 45 : 40
+        let selectedSize: CGFloat = isMiddleButton ? 48 : 43
+        
+        return self
             .resizable()
             .aspectRatio(contentMode: .fill)
-            .frame(maxWidth: isSelected ? 43 : 40, maxHeight: isSelected ? 43 : 40)
+            .frame(maxWidth: isSelected ? selectedSize : baseSize, maxHeight: isSelected ? selectedSize : baseSize)
     }
 }
 
@@ -34,7 +37,7 @@ struct TabBarView: View {
             // Home Tab
             Button(action: { selectedTab = 1 }) {
                 Image(selectedTab == 1 ? "home_selected" : "home_unselected")
-                    .tabBarIcon(isSelected: selectedTab == 1)
+                    .tabBarIcon(isSelected: selectedTab == 1, isMiddleButton: false)
                     .animation(nil, value: selectedTab)
             }
             .frame(maxWidth: 50, maxHeight: 50)
@@ -44,7 +47,7 @@ struct TabBarView: View {
             // Calendar Tab
             Button(action: { selectedTab = 2 }) {
                 Image(selectedTab == 2 ? "calendar_selected" : "calendar_unselected")
-                    .tabBarIcon(isSelected: selectedTab == 2)
+                    .tabBarIcon(isSelected: selectedTab == 2, isMiddleButton: false)
                     .animation(nil, value: selectedTab)
             }
             .frame(maxWidth: 50, maxHeight: 50)
@@ -54,20 +57,20 @@ struct TabBarView: View {
             // Cove Tab
             Button(action: { selectedTab = 3 }) {
                 Image(selectedTab == 3 ? "cove_selected" : "cove_unselected")
-                    .tabBarIcon(isSelected: selectedTab == 3)
+                    .tabBarIcon(isSelected: selectedTab == 3, isMiddleButton: true)
                     .animation(nil, value: selectedTab)
             }
-            .frame(maxWidth: 50, maxHeight: 50)
+            .frame(maxWidth: 56, maxHeight: 56)
             
             Spacer()
             
             // Friends Tab
             Button(action: { selectedTab = 4 }) {
                 Image(selectedTab == 4 ? "friends_selected" : "friends_unselected")
-                    .tabBarIcon(isSelected: selectedTab == 4)
+                    .tabBarIcon(isSelected: selectedTab == 4, isMiddleButton: true)
                     .animation(nil, value: selectedTab)
             }
-            .frame(maxWidth: 50, maxHeight: 50)
+            .frame(maxWidth: 56, maxHeight: 56)
             
             Spacer()
             
@@ -106,6 +109,7 @@ struct TabBarView: View {
                         .aspectRatio(contentMode: .fill)
                         .frame(maxWidth: 40, maxHeight: 40)
                         .clipShape(Circle())
+                        .tabBarIcon(isSelected: selectedTab == 5, isMiddleButton: false)
                         .overlay(
                             Circle()
                                 .stroke(Color(hex: "F5F0E6"), lineWidth: selectedTab == 5 ? 3 : 0)
@@ -147,10 +151,8 @@ struct HomeView: View {
                 }
             }
 
-            // Tab bar - conditionally shown based on global flag so full-screen views can hide it
-            if appController.showTabBar {
-                TabBarView(selectedTab: $tabSelection)
-            }
+            // Tab bar - now won't be recreated on tab switches
+            TabBarView(selectedTab: $tabSelection)
         }
         .onAppear(perform: {
             // Set default tab selection
