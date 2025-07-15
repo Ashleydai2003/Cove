@@ -9,7 +9,7 @@
 import SwiftUI
 
 /// View for handling OTP (One-Time Password) verification during user onboarding
-/// Manages a 5-digit verification code input with automatic field advancement
+/// Manages a 6-digit verification code input with automatic field advancement
 struct OtpVerifyView: View {
     // MARK: - Properties
     
@@ -34,6 +34,24 @@ struct OtpVerifyView: View {
     
     /// Tracks whether an error should be shown
     @State private var showError = false
+    
+    /// Inline error message below OTP digits
+    @State private var otpErrorMessage: String = ""
+    
+    /// Status messaging
+    @State private var statusMessage: String = ""
+    @State private var messageType: MessageType = .none
+    
+    /// Rate limiting for resend
+    @State private var lastResendTime: Date = Date.distantPast
+    @State private var resendCooldownRemaining: Int = 0
+    @State private var cooldownTimer: Timer?
+    
+    enum MessageType {
+        case none
+        case success
+        case error
+    }
     
     // Custom input accessory view for keyboard
     private var keyboardAccessoryView: some View {
@@ -63,6 +81,22 @@ struct OtpVerifyView: View {
         return phoneNumber
     }
     
+    // MARK: - Status Message Display
+    
+    private var statusMessageView: some View {
+        HStack {
+            if !statusMessage.isEmpty {
+                Text(statusMessage)
+                    .font(.LeagueSpartan(size: 14))
+                    .foregroundColor(messageType == .success ? .green : .red)
+            }
+            Spacer()
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 8)
+        .animation(.easeInOut(duration: 0.3), value: statusMessage)
+    }
+    
     // MARK: - View Body
     
     var body: some View {
@@ -73,6 +107,16 @@ struct OtpVerifyView: View {
                     // MARK: - Navigation Header
                     HStack {
                         Button {
+                            // Clear verification state but keep phone number
+                            OtpVerify.clearVerificationState()
+                            
+                            // Reset local state
+                            statusMessage = ""
+                            messageType = .none
+                            otpErrorMessage = ""
+                            otpText = ""
+                            
+                            // Navigate back (UserPhoneNumberView will auto-send again)
                             appController.path.removeLast()
                         } label: {
                             Images.backArrow
@@ -156,6 +200,22 @@ struct OtpVerifyView: View {
                     }
                     .padding(.top, 50)
                     
+                    // MARK: - OTP Error Message (inline below digits)
+                    if !otpErrorMessage.isEmpty {
+                        HStack {
+                            Text(otpErrorMessage)
+                                .font(.LeagueSpartan(size: 12))
+                                .foregroundColor(.red)
+                                .padding(.top, 8)
+                            Spacer()
+                        }
+                        .padding(.horizontal, 20)
+                        .animation(.easeInOut(duration: 0.3), value: otpErrorMessage)
+                    }
+                    
+                    // MARK: - Status Message
+                    statusMessageView
+                    
                     // MARK: - Loading Indicator
                     if isVerifying {
                         ProgressView()
@@ -166,14 +226,7 @@ struct OtpVerifyView: View {
                     // MARK: - Resend Code Button
                     HStack {
                         Spacer()
-                        Button {
-                            resendCode()
-                        } label: {
-                            Text("resend code")
-                                .foregroundStyle(Color.blue)
-                                .font(.LeagueSpartan(size: 15))
-                        }
-                        .disabled(isVerifying)
+                        resendButton
                     }
                     .padding(.top, 5)
                     
@@ -181,7 +234,7 @@ struct OtpVerifyView: View {
                 }
                 .padding(.horizontal, 20)
                 .safeAreaPadding()
-                // Error alert
+                // Error alert (fallback)
                 .alert("Error", isPresented: $showError) {
                     Button("OK", role: .cancel) { }
                 } message: {
@@ -194,12 +247,41 @@ struct OtpVerifyView: View {
         .onAppear {
             isInputFocused = true
         }
+        .onDisappear {
+            // Clean up timer when view disappears
+            cooldownTimer?.invalidate()
+            cooldownTimer = nil
+        }
+    }
+    
+    // MARK: - Resend Button
+    
+    private var resendButton: some View {
+        Button {
+            resendCodeWithCooldown()
+        } label: {
+            if resendCooldownRemaining > 0 {
+                Text("resend code (\(resendCooldownRemaining)s)")
+                    .foregroundColor(.gray)
+                    .font(.LeagueSpartan(size: 15))
+            } else {
+                Text("resend code")
+                    .foregroundColor(.blue)
+                    .font(.LeagueSpartan(size: 15))
+            }
+        }
+        .disabled(resendCooldownRemaining > 0 || isVerifying)
     }
     
     // MARK: - Input Handling Methods
     
     /// Handles OTP input with improved focus management and backspace behavior
     private func handleOTPInput(oldValue: String, newValue: String) {
+        // Clear error message when user starts typing (especially on backspace)
+        if newValue.count < oldValue.count && !otpErrorMessage.isEmpty {
+            otpErrorMessage = ""
+        }
+        
         // Limit to 6 digits maximum
         if newValue.count > 6 {
             otpText = String(newValue.prefix(6))
@@ -221,31 +303,91 @@ struct OtpVerifyView: View {
     
     private func verifyOTP() {
         guard !isVerifying else { return }
+        
         isVerifying = true
         isInputFocused = false // Dismiss keyboard
+        otpErrorMessage = "" // Clear previous error
+        statusMessage = "Verifying..."
+        messageType = .none
         
         let code = otpText
-        OtpVerify.verifyOTP(code) { success in
+        OtpVerify.verifyOTP(code) { success, errorMessage in
             isVerifying = false
-            if !success {
-                showError = true
+            
+            if success {
+                // Success - will navigate to next screen
+                statusMessage = ""
+                messageType = .none
+                otpErrorMessage = ""
+            } else {
+                // Show inline error below OTP digits
+                otpErrorMessage = errorMessage ?? "Incorrect code. Please check and try again."
+                statusMessage = ""
+                messageType = .none
             }
         }
     }
     
-    private func resendCode() {
+    private func resendCodeWithCooldown() {
+        guard resendCooldownRemaining == 0 else { return }
+        
+        // Start cooldown
+        lastResendTime = Date()
+        resendCooldownRemaining = 5
+        startCooldownTimer()
+        
+        // Clear previous messages
+        otpErrorMessage = ""
+        statusMessage = "Sending code..."
+        messageType = .none
+        
+        resendCode { result in
+            switch result {
+            case .success:
+                statusMessage = "Code sent!"
+                messageType = .success
+                otpText = "" // Clear OTP input
+                
+            case .invalidPhoneNumber:
+                statusMessage = "Failure to send code, check that your phone number is correct."
+                messageType = .error
+                
+            case .networkError:
+                statusMessage = "Network error. Please check your connection and try again."
+                messageType = .error
+                
+            case .rateLimited:
+                statusMessage = "Too many attempts. Please wait before trying again."
+                messageType = .error
+                
+            case .unknownError(let message):
+                statusMessage = "Failed to resend: \(message)"
+                messageType = .error
+            }
+        }
+    }
+    
+    private func startCooldownTimer() {
+        cooldownTimer?.invalidate()
+        cooldownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+            if resendCooldownRemaining > 0 {
+                resendCooldownRemaining -= 1
+            } else {
+                cooldownTimer?.invalidate()
+                cooldownTimer = nil
+            }
+        }
+    }
+    
+    private func resendCode(completion: @escaping (CodeSendResult) -> Void) {
         guard let phoneNumber = UserDefaults.standard.string(forKey: "UserPhoneNumber") else {
-            appController.errorMessage = "No phone number found"
-            showError = true
+            completion(.unknownError("No phone number found"))
             return
         }
         
         let userPhone = UserPhoneNumber(number: phoneNumber, country: Country(id: "0235", name: "USA", flag: "🇺🇸", code: "US", dial_code: "+1", pattern: "### ### ####", limit: 17))
-        userPhone.sendVerificationCode { success in
-            if !success {
-                appController.errorMessage = "Failed to resend verification code"
-                showError = true
-            }
+        userPhone.sendVerificationCode { result in
+            completion(result)
         }
     }
 }
