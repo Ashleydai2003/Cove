@@ -10,9 +10,7 @@ struct LoginView: View {
     // MARK: - Main View Body
     var body: some View {
         ZStack {
-            // Background image with reduced opacity for better text visibility
-            OnboardingBackgroundView(imageName: "login_background")
-                .opacity(0.6)
+            OnboardingBackgroundView()
             
             VStack {
                 // MARK: - App logo and tagline
@@ -32,6 +30,7 @@ struct LoginView: View {
                 // MARK: - Main call-to-action button
                 // Initiates the sign-in flow
                 SignOnButton(text: "let's go") {
+                    // Start the proper onboarding flow
                     appController.path.append(.enterPhoneNumber) 
                 }
                 .padding(.bottom)
@@ -78,11 +77,17 @@ struct SignOnButton: View {
                 .font(.LibreBodoni(size: 25))
                 .frame(maxWidth: .infinity)  // Makes button expand to full width
                 .padding()
-                .foregroundStyle(Colors.primaryDark)
-                .background(Color.white)
+                .foregroundStyle(Colors.primaryLight)
+                .background(Colors.primaryDark)
                 .cornerRadius(16.99)  // Consistent corner radius for rounded appearance
                 .padding(.horizontal, 50)  // Horizontal padding for button container
         }
+    }
+}
+
+struct OnboardingBackgroundView: View {
+    var body: some View {
+        Color(Colors.primaryLight).ignoresSafeArea()
     }
 }
 

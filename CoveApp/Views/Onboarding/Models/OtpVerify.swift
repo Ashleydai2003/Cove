@@ -3,14 +3,14 @@ import FirebaseAuth
 
 struct OtpVerify {
     /// API base URL and login path
-private static let apiBaseURL = AppConstants.API.baseURL
+    private static let apiBaseURL = AppConstants.API.baseURL
     private static let apiLoginPath = "/login"
     
     /// Verifies the OTP code entered by the user
     /// - Parameters:
     ///   - code: The OTP code to verify
-    ///   - completion: Callback with success status
-    static func verifyOTP(_ code: String, completion: @escaping (Bool) -> Void) {
+    ///   - completion: Callback with success status and error message
+    static func verifyOTP(_ code: String, completion: @escaping (Bool, String?) -> Void) {
         print("Attempting to verify OTP code")
         
         let credential = PhoneAuthProvider.provider().credential(
@@ -23,36 +23,72 @@ private static let apiBaseURL = AppConstants.API.baseURL
                 if let error = error {
                     print("❌ Firebase Auth Error: \(error.localizedDescription)")
                     print("❌ Error details: \(error)")
-                    AppController.shared.errorMessage = error.localizedDescription
-                    completion(false)
+                    
+                    let errorMessage = categorizeVerificationError(error)
+                    completion(false, errorMessage)
                     return
                 }
                 
-                // Only print user if needed, don't bind unused
                 if authResult?.user != nil {
                     print("✅ Successfully verified OTP and signed in")
                     // Make login request to backend
                     makeLoginRequest { success in
                         if success {
-                            completion(true)
+                            completion(true, nil)
                         } else {
-                            AppController.shared.errorMessage = "Failed to login to backend"
-                            completion(false)
+                            completion(false, "Failed to login to backend")
                         }
                     }
                 } else {
                     print("❌ Failed to verify OTP - no error but no auth result")
-                    AppController.shared.errorMessage = "Failed to verify OTP"
-                    completion(false)
+                    completion(false, "Failed to verify OTP")
                 }
             }
         }
     }
     
+    /// Categorizes Firebase verification errors into user-friendly messages
+    /// - Parameter error: The Firebase error
+    /// - Returns: User-friendly error message
+    private static func categorizeVerificationError(_ error: Error) -> String {
+        let errorCode = (error as NSError).code
+        let errorMessage = error.localizedDescription.lowercased()
+        
+        // Firebase Auth error codes for verification
+        switch errorCode {
+        case 17044: // Invalid verification code
+            return "Incorrect code. Please check and try again."
+        case 17043: // Invalid verification ID
+            return "Verification session expired. Please request a new code."
+        case 17025: // Too many requests
+            return "Too many attempts. Please wait before trying again."
+        case 17020: // Network error
+            return "Network error. Please check your connection and try again."
+        default:
+            // Check error message for common patterns
+            if errorMessage.contains("invalid verification code") || errorMessage.contains("verification code") {
+                return "Incorrect code. Please check and try again."
+            } else if errorMessage.contains("session") || errorMessage.contains("expired") {
+                return "Verification session expired. Please request a new code."
+            } else if errorMessage.contains("network") || errorMessage.contains("connection") {
+                return "Network error. Please check your connection and try again."
+            } else {
+                return "Unable to verify code. Please try again."
+            }
+        }
+    }
+    
+    /// Clears verification state but keeps phone number for resending
+    static func clearVerificationState() {
+        print("Clearing verification state")
+        UserDefaults.standard.removeObject(forKey: "verification_id")
+        // Keep UserPhoneNumber for potential resending
+    }
+    
     /// Handles authentication failure by resetting relevant state
     static func handleAuthFailure() {
         // Clear the stored phone number
-        print(("User Default Removed!"))
+        print("User Default Removed!")
         UserDefaults.standard.removeObject(forKey: "UserPhoneNumber")
         
         // Clear the stored verification ID
@@ -109,13 +145,8 @@ private static let apiBaseURL = AppConstants.API.baseURL
                         print("🔐 Login: Set ProfileModel.onboarding = \(loginResponse.user.onboarding)")
                         
                         if loginResponse.user.onboarding {
-                            if loginResponse.user.verified {
-                                print("✅ User is verified")
-                                AppController.shared.path.append(.adminVerify)
-                                Onboarding.setAdminCove(adminCove: loginResponse.user.cove ?? "create new cove!")
-                            } else {
+                            // Skip admin verification and go directly to user details
                                 AppController.shared.path.append(.userDetails)
-                            }
                         } else {
                             AppController.shared.path.append(.pluggingIn)
                             AppController.shared.hasCompletedOnboarding = true
@@ -125,7 +156,7 @@ private static let apiBaseURL = AppConstants.API.baseURL
                     
                 case .failure(let error):
                     print("❌ Backend login error: \(error.localizedDescription)")
-                    AppController.shared.errorMessage = error.localizedDescription
+                    // Don't set AppController.shared.errorMessage to avoid alert flash
                     completion(false)
                 }
             }
