@@ -13,6 +13,18 @@ export const initializeFirebase = async () => {
     return;
   }
 
+  // Use emulator if configured
+  if (process.env.FIREBASE_AUTH_EMULATOR_HOST) {
+    // Only projectId is required for emulator
+    admin.initializeApp({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+    });
+    firebaseInitialized = true;
+    console.log('[firebase] Initialized Firebase Admin for emulator');
+    return;
+  }
+
+  // Otherwise, use AWS Secrets Manager (production)
   const secretId = 'firebaseSDK';  // Using the name from AWS
   if (!secretId) {
     throw new Error('Firebase secret name is not set');
