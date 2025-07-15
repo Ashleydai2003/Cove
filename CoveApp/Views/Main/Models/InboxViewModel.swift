@@ -21,7 +21,6 @@ class InboxViewModel: ObservableObject {
     
     /// Initializes the inbox model - called on login/after onboarding
     func initialize() {
-        Log.debug("InboxViewModel initializing")
         fetchInvites()
     }
     
@@ -29,8 +28,6 @@ class InboxViewModel: ObservableObject {
     func fetchInvites() {
         isLoading = true
         errorMessage = nil
-        
-        Log.debug("InboxViewModel: fetching invites…")
         
         NetworkManager.shared.get(
             endpoint: "/invites",
@@ -43,12 +40,11 @@ class InboxViewModel: ObservableObject {
                 
                 switch result {
                 case .success(let response):
-                    Log.debug("Invites fetched: total=\(response.invites.count) unopened=\(response.invites.filter { !$0.isOpened }.count)")
                     self.invites = response.invites
+                    
                     // Prefetch cover photos for already-opened invites
                     let coverUrls = response.invites.compactMap { $0.cove.coverPhotoUrl }
                     ImagePrefetcherUtil.prefetch(urlStrings: coverUrls)
-                    Log.debug("InboxViewModel: hasUnopenedInvites=\(self.hasUnopenedInvites)")
                     
                     // Notify AppController to check for auto-show
                     AppController.shared.checkForAutoShowInbox()

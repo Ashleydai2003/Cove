@@ -16,6 +16,8 @@ struct CoveApp: App {
     @StateObject private var appController = AppController.shared
     
     init() {
+        Log.debug("🔐 CoveApp: App initialization starting")
+        
         // For Injection (hot reloading)
         // Note flags -Xlinker -interposable under Other Linker Flags are for Injection
         #if DEBUG
@@ -36,15 +38,12 @@ struct CoveApp: App {
             UITabBar.appearance().scrollEdgeAppearance = tabBarAppearance
         }
         
-        // For development: always reset onboarding status
-        UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
+        // NOTE: Previously we force-reset the onboarding flag on every launch for
+        // development. This caused fully-onboarded users to be treated as new
+        // users and skip the data-loading flow. The line is now removed so the
+        // persisted onboarding status returned from the backend is respected.
         
-        for family in UIFont.familyNames {
-            Log.debug("Font family: \(family)")
-            for name in UIFont.fontNames(forFamilyName: family) {
-                Log.debug("   \(name)")
-            }
-        }
+        Log.debug("🔐 CoveApp: App initialization complete")
     }
     
     var body: some Scene {

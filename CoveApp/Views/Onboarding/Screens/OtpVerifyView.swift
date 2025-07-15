@@ -199,7 +199,7 @@ struct OtpVerifyView: View {
         focusedIndex = nil // Dismiss keyboard
         
         let code = otp.joined()
-        OtpVerify.verifyOTP(code) { success in
+        OtpVerify.verifyOTP(otp: code) { success in
             isVerifying = false
             if !success {
                 showError = true

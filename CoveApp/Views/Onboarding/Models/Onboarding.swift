@@ -91,20 +91,17 @@ class Onboarding {
             return
         }
         
-        Log.debug("📱 Sending friend requests to: \(pendingFriendRequests)")
-        
         NetworkManager.shared.post(
             endpoint: "/send-friend-request",
             parameters: ["toUserIds": pendingFriendRequests]
         ) { (result: Result<FriendRequestResponse, NetworkError>) in
             switch result {
             case .success(let response):
-                Log.debug("✅ Friend requests sent successfully: \(response.message)")
                 pendingFriendRequests.removeAll()
                 completion(true)
                 
             case .failure(let error):
-                Log.debug("❌ Failed to send friend requests: \(error)")
+                Log.error("Failed to send friend requests: \(error.localizedDescription)")
                 completion(false)
             }
         }
@@ -187,101 +184,25 @@ class Onboarding {
         return userName != nil && userBirthdate != nil && !userHobbies.isEmpty && userBio != nil && userLatitude != nil && userLongitude != nil
     }
 
+    /// Completes the onboarding process by updating the user's onboarding status
+    /// - Parameter completion: Callback with success status
     static func completeOnboarding(completion: @escaping (Bool) -> Void) {
-        if isOnboardingComplete() {
-            Log.debug("📱 Starting onboarding completion")
-            
-            // Move all heavy operations to background
-            DispatchQueue.global(qos: .userInitiated).async {
-                // First upload all images
-                let group = DispatchGroup()
-                var uploadError: Error?
-                
-                for (image, isProfilePic) in getAllImages() {
-                    group.enter()
-                    guard let data = image.jpegData(compressionQuality: 0.8) else {
-                        Log.debug("❌ Failed to convert image to JPEG data")
-                        group.leave()
-                        continue
-                    }
-                    
-                    UserImage.upload(imageData: data, isProfilePic: isProfilePic) { result in
-                        switch result {
-                        case .success:
-                            Log.debug("✅ Image uploaded successfully")
-                            break
-                        case .failure(let error):
-                            Log.debug("❌ Image upload failed: \(error)")
-                            uploadError = error
-                        }
-                        group.leave()
-                    }
-                }
-                
-                group.wait() // Wait for all uploads to complete
-                
-                // Check for upload errors
-                if let error = uploadError {
-                    Log.debug("❌ Upload error occurred: \(error)")
-                    Task { @MainActor in
-                        AppController.shared.errorMessage = "Failed to upload images: \(error.localizedDescription)"
+        // Send friend requests first
+        sendPendingFriendRequests { friendRequestSuccess in
+            if friendRequestSuccess {
+                // Update onboarding status
+                makeOnboardingCompleteRequest { onboardingSuccess in
+                    if onboardingSuccess {
+                        // Clear pending friend requests after successful completion
+                        clearPendingFriendRequests()
+                        completion(true)
+                    } else {
                         completion(false)
                     }
-                    return
                 }
-                
-                Log.debug("📱 Images uploaded successfully, proceeding with onboarding completion")
-                
-                // Then complete onboarding
-                makeOnboardingCompleteRequest { success in
-                    Log.debug("📱 Onboarding completion result: \(success)")
-                    if success {
-                        // Send friend requests if any
-                        if !pendingFriendRequests.isEmpty {
-                            Log.debug("📱 About to send friend requests: \(pendingFriendRequests)")
-                            sendPendingFriendRequests { friendRequestSuccess in
-                                Log.debug("📱 Friend request result: \(friendRequestSuccess)")
-                                DispatchQueue.main.async {
-                                    if friendRequestSuccess {
-                                        Log.debug("✅ All operations completed successfully")
-                                        Task { @MainActor in
-                                            AppController.shared.hasCompletedOnboarding = true
-                                            clearImages() // Clear stored images after successful upload
-                                        }
-                                    } else {
-                                        Log.debug("❌ Friend request sending failed")
-                                        Task { @MainActor in
-                                            AppController.shared.errorMessage = "Failed to send friend requests"
-                                        }
-                                    }
-                                    completion(friendRequestSuccess)
-                                }
-                            }
-                        } else {
-                            Log.debug("📱 No friend requests to send")
-                            DispatchQueue.main.async {
-                                Log.debug("✅ Onboarding completed without friend requests")
-                                Task { @MainActor in
-                                    AppController.shared.hasCompletedOnboarding = true
-                                    clearImages() // Clear stored images after successful upload
-                                }
-                                completion(true)
-                            }
-                        }
-                    } else {
-                        Log.debug("❌ Onboarding completion failed")
-                        DispatchQueue.main.async {
-                            completion(false)
-                        }
-                    }
-                }
+            } else {
+                completion(false)
             }
-        } else {
-            Log.debug("❌ Onboarding incomplete, missing required fields")
-            Task { @MainActor in
-                AppController.shared.errorMessage = "Onboarding process incomplete"
-            }
-            completion(false)
         }
     }
 
@@ -318,18 +239,17 @@ class Onboarding {
         ]
         
         NetworkManager.shared.post(
-            endpoint: apiOnboardPath,
+            endpoint: "/onboard",
             parameters: parameters
         ) { (result: Result<OnboardResponse, NetworkError>) in
-            switch result {
-            case .success(let response):
-                Log.debug("Onboarding complete: \(response.message)")
-                completion(true)
-            case .failure(let error):
-                Task { @MainActor in
-                    AppController.shared.errorMessage = "Onboarding failed: \(error.localizedDescription)"
+            DispatchQueue.main.async {
+                switch result {
+                case .success(_):
+                    completion(true)
+                case .failure(let error):
+                    Log.error("Onboarding completion failed: \(error.localizedDescription)")
+                    completion(false)
                 }
-                completion(false)
             }
         }
     }

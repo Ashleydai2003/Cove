@@ -37,12 +37,31 @@ class AppController: ObservableObject {
     
     /// Navigation path for onboarding NavigationStack
     @Published var path: [OnboardingRoute] = []
-    /// Whether the user has completed onboarding (persisted)
-    @AppStorage("hasCompletedOnboarding") var hasCompletedOnboarding = false
+    
     /// Whether the user is logged in and data has been fetched
     @Published var isLoggedIn = false
     /// Global error message for displaying alerts
     @Published var errorMessage: String = ""
+    
+    /// Whether the current user has completed onboarding (persisted per user)
+    /// Thread-safe access to UserDefaults for onboarding status
+    var hasCompletedOnboarding: Bool {
+        get {
+            guard let userId = Auth.auth().currentUser?.uid else { return false }
+            return UserDefaults.standard.bool(forKey: "hasCompletedOnboarding_\(userId)")
+        }
+        set {
+            guard let userId = Auth.auth().currentUser?.uid else { return }
+            // UserDefaults is thread-safe, but ensure we're on main thread if called from UI
+            if Thread.isMainThread {
+                UserDefaults.standard.set(newValue, forKey: "hasCompletedOnboarding_\(userId)")
+            } else {
+                DispatchQueue.main.sync {
+                    UserDefaults.standard.set(newValue, forKey: "hasCompletedOnboarding_\(userId)")
+                }
+            }
+        }
+    }
     
     /// Shared CoveFeed instance for all cove feed and caching logic
     @Published var coveFeed = CoveFeed()
@@ -88,25 +107,39 @@ class AppController: ObservableObject {
                 if !isAuthenticated {
                     // User signed out – clear all cached data and reset UI
                     self.clearAllData()
+                } else {
+                    // If we have an authenticated user but no path set (app was killed during onboarding),
+                    // handle the navigation logic here
+                    if self.path.isEmpty {
+                        if self.hasCompletedOnboarding {
+                            self.path = [.pluggingIn]
+                        } else {
+                            // Keep path empty to start from login, but user is authenticated
+                            // The backend login call will determine the correct screen
+                        }
+                    }
                 }
             }
         }
         
         // Bootstrap app UI based on any existing Firebase session.
-        if Auth.auth().currentUser != nil {
+        let currentUser = Auth.auth().currentUser
+        if currentUser != nil {
             // Existing Firebase session detected.
             // If the user has already completed onboarding we start at the loading
-            // screen that fetches all server data. Otherwise we remain in the
-            // onboarding flow and wait for the backend login call to determine the
-            // correct screen.
+            // screen that fetches all server data. Otherwise we start from the beginning
+            // of the onboarding flow and let the backend login call determine the correct screen.
             if self.hasCompletedOnboarding {
                 self.path = [.pluggingIn]
             } else {
-                // User has NOT completed onboarding - sign them out to force fresh start
-                // This prevents users from being stuck in onboarding when returning from background
-                try? Auth.auth().signOut()
-                self.clearAllData()
+                // User has NOT completed onboarding - start from the beginning
+                // but keep them authenticated. The backend will determine the correct screen
+                // based on their onboarding status when they go through login
+                self.path = []
             }
+        } else {
+            // No existing Firebase session - start fresh
+            self.path = []
         }
     }
     
@@ -130,6 +163,11 @@ class AppController: ObservableObject {
      * Clears all data when user logs out.
      */
     func clearAllData() {
+        // Clear user-specific onboarding flag
+        if let userId = Auth.auth().currentUser?.uid {
+            UserDefaults.standard.removeObject(forKey: "hasCompletedOnboarding_\(userId)")
+        }
+        
         // Clear all view model data
         coveFeed = CoveFeed()
         upcomingFeed = UpcomingFeed()
@@ -144,7 +182,6 @@ class AppController: ObservableObject {
         path = [] // ensure OnboardingFlow starts at LoginView after logout
         shouldAutoShowInbox = false
         isLoggedIn = false
-        errorMessage = ""
     }
     
     // MARK: - Utility Methods
