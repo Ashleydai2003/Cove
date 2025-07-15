@@ -10,37 +10,22 @@ private static let apiBaseURL = AppConstants.API.baseURL
     /// - Parameters:
     ///   - code: The OTP code to verify
     ///   - completion: Callback with success status
-    static func verifyOTP(_ code: String, completion: @escaping (Bool) -> Void) {
+    static func verifyOTP(otp: String, completion: @escaping (Bool) -> Void) {
         let credential = PhoneAuthProvider.provider().credential(
             withVerificationID: UserDefaults.standard.string(forKey: "verification_id") ?? "",
-            verificationCode: code
+            verificationCode: otp
         )
         
         Auth.auth().signIn(with: credential) { authResult, error in
-            DispatchQueue.main.async {
-                if let error = error {
-                    Log.error("Firebase Auth Error: \(error.localizedDescription)")
-                    AppController.shared.errorMessage = error.localizedDescription
-                    completion(false)
-                    return
-                }
-                
-                // Only print user if needed, don't bind unused
-                if authResult?.user != nil {
-                    // Make login request to backend
-                    makeLoginRequest { success in
-                        if success {
-                            completion(true)
-                        } else {
-                            AppController.shared.errorMessage = "Failed to login to backend"
-                            completion(false)
-                        }
-                    }
-                } else {
-                    Log.error("Failed to verify OTP - no error but no auth result")
-                    AppController.shared.errorMessage = "Failed to verify OTP"
-                    completion(false)
-                }
+            if let error = error {
+                Log.error("Firebase OTP verification failed: \(error.localizedDescription)")
+                completion(false)
+                return
+            }
+            
+            // Firebase auth successful, now make backend login request
+            makeLoginRequest { success in
+                completion(success)
             }
         }
     }
@@ -112,10 +97,8 @@ private static let apiBaseURL = AppConstants.API.baseURL
                         }
                     }
                     completion(true)
-                    
                 case .failure(let error):
-                    Log.error("Backend login error: \(error.localizedDescription)")
-                    AppController.shared.errorMessage = error.localizedDescription
+                    Log.error("Backend login failed: \(error.localizedDescription)")
                     completion(false)
                 }
             }

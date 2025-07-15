@@ -42,7 +42,6 @@ struct CoveApp: App {
         // development. This caused fully-onboarded users to be treated as new
         // users and skip the data-loading flow. The line is now removed so the
         // persisted onboarding status returned from the backend is respected.
-        
     }
     
     var body: some Scene {

@@ -11,25 +11,15 @@ import UserNotifications
 import IQKeyboardManagerSwift
 
 class FirebaseSetup: NSObject, UIApplicationDelegate {
-    func application(_ application: UIApplication,
-                     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        // Configure Firebase
         FirebaseApp.configure()
         
-        // Enable IQKeyboardManager to prevent issues of keyboard sliding up
-        IQKeyboardManager.shared.enable = true
-        
-        // Request notification permissions
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
-            if let error = error {
-                Log.error("Notification permission error: \(error.localizedDescription)")
-                return
-            }
-            
-            if granted {
-                DispatchQueue.main.async {
-                    application.registerForRemoteNotifications()
-                }
-            }
+        // Check if user is already authenticated
+        if let currentUser = Auth.auth().currentUser {
+            // User is already signed in
+        } else {
+            // No user signed in
         }
         
         return true
