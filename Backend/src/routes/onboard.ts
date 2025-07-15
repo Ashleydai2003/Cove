@@ -2,6 +2,61 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { authMiddleware } from '../middleware/auth';
 import { initializeDatabase } from '../config/database';
 
+// Geocoding utility function to convert city names to coordinates
+async function geocodeCity(city: string): Promise<{latitude: number, longitude: number} | null> {
+  try {
+    // Use Nominatim (OpenStreetMap) geocoding service - free and no API key required
+    const encodedCity = encodeURIComponent(city);
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodedCity}&limit=1&countrycodes=us`;
+    
+    // Add timeout to prevent hanging requests
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+    
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'CoveApp/1.0'  // Required by Nominatim
+      },
+      signal: controller.signal
+    });
+    
+    clearTimeout(timeoutId);
+    
+    if (!response.ok) {
+      console.error('Geocoding request failed:', response.status, response.statusText);
+      return null;
+    }
+    
+    const data = await response.json();
+    
+    if (Array.isArray(data) && data.length > 0) {
+      const result = data[0];
+      const lat = parseFloat(result.lat);
+      const lon = parseFloat(result.lon);
+      
+      // Validate parsed coordinates
+      if (isNaN(lat) || isNaN(lon)) {
+        console.error('Invalid coordinates in geocoding response:', result);
+        return null;
+      }
+      
+      return {
+        latitude: lat,
+        longitude: lon
+      };
+    }
+    
+    console.log('No geocoding results found for city:', city);
+    return null;
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error('Geocoding request timed out for city:', city);
+    } else {
+      console.error('Error geocoding city:', city, error);
+    }
+    return null;
+  }
+}
 
 // TODO: there should be a default user profile photo that is used if the user does not have a profile photo
 export const handleOnboard = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
@@ -77,6 +132,7 @@ export const handleOnboard = async (event: APIGatewayProxyEvent): Promise<APIGat
       bio,
       latitude,
       longitude,
+      city,  // Add city field
       almaMater,
       job,
       workLocation,
@@ -85,15 +141,64 @@ export const handleOnboard = async (event: APIGatewayProxyEvent): Promise<APIGat
       gender
     } = JSON.parse(event.body);
 
+    // Step 6.5: Handle location data - either direct coordinates or city name
+    let finalLatitude = latitude;
+    let finalLongitude = longitude;
+    let locationProcessingMessage = '';
+
+    // If no direct coordinates provided but city is available, geocode it
+    if ((!latitude || !longitude) && city && typeof city === 'string') {
+      // Basic validation for city name
+      const trimmedCity = city.trim();
+      if (trimmedCity.length < 2) {
+        console.log('City name too short, skipping geocoding:', city);
+        locationProcessingMessage = 'City name too short for geocoding';
+      } else if (trimmedCity.length > 100) {
+        console.log('City name too long, skipping geocoding:', city);
+        locationProcessingMessage = 'City name too long for geocoding';
+      } else {
+        console.log('Geocoding city:', trimmedCity);
+        try {
+          const geocodeResult = await geocodeCity(trimmedCity);
+          
+          if (geocodeResult) {
+            // Validate that coordinates are reasonable (not null island, etc.)
+            const { latitude: lat, longitude: lon } = geocodeResult;
+            
+            if (lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180) {
+              finalLatitude = lat;
+              finalLongitude = lon;
+              console.log('Successfully geocoded coordinates:', { city: trimmedCity, latitude: finalLatitude, longitude: finalLongitude });
+              locationProcessingMessage = `Successfully geocoded ${trimmedCity}`;
+            } else {
+              console.log('Invalid coordinates returned from geocoding:', geocodeResult);
+              locationProcessingMessage = 'Invalid coordinates returned from geocoding service';
+            }
+          } else {
+            console.log('No results found for city:', trimmedCity);
+            locationProcessingMessage = `No location found for "${trimmedCity}"`;
+          }
+        } catch (error) {
+          console.error('Error during geocoding process:', error);
+          locationProcessingMessage = 'Geocoding service temporarily unavailable';
+        }
+      }
+    }
+
+    // Log location processing result
+    if (locationProcessingMessage) {
+      console.log('Location processing result:', locationProcessingMessage);
+    }
+
     // Validate numeric fields
-    if (latitude && typeof latitude !== 'number') {
+    if (finalLatitude && typeof finalLatitude !== 'number') {
       return {
         statusCode: 400,
         body: JSON.stringify({ message: 'Latitude must be a number' })
       };
     }
 
-    if (longitude && typeof longitude !== 'number') {
+    if (finalLongitude && typeof finalLongitude !== 'number') {
       return {
         statusCode: 400,
         body: JSON.stringify({ message: 'Longitude must be a number' })
@@ -105,8 +210,9 @@ export const handleOnboard = async (event: APIGatewayProxyEvent): Promise<APIGat
       birthdate,
       hobbies,
       bio,
-      latitude,
-      longitude,
+      city,
+      latitude: finalLatitude,
+      longitude: finalLongitude,
       almaMater,
       job,
       workLocation,
@@ -156,8 +262,8 @@ export const handleOnboard = async (event: APIGatewayProxyEvent): Promise<APIGat
           create: {
             birthdate: birthdate ? new Date(birthdate) : null,
             interests: hobbies || [],
-            latitude: latitude || null,
-            longitude: longitude || null,
+            latitude: finalLatitude || null,
+            longitude: finalLongitude || null,
             almaMater: almaMater || null,
             job: job || null,
             workLocation: workLocation || null,

@@ -175,7 +175,7 @@ export const handleDeleteUser = async (event: APIGatewayProxyEvent): Promise<API
         }
       });
 
-      // Delete user's friend requests
+      // Delete user's friend requests (sent and received)
       await tx.friendRequest.deleteMany({
         where: {
           OR: [
@@ -185,14 +185,46 @@ export const handleDeleteUser = async (event: APIGatewayProxyEvent): Promise<API
         }
       });
 
-      // Delete user's event RSVPs
+      // Delete user's event RSVPs (where user RSVP'd to events)
       await tx.eventRSVP.deleteMany({
         where: { userId }
+      });
+
+      // Delete RSVPs to events created by the user
+      await tx.eventRSVP.deleteMany({
+        where: {
+          eventId: {
+            in: userEvents.map(event => event.id)
+          }
+        }
       });
 
       // Delete user's cove memberships
       await tx.coveMember.deleteMany({
         where: { userId }
+      });
+
+      // Delete invites sent by the user
+      await tx.invite.deleteMany({
+        where: { sentByUserId: userId }
+      });
+
+      // Delete event images for events created by the user
+      await tx.eventImage.deleteMany({
+        where: {
+          eventId: {
+            in: userEvents.map(event => event.id)
+          }
+        }
+      });
+
+      // Delete cove images for coves created by the user
+      await tx.coveImage.deleteMany({
+        where: {
+          coveId: {
+            in: userCoves.map(cove => cove.id)
+          }
+        }
       });
 
       // Delete user's created events

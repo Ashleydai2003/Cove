@@ -42,6 +42,8 @@ struct ProfilePicView: View {
 
     // Image picker sheet state
     @State private var showingImagePicker = false
+    @State private var isCompletingOnboarding = false
+    @State private var showingError = false
 
     var body: some View {
         GeometryReader { geometry in
@@ -114,13 +116,21 @@ struct ProfilePicView: View {
                     // Continue button
                     HStack {
                         Spacer()
-                        Images.nextArrow
-                            .resizable()
-                            .frame(width: 52, height: 52)
-                            .padding(.trailing, 20)
-                            .onTapGesture {
-                                appController.path.append(.pluggingIn)
-                            }
+                        if isCompletingOnboarding {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle())
+                                .scaleEffect(1.2)
+                                .frame(width: 52, height: 52)
+                                .padding(.trailing, 20)
+                        } else {
+                            Images.nextArrow
+                                .resizable()
+                                .frame(width: 52, height: 52)
+                                .padding(.trailing, 20)
+                                .onTapGesture {
+                                    completeOnboarding()
+                                }
+                        }
                     }
                 }
                 .safeAreaPadding()
@@ -139,8 +149,43 @@ struct ProfilePicView: View {
                     }
                 }
             }
+            .alert("Onboarding Failed", isPresented: $showingError) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(appController.errorMessage.isEmpty ? "Failed to complete onboarding. Please try again." : appController.errorMessage)
+            }
         }
         .navigationBarBackButtonHidden()
+    }
+    
+    // MARK: - Onboarding Completion
+    
+    private func completeOnboarding() {
+        // Prevent multiple completion attempts
+        guard !isCompletingOnboarding else { return }
+        
+        isCompletingOnboarding = true
+        
+        // Store the profile picture if one was selected
+        if let mainImage = mainImage {
+            Onboarding.storeProfilePic(mainImage)
+        }
+        
+        // Complete the onboarding process
+        Onboarding.completeOnboarding { success in
+            DispatchQueue.main.async {
+                isCompletingOnboarding = false
+                
+                if success {
+                    // Navigate to data loading screen
+                    appController.path = [.pluggingIn]
+                } else {
+                    // Show error message - the AppController.errorMessage will be set by Onboarding.completeOnboarding
+                    Log.error("Failed to complete onboarding from ProfilePicView")
+                    showingError = true
+                }
+            }
+        }
     }
 }
 
