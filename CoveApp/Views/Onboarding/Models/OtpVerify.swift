@@ -11,18 +11,18 @@ struct OtpVerify {
     ///   - code: The OTP code to verify
     ///   - completion: Callback with success status
     static func verifyOTP(_ code: String, completion: @escaping (Bool) -> Void) {
-        print("Attempting to verify OTP code")
+        Log.debug("Attempting to verify OTP code")
         
         let credential = PhoneAuthProvider.provider().credential(
             withVerificationID: UserDefaults.standard.string(forKey: "verification_id") ?? "",
-            verificationCode: otp
+            verificationCode: code
         )
         
         Auth.auth().signIn(with: credential) { authResult, error in
             DispatchQueue.main.async {
                 if let error = error {
-                    print("❌ Firebase Auth Error: \(error.localizedDescription)")
-                    print("❌ Error details: \(error)")
+                    Log.error("Firebase Auth Error: \(error.localizedDescription)")
+                    Log.error("Error details: \(error)")
                     AppController.shared.errorMessage = error.localizedDescription
                     completion(false)
                     return
@@ -30,7 +30,7 @@ struct OtpVerify {
                 
                 // Only print user if needed, don't bind unused
                 if authResult?.user != nil {
-                    print("✅ Successfully verified OTP and signed in")
+                    Log.debug("Successfully verified OTP and signed in")
                     // Make login request to backend
                     makeLoginRequest { success in
                         if success {
@@ -41,7 +41,7 @@ struct OtpVerify {
                         }
                     }
                 } else {
-                    print("❌ Failed to verify OTP - no error but no auth result")
+                    Log.error("Failed to verify OTP - no error but no auth result")
                     AppController.shared.errorMessage = "Failed to verify OTP"
                     completion(false)
                 }
@@ -49,10 +49,17 @@ struct OtpVerify {
         }
     }
     
+    /// Clears verification state but keeps phone number for resending
+    static func clearVerificationState() {
+        Log.debug("Clearing verification state")
+        UserDefaults.standard.removeObject(forKey: "verification_id")
+        // Keep UserPhoneNumber for potential resending
+    }
+    
     /// Handles authentication failure by resetting relevant state
     static func handleAuthFailure() {
         // Clear the stored phone number
-        print(("User Default Removed!"))
+        Log.debug("User Default Removed!")
         UserDefaults.standard.removeObject(forKey: "UserPhoneNumber")
         
         // Clear the stored verification ID
@@ -101,12 +108,9 @@ struct OtpVerify {
                         AppController.shared.profileModel.verified = loginResponse.user.verified
                         
                         if loginResponse.user.onboarding {
-                            if loginResponse.user.verified {
-                                print("✅ User is verified")
-                                AppController.shared.path.append(.adminVerify)
-                                Onboarding.setAdminCove(adminCove: loginResponse.user.cove ?? "create new cove!")
-                            } else {
-                                AppController.shared.path.append(.userDetails)
+                            // Skip adminVerify - send all users needing onboarding to userDetails
+                            Log.debug("User needs onboarding, proceeding to userDetails")
+                            AppController.shared.path.append(.userDetails)
                         } else {
                             // User has completed onboarding - go to data loading screen
                             AppController.shared.path = [.pluggingIn]
@@ -115,7 +119,7 @@ struct OtpVerify {
                     }
                     completion(true)
                 case .failure(let error):
-                    print("❌ Backend login error: \(error.localizedDescription)")
+                    Log.error("Backend login error: \(error.localizedDescription)")
                     AppController.shared.errorMessage = error.localizedDescription
                     completion(false)
                 }

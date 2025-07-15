@@ -46,17 +46,29 @@ struct CoveApp: App {
     
     var body: some Scene {
         WindowGroup {
-            if appController.isLoggedIn {
-                // Main app flow - tab-based navigation
-                HomeView()
-                    .environmentObject(appController)
-                    .preferredColorScheme(.light) // TODO: Support dark mode properly later
-            } else {
-                // Onboarding flow - linear navigation
-            OnboardingFlow()
-                .environmentObject(appController)
-                .preferredColorScheme(.light) // TODO: Support dark mode properly later
+            // Use Group & transitions for smoother authentication switches
+            Group {
+                if appController.isLoggedIn {
+                    // Main app flow - tab-based navigation
+                    HomeView()
+                        .environmentObject(appController)
+                        .preferredColorScheme(.light)
+                        .transition(.asymmetric(
+                            insertion: .move(edge: .trailing).combined(with: .opacity),
+                            removal: .move(edge: .leading).combined(with: .opacity)
+                        ))
+                } else {
+                    // Onboarding flow - linear navigation
+                    OnboardingFlow()
+                        .environmentObject(appController)
+                        .preferredColorScheme(.light)
+                        .transition(.asymmetric(
+                            insertion: .move(edge: .leading).combined(with: .opacity),
+                            removal: .move(edge: .trailing).combined(with: .opacity)
+                        ))
+                }
             }
+            .animation(.easeInOut(duration: 0.45), value: appController.isLoggedIn)
         }
     }
 }

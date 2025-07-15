@@ -6,6 +6,7 @@
 
 
 import SwiftUI
+import UIKit
 import CoreLocation
 import MapKit
 import PhotosUI
@@ -828,6 +829,7 @@ struct ProfileView: View {
     @State private var isEditing = false
     @State private var showingLocationSheet = false
     @State private var isSaving = false
+    @State private var isLoggingOut = false
     
     // Local editing state
     @State private var editingName: String = ""
@@ -966,16 +968,30 @@ struct ProfileView: View {
                             // Logout button shown only when NOT editing
                             if !isEditing {
                                 Button(action: handleLogout) {
-                                    Text("log out")
-                                        .font(.LibreBodoni(size: 16))
-                                        .foregroundColor(.white)
-                                        .padding(.horizontal, 40)
-                                        .padding(.vertical, 12)
-                                        .background(
-                                            RoundedRectangle(cornerRadius: 10)
-                                                .fill(Colors.primaryDark)
-                                        )
+                                    HStack {
+                                        if isLoggingOut {
+                                            ProgressView()
+                                                .scaleEffect(0.8)
+                                                .tint(.white)
+                                            Text("logging out...")
+                                                .font(.LibreBodoni(size: 16))
+                                                .foregroundColor(.white)
+                                        } else {
+                                            Text("log out")
+                                                .font(.LibreBodoni(size: 16))
+                                                .foregroundColor(.white)
+                                        }
+                                    }
+                                    .padding(.horizontal, 40)
+                                    .padding(.vertical, 12)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .fill(isLoggingOut ? Colors.primaryDark.opacity(0.8) : Colors.primaryDark)
+                                    )
                                 }
+                                .disabled(isLoggingOut)
+                                .scaleEffect(isLoggingOut ? 0.95 : 1.0)
+                                .animation(.easeInOut(duration: 0.2), value: isLoggingOut)
                                 .padding(.top, 20)
                             }
                         }
@@ -1072,9 +1088,30 @@ struct ProfileView: View {
 
     // MARK: - Logout Helper
     private func handleLogout() {
-        // Attempt Firebase sign-out (safe to ignore error for now)
-        try? Auth.auth().signOut()
-        appController.clearAllData()
+        // Prevent multiple logout attempts
+        guard !isLoggingOut else { return }
+        
+        // Add haptic feedback
+        let impact = UIImpactFeedbackGenerator(style: .medium)
+        impact.impactOccurred()
+        
+        // Start logout animation
+        withAnimation(.easeInOut(duration: 0.2)) {
+            isLoggingOut = true
+        }
+        
+        // Add a small delay to make the logout feel more intentional
+        // and allow the user to see the loading state
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+            // Attempt Firebase sign-out (safe to ignore error for now)
+            try? Auth.auth().signOut()
+            
+            // Clear all data - this will trigger the app transition
+            appController.clearAllData()
+            
+            // Reset the logout state (though this will be cleared by clearAllData anyway)
+            isLoggingOut = false
+        }
     }
 }
 

@@ -14,6 +14,7 @@ class Onboarding {
     private static var userBirthdate: Date?
     private static var userHobbies: Set<String> = []
     private static var userAlmaMater: String?
+    private static var userCity: String?
     private static var profilePic: UIImage?
     private static var pendingFriendRequests: [String] = []
     private static var adminCove: String?
@@ -36,6 +37,10 @@ class Onboarding {
 
     static func storeAlmaMater(almaMater: String) -> Void {
         userAlmaMater = almaMater
+    }
+
+    static func storeCity(city: String) -> Void {
+        userCity = city
     }
 
     // MARK: - Admin Functions
@@ -71,7 +76,7 @@ class Onboarding {
             parameters: ["toUserIds": pendingFriendRequests]
         ) { (result: Result<FriendRequestResponse, NetworkError>) in
             switch result {
-            case .success(let response):
+            case .success(_):
                 pendingFriendRequests.removeAll()
                 completion(true)
                 
@@ -116,51 +121,74 @@ class Onboarding {
         return userAlmaMater
     }
 
-    static func getJob() -> String? {
-        return userJob
+    static func getCity() -> String? {
+        return userCity
     }
 
-    static func getWorkLocation() -> String? {
-        return userWorkLocation
-    }
-
-    static func getRelationStatus() -> String? {
-        return userRelationStatus
-    }
-
-    static func getInterestedInto() -> String? {
-        return userInterestedInto
-    }
-    
     // MARK: - Validation
+    // Updated to reflect current onboarding requirements
     static func isOnboardingComplete() -> Bool {
+        // Core required fields: name, birthdate, hobbies
+        // Optional fields: almaMater, city, profilePic
         return userName != nil && userBirthdate != nil && !userHobbies.isEmpty
     }
 
     /// Completes the onboarding process by updating the user's onboarding status
     /// - Parameter completion: Callback with success status
     static func completeOnboarding(completion: @escaping (Bool) -> Void) {
-        // Send friend requests first
-        sendPendingFriendRequests { friendRequestSuccess in
-            if friendRequestSuccess {
-                // Update onboarding status
-                makeOnboardingCompleteRequest { onboardingSuccess in
-                    if onboardingSuccess {
-                        // Clear pending friend requests after successful completion
-                        clearPendingFriendRequests()
-                        completion(true)
+        // Check if onboarding is complete with necessary data
+        if isOnboardingComplete() {
+            // Step 1: Upload profile picture if it exists
+            if let profileImage = profilePic {
+                uploadProfilePicture(profileImage) { uploadSuccess in
+                    if uploadSuccess {
+                        // Step 2: Send friend requests
+                        sendPendingFriendRequests { friendRequestSuccess in
+                            if friendRequestSuccess {
+                                // Step 3: Update onboarding status
+                                makeOnboardingCompleteRequest { onboardingSuccess in
+                                    if onboardingSuccess {
+                                        // Clear data after successful completion
+                                        clearPendingFriendRequests()
+                                        completion(true)
+                                    } else {
+                                        completion(false)
+                                    }
+                                }
+                            } else {
+                                completion(false)
+                            }
+                        }
                     } else {
                         completion(false)
                     }
                 }
             } else {
-                completion(false)
+                // No profile picture to upload, proceed with friend requests
+                sendPendingFriendRequests { friendRequestSuccess in
+                    if friendRequestSuccess {
+                        // Update onboarding status
+                        makeOnboardingCompleteRequest { onboardingSuccess in
+                            if onboardingSuccess {
+                                // Clear data after successful completion
+                                clearPendingFriendRequests()
+                                completion(true)
+                            } else {
+                                completion(false)
+                            }
+                        }
+                    } else {
+                        completion(false)
+                    }
+                }
             }
         } else {
-            print("❌ Onboarding incomplete, missing required fields")
+            Log.error("Onboarding incomplete, missing required fields")
             Task { @MainActor in
-            AppController.shared.errorMessage = "Onboarding process incomplete"
-            AppController.shared.path = [.pluggingIn]
+                AppController.shared.errorMessage = "Please complete all required fields before continuing"
+                // Don't navigate anywhere - stay on current screen to show error
+                // Or navigate back to collect missing data
+                // AppController.shared.path = [.userDetails] // Could navigate back to details if needed
             }
             completion(false)
         }
@@ -176,19 +204,56 @@ class Onboarding {
         let requestIds: [String]?
     }
 
+    // MARK: - Private Helper Methods
+    
+    /// Uploads the profile picture to the backend
+    /// - Parameters:
+    ///   - image: The UIImage to upload
+    ///   - completion: Callback with success status
+    private static func uploadProfilePicture(_ image: UIImage, completion: @escaping (Bool) -> Void) {
+        // Convert UIImage to JPEG data
+        guard let imageData = image.jpegData(compressionQuality: 0.8) else {
+            Log.error("Failed to convert profile picture to JPEG data")
+            completion(false)
+            return
+        }
+        
+        // Upload using UserImage utility
+        UserImage.upload(imageData: imageData, isProfilePic: true) { result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(_):
+                    Log.debug("Profile picture uploaded successfully")
+                    completion(true)
+                case .failure(let error):
+                    Log.error("Profile picture upload failed: \(error.localizedDescription)")
+                    completion(false)
+                }
+            }
+        }
+    }
+
     private static func makeOnboardingCompleteRequest(completion: @escaping (Bool) -> Void) {
         // Format date to ISO 8601
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd"
         let formattedDate = userBirthdate.map { dateFormatter.string(from: $0) } ?? ""
         
-        // Create request parameters with only the data we actually collect
-        let parameters: [String: Any] = [
+        // Create request parameters with current onboarding data
+        var parameters: [String: Any] = [
             "name": userName ?? "",
             "birthdate": formattedDate,
-            "hobbies": Array(userHobbies),  // Convert Set to Array for JSON serialization
-            "almaMater": userAlmaMater ?? ""
+            "hobbies": Array(userHobbies)  // Convert Set to Array for JSON serialization
         ]
+        
+        // Add optional fields if they exist
+        if let almaMater = userAlmaMater, !almaMater.isEmpty {
+            parameters["almaMater"] = almaMater
+        }
+        
+        if let city = userCity, !city.isEmpty {
+            parameters["city"] = city
+        }
         
         NetworkManager.shared.post(
             endpoint: "/onboard",

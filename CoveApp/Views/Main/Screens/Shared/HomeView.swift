@@ -38,7 +38,7 @@ struct TabBarView: View {
             Button(action: { selectedTab = 1 }) {
                 Image(selectedTab == 1 ? "home_selected" : "home_unselected")
                     .tabBarIcon(isSelected: selectedTab == 1, isMiddleButton: false)
-                    .animation(nil, value: selectedTab)
+                    .animation(.none, value: selectedTab)
             }
             .frame(maxWidth: 50, maxHeight: 50)
             
@@ -48,7 +48,7 @@ struct TabBarView: View {
             Button(action: { selectedTab = 2 }) {
                 Image(selectedTab == 2 ? "calendar_selected" : "calendar_unselected")
                     .tabBarIcon(isSelected: selectedTab == 2, isMiddleButton: false)
-                    .animation(nil, value: selectedTab)
+                    .animation(.none, value: selectedTab)
             }
             .frame(maxWidth: 50, maxHeight: 50)
             
@@ -58,7 +58,7 @@ struct TabBarView: View {
             Button(action: { selectedTab = 3 }) {
                 Image(selectedTab == 3 ? "cove_selected" : "cove_unselected")
                     .tabBarIcon(isSelected: selectedTab == 3, isMiddleButton: true)
-                    .animation(nil, value: selectedTab)
+                    .animation(.none, value: selectedTab)
             }
             .frame(maxWidth: 56, maxHeight: 56)
             
@@ -68,7 +68,7 @@ struct TabBarView: View {
             Button(action: { selectedTab = 4 }) {
                 Image(selectedTab == 4 ? "friends_selected" : "friends_unselected")
                     .tabBarIcon(isSelected: selectedTab == 4, isMiddleButton: true)
-                    .animation(nil, value: selectedTab)
+                    .animation(.none, value: selectedTab)
             }
             .frame(maxWidth: 56, maxHeight: 56)
             
@@ -101,20 +101,17 @@ struct TabBarView: View {
                             Circle()
                                 .stroke(Color(hex: "F5F0E6"), lineWidth: selectedTab == 5 ? 3 : 0)
                         )
-                        .animation(nil, value: selectedTab)
+                        .animation(.none, value: selectedTab)
                 } else {
                     // Show default placeholder only if not loading
                     Image("default_user_pfp")
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(maxWidth: 40, maxHeight: 40)
-                        .clipShape(Circle())
                         .tabBarIcon(isSelected: selectedTab == 5, isMiddleButton: false)
+                        .clipShape(Circle())
                         .overlay(
                             Circle()
                                 .stroke(Color(hex: "F5F0E6"), lineWidth: selectedTab == 5 ? 3 : 0)
                         )
-                        .animation(nil, value: selectedTab)
+                        .animation(.none, value: selectedTab)
                 }
             }
             .frame(maxWidth: 50, maxHeight: 50)

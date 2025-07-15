@@ -104,7 +104,8 @@ struct UserPhoneNumber {
                 if let error = error {
                     Log.error("Firebase Auth Error: \(error.localizedDescription)")
                     AppController.shared.errorMessage = error.localizedDescription
-                    completion(false)
+                    let result = self.categorizeFirebaseError(error)
+                    completion(result)
                     return
                 }
                 
@@ -117,7 +118,7 @@ struct UserPhoneNumber {
                 } else {
                     Log.error("Failed to get verification ID - no error but no ID received")
                     AppController.shared.errorMessage = "Failed to get verification ID"
-                    completion(false)
+                    completion(.unknownError("Failed to get verification ID"))
                 }
             }
         }

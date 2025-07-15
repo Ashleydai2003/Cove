@@ -144,6 +144,8 @@ struct PluggingYouIn: View {
                 self.prefetchProfileImages()
             }
             
+            // Mark onboarding as complete and log the user in
+            appController.hasCompletedOnboarding = true
             appController.isLoggedIn = true
         }
     }
