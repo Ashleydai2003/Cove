@@ -282,7 +282,7 @@ struct UserPhoneNumberView: View {
                 messageType = .error
                 
             case .rateLimited:
-                statusMessage = "Too many attempts. Please wait before trying again."
+                statusMessage = "Wait just a few seconds and try to resend again."
                 messageType = .error
                 
             case .unknownError(let message):

@@ -325,6 +325,8 @@ struct OtpVerifyView: View {
                 otpErrorMessage = errorMessage ?? "Incorrect code. Please check and try again."
                 statusMessage = ""
                 messageType = .none
+                // Re-enable focus so user can immediately backspace/edit
+                isInputFocused = true
             }
         }
     }
@@ -358,7 +360,7 @@ struct OtpVerifyView: View {
                 messageType = .error
                 
             case .rateLimited:
-                statusMessage = "Too many attempts. Please wait before trying again."
+                statusMessage = "Wait just a few seconds and try to resend again."
                 messageType = .error
                 
             case .unknownError(let message):
