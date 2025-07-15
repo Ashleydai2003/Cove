@@ -156,7 +156,7 @@ struct OtpVerify {
                     
                 case .failure(let error):
                     print("❌ Backend login error: \(error.localizedDescription)")
-                    AppController.shared.errorMessage = error.localizedDescription
+                    // Don't set AppController.shared.errorMessage to avoid alert flash
                     completion(false)
                 }
             }
