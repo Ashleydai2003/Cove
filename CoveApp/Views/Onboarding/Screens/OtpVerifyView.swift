@@ -88,7 +88,8 @@ struct OtpVerifyView: View {
             if !statusMessage.isEmpty {
                 Text(statusMessage)
                     .font(.LeagueSpartan(size: 14))
-                    .foregroundColor(messageType == .success ? .green : .red)
+                    .foregroundColor(messageType == .success ? .green : 
+                                   messageType == .error ? .red : Colors.primaryDark)
             }
             Spacer()
         }
@@ -361,7 +362,7 @@ struct OtpVerifyView: View {
                 messageType = .error
                 
             case .unknownError(let message):
-                statusMessage = "Failed to resend: \(message)"
+                statusMessage = "Code failed to send—try another phone number."
                 messageType = .error
             }
         }
