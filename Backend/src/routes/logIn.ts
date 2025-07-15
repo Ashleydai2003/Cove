@@ -3,10 +3,9 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { authMiddleware } from '../middleware/auth';
 import { initializeDatabase } from '../config/database';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { getAuth } from 'firebase-admin/auth';
-
-const s3Client = new S3Client({ region: process.env.AWS_REGION });
+import { s3Client } from '../config/s3';
 
 export const handleLogin = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {

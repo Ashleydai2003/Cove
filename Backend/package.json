@@ -13,7 +13,14 @@
     "prisma:reset": "dotenv -e env.development -- prisma migrate reset",
     "db:start": "docker-compose up -d",
     "db:stop": "docker-compose down",
-    "dev": "dotenv -e env.development -- ts-node src/local-server.ts"
+    "minio:setup": "dotenv -e env.development -- ts-node src/scripts/setup-minio.ts",
+    "dev": "dotenv -e env.development -- ts-node src/local-server.ts",
+    "start:prod": "dotenv -e env.production -- ts-node src/local-server.ts",
+    "dev:stop:server": "pkill -f 'ts-node src/local-server.ts' || echo 'Server not running'",
+    "dev:full": "npm run db:start && sleep 5 && npm run minio:setup && npm run emulators:start & npm run dev",
+    "dev:stop": "npm run dev:stop:server && npm run db:stop && npm run emulators:stop",
+    "emulators:start": "firebase emulators:start --only auth",
+    "emulators:stop": "pkill -f 'firebase emulators:start' || echo 'Emulator not running'"
   },
   "keywords": [],
   "author": "",
@@ -44,6 +51,7 @@
     "express": "^4.21.2",
     "prisma": "^6.8.2",
     "ts-node": "^10.9.2",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "firebase-tools": "^13.0.0"
   }
 }

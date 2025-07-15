@@ -1,9 +1,8 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { authMiddleware } from '../middleware/auth';
 import { initializeDatabase } from '../config/database';
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
-
-const s3Client = new S3Client({ region: process.env.AWS_REGION });
+import { PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { s3Client } from '../config/s3';
 
 export const handleUserImage = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
