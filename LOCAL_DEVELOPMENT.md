@@ -124,4 +124,48 @@
 
 ---
 
-**Need help?** Ask your team or check the troubleshooting section above! 
+## 🛠️ Super Admin Local Guide (Advanced)
+
+> **Warning:** These operations are for advanced users. Always make sure you’re working in your local/dev environment—never production!
+
+### 1. Direct Database Access
+- **Prisma Studio (Recommended):**
+  - Run: `npm run prisma:studio`
+  - Opens [http://localhost:5555](http://localhost:5555) in your browser.
+  - Edit, add, or delete any data in your local DB.
+- **pgAdmin:**
+  - Visit [http://localhost:5050](http://localhost:5050)
+  - Login: admin/admin
+  - Full SQL access to your local PostgreSQL database.
+- **psql CLI:**
+  - Run: `docker exec -it team23-postgres psql -U postgres team23_dev`
+  - You can run raw SQL queries directly.
+
+### 2. MinIO (S3) Management
+- **Web Console:**
+  - Visit [http://localhost:9001](http://localhost:9001)
+  - Login: minioadmin/minioadmin
+  - Browse, upload, download, or delete files/buckets.
+- **mc CLI (MinIO Client):**
+  - [Install mc](https://docs.min.io/docs/minio-client-quickstart-guide.html)
+  - Configure: `mc alias set local http://localhost:9000 minioadmin minioadmin`
+  - List buckets: `mc ls local`
+  - Remove a bucket: `mc rb --force local/cove-user-images-dev`
+  - Upload/download files: `mc cp ...`
+
+### 3. Manual Data Seeding or Cleanup
+- **Reset DB:** `npm run prisma:reset` (wipes all data)
+- **Seed Data:** Add scripts in `Backend/src/scripts/` and run with `ts-node`.
+- **Delete MinIO Buckets:** Use MinIO Console or `mc` CLI as above.
+
+### 4. Debugging & Logs
+- **API Logs:**
+  - All backend logs print to your terminal running `npm run dev`.
+- **Docker Logs:**
+  - `docker logs team23-postgres`
+  - `docker logs team23-minio`
+
+### 5. Caution!
+- **Never run these commands against production!**
+- **Always double-check which environment you’re connected to.**
+- **If in doubt, ask your team before making destructive changes.**
