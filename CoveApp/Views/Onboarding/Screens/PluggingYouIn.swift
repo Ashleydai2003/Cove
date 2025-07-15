@@ -306,7 +306,7 @@ struct PluggingYouIn: View {
     
     private func fetchFriends() {
         print("👥 PluggingYouIn: Starting fetchFriends...")
-        statusMessage = "loading your friends…"
+        statusMessage = "bringing your friends over…"
         appController.friendsViewModel.loadNextPage()
         
         // Monitor the friends loading state
