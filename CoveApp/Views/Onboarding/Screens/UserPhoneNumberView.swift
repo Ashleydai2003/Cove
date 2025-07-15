@@ -84,7 +84,8 @@ struct UserPhoneNumberView: View {
             if !statusMessage.isEmpty {
                 Text(statusMessage)
                     .font(.LeagueSpartan(size: 14))
-                    .foregroundColor(messageType == .success ? .green : .red)
+                    .foregroundColor(messageType == .success ? .green : 
+                                   messageType == .error ? .red : Colors.primaryDark)
             }
             Spacer()
         }
@@ -162,6 +163,9 @@ struct UserPhoneNumberView: View {
             }
         }
         .onAppear {
+            // Auto-focus on phone number input
+            isFocused = true
+            
             // Auto-send code if phone number is complete when returning from OTP screen
             if checkPhoneNumberCompletion(userPhone.number) && statusMessage.isEmpty {
                 sendVerificationCodeWithFeedback()
@@ -222,6 +226,7 @@ struct UserPhoneNumberView: View {
                 .keyboardType(.numberPad)
                 .focused($isFocused)
                 .textContentType(.telephoneNumber)
+                .tint(.clear) // Hide cursor
                 .onChange(of: userPhone.number) { _, newValue in
                     let formattedNumber = userPhone.formatPhoneNumber(newValue, pattern: userPhone.country.pattern)
                     userPhone.number = formattedNumber
@@ -281,7 +286,7 @@ struct UserPhoneNumberView: View {
                 messageType = .error
                 
             case .unknownError(let message):
-                statusMessage = "Error: \(message)"
+                statusMessage = "Code failed to send—try another phone number."
                 messageType = .error
             }
         }
