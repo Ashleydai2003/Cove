@@ -1,5 +1,6 @@
 import SwiftUI
 import Kingfisher
+import FirebaseAuth
 
 /// The context in which the event summary is shown (for styling/layout)
 enum EventSummaryType {
@@ -39,7 +40,6 @@ struct EventSummaryView: View {
                                     .clipShape(RoundedRectangle(cornerRadius: 18))
                             }
                             .onSuccess { result in
-                                print("📸 Event cover loaded from: \(result.cacheType)")
                                 withAnimation(.easeIn(duration: 0.3)) {
                                     imageLoaded = true
                                 }
@@ -58,10 +58,19 @@ struct EventSummaryView: View {
                             .aspectRatio(16/10, contentMode: .fill)
                             .frame(maxWidth: .infinity)
                             .clipShape(RoundedRectangle(cornerRadius: 18))
+                            .onAppear {
+                                // For default images, set imageLoaded to true immediately
+                                withAnimation(.easeIn(duration: 0.3)) {
+                                    imageLoaded = true
+                                }
+                            }
                     }
                     // RSVP overlay if not calendar and user is going or hosting
                     if type != .calendar && imageLoaded {
-                        if event.hostId == appController.profileModel.userId {
+                        // Use Firebase Auth current user ID for comparison
+                        let currentUserId = Auth.auth().currentUser?.uid ?? ""
+                        
+                        if event.hostId == currentUserId {
                             // Show hosting overlay for event hosts
                             Rectangle()
                                 .fill(Color.black.opacity(0.25))
@@ -168,6 +177,7 @@ struct EventSummaryView: View {
             }
         }
         .padding(.vertical, 5)
+
     }
     /// Returns a human-readable time-ago string for the event date.
     private func timeAgo(_ dateString: String) -> String {

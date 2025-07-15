@@ -5,8 +5,6 @@
 //  Created by Ananya Agarwal
 
 import SwiftUI
-
-import SwiftUI
 import MapKit
 
 struct LocationSearchView: View {
@@ -37,6 +35,42 @@ struct LocationSearchView: View {
                     }
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
+                    .padding(.top, 20)
+                    
+                    // Search bar under title
+                    HStack {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundColor(Colors.k6F6F73)
+                            .font(.system(size: 16))
+                        
+                        TextField("enter address", text: $viewModel.searchQuery)
+                            .font(.LibreBodoni(size: 16))
+                            .foregroundColor(Colors.primaryDark)
+                            .textFieldStyle(PlainTextFieldStyle())
+                        
+                        if !viewModel.searchQuery.isEmpty {
+                            Button {
+                                viewModel.searchQuery = ""
+                            } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundColor(Colors.k6F6F73)
+                                    .font(.system(size: 16))
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color.white)
+                            .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                    )
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 16)
 
                     // Results list
                     List {
@@ -50,24 +84,36 @@ struct LocationSearchView: View {
                                 HStack(spacing: 12) {
                                     Image(systemName: "mappin.circle.fill")
                                         .foregroundColor(Colors.primaryDark)
-                                    VStack(alignment: .leading, spacing: 2) {
+                                        .font(.system(size: 20))
+                                    
+                                    VStack(alignment: .leading, spacing: 4) {
                                         Text(result.title)
                                             .font(.LibreBodoniBold(size: 16))
                                             .foregroundColor(Colors.primaryDark)
+                                            .multilineTextAlignment(.leading)
+                                        
                                         Text(result.subtitle)
                                             .font(.LeagueSpartan(size: 14))
                                             .foregroundColor(Colors.k6F6F73)
+                                            .multilineTextAlignment(.leading)
                                     }
+                                    
+                                    Spacer()
                                 }
-                                .padding(.vertical, 6)
+                                .padding(.vertical, 12)
+                                .padding(.horizontal, 16)
+                                .background(Colors.faf8f4) // Same as background
+                                .cornerRadius(12)
                             }
                             .buttonStyle(.plain)
+                            .listRowBackground(Colors.faf8f4) // Same as background
+                            .listRowSeparator(.hidden)
+                            .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
                         }
                     }
                     .listStyle(.plain)
                     .scrollContentBackground(.hidden)
                     .background(Colors.faf8f4)
-                    .searchable(text: $viewModel.searchQuery, placement: .navigationBarDrawer(displayMode: .always), prompt: "enter address")
                 }
             }
         }

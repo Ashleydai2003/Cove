@@ -100,7 +100,6 @@ struct EventView: View {
                                 .clipShape(RoundedRectangle(cornerRadius: 12))
                         }
                         .onSuccess { result in
-                            print("📸 Event cover loaded from: \(result.cacheType)")
                         }
                         .resizable()
                         .fade(duration: 0.2)

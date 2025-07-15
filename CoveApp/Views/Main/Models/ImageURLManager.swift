@@ -19,7 +19,7 @@ actor ImageURLManager {
                         let newURL = try await fetchURL()
                         await self.updateCache(key: key, url: newURL)
                     } catch {
-                        print("Background URL refresh failed: \(error)")
+                        Log.debug("Background URL refresh failed: \(error)")
                     }
                 }
             }

@@ -31,7 +31,7 @@ class FriendsViewModel: ObservableObject {
     }
     
     init() {
-        print("👥 FriendsViewModel initialized")
+        Log.debug("FriendsViewModel initialized")
     }
     
     func loadNextPage() {
@@ -76,10 +76,10 @@ class FriendsViewModel: ObservableObject {
     func loadNextPageIfStale() {
         if !hasCachedData || isCacheStale {
             let reason = !hasCachedData ? "no cached data" : "cache is stale"
-            print("👥 FriendsViewModel: Loading friends data (\(reason))")
+            Log.debug("FriendsViewModel: Loading friends data (\(reason))")
             loadNextPage()
         } else {
-            print("👥 FriendsViewModel: ✅ Using fresh cached friends data (\(friends.count) friends) - NO NETWORK REQUEST")
+            Log.debug("FriendsViewModel: using cached friends count=\(friends.count)")
         }
     }
 } 

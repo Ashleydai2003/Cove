@@ -96,6 +96,7 @@ struct CitySelectionView: View {
                                 ForEach(filteredCities, id: \.self) { city in
                                     Button {
                                         searchCity = city
+                                        Onboarding.storeCity(city: city)
                                         DispatchQueue.main.async {
                                             showCityDropdown = false
                                         }
@@ -136,7 +137,9 @@ struct CitySelectionView: View {
                         .padding(.bottom, 20)
                         .onTapGesture {
                             // MARK: - Store city
-                            // TODO: Store city when backend supports it
+                            if !searchCity.isEmpty {
+                                Onboarding.storeCity(city: searchCity)
+                            }
                             appController.path.append(.hobbies)
                         }
                 }

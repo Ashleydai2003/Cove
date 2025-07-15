@@ -6,6 +6,7 @@
 
 import SwiftUI
 import Foundation
+import FirebaseAuth
 
 /// Model for creating new events, following MVVM pattern
 @MainActor
@@ -29,6 +30,7 @@ class NewEventModel: ObservableObject {
     
     // MARK: - Computed Properties
     var isFormValid: Bool {
+        // Only event name and location are required
         return !eventName.isEmpty && location != nil
     }
     
@@ -59,10 +61,8 @@ class NewEventModel: ObservableObject {
             return
         }
         
-        guard let image = eventImage,
-              let coverPhoto = image.jpegData(compressionQuality: 0.8),
-              let location = self.location else {
-            errorMessage = "Missing required fields"
+        guard let location = self.location else {
+            errorMessage = "Location is required"
             completion(false)
             return
         }
@@ -72,16 +72,25 @@ class NewEventModel: ObservableObject {
         
         // Format date to ISO 8601
         let finalDate: String = combineDateTime(date: eventDate, time: eventTime) ?? ""
-        debugPrint("📅 Event date: \(finalDate)")
         
-        let params: [String: Any] = [
+        // Build parameters with optional cover photo
+        var params: [String: Any] = [
             "name": eventName,
             "description": "",
             "date": finalDate,
             "location": location,
-            "coverPhoto": coverPhoto.base64EncodedString(),
             "coveId": coveId
         ]
+        
+        // Debug: Log the current userId from Firebase Auth
+        let firebaseUserId = Auth.auth().currentUser?.uid ?? "no-firebase-user"
+        Log.critical("Creating event - Firebase userId: '\(firebaseUserId)', ProfileModel userId: '\(AppController.shared.profileModel.userId)'")
+        
+        // Add cover photo if provided
+        if let image = eventImage,
+           let coverPhoto = image.jpegData(compressionQuality: 0.8) {
+            params["coverPhoto"] = coverPhoto.base64EncodedString()
+        }
         
         NetworkManager.shared.post(
             endpoint: "/create-event",
@@ -92,11 +101,11 @@ class NewEventModel: ObservableObject {
                 
                 switch result {
                 case .success(let response):
-                    debugPrint("✅ Event created successfully: \(response)")
+                    Log.debug("✅ Event created successfully: \(response)")
                     self.resetForm()
                     completion(true)
                 case .failure(let error):
-                    debugPrint("❌ Event creation failed: \(error)")
+                    Log.error("Event creation failed: \(error)")
                     self.errorMessage = "Failed to create event: \(error.localizedDescription)"
                     completion(false)
                 }

@@ -32,7 +32,7 @@ class MutualsViewModel: ObservableObject {
     }
     
     init() {
-        print("🔗 MutualsViewModel initialized")
+        Log.debug("🔗 MutualsViewModel initialized")
     }
     
     func loadNextPage() {
@@ -77,15 +77,15 @@ class MutualsViewModel: ObservableObject {
     func loadNextPageIfStale() {
         if !hasCachedData || isCacheStale {
             let reason = !hasCachedData ? "no cached data" : "cache is stale"
-            print("🔗 MutualsViewModel: Loading mutuals data (\(reason))")
+            Log.debug("🔗 MutualsViewModel: Loading mutuals data (\(reason))")
             loadNextPage()
         } else {
-            print("🔗 MutualsViewModel: ✅ Using fresh cached mutuals data (\(mutuals.count) mutuals) - NO NETWORK REQUEST")
+            Log.debug("🔗 MutualsViewModel: ✅ Using fresh cached mutuals data (\(mutuals.count) mutuals) - NO NETWORK REQUEST")
         }
     }
     
     func sendFriendRequest(to userId: String) {
-        print("🔗 MUTUALS: Sending friend request to \(userId)")
+        Log.debug("🔗 MUTUALS: Sending friend request to \(userId)")
         
         // Optimistic UI update by assigning NEW Set reference
         var newSet = pendingRequests

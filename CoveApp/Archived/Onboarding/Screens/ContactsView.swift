@@ -124,8 +124,8 @@ struct ContactsView: View {
                     action: processAllContacts,
                     isLoading: isLoading,
                     onSkip: {
-                        // Navigate to PluggingYouIn instead of completing onboarding directly
-                        appController.path.append(.pluggingIn)
+                        // Complete onboarding and navigate to data loading
+                        completeOnboarding()
                     }
                 )
             }
@@ -208,6 +208,22 @@ struct ContactsView: View {
                             }
                         }
                     }
+                }
+            }
+        }
+    }
+    
+    private func completeOnboarding() {
+        // Complete onboarding and navigate to data loading screen
+        Onboarding.completeOnboarding { success in
+            DispatchQueue.main.async {
+                if success {
+                    // Navigate to data loading screen
+                    appController.path = [.pluggingIn]
+                } else {
+                    // Stay on this screen if onboarding fails
+                    errorMessage = "Failed to complete onboarding"
+                    showError = true
                 }
             }
         }

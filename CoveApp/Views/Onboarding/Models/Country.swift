@@ -36,7 +36,7 @@ extension Bundle {
         }
         catch {
             // 4. Print the exact decoding error so you can fix it
-            print("❌ Error decoding '\(file)': \(error)")
+            Log.debug("❌ Error decoding '\(file)': \(error)")
             fatalError("Decoding '\(file)' failed; see console for details.")
         }
     }

@@ -38,7 +38,7 @@ struct ContactMatcher {
         if let pretty = try? JSONSerialization
                           .data(withJSONObject: parameters, options: [.prettyPrinted]),
            let json = String(data: pretty, encoding: .utf8) {
-            print("📞 POST /contacts body:\n\(json)")
+            Log.debug("📞 POST /contacts body:\n\(json)")
         }
 
         // 3) Change the expected decoded type to the wrapper

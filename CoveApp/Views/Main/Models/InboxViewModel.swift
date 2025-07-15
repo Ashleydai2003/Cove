@@ -21,7 +21,6 @@ class InboxViewModel: ObservableObject {
     
     /// Initializes the inbox model - called on login/after onboarding
     func initialize() {
-        print("📮 InboxViewModel: Initializing inbox...")
         fetchInvites()
     }
     
@@ -29,8 +28,6 @@ class InboxViewModel: ObservableObject {
     func fetchInvites() {
         isLoading = true
         errorMessage = nil
-        
-        print("📮 InboxViewModel: Starting fetchInvites...")
         
         NetworkManager.shared.get(
             endpoint: "/invites",
@@ -43,18 +40,17 @@ class InboxViewModel: ObservableObject {
                 
                 switch result {
                 case .success(let response):
-                    print("✅ InboxViewModel: Invites fetched successfully: \(response.invites.count) invites, \(response.invites.filter { !$0.isOpened }.count) unopened")
                     self.invites = response.invites
+                    
                     // Prefetch cover photos for already-opened invites
                     let coverUrls = response.invites.compactMap { $0.cove.coverPhotoUrl }
                     ImagePrefetcherUtil.prefetch(urlStrings: coverUrls)
-                    print("📮 InboxViewModel: After setting invites - hasUnopenedInvites: \(self.hasUnopenedInvites)")
                     
                     // Notify AppController to check for auto-show
                     AppController.shared.checkForAutoShowInbox()
                     
                 case .failure(let error):
-                    print("❌ InboxViewModel: Failed to fetch invites: \(error)")
+                    Log.error("Failed to fetch invites: \(error.localizedDescription)")
                     self.errorMessage = "Failed to load invites: \(error.localizedDescription)"
                 }
             }
@@ -68,10 +64,10 @@ class InboxViewModel: ObservableObject {
     
     /// Opens an invite by marking it as opened on the server (only for unopened invites)
     func openInvite(_ invite: InviteModel) {
-        print("📭 InboxViewModel: openInvite called for invite: \(invite.id)")
+        Log.debug("openInvite called for invite: \(invite.id)")
         
         guard !invite.isOpened else {
-            print("📭 InboxViewModel: Invite \(invite.id) already opened – no-op")
+            Log.debug("Invite \(invite.id) already opened – no-op")
             return
         }
         
@@ -118,7 +114,7 @@ class InboxViewModel: ObservableObject {
                         }
                     }
                 case .failure(let error):
-                    print("❌ openInvite failed: \(error)")
+                    Log.error("openInvite failed: \(error.localizedDescription)")
                     // Revert optimistic update
                     if let i = self.invites.firstIndex(where: { $0.id == invite.id }) {
                         var reverted = self.invites
@@ -135,7 +131,7 @@ class InboxViewModel: ObservableObject {
     
     /// Accepts an invite and joins the cove
     func acceptInvite(_ invite: InviteModel) {
-        print("✅ ACCEPT: Invite \(invite.id)")
+        Log.debug("Accept invite \(invite.id)")
         let impact = UIImpactFeedbackGenerator(style: .medium); impact.impactOccurred()
         
         // Remove optimistically by reassigning a NEW array
@@ -167,7 +163,7 @@ class InboxViewModel: ObservableObject {
     
     /// Refreshes all feeds after joining a new cove
     private func refreshAllFeeds() {
-        print("🔄 InboxViewModel: Refreshing all feeds after joining cove...")
+        Log.debug("Refreshing feeds after joining cove…")
         
         // Refresh CoveFeed (user's coves list)
         AppController.shared.coveFeed.refreshUserCoves()
@@ -181,7 +177,7 @@ class InboxViewModel: ObservableObject {
     
     /// Declines an invite
     func declineInvite(_ invite: InviteModel) {
-        print("❌ DECLINE: Invite \(invite.id)")
+        Log.debug("Decline invite \(invite.id)")
         let impact = UIImpactFeedbackGenerator(style: .light); impact.impactOccurred()
         
         withAnimation {

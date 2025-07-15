@@ -1,6 +1,9 @@
 import Foundation
 import FirebaseAuth
 
+// Lightweight logging helper
+import os
+
 /// NetworkManager: Handles all API requests for the app
 class NetworkManager {
     /// Singleton instance for global access
@@ -11,9 +14,8 @@ class NetworkManager {
     
     /// Private initializer to enforce singleton pattern
     private init() {
-        // Log current environment for debugging
-        print("🌐 NetworkManager initialized with \(AppConstants.API.environment) environment")
-        print("🔗 API Base URL: \(apiBaseURL)")
+        // Minimal initialization logging
+        Log.critical("NetworkManager initialized", category: "network")
     }
     
     /// Makes a GET request to the specified endpoint
@@ -26,26 +28,22 @@ class NetworkManager {
         parameters: [String: Any]? = nil,
         completion: @escaping (Result<T, NetworkError>) -> Void
     ) {
-        print("🌐 GET Request - Endpoint: \(endpoint)")
-        if let params = parameters {
-            print("📝 Query Parameters: \(params)")
-        }
+        // Minimal request logging
+        Log.critical("GET \(endpoint)", category: "network")
         
         // Get current Firebase token
         Auth.auth().currentUser?.getIDToken { token, error in
             if let error = error {
-                print("❌ Auth Error: \(error.localizedDescription)")
+                Log.error("Auth error: \(error.localizedDescription)", category: "network")
                 completion(.failure(.authError(error)))
                 return
             }
             
             guard let token = token else {
-                print("❌ Missing Auth Token")
+                Log.error("Missing auth token", category: "network")
                 completion(.failure(.missingToken))
                 return
             }
-            
-            print("🔑 Auth Token received")
             
             // Create base URL
             var urlComponents = URLComponents(string: "\(self.apiBaseURL)\(endpoint)")
@@ -59,64 +57,48 @@ class NetworkManager {
             
             // Create URL
             guard let url = urlComponents?.url else {
-                print("❌ Invalid URL: \(self.apiBaseURL)\(endpoint)")
+                Log.error("Invalid URL: \(self.apiBaseURL)\(endpoint)", category: "network")
                 completion(.failure(.invalidURL))
                 return
             }
-            
-            print("🔗 Request URL: \(url.absoluteString)")
             
             // Create request
             var request = URLRequest(url: url)
             request.httpMethod = "GET"
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
             
-            print("📤 Sending GET request...")
-            
             // Make the request
             let task = URLSession.shared.dataTask(with: request) { data, response, error in
                 DispatchQueue.main.async {
                     if let error = error {
-                        print("❌ Network Error: \(error.localizedDescription)")
+                        Log.error("Network error: \(error.localizedDescription)", category: "network")
                         completion(.failure(.networkError(error)))
                         return
                     }
                     
                     guard let httpResponse = response as? HTTPURLResponse else {
-                        print("❌ Invalid Response: No HTTP response")
+                        Log.error("Invalid response (no HTTP)", category: "network")
                         completion(.failure(.invalidResponse))
                         return
                     }
                     
-                    print("📥 Response Status: \(httpResponse.statusCode)")
-                    
                     guard (200...299).contains(httpResponse.statusCode) else {
-                        print("❌ Server Error: \(httpResponse.statusCode)")
+                        Log.error("Server error \(httpResponse.statusCode)", category: "network")
                         completion(.failure(.serverError(httpResponse.statusCode)))
                         return
                     }
                     
                     guard let data = data else {
-                        print("❌ No Data Received")
+                        Log.error("No data received", category: "network")
                         completion(.failure(.noData))
                         return
                     }
                     
-                    print("📦 Received Data: \(String(data: data, encoding: .utf8) ?? "Unable to decode data")")
-                    
-                    // Add more detailed logging for debugging
-                    if let jsonString = String(data: data, encoding: .utf8) {
-                        print("🔍 NetworkManager: Raw JSON response:")
-                        print(jsonString)
-                    }
-                    
                     do {
                         let decodedResponse = try JSONDecoder().decode(T.self, from: data)
-                        print("✅ Successfully decoded response")
                         completion(.success(decodedResponse))
                     } catch {
-                        print("❌ Decoding Error: \(error.localizedDescription)")
-                        print("🔍 NetworkManager: Failed to decode response as \(T.self)")
+                        Log.error("Decoding error: \(error.localizedDescription)", category: "network")
                         completion(.failure(.decodingError(error)))
                     }
                 }
@@ -136,35 +118,28 @@ class NetworkManager {
         parameters: [String: Any],
         completion: @escaping (Result<T, NetworkError>) -> Void
     ) {
-        print("🌐 POST Request - Endpoint: \(endpoint)")
-        print("📝 Request Body: \(parameters)")
+        Log.critical("POST \(endpoint)", category: "network")
         
         // Get current Firebase token
         Auth.auth().currentUser?.getIDToken { token, error in
             if let error = error {
-                print("❌ Auth Error: \(error.localizedDescription)")
+                Log.error("Auth error: \(error.localizedDescription)", category: "network")
                 completion(.failure(.authError(error)))
                 return
             }
             
             guard let token = token else {
-                print("❌ Missing Auth Token")
+                Log.error("Missing auth token", category: "network")
                 completion(.failure(.missingToken))
                 return
             }
             
-            print("🔑 Auth Token received")
-            // TODO: DELETE THIS WHEN DONE TESTING
-            print("🔑 Auth Token received: \(token)")
-            
             // Create URL
             guard let url = URL(string: "\(self.apiBaseURL)\(endpoint)") else {
-                print("❌ Invalid URL: \(self.apiBaseURL)\(endpoint)")
+                Log.error("Invalid URL: \(self.apiBaseURL)\(endpoint)", category: "network")
                 completion(.failure(.invalidURL))
                 return
             }
-            
-            print("🔗 Request URL: \(url.absoluteString)")
             
             // Create request
             var request = URLRequest(url: url)
@@ -175,59 +150,44 @@ class NetworkManager {
             // Create request body
             do {
                 request.httpBody = try JSONSerialization.data(withJSONObject: parameters)
-                print("📦 Request Body: \(String(data: request.httpBody!, encoding: .utf8) ?? "Unable to decode body")")
             } catch {
-                print("❌ Encoding Error: \(error.localizedDescription)")
+                Log.error("Encoding error: \(error.localizedDescription)", category: "network")
                 completion(.failure(.encodingError(error)))
                 return
             }
-            
-            print("📤 Sending POST request...")
             
             // Make the request
             let task = URLSession.shared.dataTask(with: request) { data, response, error in
                 DispatchQueue.main.async {
                     if let error = error {
-                        print("❌ Network Error: \(error.localizedDescription)")
+                        Log.error("Network error: \(error.localizedDescription)", category: "network")
                         completion(.failure(.networkError(error)))
                         return
                     }
                     
                     guard let httpResponse = response as? HTTPURLResponse else {
-                        print("❌ Invalid Response: No HTTP response")
+                        Log.error("Invalid response (no HTTP)", category: "network")
                         completion(.failure(.invalidResponse))
                         return
                     }
                     
-                    print("📥 Response Status: \(httpResponse.statusCode)")
-                    
                     guard (200...299).contains(httpResponse.statusCode) else {
-                        print("❌ Server Error: \(httpResponse.statusCode)")
+                        Log.error("Server error \(httpResponse.statusCode)", category: "network")
                         completion(.failure(.serverError(httpResponse.statusCode)))
                         return
                     }
                     
                     guard let data = data else {
-                        print("❌ No Data Received")
+                        Log.error("No data received", category: "network")
                         completion(.failure(.noData))
                         return
                     }
                     
-                    print("📦 Received Data: \(String(data: data, encoding: .utf8) ?? "Unable to decode data")")
-                    
-                    // Add more detailed logging for debugging
-                    if let jsonString = String(data: data, encoding: .utf8) {
-                        print("🔍 NetworkManager: Raw JSON response:")
-                        print(jsonString)
-                    }
-                    
                     do {
                         let decodedResponse = try JSONDecoder().decode(T.self, from: data)
-                        print("✅ Successfully decoded response")
                         completion(.success(decodedResponse))
                     } catch {
-                        print("❌ Decoding Error: \(error.localizedDescription)")
-                        print("🔍 NetworkManager: Failed to decode response as \(T.self)")
+                        Log.error("Decoding error: \(error.localizedDescription)", category: "network")
                         completion(.failure(.decodingError(error)))
                     }
                 }
@@ -247,33 +207,32 @@ class NetworkManager {
         parameters: [String: Any],
         completion: @escaping (Result<T, NetworkError>) -> Void
     ) {
-        print("🌐 PUT Request - Endpoint: \(endpoint)")
-        print("📝 Request Body: \(parameters)")
+        Log.debug("PUT \(endpoint) – body keys: \(parameters.keys)", category: "network")
         
         // Get current Firebase token
         Auth.auth().currentUser?.getIDToken { token, error in
             if let error = error {
-                print("❌ Auth Error: \(error.localizedDescription)")
+                Log.error("Auth error: \(error.localizedDescription)", category: "network")
                 completion(.failure(.authError(error)))
                 return
             }
             
             guard let token = token else {
-                print("❌ Missing Auth Token")
+                Log.error("Missing auth token", category: "network")
                 completion(.failure(.missingToken))
                 return
             }
             
-            print("🔑 Auth Token received")
+            Log.debug("Auth token received", category: "network")
             
             // Create URL
             guard let url = URL(string: "\(self.apiBaseURL)\(endpoint)") else {
-                print("❌ Invalid URL: \(self.apiBaseURL)\(endpoint)")
+                Log.error("Invalid URL: \(self.apiBaseURL)\(endpoint)", category: "network")
                 completion(.failure(.invalidURL))
                 return
             }
             
-            print("🔗 Request URL: \(url.absoluteString)")
+            Log.debug("Request URL: \(url.absoluteString)", category: "network")
             
             // Create request
             var request = URLRequest(url: url)
@@ -284,59 +243,61 @@ class NetworkManager {
             // Create request body
             do {
                 request.httpBody = try JSONSerialization.data(withJSONObject: parameters)
-                print("📦 Request Body: \(String(data: request.httpBody!, encoding: .utf8) ?? "Unable to decode body")")
+                #if DEBUG
+                if let bodyString = String(data: request.httpBody!, encoding: .utf8) {
+                    Log.debug("Request Body: \(bodyString)", category: "network")
+                }
+                #endif
             } catch {
-                print("❌ Encoding Error: \(error.localizedDescription)")
+                Log.error("Encoding error: \(error.localizedDescription)", category: "network")
                 completion(.failure(.encodingError(error)))
                 return
             }
             
-            print("📤 Sending PUT request...")
+            Log.debug("Sending PUT request...", category: "network")
             
             // Make the request
             let task = URLSession.shared.dataTask(with: request) { data, response, error in
                 DispatchQueue.main.async {
                     if let error = error {
-                        print("❌ Network Error: \(error.localizedDescription)")
+                        Log.error("Network error: \(error.localizedDescription)", category: "network")
                         completion(.failure(.networkError(error)))
                         return
                     }
                     
                     guard let httpResponse = response as? HTTPURLResponse else {
-                        print("❌ Invalid Response: No HTTP response")
+                        Log.error("Invalid response (no HTTP)", category: "network")
                         completion(.failure(.invalidResponse))
                         return
                     }
                     
-                    print("📥 Response Status: \(httpResponse.statusCode)")
+                    Log.debug("Response status: \(httpResponse.statusCode)", category: "network")
                     
                     guard (200...299).contains(httpResponse.statusCode) else {
-                        print("❌ Server Error: \(httpResponse.statusCode)")
+                        Log.error("Server error \(httpResponse.statusCode)", category: "network")
                         completion(.failure(.serverError(httpResponse.statusCode)))
                         return
                     }
                     
                     guard let data = data else {
-                        print("❌ No Data Received")
+                        Log.error("No data received", category: "network")
                         completion(.failure(.noData))
                         return
                     }
                     
-                    print("📦 Received Data: \(String(data: data, encoding: .utf8) ?? "Unable to decode data")")
-                    
-                    // Add more detailed logging for debugging
+                    #if DEBUG
                     if let jsonString = String(data: data, encoding: .utf8) {
-                        print("🔍 NetworkManager: Raw JSON response:")
-                        print(jsonString)
+                        Log.debug("Raw JSON: \(jsonString)", category: "network")
                     }
+                    #endif
                     
                     do {
                         let decodedResponse = try JSONDecoder().decode(T.self, from: data)
-                        print("✅ Successfully decoded response")
+                        Log.debug("Successfully decoded response", category: "network")
                         completion(.success(decodedResponse))
                     } catch {
-                        print("❌ Decoding Error: \(error.localizedDescription)")
-                        print("🔍 NetworkManager: Failed to decode response as \(T.self)")
+                        Log.error("Decoding error: \(error.localizedDescription)", category: "network")
+                        Log.debug("Failed to decode response as \(T.self)", category: "network")
                         completion(.failure(.decodingError(error)))
                     }
                 }
@@ -356,33 +317,33 @@ class NetworkManager {
         parameters: [String: Any],
         completion: @escaping (Result<T, NetworkError>) -> Void
     ) {
-        print("🌐 DELETE Request - Endpoint: \(endpoint)")
-        print("📝 Request Body: \(parameters)")
+        Log.debug("DELETE Request - Endpoint: \(endpoint)", category: "network")
+        Log.debug("Request Body: \(parameters)", category: "network")
         
         // Get current Firebase token
         Auth.auth().currentUser?.getIDToken { token, error in
             if let error = error {
-                print("❌ Auth Error: \(error.localizedDescription)")
+                Log.error("Auth error: \(error.localizedDescription)", category: "network")
                 completion(.failure(.authError(error)))
                 return
             }
             
             guard let token = token else {
-                print("❌ Missing Auth Token")
+                Log.error("Missing auth token", category: "network")
                 completion(.failure(.missingToken))
                 return
             }
             
-            print("🔑 Auth Token received")
+            Log.debug("Auth token received", category: "network")
             
             // Create URL
             guard let url = URL(string: "\(self.apiBaseURL)\(endpoint)") else {
-                print("❌ Invalid URL: \(self.apiBaseURL)\(endpoint)")
+                Log.error("Invalid URL: \(self.apiBaseURL)\(endpoint)", category: "network")
                 completion(.failure(.invalidURL))
                 return
             }
             
-            print("🔗 Request URL: \(url.absoluteString)")
+            Log.debug("Request URL: \(url.absoluteString)", category: "network")
             
             // Create request
             var request = URLRequest(url: url)
@@ -393,59 +354,57 @@ class NetworkManager {
             // Create request body
             do {
                 request.httpBody = try JSONSerialization.data(withJSONObject: parameters)
-                print("📦 Request Body: \(String(data: request.httpBody!, encoding: .utf8) ?? "Unable to decode body")")
+                Log.debug("Request Body: \(String(data: request.httpBody!, encoding: .utf8) ?? "Unable to decode body")", category: "network")
             } catch {
-                print("❌ Encoding Error: \(error.localizedDescription)")
+                Log.error("Encoding error: \(error.localizedDescription)", category: "network")
                 completion(.failure(.encodingError(error)))
                 return
             }
             
-            print("📤 Sending DELETE request...")
+            Log.debug("Sending DELETE request...", category: "network")
             
             // Make the request
             let task = URLSession.shared.dataTask(with: request) { data, response, error in
                 DispatchQueue.main.async {
                     if let error = error {
-                        print("❌ Network Error: \(error.localizedDescription)")
+                        Log.error("Network error: \(error.localizedDescription)", category: "network")
                         completion(.failure(.networkError(error)))
                         return
                     }
                     
                     guard let httpResponse = response as? HTTPURLResponse else {
-                        print("❌ Invalid Response: No HTTP response")
+                        Log.error("Invalid response (no HTTP)", category: "network")
                         completion(.failure(.invalidResponse))
                         return
                     }
                     
-                    print("📥 Response Status: \(httpResponse.statusCode)")
+                    Log.debug("Response status: \(httpResponse.statusCode)", category: "network")
                     
                     guard (200...299).contains(httpResponse.statusCode) else {
-                        print("❌ Server Error: \(httpResponse.statusCode)")
+                        Log.error("Server error \(httpResponse.statusCode)", category: "network")
                         completion(.failure(.serverError(httpResponse.statusCode)))
                         return
                     }
                     
                     guard let data = data else {
-                        print("❌ No Data Received")
+                        Log.error("No data received", category: "network")
                         completion(.failure(.noData))
                         return
                     }
                     
-                    print("📦 Received Data: \(String(data: data, encoding: .utf8) ?? "Unable to decode data")")
-                    
-                    // Add more detailed logging for debugging
+                    #if DEBUG
                     if let jsonString = String(data: data, encoding: .utf8) {
-                        print("🔍 NetworkManager: Raw JSON response:")
-                        print(jsonString)
+                        Log.debug("Raw JSON: \(jsonString)", category: "network")
                     }
+                    #endif
                     
                     do {
                         let decodedResponse = try JSONDecoder().decode(T.self, from: data)
-                        print("✅ Successfully decoded response")
+                        Log.debug("Successfully decoded response", category: "network")
                         completion(.success(decodedResponse))
                     } catch {
-                        print("❌ Decoding Error: \(error.localizedDescription)")
-                        print("🔍 NetworkManager: Failed to decode response as \(T.self)")
+                        Log.error("Decoding error: \(error.localizedDescription)", category: "network")
+                        Log.debug("Failed to decode response as \(T.self)", category: "network")
                         completion(.failure(.decodingError(error)))
                     }
                 }

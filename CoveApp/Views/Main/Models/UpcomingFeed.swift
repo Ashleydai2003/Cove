@@ -41,7 +41,7 @@ class UpcomingFeed: ObservableObject {
     }
     
     init() {
-        print("📅 UpcomingFeed initialized")
+        Log.debug("UpcomingFeed initialized")
     }
     
     /// Fetches upcoming events from the backend, using cache if fresh.
@@ -50,7 +50,7 @@ class UpcomingFeed: ObservableObject {
     func fetchUpcomingEvents(forceRefresh: Bool = false, completion: (() -> Void)? = nil) {
         // Check if we have recent cached data and not forcing refresh
         if !forceRefresh && hasCachedData && !isCacheStale {
-            print("📅 UpcomingFeed: Using cached upcoming events data (\(events.count) events)")
+            Log.debug("UpcomingFeed: using cached events count=\(events.count)")
             completion?()
             return
         }
@@ -58,7 +58,7 @@ class UpcomingFeed: ObservableObject {
         guard !isLoading else { return }
         
         isLoading = true
-        print("🔍 UpcomingFeed: Fetching upcoming events from backend...")
+        Log.debug("UpcomingFeed: fetching events from backend…")
         
         var parameters: [String: Any] = [
             "limit": pageSize
@@ -77,7 +77,7 @@ class UpcomingFeed: ObservableObject {
                 
                 switch result {
                 case .success(let response):
-                    print("✅ UpcomingFeed: Upcoming events fetched successfully: \(response.events?.count ?? 0) events")
+                    Log.debug("UpcomingFeed: events fetched count=\(response.events?.count ?? 0)")
                     
                     if forceRefresh || self.nextCursor == nil {
                         // First page or refresh, replace existing data
@@ -98,7 +98,7 @@ class UpcomingFeed: ObservableObject {
                     completion?()
                     
                 case .failure(let error):
-                    print("❌ UpcomingFeed: Upcoming events fetch failed: \(error.localizedDescription)")
+                    Log.error("UpcomingFeed fetch failed: \(error.localizedDescription)")
                     self.errorMessage = error.localizedDescription
                     completion?()
                 }
@@ -108,7 +108,7 @@ class UpcomingFeed: ObservableObject {
     
     /// Forces a refresh of upcoming events data, bypassing cache.
     func refreshUpcomingEvents(completion: (() -> Void)? = nil) {
-        print("🔄 UpcomingFeed: Forcing refresh of upcoming events data")
+        Log.debug("UpcomingFeed: forcing refresh")
         nextCursor = nil
         hasMore = true
         fetchUpcomingEvents(forceRefresh: true, completion: completion)
@@ -117,7 +117,7 @@ class UpcomingFeed: ObservableObject {
     /// Loads more events if the user scrolls to the end of the list.
     func loadMoreEventsIfNeeded() {
         if hasMore && !isLoading && nextCursor != nil {
-            print("📅 UpcomingFeed: Loading more events...")
+            Log.debug("UpcomingFeed: loading more events…")
             fetchUpcomingEvents(forceRefresh: false)
         }
     }
@@ -126,10 +126,10 @@ class UpcomingFeed: ObservableObject {
     func fetchUpcomingEventsIfStale(completion: (() -> Void)? = nil) {
         if !hasCachedData || isCacheStale {
             let reason = !hasCachedData ? "no cached data" : "cache is stale"
-            print("📅 UpcomingFeed: Fetching upcoming events (\(reason))")
+            Log.debug("UpcomingFeed: fetching events (\(reason))")
             fetchUpcomingEvents(forceRefresh: false, completion: completion)
         } else {
-            print("📅 UpcomingFeed: ✅ Using fresh cached upcoming events data (\(events.count) events) - NO NETWORK REQUEST")
+            Log.debug("UpcomingFeed: using cached fresh data count=\(events.count)")
             completion?()
         }
     }

@@ -66,8 +66,9 @@ Takes Data Parameters:
 * birthdate: ISO 8601 string
 * hobbies: Array(userHobbies)
 * bio: String
-* latitude: Double
-* longitude: Double
+* latitude: Double (optional - will be geocoded from city if not provided)
+* longitude: Double (optional - will be geocoded from city if not provided)
+* city: String (optional - will be converted to coordinates if provided)
 * almaMater: String
 * job: String
 * workLocation: String

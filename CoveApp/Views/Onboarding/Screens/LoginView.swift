@@ -38,7 +38,7 @@ struct LoginView: View {
                 // Terms and privacy notice with interactive links
                 Text(attributedString)
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(Color.white)
+                    .foregroundStyle(Color.black)
                     .padding([.horizontal, .vertical])
                     .font(.LeagueSpartan(size: 15))
             }
@@ -50,7 +50,7 @@ struct LoginView: View {
     // TODO: Add links to Terms and Privacy Policy
     var attributedString: AttributedString {
         var string = AttributedString("By tapping 'Get Started' you agree to our Terms and Conditions. Learn how we process you data in our Privacy Policy.")
-        string.foregroundColor = .white
+        string.foregroundColor = .black
         
         // Add underline and link styling to both interactive text elements
         ["Terms and Conditions", "Privacy Policy"].forEach { text in

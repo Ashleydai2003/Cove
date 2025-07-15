@@ -127,13 +127,9 @@ struct StaticHobbyPill: View {
 
 #Preview {
     VStack(spacing: 16) {
-        HobbyPill(text: "Soccer Teams", emoji: "⚽️", isSelected: true) {
-            print("Selected")
-        }
+        HobbyPill(text: "Soccer Teams", emoji: "⚽️", isSelected: true) {}
         
-        HobbyPill(text: "Basketball Leagues", emoji: "🏀", isSelected: false) {
-            print("Unselected")
-        }
+        HobbyPill(text: "Basketball Leagues", emoji: "🏀", isSelected: false) {}
         
         StaticHobbyPill(text: "Static Hobby", emoji: "✨")
     }
