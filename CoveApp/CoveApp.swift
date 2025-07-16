@@ -6,7 +6,7 @@
 import SwiftUI
 import UIKit
 
-// TODO: fix dark mode
+// TODO: fix dark mode once we get UI
 @main
 struct CoveApp: App {
     // firebase delegate

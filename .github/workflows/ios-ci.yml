@@ -5,9 +5,7 @@ on:
     branches: [main, develop]
     paths:
       - 'CoveApp/**'
-  pull_request:
-    paths:
-      - 'CoveApp/**'
+  pull_request:            # Run on all PRs to avoid blocking merges
 
 jobs:
   validate-ios:
@@ -17,20 +15,43 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # Check if iOS files have changed
+      - name: Check for iOS changes
+        id: ios-changes
+        run: |
+          if git diff --name-only ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }} | grep -E 'CoveApp/' > /dev/null; then
+            echo "changes=true" >> $GITHUB_OUTPUT
+            echo "🔍 iOS files have changed - running validation"
+          else
+            echo "changes=false" >> $GITHUB_OUTPUT
+            echo "⏭️  No iOS changes detected - skipping validation"
+          fi
+
       - name: Check for disallowed print() statements
+        if: steps.ios-changes.outputs.changes == 'true'
         run: ./scripts/check_no_prints.sh
 
       - name: Install SwiftLint
+        if: steps.ios-changes.outputs.changes == 'true'
         run: brew install swiftlint
 
       - name: Run SwiftLint
+        if: steps.ios-changes.outputs.changes == 'true'
         run: swiftlint --strict
 
       - name: Resolve Swift Package dependencies
+        if: steps.ios-changes.outputs.changes == 'true'
         run: xcodebuild -resolvePackageDependencies -project CoveApp/Cove.xcodeproj
 
       - name: Build (Debug, no signing)
+        if: steps.ios-changes.outputs.changes == 'true'
         run: xcodebuild -scheme Cove -project CoveApp/Cove.xcodeproj -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 15' build CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
+
+      # Skip validation message
+      - name: Skip validation
+        if: steps.ios-changes.outputs.changes == 'false'
+        run: |
+          echo "✅ Skipping iOS validation - no iOS changes detected"
 
   test-ios:
     name: Run iOS Tests
@@ -40,11 +61,31 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # Check if iOS files have changed
+      - name: Check for iOS changes
+        id: ios-changes
+        run: |
+          if git diff --name-only ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }} | grep -E 'CoveApp/' > /dev/null; then
+            echo "changes=true" >> $GITHUB_OUTPUT
+            echo "🔍 iOS files have changed - running tests"
+          else
+            echo "changes=false" >> $GITHUB_OUTPUT
+            echo "⏭️  No iOS changes detected - skipping tests"
+          fi
+
       - name: Run Unit Tests
+        if: steps.ios-changes.outputs.changes == 'true'
         run: xcodebuild test -scheme Cove -project CoveApp/Cove.xcodeproj -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 15' CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
 
       - name: Run UI Tests
+        if: steps.ios-changes.outputs.changes == 'true'
         run: xcodebuild test -scheme Cove -project CoveApp/Cove.xcodeproj -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 15' -only-testing:CoveUITests CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
+
+      # Skip tests message
+      - name: Skip tests
+        if: steps.ios-changes.outputs.changes == 'false'
+        run: |
+          echo "✅ Skipping iOS tests - no iOS changes detected"
 
   build-ios:
     name: Build iOS App
