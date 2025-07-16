@@ -59,11 +59,12 @@ struct ProfileHeader: View {
         // Capture the @State flag once in a main-actor context; use it everywhere below to avoid
         // referencing 'isPressed' inside non-isolated view-builder closures.
         let pressed = isPressed
+        let fallbackImage = appController.profileModel.profileUIImage // main-actor safe
+        let isProfileImageLoading = appController.profileModel.isProfileImageLoading // <--- capture here
 
         VStack(spacing: 10) {
             // MARK: - Profile Photo
             // Pull main-actor data into local constants BEFORE entering the PhotosPicker content closure.
-            let fallbackImage = appController.profileModel.profileUIImage // main-actor safe
             PhotosPicker(selection: $selectedItem, matching: .images) {
                 // The closure passed to PhotosPicker is not main-actor-isolated, so we must avoid directly
                 // touching @MainActor properties inside it. We therefore use the pre-computed values captured above.
@@ -74,7 +75,7 @@ struct ProfileHeader: View {
                             .scaledToFill()
                             .frame(maxWidth: 200, maxHeight: 200)
                             .clipShape(Circle())
-                    } else if appController.profileModel.isProfileImageLoading {
+                    } else if isProfileImageLoading { // <--- use the captured value
                         // Show loading state with proper circular shape
                         Circle()
                             .fill(Color.gray.opacity(0.3))
@@ -110,14 +111,16 @@ struct ProfileHeader: View {
             }
             .disabled(!isEditing)
             .animation(.easeInOut(duration: 0.1), value: pressed)
-            .onTapGesture { @MainActor in
+            .onTapGesture {
                 if isEditing {
-                    withAnimation(.easeInOut(duration: 0.1)) {
-                        isPressed = true
-                    }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    Task { @MainActor in
                         withAnimation(.easeInOut(duration: 0.1)) {
-                            isPressed = false
+                            isPressed = true
+                        }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            withAnimation(.easeInOut(duration: 0.1)) {
+                                isPressed = false
+                            }
                         }
                     }
                 }
