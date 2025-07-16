@@ -18,7 +18,7 @@ class FirebaseSetup: NSObject, UIApplicationDelegate {
         #if DEBUG
         // Use Firebase Auth emulator for local development
         Auth.auth().useEmulator(withHost: "localhost", port: 9099)
-        print("[Firebase] Using Auth emulator at localhost:9099")
+        Log.debug("[Firebase] Using Auth emulator at localhost:9099")
         #endif
         
         return true
