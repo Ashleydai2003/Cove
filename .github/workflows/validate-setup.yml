@@ -6,8 +6,7 @@ name: Validate CI/CD Setup
 
 on:
   workflow_dispatch:        # Allow manual triggering from GitHub Actions UI
-  pull_request:            # Run when CI/CD configuration files are changed
-    paths: ['.github/workflows/**', 'CI-CD-SETUP.md']  # Only trigger on workflow or doc changes
+  pull_request:            # Run on all PRs to avoid blocking merges
 
 env:
   AWS_REGION: us-west-1    # Your AWS region (matches production infrastructure)
@@ -31,9 +30,22 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # Check if CI/CD files have changed
+      - name: Check for CI/CD changes
+        id: cicd-changes
+        run: |
+          if git diff --name-only ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }} | grep -E '\.github/workflows/|CI-CD-SETUP\.md' > /dev/null; then
+            echo "changes=true" >> $GITHUB_OUTPUT
+            echo "🔍 CI/CD files have changed - running validation"
+          else
+            echo "changes=false" >> $GITHUB_OUTPUT
+            echo "⏭️  No CI/CD changes detected - skipping validation"
+          fi
+
       # Test OIDC authentication with your AWS role
       # This verifies that the GitHub Actions role is properly configured
       - name: Configure AWS credentials
+        if: steps.cicd-changes.outputs.changes == 'true'
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}        # Your GitHubActionsRole ARN
@@ -43,6 +55,7 @@ jobs:
       # Test that the EC2 instance exists and is accessible
       # This validates the instance ID and basic EC2 permissions
       - name: Validate EC2 instance
+        if: steps.cicd-changes.outputs.changes == 'true'
         run: |
           echo "🔍 Checking EC2 instance status..."
           # Query the instance to verify it exists and get basic info
@@ -56,6 +69,7 @@ jobs:
       # Test SSM (Systems Manager) connectivity to the EC2 instance
       # This is crucial for running migration commands remotely
       - name: Validate SSM connectivity
+        if: steps.cicd-changes.outputs.changes == 'true'
         run: |
           echo "🔍 Checking SSM connectivity..."
           # Check if the instance is registered with SSM and can receive commands
@@ -69,6 +83,7 @@ jobs:
       # Test that the Lambda function exists and is accessible
       # This validates the function name and basic Lambda permissions
       - name: Validate Lambda function
+        if: steps.cicd-changes.outputs.changes == 'true'
         run: |
           echo "🔍 Checking Lambda function..."
           # Get basic information about the Lambda function
@@ -82,6 +97,12 @@ jobs:
       # Note: RDS secret access is not validated here for security reasons
       # The actual migration workflow will test database connectivity when needed
 
+      # Skip validation message
+      - name: Skip validation
+        if: steps.cicd-changes.outputs.changes == 'false'
+        run: |
+          echo "✅ Skipping AWS validation - no CI/CD changes detected"
+
   validate-backend-build:
     name: Validate Backend Build
     runs-on: ubuntu-latest
@@ -90,16 +111,31 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # Check if CI/CD files have changed
+      - name: Check for CI/CD changes
+        id: cicd-changes
+        run: |
+          if git diff --name-only ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }} | grep -E '\.github/workflows/|CI-CD-SETUP\.md' > /dev/null; then
+            echo "changes=true" >> $GITHUB_OUTPUT
+            echo "🔍 CI/CD files have changed - running validation"
+          else
+            echo "changes=false" >> $GITHUB_OUTPUT
+            echo "⏭️  No CI/CD changes detected - skipping validation"
+          fi
+
       - name: Setup Node.js
+        if: steps.cicd-changes.outputs.changes == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '18'
 
       - name: Install dependencies
+        if: steps.cicd-changes.outputs.changes == 'true'
         working-directory: Backend
         run: npm install
 
       - name: Validate Prisma schema
+        if: steps.cicd-changes.outputs.changes == 'true'
         working-directory: Backend
         run: |
           echo "🔍 Validating Prisma schema..."
@@ -107,6 +143,7 @@ jobs:
           echo "✅ Prisma schema validated"
 
       - name: Test build process
+        if: steps.cicd-changes.outputs.changes == 'true'
         working-directory: Backend
         run: |
           echo "🔍 Testing build process..."
@@ -121,12 +158,34 @@ jobs:
             exit 1
           fi
 
+      # Skip validation message
+      - name: Skip validation
+        if: steps.cicd-changes.outputs.changes == 'false'
+        run: |
+          echo "✅ Skipping backend validation - no CI/CD changes detected"
+
   validate-secrets:
     name: Validate Required Secrets
     runs-on: ubuntu-latest
     
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Check if CI/CD files have changed
+      - name: Check for CI/CD changes
+        id: cicd-changes
+        run: |
+          if git diff --name-only ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }} | grep -E '\.github/workflows/|CI-CD-SETUP\.md' > /dev/null; then
+            echo "changes=true" >> $GITHUB_OUTPUT
+            echo "🔍 CI/CD files have changed - running validation"
+          else
+            echo "changes=false" >> $GITHUB_OUTPUT
+            echo "⏭️  No CI/CD changes detected - skipping validation"
+          fi
+
       - name: Check AWS secrets
+        if: steps.cicd-changes.outputs.changes == 'true'
         run: |
           echo "🔍 Checking AWS secrets..."
           
@@ -149,6 +208,7 @@ jobs:
           echo "✅ AWS secrets validated"
 
       - name: Check iOS secrets (optional)
+        if: steps.cicd-changes.outputs.changes == 'true'
         run: |
           echo "🔍 Checking iOS secrets..."
           
@@ -158,6 +218,12 @@ jobs:
           else
             echo "⚠️  iOS secrets not configured (required for iOS deployment)"
           fi
+
+      # Skip validation message
+      - name: Skip validation
+        if: steps.cicd-changes.outputs.changes == 'false'
+        run: |
+          echo "✅ Skipping secrets validation - no CI/CD changes detected"
 
   summary:
     name: Validation Summary
