@@ -367,7 +367,7 @@ struct OtpVerifyView: View {
                 statusMessage = "Wait just a few seconds and try to resend again."
                 messageType = .error
                 
-            case .unknownError(let message):
+            case .unknownError(_):
                 statusMessage = "Code failed to send—try another phone number."
                 messageType = .error
             }
