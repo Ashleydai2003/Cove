@@ -1,0 +1,159 @@
+name: iOS CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'CoveApp/**'
+  pull_request:
+    paths:
+      - 'CoveApp/**'
+
+jobs:
+  validate-ios:
+    name: Validate iOS Code
+    runs-on: macos-14
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for disallowed print() statements
+        run: ./scripts/check_no_prints.sh
+
+      - name: Install SwiftLint
+        run: brew install swiftlint
+
+      - name: Run SwiftLint
+        run: swiftlint --strict
+
+      - name: Resolve Swift Package dependencies
+        run: xcodebuild -resolvePackageDependencies -project CoveApp/Cove.xcodeproj
+
+      - name: Build (Debug, no signing)
+        run: xcodebuild -scheme Cove -project CoveApp/Cove.xcodeproj -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 15' build CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
+
+  test-ios:
+    name: Run iOS Tests
+    runs-on: macos-14
+    needs: validate-ios
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Unit Tests
+        run: xcodebuild test -scheme Cove -project CoveApp/Cove.xcodeproj -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 15' CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
+
+      - name: Run UI Tests
+        run: xcodebuild test -scheme Cove -project CoveApp/Cove.xcodeproj -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 15' -only-testing:CoveUITests CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
+
+  build-ios:
+    name: Build iOS App
+    runs-on: macos-14
+    needs: [validate-ios, test-ios]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '15.2'
+
+      - name: Install certificates
+        uses: apple-actions/import-codesigning-certs@v1
+        with:
+          p12-file-base64: ${{ secrets.P12_BASE64 }}
+          p12-password: ${{ secrets.P12_PASSWORD }}
+
+      # TODO: APP_STORE_CONNECT_API_ISSUER_ID - App Store Connect API issuer ID - From App Store Connect → Users and Access → Keys
+      # TODO: APP_STORE_CONNECT_API_KEY_ID - App Store Connect API key ID - From App Store Connect → Users and Access → Keys  
+      # TODO: APP_STORE_CONNECT_API_KEY - App Store Connect API private key (base64) - Download from App Store Connect, then base64 encode
+      # - name: Download provisioning profiles
+      #   uses: apple-actions/download-provisioning-profiles@v1
+      #   with:
+      #     bundle-id: 'co.coveapp.CoveApp'
+      #     profile-type: 'IOS_APP_STORE'
+      #     issuer-id: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+      #     api-key-id: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+      #     api-private-key: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+
+      - name: Build and Archive
+        run: |
+          xcodebuild -scheme Cove -project CoveApp/Cove.xcodeproj \
+            -configuration Release \
+            -archivePath Cove.xcarchive \
+            -destination 'generic/platform=iOS' \
+            archive
+
+      - name: Export IPA
+        run: |
+          xcodebuild -exportArchive \
+            -archivePath Cove.xcarchive \
+            -exportPath ./build \
+            -exportOptionsPlist exportOptions.plist
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-build
+          path: ./build/*.ipa
+
+  # TODO: TestFlight Distribution
+  # deploy-testflight:
+  #   name: Deploy to TestFlight
+  #   runs-on: macos-14
+  #   needs: build-ios
+  #   if: github.ref == 'refs/heads/develop'
+  #   steps:
+  #     - name: Download build artifacts
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: ios-build
+  #
+  #     - name: Upload to TestFlight
+  #       uses: apple-actions/upload-testflight@v1
+  #       with:
+  #         app-path: '*.ipa'
+  #         issuer-id: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+  #         api-key-id: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+  #         api-private-key: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+
+  # TODO: App Store Distribution
+  # deploy-appstore:
+  #   name: Deploy to App Store
+  #   runs-on: macos-14
+  #   needs: build-ios
+  #   if: github.ref == 'refs/heads/main'
+  #   steps:
+  #     - name: Download build artifacts
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: ios-build
+  #
+  #     - name: Upload to App Store
+  #       uses: apple-actions/upload-appstore@v1
+  #       with:
+  #         app-path: '*.ipa'
+  #         issuer-id: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+  #         api-key-id: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+  #         api-private-key: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+
+# Required GitHub Secrets for iOS CI/CD:
+# - P12_BASE64: Base64 encoded p12 certificate
+# - P12_PASSWORD: Password for p12 certificate
+# - APP_STORE_CONNECT_API_ISSUER_ID: App Store Connect API issuer ID
+# - APP_STORE_CONNECT_API_KEY_ID: App Store Connect API key ID
+# - APP_STORE_CONNECT_API_KEY: App Store Connect API private key (base64 encoded)
+#
+# TODO: TestFlight Setup
+# 1. Configure App Store Connect API access
+# 2. Set up TestFlight distribution certificates
+# 3. Configure provisioning profiles for TestFlight
+# 4. Uncomment and configure TestFlight deployment job
+#
+# TODO: App Store Setup
+# 1. Configure App Store distribution certificates
+# 2. Set up App Store provisioning profiles
+# 3. Configure App Store Connect metadata
+# 4. Uncomment and configure App Store deployment job 
