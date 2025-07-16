@@ -19,12 +19,25 @@ jobs:
       - name: Check for iOS changes
         id: ios-changes
         run: |
-          if git diff --name-only ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }} | grep -E 'CoveApp/' > /dev/null; then
-            echo "changes=true" >> $GITHUB_OUTPUT
-            echo "🔍 iOS files have changed - running validation"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            # For pull requests, compare with base branch
+            git fetch origin ${{ github.base_ref }}
+            if git diff --name-only origin/${{ github.base_ref }}..HEAD | grep -E 'CoveApp/' > /dev/null; then
+              echo "changes=true" >> $GITHUB_OUTPUT
+              echo "🔍 iOS files have changed - running validation"
+            else
+              echo "changes=false" >> $GITHUB_OUTPUT
+              echo "⏭️  No iOS changes detected - skipping validation"
+            fi
           else
-            echo "changes=false" >> $GITHUB_OUTPUT
-            echo "⏭️  No iOS changes detected - skipping validation"
+            # For pushes, check if CoveApp files exist
+            if find CoveApp -name "*.swift" -o -name "*.xcodeproj" | head -1 | grep -q .; then
+              echo "changes=true" >> $GITHUB_OUTPUT
+              echo "🔍 iOS files detected - running validation"
+            else
+              echo "changes=false" >> $GITHUB_OUTPUT
+              echo "⏭️  No iOS files detected - skipping validation"
+            fi
           fi
 
       - name: Check for disallowed print() statements
@@ -65,12 +78,25 @@ jobs:
       - name: Check for iOS changes
         id: ios-changes
         run: |
-          if git diff --name-only ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }} | grep -E 'CoveApp/' > /dev/null; then
-            echo "changes=true" >> $GITHUB_OUTPUT
-            echo "🔍 iOS files have changed - running tests"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            # For pull requests, compare with base branch
+            git fetch origin ${{ github.base_ref }}
+            if git diff --name-only origin/${{ github.base_ref }}..HEAD | grep -E 'CoveApp/' > /dev/null; then
+              echo "changes=true" >> $GITHUB_OUTPUT
+              echo "🔍 iOS files have changed - running tests"
+            else
+              echo "changes=false" >> $GITHUB_OUTPUT
+              echo "⏭️  No iOS changes detected - skipping tests"
+            fi
           else
-            echo "changes=false" >> $GITHUB_OUTPUT
-            echo "⏭️  No iOS changes detected - skipping tests"
+            # For pushes, check if CoveApp files exist
+            if find CoveApp -name "*.swift" -o -name "*.xcodeproj" | head -1 | grep -q .; then
+              echo "changes=true" >> $GITHUB_OUTPUT
+              echo "🔍 iOS files detected - running tests"
+            else
+              echo "changes=false" >> $GITHUB_OUTPUT
+              echo "⏭️  No iOS files detected - skipping tests"
+            fi
           fi
 
       - name: Run Unit Tests
@@ -101,11 +127,12 @@ jobs:
         with:
           xcode-version: '15.2'
 
-      - name: Install certificates
-        uses: apple-actions/import-codesigning-certs@v1
-        with:
-          p12-file-base64: ${{ secrets.P12_BASE64 }}
-          p12-password: ${{ secrets.P12_PASSWORD }}
+      # Comment out certificate installation for now since we don't have the secrets configured
+      # - name: Install certificates
+      #   uses: apple-actions/import-codesigning-certs@v1
+      #   with:
+      #     p12-file-base64: ${{ secrets.P12_BASE64 }}
+      #     p12-password: ${{ secrets.P12_PASSWORD }}
 
       # TODO: APP_STORE_CONNECT_API_ISSUER_ID - App Store Connect API issuer ID - From App Store Connect → Users and Access → Keys
       # TODO: APP_STORE_CONNECT_API_KEY_ID - App Store Connect API key ID - From App Store Connect → Users and Access → Keys  
@@ -125,7 +152,30 @@ jobs:
             -configuration Release \
             -archivePath Cove.xcarchive \
             -destination 'generic/platform=iOS' \
-            archive
+            archive CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
+
+      - name: Create export options plist
+        run: |
+          cat > exportOptions.plist << 'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>method</key>
+              <string>development</string>
+              <key>teamID</key>
+              <string>YOUR_TEAM_ID</string>
+              <key>signingStyle</key>
+              <string>manual</string>
+              <key>stripSwiftSymbols</key>
+              <true/>
+              <key>uploadBitcode</key>
+              <false/>
+              <key>uploadSymbols</key>
+              <false/>
+          </dict>
+          </plist>
+          EOF
 
       - name: Export IPA
         run: |

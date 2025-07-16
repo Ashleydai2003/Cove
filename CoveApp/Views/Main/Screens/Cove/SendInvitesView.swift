@@ -366,7 +366,7 @@ struct PhoneNumberInputView: View {
                 .font(.LibreCaslon(size: Constants.phoneInputFontSize))
                 .foregroundStyle(Color.black)
                 .keyboardType(.numberPad)
-                .textContentType(.telephoneNumber)
+            .textContentType(.telephoneNumber)
                 .toolbar {
                     ToolbarItem(placement: .keyboard) {
                         keyboardAccessoryView
