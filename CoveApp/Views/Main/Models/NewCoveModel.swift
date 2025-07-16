@@ -181,7 +181,7 @@ class NewCoveModel: ObservableObject {
             parameters: requestBody
         ) { (result: Result<SendInvitesModel.SendInviteResponse, NetworkError>) in
             switch result {
-            case .success(let response):
+            case .success(_):
                 Log.debug("Invites sent successfully")
                 completion(true)
             case .failure(let error):
