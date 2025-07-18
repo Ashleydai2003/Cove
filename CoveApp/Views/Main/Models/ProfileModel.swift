@@ -375,47 +375,47 @@ class ProfileModel: ObservableObject {
                 completion(.success(()))
             }
         }
-    }
+            }
 
     private func buildChangedParameters(
         name: String?, birthdate: String?, interests: [String]?, bio: String?, latitude: Double?, longitude: Double?, almaMater: String?, job: String?, workLocation: String?, relationStatus: String?, sexuality: String?, gender: String?
     ) -> [String: Any] {
-        var parameters: [String: Any] = [:]
-        func addIfChanged<T: Equatable>(_ key: String, newValue: T?, currentValue: T?) {
-            if let newValue = newValue, newValue != currentValue {
-                parameters[key] = newValue
+            var parameters: [String: Any] = [:]
+            func addIfChanged<T: Equatable>(_ key: String, newValue: T?, currentValue: T?) {
+                if let newValue = newValue, newValue != currentValue {
+                    parameters[key] = newValue
+                }
             }
-        }
-        addIfChanged("name", newValue: name, currentValue: self.name)
-        addIfChanged("birthdate", newValue: birthdate, currentValue: self.birthdate)
-        addIfChanged("interests", newValue: interests, currentValue: self.interests)
-        addIfChanged("bio", newValue: bio, currentValue: self.bio)
-        addIfChanged("latitude", newValue: latitude, currentValue: self.latitude)
-        addIfChanged("longitude", newValue: longitude, currentValue: self.longitude)
-        addIfChanged("almaMater", newValue: almaMater, currentValue: self.almaMater)
-        addIfChanged("job", newValue: job, currentValue: self.job)
-        addIfChanged("workLocation", newValue: workLocation, currentValue: self.workLocation)
-        addIfChanged("relationStatus", newValue: relationStatus, currentValue: self.relationStatus)
-        addIfChanged("sexuality", newValue: sexuality, currentValue: self.sexuality)
-        addIfChanged("gender", newValue: gender, currentValue: self.gender)
+            addIfChanged("name", newValue: name, currentValue: self.name)
+            addIfChanged("birthdate", newValue: birthdate, currentValue: self.birthdate)
+            addIfChanged("interests", newValue: interests, currentValue: self.interests)
+            addIfChanged("bio", newValue: bio, currentValue: self.bio)
+            addIfChanged("latitude", newValue: latitude, currentValue: self.latitude)
+            addIfChanged("longitude", newValue: longitude, currentValue: self.longitude)
+            addIfChanged("almaMater", newValue: almaMater, currentValue: self.almaMater)
+            addIfChanged("job", newValue: job, currentValue: self.job)
+            addIfChanged("workLocation", newValue: workLocation, currentValue: self.workLocation)
+            addIfChanged("relationStatus", newValue: relationStatus, currentValue: self.relationStatus)
+            addIfChanged("sexuality", newValue: sexuality, currentValue: self.sexuality)
+            addIfChanged("gender", newValue: gender, currentValue: self.gender)
         return parameters
     }
 
     private func updateLocalState(
         name: String?, birthdate: String?, interests: [String]?, bio: String?, latitude: Double?, longitude: Double?, almaMater: String?, job: String?, workLocation: String?, relationStatus: String?, sexuality: String?, gender: String?, parameters: [String: Any]
     ) {
-        if let name = name { self.name = name }
-        if let birthdate = birthdate { self.birthdate = birthdate }
-        if let interests = interests { self.interests = interests }
-        if let bio = bio { self.bio = bio }
-        if let latitude = latitude { self.latitude = latitude }
-        if let longitude = longitude { self.longitude = longitude }
-        if let almaMater = almaMater { self.almaMater = almaMater }
-        if let job = job { self.job = job }
-        if let workLocation = workLocation { self.workLocation = workLocation }
-        if let relationStatus = relationStatus { self.relationStatus = relationStatus }
-        if let sexuality = sexuality { self.sexuality = sexuality }
-        if let gender = gender { self.gender = gender }
+                        if let name = name { self.name = name }
+                        if let birthdate = birthdate { self.birthdate = birthdate }
+                        if let interests = interests { self.interests = interests }
+                        if let bio = bio { self.bio = bio }
+                        if let latitude = latitude { self.latitude = latitude }
+                        if let longitude = longitude { self.longitude = longitude }
+                        if let almaMater = almaMater { self.almaMater = almaMater }
+                        if let job = job { self.job = job }
+                        if let workLocation = workLocation { self.workLocation = workLocation }
+                        if let relationStatus = relationStatus { self.relationStatus = relationStatus }
+                        if let sexuality = sexuality { self.sexuality = sexuality }
+                        if let gender = gender { self.gender = gender }
         if parameters["latitude"] != nil || parameters["longitude"] != nil {
             Task { await self.updateAddress() }
         }
@@ -483,7 +483,7 @@ class ProfileModel: ObservableObject {
             extraImages: extraImages, isOnboarding: isOnboarding
         )
         handleImageUploadAndUpdate(updateData: updateData, completion: completion)
-    }
+                            }
     // swiftlint:enable cyclomatic_complexity
 
     // Helper to handle image upload and call completion
@@ -494,13 +494,13 @@ class ProfileModel: ObservableObject {
         uploadAllImages(profileImage: updateData.profileImage, extraImages: updateData.extraImages) { [weak self] imageResult in
             guard let self = self else { return }
             switch imageResult {
-            case .failure(let error):
-                completion(.failure(error))
+                    case .failure(let error):
+                        completion(.failure(error))
             case .success:
                 self.handleProfileUpdateRequest(updateData: updateData, completion: completion)
+                    }
+                }
             }
-        }
-    }
 
     // Aggressively refactored to reduce cyclomatic complexity
     private func handleProfileUpdateRequest(
