@@ -267,6 +267,7 @@ struct UserPhoneNumberView: View {
 
             switch result {
             case .success:
+                // No action needed
                 statusMessage = "Code sent!"
                 messageType = .success
                 // Navigate to OTP view
