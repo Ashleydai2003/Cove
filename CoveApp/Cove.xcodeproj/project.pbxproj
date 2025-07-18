@@ -15,9 +15,20 @@
 		EC736BC02DCEEC5C003F3FFA /* IQKeyboardManagerSwift in Frameworks */ = {isa = PBXBuildFile; productRef = EC736BBF2DCEEC5C003F3FFA /* IQKeyboardManagerSwift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		C4BB59A42E2A452B009F61E0 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = C44B02DE2DADAFAF00AFF42B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C44B02E52DADAFAF00AFF42B;
+			remoteInfo = Cove;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		3C2025342DBCC2BE00D78C65 /* TmpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TmpView.swift; sourceTree = "<group>"; };
 		C44B02E62DADAFAF00AFF42B /* Cove.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Cove.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C4BB599E2E2A452B009F61E0 /* CoveUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CoveUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		C4D6AE182DC47CDB00A39472 /* Cove.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Cove.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -60,6 +71,11 @@
 			path = SupportingFiles;
 			sourceTree = "<group>";
 		};
+		C4BB599F2E2A452B009F61E0 /* CoveUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = CoveUITests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -72,6 +88,13 @@
 				3CFAEF7B2DBDCA4700148161 /* FirebaseAuth in Frameworks */,
 				3C29BAAE2DBC90B700C73EC3 /* Inject in Frameworks */,
 				C47F61512E1127DB00060EB0 /* Kingfisher in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C4BB599B2E2A452B009F61E0 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -88,6 +111,7 @@
 				3C2024AC2DBCA92500D78C65 /* App */,
 				3C2024772DBCA74500D78C65 /* Views */,
 				3C20248F2DBCA75D00D78C65 /* Assets */,
+				C4BB599F2E2A452B009F61E0 /* CoveUITests */,
 				C44B02E72DADAFAF00AFF42B /* Products */,
 			);
 			sourceTree = "<group>";
@@ -96,6 +120,7 @@
 			isa = PBXGroup;
 			children = (
 				C44B02E62DADAFAF00AFF42B /* Cove.app */,
+				C4BB599E2E2A452B009F61E0 /* CoveUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -134,6 +159,29 @@
 			productReference = C44B02E62DADAFAF00AFF42B /* Cove.app */;
 			productType = "com.apple.product-type.application";
 		};
+		C4BB599D2E2A452B009F61E0 /* CoveUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C4BB59A62E2A452B009F61E0 /* Build configuration list for PBXNativeTarget "CoveUITests" */;
+			buildPhases = (
+				C4BB599A2E2A452B009F61E0 /* Sources */,
+				C4BB599B2E2A452B009F61E0 /* Frameworks */,
+				C4BB599C2E2A452B009F61E0 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				C4BB59A52E2A452B009F61E0 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				C4BB599F2E2A452B009F61E0 /* CoveUITests */,
+			);
+			name = CoveUITests;
+			packageProductDependencies = (
+			);
+			productName = CoveUITests;
+			productReference = C4BB599E2E2A452B009F61E0 /* CoveUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -141,11 +189,15 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1630;
+				LastSwiftUpdateCheck = 1640;
 				LastUpgradeCheck = 1630;
 				TargetAttributes = {
 					C44B02E52DADAFAF00AFF42B = {
 						CreatedOnToolsVersion = 16.3;
+					};
+					C4BB599D2E2A452B009F61E0 = {
+						CreatedOnToolsVersion = 16.4;
+						TestTargetID = C44B02E52DADAFAF00AFF42B;
 					};
 				};
 			};
@@ -170,12 +222,20 @@
 			projectRoot = "";
 			targets = (
 				C44B02E52DADAFAF00AFF42B /* Cove */,
+				C4BB599D2E2A452B009F61E0 /* CoveUITests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		C44B02E42DADAFAF00AFF42B /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C4BB599C2E2A452B009F61E0 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -193,7 +253,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		C4BB599A2E2A452B009F61E0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		C4BB59A52E2A452B009F61E0 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C44B02E52DADAFAF00AFF42B /* Cove */;
+			targetProxy = C4BB59A42E2A452B009F61E0 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		C44B02EF2DADAFB100AFF42B /* Debug */ = {
@@ -407,6 +482,42 @@
 			};
 			name = Release;
 		};
+		C4BB59A72E2A452B009F61E0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9L4RA2CN39;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = co.AshleyDai.CoveUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Cove;
+			};
+			name = Debug;
+		};
+		C4BB59A82E2A452B009F61E0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9L4RA2CN39;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = co.AshleyDai.CoveUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Cove;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -424,6 +535,15 @@
 			buildConfigurations = (
 				C44B02F22DADAFB100AFF42B /* Debug */,
 				C44B02F32DADAFB100AFF42B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C4BB59A62E2A452B009F61E0 /* Build configuration list for PBXNativeTarget "CoveUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C4BB59A72E2A452B009F61E0 /* Debug */,
+				C4BB59A82E2A452B009F61E0 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

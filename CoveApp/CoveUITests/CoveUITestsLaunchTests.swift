@@ -2,14 +2,14 @@
 //  CoveUITestsLaunchTests.swift
 //  CoveUITests
 //
-//  Created by Ashley Dai on 3/6/25.
+//  Created by Ashley Dai on 7/18/25.
 //
 
 import XCTest
 
 final class CoveUITestsLaunchTests: XCTestCase {
 
-    override static var runsForEachTargetApplicationUIConfiguration: Bool {
+    override class var runsForEachTargetApplicationUIConfiguration: Bool {
         true
     }
 
