@@ -122,11 +122,24 @@ class ProfileModel: ObservableObject {
      */
     var calculatedAge: Int? {
         guard let birthdateString = birthdate else { return nil }
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd"
-        guard let birthdate = dateFormatter.date(from: birthdateString) else { return nil }
+        
+        // Try ISO8601 parsing first
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        var birthdateDate: Date? = isoFormatter.date(from: birthdateString)
+
+        // Fallback to yyyy-MM-dd if needed
+        if birthdateDate == nil {
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "yyyy-MM-dd"
+            birthdateDate = dateFormatter.date(from: birthdateString)
+        }
+
+        guard let birthdate = birthdateDate else { return nil }
+
         let calendar = Calendar.current
-        let ageComponents = calendar.dateComponents([.year], from: birthdate, to: Date())
+        let now = Date()
+        let ageComponents = calendar.dateComponents([.year], from: birthdate, to: now)
         return ageComponents.year
     }
 
@@ -422,7 +435,7 @@ class ProfileModel: ObservableObject {
     }
 
     // MARK: - Profile Update Struct
-    
+
     struct ProfileUpdateData {
         let name: String?
         let birthdate: String?
@@ -439,7 +452,7 @@ class ProfileModel: ObservableObject {
         let profileImage: UIImage?
         let extraImages: [UIImage?]
         let isOnboarding: Bool
-        
+
         init(
             name: String? = nil, birthdate: String? = nil, interests: [String]? = nil,
             bio: String? = nil, latitude: Double? = nil, longitude: Double? = nil,

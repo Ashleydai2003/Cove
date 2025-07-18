@@ -63,11 +63,6 @@ struct CreateCoveView: View {
                 initialMessage: viewModel.inviteMessage
             )
         }
-        .toolbar {
-            ToolbarItem(placement: .keyboard) {
-                keyboardAccessoryView
-            }
-        }
         .navigationBarBackButtonHidden()
         .alert("Error", isPresented: Binding(
             get: { viewModel.errorMessage != nil },
@@ -300,19 +295,6 @@ extension CreateCoveView {
         }
         .disabled(!viewModel.isFormValid || viewModel.isSubmitting)
         .padding(.top, 24)
-    }
-
-    // MARK: - Keyboard Accessory
-    private var keyboardAccessoryView: some View {
-        HStack {
-            Spacer()
-            Button("Done") {
-                isFocused = false
-            }
-            .padding(.trailing, 16)
-            .padding(.vertical, 8)
-        }
-        .background(Color(.systemGray6))
     }
 }
 

@@ -80,7 +80,7 @@ struct FloatingActionView: View {
                         }
                     }
                 }
-                .frame(maxWidth: 160) // Increase width to prevent text wrapping
+                .frame(maxWidth: 170) // Increase width to prevent text wrapping
                 .transition(.opacity.combined(with: .scale))
             }
 

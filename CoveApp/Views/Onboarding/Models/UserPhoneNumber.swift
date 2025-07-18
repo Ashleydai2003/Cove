@@ -97,7 +97,9 @@ struct UserPhoneNumber {
 
         // Disable reCAPTCHA verification
         // TODO: REMOVE THIS AFTER GETTING TOKEN FOR TESTING!!!!
+        #if DEBUG
         Auth.auth().settings?.isAppVerificationDisabledForTesting = true
+        #endif
 
         PhoneAuthProvider.provider().verifyPhoneNumber(fullPhoneNumber, uiDelegate: nil) { verificationID, error in
             DispatchQueue.main.async {
