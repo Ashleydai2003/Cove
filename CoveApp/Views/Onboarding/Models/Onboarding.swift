@@ -18,15 +18,15 @@ class Onboarding {
     private static var profilePic: UIImage?
     private static var pendingFriendRequests: [String] = []
     private static var adminCove: String?
-    
+
     private static let apiBaseURL = AppConstants.API.baseURL
     private static let apiOnboardPath = "/onboard"
-    
+
     // MARK: - Public Methods
     static func storeName(firstName: String, lastName: String) -> Void {
         userName = firstName + " " + lastName
     }
-    
+
     static func storeBirthdate(birthDate: Date) -> Void {
         userBirthdate = birthDate
     }
@@ -51,26 +51,26 @@ class Onboarding {
     static func getAdminCove() -> String? {
         return adminCove
     }
-    
-    // MARK: - Friend Requests 
+
+    // MARK: - Friend Requests
     static func addFriendRequest(userId: String) {
         pendingFriendRequests.append(userId)
     }
-    
+
     static func removeFriendRequest(userId: String) {
         pendingFriendRequests.removeAll { $0 == userId }
     }
-    
+
     static func clearPendingFriendRequests() {
         pendingFriendRequests.removeAll()
     }
-    
+
     static func sendPendingFriendRequests(completion: @escaping (Bool) -> Void) {
         guard !pendingFriendRequests.isEmpty else {
             completion(true)
             return
         }
-        
+
         NetworkManager.shared.post(
             endpoint: "/send-friend-request",
             parameters: ["toUserIds": pendingFriendRequests]
@@ -79,23 +79,23 @@ class Onboarding {
             case .success(_):
                 pendingFriendRequests.removeAll()
                 completion(true)
-                
+
             case .failure(let error):
                 Log.error("Failed to send friend requests: \(error.localizedDescription)")
                 completion(false)
             }
         }
-    } 
+    }
 
     // MARK: - Image Storage
     static func storeProfilePic(_ image: UIImage) {
         profilePic = image
     }
-    
+
     static func clearImages() {
         profilePic = nil
     }
-    
+
     static func getAllImages() -> [(UIImage, Bool)] {
         var images: [(UIImage, Bool)] = []
         if let profile = profilePic {
@@ -103,16 +103,16 @@ class Onboarding {
         }
         return images
     }
-    
+
     // MARK: - Getters
     static func getName() -> String? {
         return userName
     }
-    
+
     static func getBirthdate() -> Date? {
         return userBirthdate
     }
-    
+
     static func getHobbies() -> Set<String> {
         return userHobbies
     }
@@ -198,14 +198,14 @@ class Onboarding {
     struct OnboardResponse: Decodable {
         let message: String
     }
-    
+
     struct FriendRequestResponse: Decodable {
         let message: String
         let requestIds: [String]?
     }
 
     // MARK: - Private Helper Methods
-    
+
     /// Uploads the profile picture to the backend
     /// - Parameters:
     ///   - image: The UIImage to upload
@@ -217,7 +217,7 @@ class Onboarding {
             completion(false)
             return
         }
-        
+
         // Upload using UserImage utility
         UserImage.upload(imageData: imageData, isProfilePic: true) { result in
             DispatchQueue.main.async {
@@ -238,23 +238,23 @@ class Onboarding {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd"
         let formattedDate = userBirthdate.map { dateFormatter.string(from: $0) } ?? ""
-        
+
         // Create request parameters with current onboarding data
         var parameters: [String: Any] = [
             "name": userName ?? "",
             "birthdate": formattedDate,
             "hobbies": Array(userHobbies)  // Convert Set to Array for JSON serialization
         ]
-        
+
         // Add optional fields if they exist
         if let almaMater = userAlmaMater, !almaMater.isEmpty {
             parameters["almaMater"] = almaMater
         }
-        
+
         if let city = userCity, !city.isEmpty {
             parameters["city"] = city
         }
-        
+
         NetworkManager.shared.post(
             endpoint: "/onboard",
             parameters: parameters

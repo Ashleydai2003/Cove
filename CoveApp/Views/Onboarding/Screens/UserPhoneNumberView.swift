@@ -11,12 +11,11 @@ import Combine
 /// Handles country selection, phone number formatting, and navigation to OTP verification
 struct UserPhoneNumberView: View {
 
-    
-    // MARK: - Environment & State Properties
-    
+// MARK: - Environment & State Properties
+
     /// App controller for managing navigation and shared state
     @EnvironmentObject var appController: AppController
-    
+
     /// UI State
     @State private var presentSheet = false
     @State private var searchCountry: String = ""
@@ -24,19 +23,19 @@ struct UserPhoneNumberView: View {
     @State private var isCodeSending = false
     @State private var showError = false
     @State private var userPhone = UserPhoneNumber(number: "",country: Country(id: "0235", name: "USA", flag: "🇺🇸", code: "US", dial_code: "+1", pattern: "### ### ####", limit: 17))
-    
+
     // Status messaging
     @State private var statusMessage: String = ""
     @State private var messageType: MessageType = .none
-    
+
     enum MessageType {
         case none
         case success
         case error
     }
-    
+
     // MARK: - Constants
-    
+
     private enum Constants {
         static let titleFontSize: CGFloat = 40
         static let subtitleFontSize: CGFloat = 15
@@ -51,7 +50,7 @@ struct UserPhoneNumberView: View {
         static let arrowBottomPadding: CGFloat = 60
         static let arrowTrailingPadding: CGFloat = 20
     }
-    
+
     // Custom input accessory view for keyboard
     private var keyboardAccessoryView: some View {
         HStack {
@@ -64,27 +63,27 @@ struct UserPhoneNumberView: View {
         }
         .background(Color.gray.opacity(0.1))
     }
-    
+
     /// Data
     let counrties: [Country] = Bundle.main.decode("CountryList.json")
-    
+
     // MARK: - Helper Methods
-    
+
     /// Validates if the phone number matches the expected length for the selected country
     private func checkPhoneNumberCompletion(_ number: String) -> Bool {
         let digitsOnly = number.filter { $0.isNumber }
         let expectedLength = userPhone.country.pattern.filter { $0 == "#" }.count
         return digitsOnly.count == expectedLength
     }
-    
+
     // MARK: - Status Message Display
-    
+
     private var statusMessageView: some View {
         HStack {
             if !statusMessage.isEmpty {
                 Text(statusMessage)
                     .font(.LeagueSpartan(size: 14))
-                    .foregroundColor(messageType == .success ? .green : 
+                    .foregroundColor(messageType == .success ? .green :
                                    messageType == .error ? .red : Colors.primaryDark)
             }
             Spacer()
@@ -93,7 +92,7 @@ struct UserPhoneNumberView: View {
         .padding(.top, 8)
         .animation(.easeInOut(duration: 0.3), value: statusMessage)
     }
-    
+
     // MARK: - Main View Body
     var body: some View {
         ZStack {
@@ -101,22 +100,22 @@ struct UserPhoneNumberView: View {
             VStack {
                 // MARK: - Header Section
                 headerSection
-                
+
                 // MARK: - Phone Number Input Section
                 HStack(alignment: .lastTextBaseline, spacing: 16) {
                     // Country Selection Button
                     countrySelectionButton
-                    
+
                     // Phone Number Input Field
                     phoneNumberInputField
                 }
                 .padding(.top, Constants.phoneInputTopPadding)
-                
+
                 // MARK: - Status Message
                 statusMessageView
-                
+
                 Spacer()
-                
+
                 // MARK: - Submit Button
                 //submitButton
             }
@@ -165,16 +164,16 @@ struct UserPhoneNumberView: View {
         .onAppear {
             // Auto-focus on phone number input
             isFocused = true
-            
+
             // Auto-send code if phone number is complete when returning from OTP screen
             if checkPhoneNumberCompletion(userPhone.number) && statusMessage.isEmpty {
                 sendVerificationCodeWithFeedback()
             }
         }
     }
-    
+
     // MARK: - View Components
-    
+
     /// Header section with title and subtitle
     var headerSection: some View {
         VStack(alignment: .leading) {
@@ -182,7 +181,7 @@ struct UserPhoneNumberView: View {
                 .foregroundStyle(Colors.primaryDark)
                 .font(.LibreBodoni(size: Constants.titleFontSize))
                 .frame(maxWidth: .infinity, alignment: .leading)
-            
+
             Text("we'll send you a verification code")
                 .foregroundStyle(Colors.primaryDark)
                 .font(.LeagueSpartan(size: Constants.subtitleFontSize))
@@ -190,7 +189,7 @@ struct UserPhoneNumberView: View {
         }
         .padding(.top, Constants.topPadding)
     }
-    
+
     /// Country selection button
     var countrySelectionButton: some View {
         Button {
@@ -201,7 +200,7 @@ struct UserPhoneNumberView: View {
                     .font(.system(size: Constants.countryFlagFontSize))
                 Images.downArrowSolid
                     .resizable()
-                    .frame(width: Constants.downArrowSize.width, 
+                    .frame(width: Constants.downArrowSize.width,
                             height: Constants.downArrowSize.height)
             }
             .frame(width: Constants.countryButtonWidth)
@@ -212,14 +211,14 @@ struct UserPhoneNumberView: View {
             }
         }
     }
-    
+
     /// Phone number input field
     var phoneNumberInputField: some View {
         HStack {
             Text(userPhone.country.dial_code)
                 .foregroundStyle(Color.black)
                 .font(.LibreCaslon(size: Constants.phoneInputFontSize))
-            
+
             TextField(userPhone.country.pattern, text: $userPhone.number)
                 .font(.LibreCaslon(size: Constants.phoneInputFontSize))
                 .foregroundStyle(Color.black)
@@ -230,13 +229,13 @@ struct UserPhoneNumberView: View {
                 .onChange(of: userPhone.number) { _, newValue in
                     let formattedNumber = userPhone.formatPhoneNumber(newValue, pattern: userPhone.country.pattern)
                     userPhone.number = formattedNumber
-                    
+
                     // Only clear messages if we're not in the middle of sending
                     if !isCodeSending {
                         statusMessage = ""
                         messageType = .none
                     }
-                    
+
                     // Send verification code when number is complete
                     if checkPhoneNumberCompletion(formattedNumber) && !isCodeSending {
                         sendVerificationCodeWithFeedback()
@@ -254,37 +253,37 @@ struct UserPhoneNumberView: View {
             return counrties.filter { $0.name.localizedCaseInsensitiveContains(searchCountry) }
         }
     }
-    
+
     // MARK: - Private Methods
     private func sendVerificationCodeWithFeedback() {
         guard !isCodeSending else { return }
-        
+
         isCodeSending = true
         statusMessage = "Sending code..."
         messageType = .none
-        
+
         userPhone.sendVerificationCode { result in
             isCodeSending = false
-            
+
             switch result {
             case .success:
                 statusMessage = "Code sent!"
                 messageType = .success
                 // Navigate to OTP view
                 appController.path.append(.otpVerify)
-                
+
             case .invalidPhoneNumber:
                 statusMessage = "Failure to send code, check that your phone number is correct."
                 messageType = .error
-                
+
             case .networkError:
                 statusMessage = "Network error. Please check your connection and try again."
                 messageType = .error
-                
+
             case .rateLimited:
                 statusMessage = "Wait just a few seconds and try to resend again."
                 messageType = .error
-                
+
             case .unknownError(_):
                 statusMessage = "Code failed to send—try another phone number."
                 messageType = .error

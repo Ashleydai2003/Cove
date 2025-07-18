@@ -7,7 +7,7 @@ import SwiftUI
 
 // MARK: - DiscoverView
 struct DiscoverView: View {
-    
+
     var body: some View {
         VStack {
             Spacer()
@@ -26,4 +26,4 @@ struct DiscoverView_Previews: PreviewProvider {
     static var previews: some View {
         DiscoverView()
     }
-} 
+}

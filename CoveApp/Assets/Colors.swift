@@ -8,7 +8,7 @@
 import SwiftUI
 
 enum Colors {
-    // TODO: make this just the opposite 
+    // TODO: make this just the opposite
     static let primaryLight = Color("CovePrimaryLightColor")
     static let primaryDark = Color("CovePrimaryDarkColor")
     // tmp for now
@@ -18,7 +18,7 @@ enum Colors {
     static let k262627 = Color(hex: "262627")
     static let faf8f4 = Color(hex: "FAF8F4")
     static let f3f3f3 = Color(hex: "F3F3F3")
-    
+
     static let k0B0B0B = Color(hex: "0B0B0B")
     static let k0F100F = Color(hex: "0F100F")
     static let k6B6B6B = Color(hex: "6B6B6B")
@@ -28,7 +28,7 @@ enum Colors {
     static let kEDEDED = Color(hex: "EDEDED")
     static let kF5F5F5 = Color(hex: "F5F5F5")
     static let kFDFDFD = Color(hex: "FDFDFD")
-    
+
     static let k070708 = Color(hex: "070708")
     static let kE8DFCB = Color(hex: "E8DFCB")
 }

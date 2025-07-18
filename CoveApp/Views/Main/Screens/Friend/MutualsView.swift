@@ -16,9 +16,8 @@ struct MutualsView: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
-                
 
-                // MARK: — Mutuals List
+// MARK: — Mutuals List
                 if viewModel.isLoading && viewModel.mutuals.isEmpty {
                     VStack(spacing: 16) {
                         ProgressView()
@@ -34,7 +33,7 @@ struct MutualsView: View {
                         Image(systemName: "exclamationmark.circle")
                             .font(.system(size: 40))
                             .foregroundColor(.gray)
-                        
+
                         Text(error)
                             .font(.LibreBodoni(size: 16))
                             .foregroundColor(.gray)
@@ -48,7 +47,7 @@ struct MutualsView: View {
                         Image(systemName: "person.2.slash")
                             .font(.system(size: 40))
                             .foregroundColor(Colors.primaryDark)
-                        
+
                         Text("no mutuals yet – discover new connections!")
                             .font(.LibreBodoni(size: 16))
                             .foregroundColor(Colors.primaryDark)
@@ -90,7 +89,7 @@ struct MutualsView: View {
                                             Text(mutual.name)
                                                 .font(.LibreBodoni(size: 16))
                                                 .foregroundStyle(Color.black)
-                                            
+
                                             // Shared cove count
                                             Text("\(mutual.sharedCoveCount) shared cove\(mutual.sharedCoveCount == 1 ? "" : "s")")
                                                 .font(.LibreBodoni(size: 12))
@@ -118,7 +117,7 @@ struct MutualsView: View {
                                     }
                                 }
                             }
-                            
+
                             if viewModel.isLoading && !viewModel.mutuals.isEmpty {
                                 HStack {
                                     Spacer()

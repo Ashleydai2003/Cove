@@ -7,30 +7,30 @@
 import SwiftUI
 
 struct AlmaMaterView: View {
-    
+
     /// App controller for managing navigation and shared state
     @EnvironmentObject var appController: AppController
-    
+
     @State private var searchUniversity = ""
     @State private var gradYear = ""
-    
+
     @State private var showUniversityDropdown = false
     @State private var showYearDropdown = false
     @State private var showList: Bool = false
     @FocusState private var isUniversityFocused: Bool
     @State private var universities: [String] = ["Stanford University", "Stanford Graduate School of Business", "Stanford School of Medicine", "Stanford Law School", "Stanford Graduate School of Education"]
-    
+
     // Generate years from 2000 to current year + 4
     private var availableYears: [String] {
         let currentYear = Calendar.current.component(.year, from: Date())
         let maxYear = currentYear + 4
         return Array(2000...maxYear).map { String($0) }.reversed()
     }
-    
+
     var body: some View {
         ZStack {
             OnboardingBackgroundView()
-            
+
             VStack {
                 // Back button
             HStack {
@@ -42,21 +42,21 @@ struct AlmaMaterView: View {
                 Spacer()
             }
             .padding(.top, 10)
-            
+
                 // Header section
                 VStack(alignment: .leading, spacing: 10) {
             Text("what is your alma \nmater?")
                 .foregroundStyle(Colors.primaryDark)
                 .font(.LibreBodoniMedium(size: 40))
                 .frame(maxWidth: .infinity, alignment: .leading)
-            
+
             Text("find people from within your network, then others. (optional)")
                 .font(.LeagueSpartan(size: 15))
                 .foregroundColor(Colors.k0B0B0B)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .padding(.top, 40)
-                
+
                 // Search input section
                 VStack(spacing: 8) {
                     ZStack(alignment: .leading) {
@@ -65,7 +65,7 @@ struct AlmaMaterView: View {
                                 .foregroundColor(Colors.k656566)
                                 .font(.LeagueSpartan(size: 30))
                         }
-                        
+
                 TextField("", text: $searchUniversity)
                     .font(.LeagueSpartan(size: 30))
                     .foregroundStyle(Colors.k060505)
@@ -82,13 +82,13 @@ struct AlmaMaterView: View {
                                 }
                             }
                     }
-                
+
                 Divider()
                     .frame(height: 2)
                     .background(Colors.k060505)
             }
                 .padding(.top, 30)
-                
+
                 // Graduation year input section
                 VStack(spacing: 8) {
                     ZStack(alignment: .leading) {
@@ -97,7 +97,7 @@ struct AlmaMaterView: View {
                                 .foregroundColor(Colors.k656566)
                                 .font(.LeagueSpartan(size: 30))
                         }
-                        
+
                         TextField("", text: $gradYear)
                             .font(.LeagueSpartan(size: 30))
                             .foregroundStyle(Colors.k060505)
@@ -118,13 +118,13 @@ struct AlmaMaterView: View {
                                 }
                             }
                     }
-                    
+
                     Divider()
                         .frame(height: 2)
                         .background(Colors.k060505)
                 }
                 .padding(.top, 20)
-                
+
                 // University suggestions list
                 if searchUniversity.count > 0 && showUniversityDropdown {
                     VStack(spacing: 0) {
@@ -146,7 +146,7 @@ struct AlmaMaterView: View {
                                             .padding(.vertical, 12)
                                     }
                                     .background(Color.clear)
-                                    
+
                                     if university != filteredUniversities.last {
                                         Divider()
                                             .background(Colors.k060505.opacity(0.2))
@@ -161,7 +161,7 @@ struct AlmaMaterView: View {
                     .padding(.top, 10)
                     .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 5)
                 }
-                
+
                 // Graduation year suggestions list
                 if gradYear.count > 0 && showYearDropdown {
                     VStack(spacing: 0) {
@@ -183,7 +183,7 @@ struct AlmaMaterView: View {
                                             .padding(.vertical, 12)
                                     }
                                     .background(Color.clear)
-                                    
+
                                     if year != filteredYears.last {
                                         Divider()
                                             .background(Colors.k060505.opacity(0.2))
@@ -198,9 +198,9 @@ struct AlmaMaterView: View {
                     .padding(.top, 10)
                     .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 5)
             }
-            
+
             Spacer()
-            
+
                 // Continue button
             HStack {
                 Spacer()
@@ -224,7 +224,7 @@ struct AlmaMaterView: View {
             isUniversityFocused = true
         }
     }
-    
+
     var filteredUniversities: [String] {
         if searchUniversity.isEmpty {
             return universities
@@ -232,7 +232,7 @@ struct AlmaMaterView: View {
             return universities.filter { $0.localizedCaseInsensitiveContains(searchUniversity) }
         }
     }
-    
+
     var filteredYears: [String] {
         if gradYear.isEmpty {
             return availableYears

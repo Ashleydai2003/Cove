@@ -38,7 +38,7 @@ private struct ContactsButton: View {
     let action: () -> Void
     let isLoading: Bool
     let onSkip: () -> Void
-    
+
     var body: some View {
         VStack(spacing: 16) {
             Button(action: action) {
@@ -52,7 +52,7 @@ private struct ContactsButton: View {
                     .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 4)
             }
             .disabled(isLoading)
-            
+
             Button(action: onSkip) {
                 Text("skip")
                     .font(.LeagueSpartan(size: 14))
@@ -76,7 +76,7 @@ private struct ContactRow: View {
     let contact: LocalContact
     let isSelected: Bool
     let onTap: () -> Void
-    
+
     var body: some View {
         HStack {
             Text(contact.name)
@@ -96,7 +96,7 @@ private struct ContactRow: View {
 // MARK: - Main View
 struct ContactsView: View {
     @EnvironmentObject var appController: AppController
-    
+
     // MARK: – State
     @State private var serverMatches: [ContactMatcher.MatchedUser] = []
     @State private var isLoading = false
@@ -104,11 +104,11 @@ struct ContactsView: View {
     @State private var showSheet = false
     @State private var showError = false
     @State private var showingNoMatches = false
-    
+
     var body: some View {
         ZStack {
             OnboardingBackgroundView()
-            
+
             VStack(alignment: .leading, spacing: 10) {
                 HStack {
                     Button { appController.path.removeLast() } label: {
@@ -117,7 +117,7 @@ struct ContactsView: View {
                     Spacer()
                 }
                 .padding(.top, 10)
-                
+
                 HeaderView()
                 Spacer()
                 ContactsButton(
@@ -131,7 +131,7 @@ struct ContactsView: View {
             }
             .padding(.horizontal, 20)
             .safeAreaPadding()
-            
+
             if isLoading {
                 Color.black.opacity(0.5).ignoresSafeArea()
                 VStack(spacing: 12) {
@@ -159,12 +159,12 @@ struct ContactsView: View {
             Text(errorMessage ?? "An error occurred. Please try again.")
         }
     }
-    
+
     // MARK: – Helpers
     private func processAllContacts() {
         isLoading = true
         errorMessage = nil
-        
+
         let store = CNContactStore()
         store.requestAccess(for: .contacts) { granted, err in
             guard granted, err == nil else {
@@ -175,13 +175,13 @@ struct ContactsView: View {
                 }
                 return
             }
-            
+
             // Move contacts processing to background thread
             DispatchQueue.global(qos: .userInitiated).async {
                 let req = CNContactFetchRequest(keysToFetch: [
                     CNContactPhoneNumbersKey as CNKeyDescriptor
                 ])
-                
+
                 var phones: [String] = []
                 try? store.enumerateContacts(with: req) { contact, _ in
                     contact.phoneNumbers.forEach { phoneNumber in
@@ -190,7 +190,7 @@ struct ContactsView: View {
                         }
                     }
                 }
-                
+
                 // Match phones with server to find existing accounts
                 ContactMatcher.matchPhones(phones) { result in
                     // Update UI on main thread
@@ -212,7 +212,7 @@ struct ContactsView: View {
             }
         }
     }
-    
+
     private func completeOnboarding() {
         // Complete onboarding and navigate to data loading screen
         Onboarding.completeOnboarding { success in
@@ -228,7 +228,7 @@ struct ContactsView: View {
             }
         }
     }
-    
+
     private func e164(_ raw: String) -> String? {
         let digits = raw.filter(\.isNumber)
         switch digits.count {

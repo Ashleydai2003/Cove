@@ -20,4 +20,4 @@ struct ImagePrefetcherUtil {
         guard let url = URL(string: urlString) else { return }
         KingfisherManager.shared.retrieveImage(with: url, options: [.backgroundDecode]) { _ in }
     }
-} 
+}

@@ -16,7 +16,7 @@ struct CoveHeaderView: View {
     let onBackTapped: () -> Void
     let isRefreshing: Bool
     let onRefresh: () async -> Void
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 24) {
             // Cove header with back button and cover photo
@@ -27,9 +27,9 @@ struct CoveHeaderView: View {
                     Images.backArrow
                 }
                 .padding(.top, 16)
-                
+
                 Spacer()
-                
+
                 // Show loading indicator when refreshing cove details
                 if isRefreshing {
                     ProgressView()
@@ -62,17 +62,17 @@ struct CoveHeaderView: View {
                             .clipShape(Circle())
                     }
                 }
-                
+
                 Spacer()
             }
             .padding(.horizontal, 16)
-            
+
             Text(cove.name.isEmpty ? "untitled" : cove.name)
                 .foregroundStyle(Colors.primaryDark)
                 .font(.LibreBodoniBold(size: 26))
                 .frame(maxWidth: .infinity, alignment: .center)
                 .multilineTextAlignment(.center)
-            
+
             if let description = cove.description {
                 Text(description)
                     .foregroundStyle(Colors.k292929)
@@ -105,4 +105,4 @@ struct CoveHeaderView: View {
         isRefreshing: false,
         onRefresh: {}
     )
-} 
+}

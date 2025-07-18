@@ -4,7 +4,6 @@
 //
 //  Created by Nesib Muhedin
 
-
 import SwiftUI
 import UIKit
 import CoreLocation
@@ -13,7 +12,6 @@ import PhotosUI
 import Kingfisher
 import FirebaseAuth
 
-// TODO: Default profile picture
 // TODO: Consider a view and edit option up top to swipe like hinge instead
 
 // MARK: - Profile Header Component
@@ -30,14 +28,13 @@ struct ProfileText: View {
     }
 }
 
-
 @MainActor
 struct ProfileHeader: View {
-    let name: String
-    let workLocation: String
-    let gender: String
-    let relationStatus: String
-    let job: String
+    @Binding var name: String
+    @Binding var workLocation: String
+    @Binding var gender: String
+    @Binding var relationStatus: String
+    @Binding var job: String
     let profileImageURL: URL?
     let age: Int?
     let address: String
@@ -50,11 +47,11 @@ struct ProfileHeader: View {
     let onJobChange: (String) -> Void
     let onLocationSelect: () -> Void
     let onProfileImageChange: (UIImage?) -> Void
-    
+
     @State private var selectedItem: PhotosPickerItem?
     @State private var isPressed = false
     @EnvironmentObject var appController: AppController
-    
+
     var body: some View {
         // Capture the @State flag once in a main-actor context; use it everywhere below to avoid
         // referencing 'isPressed' inside non-isolated view-builder closures.
@@ -95,14 +92,14 @@ struct ProfileHeader: View {
                             .onAppear {
                             }
                     }
-                    
+
                     // Overlay for editing
                     // TODO: actually we should have an x up top and a user can only change after they remove their current picture
                     if isEditing {
                         Circle()
                             .fill(Color.black.opacity(pressed ? 0.7 : 0.3))
                             .frame(maxWidth: 200, maxHeight: 200)
-                        
+
                         Text("change")
                             .font(.LibreBodoni(size: 16))
                             .foregroundColor(.white)
@@ -125,7 +122,7 @@ struct ProfileHeader: View {
                     }
                 }
             }
-            // TODO: what is selectedItem? 
+            // TODO: what is selectedItem?
             .onChange(of: selectedItem) { _, newItem in
                 Task {
                     if let data = try? await newItem?.loadTransferable(type: Data.self),
@@ -134,10 +131,10 @@ struct ProfileHeader: View {
                     }
                 }
             }
-            
+
             // MARK: - Profile header
             if isEditing {
-                TextField("Name", text: .constant(name), onCommit: { onNameChange(name) })
+                TextField("Name", text: $name, onCommit: { onNameChange(name) })
                     .font(.LibreBodoniMedium(size: 35))
                     .foregroundColor(Colors.primaryDark)
                     .multilineTextAlignment(.center)
@@ -158,7 +155,7 @@ struct ProfileHeader: View {
                     .font(.LibreBodoniMedium(size: 35))
                     .foregroundColor(Colors.primaryDark)
             }
-            
+
             VStack(alignment: .leading, spacing: 10) {
                 if isEditing {
                     Button(action: onLocationSelect) {
@@ -167,7 +164,7 @@ struct ProfileHeader: View {
                                 .font(.LibreBodoni(size: 15))
                                 .foregroundColor(address.isEmpty ? Colors.k6F6F73 : Colors.primaryDark)
                                 .multilineTextAlignment(.center)
-                            
+
                             Image(systemName: "location.fill")
                                 .foregroundColor(Colors.primaryDark)
                                 .font(.system(size: 10))
@@ -181,19 +178,19 @@ struct ProfileHeader: View {
                         isPlaceholder: address.isEmpty
                     ).frame(maxWidth: .infinity, alignment: .center)
                 }
-                
+
                 HStack() {
                     Text(age.map(String.init) ?? "21")
                         .font(.LibreBodoni(size: 20))
                         .foregroundColor(Colors.primaryDark)
-                    
+
                     Spacer()
-                    
+
                     Image("more-info")
-                    
+
                     if isEditing {
                         // TODO: this should maybe also be a drop down select
-                        TextField("Gender", text: .constant(gender), onCommit: { onGenderChange(gender) })
+                        TextField("Gender", text: $gender, onCommit: { onGenderChange(gender) })
                             .font(.LibreBodoni(size: 15))
                             .foregroundColor(Colors.primaryDark)
                             .multilineTextAlignment(.center)
@@ -214,11 +211,11 @@ struct ProfileHeader: View {
                             isPlaceholder: gender.isEmpty
                         )
                     }
-                    
+
                     Spacer()
-                    
+
                     Image("person-fill")
-                    
+
                     if isEditing {
                         RelationStatusPicker(selectedStatus: relationStatus, onStatusChange: onRelationStatusChange)
                     } else {
@@ -228,14 +225,14 @@ struct ProfileHeader: View {
                         )
                     }
                 }.padding(.horizontal, 5)
-                
+
                 HStack() {
                     Image(systemName: "briefcase")
                         .foregroundStyle(Colors.k6B6B6B)
-                    
+
                     if isEditing {
                         HStack {
-                            TextField("Job", text: .constant(job), onCommit: { onJobChange(job) })
+                            TextField("Job", text: $job, onCommit: { onJobChange(job) })
                                 .font(.LibreBodoni(size: 15))
                                 .foregroundColor(Colors.primaryDark)
                                 .textFieldStyle(PlainTextFieldStyle())
@@ -249,12 +246,12 @@ struct ProfileHeader: View {
                                 .onChange(of: job) { _, newValue in
                                     onJobChange(newValue)
                                 }
-                            
+
                             Text("@")
                                 .font(.LibreBodoni(size: 15))
                                 .foregroundColor(Colors.primaryDark)
-                            
-                            TextField("Work Location", text: .constant(workLocation), onCommit: { onWorkLocationChange(workLocation) })
+
+                            TextField("Work Location", text: $workLocation, onCommit: { onWorkLocationChange(workLocation) })
                                 .font(.LibreBodoni(size: 15))
                                 .foregroundColor(Colors.primaryDark)
                                 .textFieldStyle(PlainTextFieldStyle())
@@ -270,10 +267,14 @@ struct ProfileHeader: View {
                                 }
                         }
                     } else {
-                        if job.isEmpty || workLocation.isEmpty {
-                            ProfileText(text: "add your work", isPlaceholder: true)
-                        } else {
+                        if !job.isEmpty && !workLocation.isEmpty {
                             ProfileText(text: "\(job) @ \(workLocation)", isPlaceholder: false)
+                        } else if !job.isEmpty {
+                            ProfileText(text: job, isPlaceholder: false)
+                        } else if !workLocation.isEmpty {
+                            ProfileText(text: workLocation, isPlaceholder: false)
+                        } else {
+                            ProfileText(text: "add your work", isPlaceholder: true)
                         }
                     }
                 }
@@ -291,9 +292,9 @@ struct RelationStatusPicker: View {
     let selectedStatus: String
     let onStatusChange: (String) -> Void
     @State private var showingPicker = false
-    
+
     private let statusOptions = ["Single", "Taken", "It's Complicated"]
-    
+
     var body: some View {
         Button(action: {
             showingPicker = true
@@ -314,7 +315,7 @@ struct RelationStatusPicker: View {
                 Text("relationship status")
                     .font(.LibreBodoni(size: 24))
                     .foregroundColor(Colors.primaryDark)
-                
+
                 ForEach(statusOptions, id: \.self) { status in
                     Button(action: {
                         onStatusChange(status)
@@ -335,7 +336,7 @@ struct RelationStatusPicker: View {
                         .cornerRadius(10)
                     }
                 }
-                
+
                 Spacer()
             }
             .padding()
@@ -346,15 +347,15 @@ struct RelationStatusPicker: View {
 
 // MARK: - Bio Component
 struct BioSection: View {
-    let bio: String
+    @Binding var bio: String
     let isEditing: Bool
     let onBioChange: (String) -> Void
-    
+
     var body: some View {
         VStack(alignment: .center, spacing: 16) {
             HStack {
                 if isEditing {
-                    TextField("Add your bio...", text: .constant(bio), axis: .vertical)
+                    TextField("Add your bio...", text: $bio, axis: .vertical)
                         .font(.LeagueSpartan(size: 14))
                         .foregroundStyle(Colors.k6F6F73)
                         .multilineTextAlignment(.leading)
@@ -397,19 +398,19 @@ struct InterestsSection: View {
     let isEditing: Bool
     let onInterestsChange: ([String]) -> Void
     @State private var showingHobbiesSheet = false
-    
+
     let columns = [
         GridItem(.flexible(), spacing: 12),
         GridItem(.flexible(), spacing: 12)
     ]
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("past times")
                 .font(.LibreBodoni(size: 18))
                 .foregroundColor(Colors.primaryDark)
                 .frame(maxWidth: .infinity, alignment: .leading)
-            
+
             if interests.isEmpty && !isEditing {
                 StaticHobbyPill(text: "whoops! add your passtimes!", textColor: Colors.k6F6F73)
             } else {
@@ -417,7 +418,7 @@ struct InterestsSection: View {
                     ForEach(interests, id: \.self) { hobby in
                         ZStack {
                             StaticHobbyPill(text: hobby, textColor: Colors.k6F6F73)
-                                
+
                                 if isEditing {
                                 HStack {
                                     Spacer()
@@ -435,7 +436,7 @@ struct InterestsSection: View {
                             }
                         }
                     }
-                    
+
                     if isEditing {
                         StaticHobbyPill(
                             text: "add hobby",
@@ -470,7 +471,7 @@ struct LocationSelectionView: View {
     @State private var coordinate: CLLocationCoordinate2D?
     @State private var selectedAddress: String = ""
     @Environment(\.dismiss) private var dismiss
-    
+
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
@@ -482,18 +483,18 @@ struct LocationSelectionView: View {
                             }
                         }
                     }
-                
+
                 VStack(spacing: 16) {
                     Text("selected location")
                         .font(.LibreBodoni(size: 18))
                         .foregroundColor(Colors.primaryDark)
-                    
+
                     Text(selectedAddress.isEmpty ? "Tap on the map to select a location" : selectedAddress.lowercased())
                         .font(.LeagueSpartan(size: 14))
                         .foregroundColor(Colors.k6F6F73)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal)
-                    
+
                     Button(action: {
                         if let coord = coordinate, !selectedAddress.isEmpty {
                             onLocationSelected(selectedAddress, coord)
@@ -526,11 +527,11 @@ struct LocationSelectionView: View {
             }
         }
     }
-    
+
     private func getLocationName(latitude: Double, longitude: Double) async -> String {
         let geocoder = CLGeocoder()
         let location = CLLocation(latitude: latitude, longitude: longitude)
-        
+
         do {
             let placemarks = try await geocoder.reverseGeocodeLocation(location)
             if let placemark = placemarks.first {
@@ -552,13 +553,13 @@ struct HobbiesSelectionView: View {
     @State private var currentSelection: Set<String>
     @State private var searchText: String = ""
     @Environment(\.dismiss) private var dismiss
-    
+
     init(selectedHobbies: Set<String>, onHobbiesSelected: @escaping (Set<String>) -> Void) {
         self.selectedHobbies = selectedHobbies
         self.onHobbiesSelected = onHobbiesSelected
         self._currentSelection = State(initialValue: selectedHobbies)
     }
-    
+
     private let hobbyCategories: [(String, [(String, String)])] = [
         ("Sports & Fitness 🏃‍♀️", [
             ("Soccer Teams", "⚽️"),
@@ -641,30 +642,30 @@ struct HobbiesSelectionView: View {
             ("Trivia Teams", "🧠")
         ])
     ]
-    
+
     private var filteredCategories: [(String, [(String, String)])] {
         if searchText.isEmpty {
             return hobbyCategories
         }
-        
+
         return hobbyCategories.compactMap { category in
             let filteredHobbies = category.1.filter { hobby in
                 hobby.0.lowercased().contains(searchText.lowercased())
             }
-            
+
             if filteredHobbies.isEmpty {
                 return nil
             }
-            
+
             return (category.0, filteredHobbies)
         }
     }
-    
+
     private let columns = [
         GridItem(.flexible(), spacing: 12),
         GridItem(.flexible(), spacing: 12)
     ]
-    
+
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
@@ -687,7 +688,7 @@ struct HobbiesSelectionView: View {
                 .background(Color.gray.opacity(0.1))
                 .cornerRadius(10)
                 .padding()
-                
+
                 // Hobbies grid
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 24) {
@@ -697,7 +698,7 @@ struct HobbiesSelectionView: View {
                                     .font(.LeagueSpartan(size: 16))
                                     .foregroundStyle(Colors.primaryLight)
                                     .padding(.horizontal)
-                                
+
                                 LazyVGrid(columns: columns, spacing: 12) {
                                     ForEach(category.1, id: \.0) { hobby in
                                         Button(action: {
@@ -751,11 +752,11 @@ struct ExtraPhotoView: View {
     let isEditing: Bool
     let editingImage: UIImage?
     let onImageChange: (UIImage?) -> Void
-    
+
     @State private var selectedItem: PhotosPickerItem?
     @State private var isPressed = false
     @EnvironmentObject var appController: AppController
-    
+
     var body: some View {
         // Capture @State and model data in locals so closures below don't access main-actor values directly.
         let pressed = isPressed
@@ -787,12 +788,12 @@ struct ExtraPhotoView: View {
                         .onAppear {
                         }
                 }
-                
+
                 if isEditing {
                     Rectangle()
                         .fill(Color.black.opacity(pressed ? 0.7 : 0.3))
                         .frame(maxWidth: AppConstants.SystemSize.width*0.8)
-                    
+
                     Text(displayImage == nil ? "add picture" : "change")
                         .font(.LibreBodoni(size: 16))
                         .foregroundColor(.white)
@@ -833,7 +834,7 @@ struct ProfileView: View {
     @State private var showingLocationSheet = false
     @State private var isSaving = false
     @State private var isLoggingOut = false
-    
+
     // Local editing state
     @State private var editingName: String = ""
     @State private var editingWorkLocation: String = ""
@@ -847,12 +848,12 @@ struct ProfileView: View {
     @State private var editingLongitude: Double?
     @State private var editingProfileImage: UIImage?
     @State private var editingExtraImages: [UIImage?] = [nil, nil]
-    
+
     var body: some View {
         ZStack {
             Colors.faf8f4
                 .ignoresSafeArea()
-            
+
             VStack {
                 // Custom Header
                 HStack(alignment: .center) {
@@ -866,7 +867,7 @@ struct ProfileView: View {
                         if isEditing {
                             // Show loading spinner immediately
                             isSaving = true
-                            
+
                             // Save changes and wait for completion before toggling
                             saveChanges { success in
                                 DispatchQueue.main.async {
@@ -909,11 +910,11 @@ struct ProfileView: View {
                     ScrollView(.vertical, showsIndicators: false) {
                         VStack(spacing: 20) {
                             ProfileHeader(
-                                name: isEditing ? editingName : appController.profileModel.name,
-                                workLocation: isEditing ? editingWorkLocation : appController.profileModel.workLocation,
-                                gender: isEditing ? editingGender : appController.profileModel.gender,
-                                relationStatus: isEditing ? editingRelationStatus : appController.profileModel.relationStatus,
-                                job: isEditing ? editingJob : appController.profileModel.job,
+                                name: isEditing ? $editingName : .constant(appController.profileModel.name),
+                                workLocation: isEditing ? $editingWorkLocation : .constant(appController.profileModel.workLocation),
+                                gender: isEditing ? $editingGender : .constant(appController.profileModel.gender),
+                                relationStatus: isEditing ? $editingRelationStatus : .constant(appController.profileModel.relationStatus),
+                                job: isEditing ? $editingJob : .constant(appController.profileModel.job),
                                 profileImageURL: isEditing ? nil : appController.profileModel.profileImageURL,
                                 age: appController.profileModel.calculatedAge,
                                 address: isEditing ? editingAddress : appController.profileModel.address,
@@ -933,7 +934,7 @@ struct ProfileView: View {
                             }
                             .onChange(of: appController.profileModel.profileImageURL) { _, newURL in
                             }
-                            
+
                             ExtraPhotoView(
                                 imageIndex: 0,
                                 isEditing: isEditing,
@@ -944,13 +945,13 @@ struct ProfileView: View {
                             }
                             .onChange(of: appController.profileModel.extraImageURLs.first) { _, newURL in
                             }
-                            
+
                             BioSection(
-                                bio: isEditing ? editingBio : appController.profileModel.bio,
+                                bio: isEditing ? $editingBio : .constant(appController.profileModel.bio),
                                 isEditing: isEditing,
                                 onBioChange: { editingBio = $0 }
                             )
-                            
+
                             ExtraPhotoView(
                                 imageIndex: 1,
                                 isEditing: isEditing,
@@ -961,7 +962,7 @@ struct ProfileView: View {
                             }
                             .onChange(of: appController.profileModel.extraImageURLs.dropFirst().first) { _, newURL in
                             }
-                            
+
                             InterestsSection(
                                 interests: isEditing ? editingInterests : appController.profileModel.interests,
                                 isEditing: isEditing,
@@ -1016,7 +1017,7 @@ struct ProfileView: View {
             )
         }
         .task {
-            
+
             // Profile data should already be loaded during login/onboarding
             // No need to fetch again - this was causing redundant network calls
         }
@@ -1025,7 +1026,7 @@ struct ProfileView: View {
             // The image loading should complete naturally
         }
     }
-    
+
     private func initializeEditingState() {
         editingName = appController.profileModel.name
         editingWorkLocation = appController.profileModel.workLocation
@@ -1041,7 +1042,7 @@ struct ProfileView: View {
         editingProfileImage = nil
         editingExtraImages = [nil, nil]
     }
-    
+
     private func saveChanges(completion: @escaping (Bool) -> Void) {
         // Check if any changes were actually made
         let hasChanges = editingName != appController.profileModel.name ||
@@ -1055,13 +1056,13 @@ struct ProfileView: View {
                         editingGender != appController.profileModel.gender ||
                         editingProfileImage != nil ||
                         editingExtraImages.contains { $0 != nil }
-        
+
         if !hasChanges {
             Log.debug("📱 No changes detected in ProfileView, skipping save")
             completion(true) // Return success since there's nothing to save
             return
         }
-        
+
         // Update the ProfileModel with all changes (images and text fields)
         appController.profileModel.updateProfile(
             name: editingName,
@@ -1093,25 +1094,25 @@ struct ProfileView: View {
     private func handleLogout() {
         // Prevent multiple logout attempts
         guard !isLoggingOut else { return }
-        
+
         // Add haptic feedback
         let impact = UIImpactFeedbackGenerator(style: .medium)
         impact.impactOccurred()
-        
+
         // Start logout animation
         withAnimation(.easeInOut(duration: 0.2)) {
             isLoggingOut = true
         }
-        
+
         // Add a small delay to make the logout feel more intentional
         // and allow the user to see the loading state
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
             // Attempt Firebase sign-out (safe to ignore error for now)
             try? Auth.auth().signOut()
-            
+
             // Clear all data - this will trigger the app transition
             appController.clearAllData()
-            
+
             // Reset the logout state (though this will be cleared by clearAllData anyway)
             isLoggingOut = false
         }

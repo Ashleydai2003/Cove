@@ -13,7 +13,7 @@ import SwiftUI
 struct ActionButton: View {
     let title: String
     let action: () -> Void
-    
+
     // Customization options
     let width: CGFloat
     let height: CGFloat
@@ -21,13 +21,13 @@ struct ActionButton: View {
     let textColor: Color
     let font: Font
     let cornerRadius: CGFloat
-    
+
     // MARK: - Constants
     static let defaultWidth: CGFloat = 120
     static let defaultHeight: CGFloat = 36
     static let defaultCornerRadius: CGFloat = 15
     static let defaultFont: Font = .LibreBodoni(size: 16) // Same as PillTabBar
-    
+
     init(
         title: String,
         width: CGFloat = ActionButton.defaultWidth,
@@ -47,7 +47,7 @@ struct ActionButton: View {
         self.cornerRadius = cornerRadius
         self.action = action
     }
-    
+
     var body: some View {
         Button(action: action) {
             Text(title)
@@ -73,7 +73,7 @@ extension ActionButton {
             action: action
         )
     }
-    
+
     /// Request button style (for friend requests)
     static func request(action: @escaping () -> Void) -> ActionButton {
         ActionButton(
@@ -81,7 +81,7 @@ extension ActionButton {
             action: action
         )
     }
-    
+
     /// Confirm button style (for accepting requests)
     static func confirm(action: @escaping () -> Void) -> ActionButton {
         ActionButton(
@@ -89,7 +89,7 @@ extension ActionButton {
             action: action
         )
     }
-    
+
     /// Delete button style (for rejecting requests)
     static func delete(action: @escaping () -> Void) -> ActionButton {
         ActionButton(
@@ -97,7 +97,7 @@ extension ActionButton {
             action: action
         )
     }
-    
+
     /// Pending button style (for pending states)
     static func pending() -> ActionButton {
         ActionButton(
@@ -116,7 +116,7 @@ extension ActionButton {
         ActionButton.confirm {}
         ActionButton.delete {}
         ActionButton.pending()
-        
+
         // Custom button
         ActionButton(
             title: "custom",
@@ -127,4 +127,4 @@ extension ActionButton {
         ) {}
     }
     .padding()
-} 
+}

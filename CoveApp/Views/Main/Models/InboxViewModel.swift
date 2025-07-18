@@ -8,47 +8,47 @@ class InboxViewModel: ObservableObject {
     @Published var invites: [InviteModel] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
-    
+
     /// Computed property to get only unopened invites
     var unopenedInvites: [InviteModel] {
         return invites.filter { !$0.isOpened }
     }
-    
+
     /// Whether there are unopened invites that should trigger showing the inbox
     var hasUnopenedInvites: Bool {
         return !unopenedInvites.isEmpty
     }
-    
+
     /// Initializes the inbox model - called on login/after onboarding
     func initialize() {
         fetchInvites()
     }
-    
+
     /// Fetches pending invites for the current user
     func fetchInvites() {
         isLoading = true
         errorMessage = nil
-        
+
         NetworkManager.shared.get(
             endpoint: "/invites",
             parameters: nil
         ) { [weak self] (result: Result<InboxResponse, NetworkError>) in
             guard let self = self else { return }
-            
+
             DispatchQueue.main.async {
                 self.isLoading = false
-                
+
                 switch result {
                 case .success(let response):
                     self.invites = response.invites
-                    
+
                     // Prefetch cover photos for already-opened invites
                     let coverUrls = response.invites.compactMap { $0.cove.coverPhotoUrl }
                     ImagePrefetcherUtil.prefetch(urlStrings: coverUrls)
-                    
+
                     // Notify AppController to check for auto-show
                     AppController.shared.checkForAutoShowInbox()
-                    
+
                 case .failure(let error):
                     Log.error("Failed to fetch invites: \(error.localizedDescription)")
                     self.errorMessage = "Failed to load invites: \(error.localizedDescription)"
@@ -56,21 +56,21 @@ class InboxViewModel: ObservableObject {
             }
         }
     }
-    
+
     /// Loads invites - convenience method for InboxView
     func loadInvites() {
         fetchInvites()
     }
-    
+
     /// Opens an invite by marking it as opened on the server (only for unopened invites)
     func openInvite(_ invite: InviteModel) {
         Log.debug("openInvite called for invite: \(invite.id)")
-        
+
         guard !invite.isOpened else {
             Log.debug("Invite \(invite.id) already opened – no-op")
             return
         }
-        
+
         // Optimistically mark as opened and replace the whole array (new reference)
         if let idx = invites.firstIndex(where: { $0.id == invite.id }) {
             let updated = InviteModel(
@@ -87,7 +87,7 @@ class InboxViewModel: ObservableObject {
                 invites = newInvites      // animated UI refresh
             }
         }
-        
+
         // Call API in background
         NetworkManager.shared.put(
             endpoint: "/open-invite",
@@ -128,17 +128,17 @@ class InboxViewModel: ObservableObject {
             }
         }
     }
-    
+
     /// Accepts an invite and joins the cove
     func acceptInvite(_ invite: InviteModel) {
         Log.debug("Accept invite \(invite.id)")
         let impact = UIImpactFeedbackGenerator(style: .medium); impact.impactOccurred()
-        
+
         // Remove optimistically by reassigning a NEW array
         withAnimation {
             invites = invites.filter { $0.id != invite.id }
         }
-        
+
         NetworkManager.shared.post(
             endpoint: "/join-cove",
             parameters: ["coveId": invite.cove.id]
@@ -160,30 +160,30 @@ class InboxViewModel: ObservableObject {
             }
         }
     }
-    
+
     /// Refreshes all feeds after joining a new cove
     private func refreshAllFeeds() {
         Log.debug("Refreshing feeds after joining cove…")
-        
+
         // Refresh CoveFeed (user's coves list)
         AppController.shared.coveFeed.refreshUserCoves()
-        
+
         // Refresh CalendarFeed (user's committed events)
         AppController.shared.calendarFeed.refreshCalendarEvents()
-        
+
         // Refresh UpcomingFeed (upcoming events from all coves)
         AppController.shared.upcomingFeed.refreshUpcomingEvents()
     }
-    
+
     /// Declines an invite
     func declineInvite(_ invite: InviteModel) {
         Log.debug("Decline invite \(invite.id)")
         let impact = UIImpactFeedbackGenerator(style: .light); impact.impactOccurred()
-        
+
         withAnimation {
             invites = invites.filter { $0.id != invite.id }
         }
-        
+
         NetworkManager.shared.delete(
             endpoint: "/reject-invite",
             parameters: ["inviteId": invite.id]
@@ -204,7 +204,7 @@ class InboxViewModel: ObservableObject {
             }
         }
     }
-    
+
     /// Clears all data when user logs out
     func clear() {
         invites = []
@@ -230,7 +230,7 @@ struct OpenInviteResponse: Decodable {
 struct JoinCoveResponse: Decodable {
     let message: String
     let member: JoinedMember
-    
+
     struct JoinedMember: Decodable {
         let id: String
         let coveId: String
@@ -253,12 +253,12 @@ struct InviteModel: Decodable, Identifiable {
     let createdAt: String
     let cove: InviteCove
     let sentBy: InviteSender
-    
+
     // Computed property for backward compatibility
     var sender: InviteSender {
         return sentBy
     }
-    
+
     struct InviteCove: Decodable {
         let id: String
         let name: String
@@ -267,10 +267,10 @@ struct InviteModel: Decodable, Identifiable {
         let coverPhotoId: String?
         let coverPhotoUrl: String?
     }
-    
+
     struct InviteSender: Decodable {
         let id: String
         let name: String?
         let profilePhotoId: String?
     }
-} 
+}

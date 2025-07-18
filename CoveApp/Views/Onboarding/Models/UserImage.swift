@@ -9,14 +9,14 @@ struct UserImage {
     // MARK: - Configuration
     private static let baseURL = AppConstants.API.baseURL
     private static let uploadPath = "/userImage"
-    
+
     // MARK: - Response Model
     struct UploadResponse: Decodable {
         let message: String
     }
-    
+
     // MARK: - Public API
-    
+
     /// Posts an image to the server.
     ///
     /// - Parameters:
@@ -36,12 +36,12 @@ struct UserImage {
             "data": base64,
             "isProfilePic": isProfilePic
         ]
-        
+
         // Add extraImageIndex if provided (for extra images)
         if let extraImageIndex = extraImageIndex {
             parameters["extraImageIndex"] = extraImageIndex
         }
-        
+
         NetworkManager.shared.post(
             endpoint: uploadPath,
             parameters: parameters
@@ -54,7 +54,7 @@ struct UserImage {
             }
         }
     }
-    
+
     /// Updates an existing image on the server by replacing it with a new one.
     ///
     /// - Parameters:
@@ -72,7 +72,7 @@ struct UserImage {
             "data": base64,
             "photoId": photoId
         ]
-        
+
         NetworkManager.shared.post(
             endpoint: "/userImageUpdate",
             parameters: parameters
@@ -85,9 +85,9 @@ struct UserImage {
             }
         }
     }
-    
+
     // MARK: - Errors
-    
+
     enum APIError: Error {
         case invalidURL
         case serverError

@@ -7,10 +7,10 @@ import SwiftUI
 
 // MARK: - CalendarView
 struct CalendarView: View {
-    
+
     @EnvironmentObject var appController: AppController
     @ObservedObject private var calendarFeed: CalendarFeed
-    
+
     init() {
         self._calendarFeed = ObservedObject(wrappedValue: AppController.shared.calendarFeed)
     }
@@ -24,7 +24,7 @@ struct CalendarView: View {
                 VStack(spacing: 0) {
                     // Header
                     CoveBannerView()
-                    
+
                     // Main content
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 5) {
@@ -59,16 +59,16 @@ struct CalendarView: View {
             Text(calendarFeed.errorMessage ?? "")
         }
     }
-    
+
     // MARK: - Computed Properties
-    
+
     private var errorBinding: Binding<Bool> {
         Binding(
             get: { calendarFeed.errorMessage != nil },
             set: { if !$0 { calendarFeed.errorMessage = nil } }
         )
     }
-    
+
     @ViewBuilder
     private var contentView: some View {
         if calendarFeed.isLoading && calendarFeed.events.isEmpty {
@@ -101,13 +101,13 @@ private struct LoadingStateView: View {
 // MARK: - Error State
 private struct ErrorStateView: View {
     let message: String
-    
+
     var body: some View {
         VStack(spacing: 16) {
             Image(systemName: "exclamationmark.circle")
                 .font(.system(size: 40))
                 .foregroundColor(.gray)
-            
+
             Text(message)
                 .font(.LibreBodoni(size: 16))
                 .foregroundColor(.gray)
@@ -125,7 +125,7 @@ private struct EmptyStateView: View {
             Image(systemName: "calendar")
                 .font(.system(size: 40))
                 .foregroundColor(Colors.primaryDark)
-            
+
             Text("no events on your calendar – plan something fun!")
                 .font(.LibreBodoni(size: 16))
                 .foregroundColor(Colors.primaryDark)
@@ -139,11 +139,11 @@ private struct EmptyStateView: View {
 // MARK: - Events List
 private struct EventsListView: View {
     @ObservedObject private var calendarFeed: CalendarFeed
-    
+
     init() {
         self._calendarFeed = ObservedObject(wrappedValue: AppController.shared.calendarFeed)
     }
-    
+
     var body: some View {
         VStack(spacing: 0) {
             ForEach(sortedGroupedDates, id: \ .self) { date in
@@ -161,7 +161,7 @@ private struct EventsListView: View {
                             .padding(.trailing, 22)
                     }
                     .padding(.vertical, 15)
-                    
+
                     ForEach(calendarFeed.groupedEvents[date] ?? [], id: \ .id) { event in
                         EventSummaryView(event: event, type: .calendar)
                             .padding(.horizontal, 20)
@@ -171,18 +171,18 @@ private struct EventsListView: View {
                     }
                 }
             }
-            
+
             if calendarFeed.isLoading && !calendarFeed.events.isEmpty {
                 LoadingIndicatorView()
             }
         }
     }
-    
+
     // Sorted array of unique event dates
     private var sortedGroupedDates: [Date] {
         calendarFeed.groupedEvents.keys.sorted()
     }
-    
+
     // Returns the appropriate label for a date
     private func dateLabel(for date: Date) -> String {
         let calendar = Calendar.current
@@ -194,7 +194,7 @@ private struct EventsListView: View {
             return calendarFeed.formattedDateWithOrdinal(date).lowercased()
         }
     }
-    
+
     // Load more events if we've reached the last event
     private func loadMoreIfNeeded(for event: CalendarEvent) {
         if let lastEvent = calendarFeed.events.last, lastEvent.id == event.id {

@@ -3,7 +3,7 @@
 //  Cove
 //
 //  This file is the service/data model for fetching and caching the user's friends list.
-//  
+//
 //  Why do we have both Friends (service) and FriendsViewModel (UI/view model)?
 //  - Friends.swift is responsible for network calls, in-memory caching, and exposing data.
 //  - FriendsViewModel is an ObservableObject that manages UI state (loading, errors, pagination) and updates the SwiftUI view.
