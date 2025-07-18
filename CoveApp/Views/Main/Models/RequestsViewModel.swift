@@ -128,7 +128,8 @@ class RequestsViewModel: ObservableObject {
             DispatchQueue.main.async {
             switch result {
             case .success:
-                case .failure(let error):
+                ()
+            case .failure(let error):
                     var arr = self.requests
                     arr.append(req)
                     withAnimation { self.requests = arr }

@@ -147,7 +147,7 @@ class InboxViewModel: ObservableObject {
             DispatchQueue.main.async {
                 switch result {
                 case .success:
-                    self.refreshAllFeeds()
+                    () // No action needed
                 case .failure(let error):
                     // Re-add on failure (new reference again)
                     var arr = self.invites
@@ -192,7 +192,7 @@ class InboxViewModel: ObservableObject {
             DispatchQueue.main.async {
                 switch result {
                 case .success:
-                    break // already removed
+                    ()
                 case .failure(let error):
                     var arr = self.invites
                     arr.append(invite)
