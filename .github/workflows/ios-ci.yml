@@ -50,6 +50,9 @@ jobs:
           which xcodebuild
           xcodebuild -version
 
+      - name: List available simulators
+        run: xcrun simctl list devices
+
       # Check for disallowed print() statements
       - name: Check for disallowed print() statements
         if: steps.ios-changes.outputs.changes == 'true'
