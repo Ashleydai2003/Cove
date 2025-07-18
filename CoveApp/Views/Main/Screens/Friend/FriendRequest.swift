@@ -12,16 +12,15 @@ import Kingfisher
 struct RequestsView: View {
     @EnvironmentObject private var appController: AppController
     @ObservedObject private var vm: RequestsViewModel = AppController.shared.requestsViewModel
-    
+
     var body: some View {
         GeometryReader { _ in
             ZStack {
                 Colors.faf8f4.ignoresSafeArea()
-                
+
                 VStack(spacing: 0) {
-                 
-                
-                    // Error banner
+
+// Error banner
                     if let msg = vm.errorMessage {
                         Text(msg)
                             .font(.LeagueSpartan(size: 12))
@@ -31,7 +30,7 @@ struct RequestsView: View {
                             .padding(.horizontal, 20)
                             .transition(.slide)
                     }
-                    
+
                     // Requests list
                     ScrollView(.vertical, showsIndicators: false) {
                         VStack(alignment: .leading, spacing: 16) {
@@ -43,7 +42,7 @@ struct RequestsView: View {
                                     .padding(.horizontal, 24)
                                     .padding(.top, 16)
                             }
-                            
+
                             // Members list
                             LazyVStack(spacing: 12) {
                                 if vm.requests.isEmpty && !vm.isLoading {
@@ -52,7 +51,7 @@ struct RequestsView: View {
                                         Image(systemName: "person.2.slash")
                                             .font(.system(size: 40))
                                             .foregroundColor(Colors.primaryDark)
-                                        
+
                                         Text("no friend requests – you’re all caught up!")
                                             .font(.LibreBodoni(size: 16))
                                             .foregroundColor(Colors.primaryDark)
@@ -67,11 +66,11 @@ struct RequestsView: View {
                                                 id: req.sender.id,
                                                 name: req.sender.name,
                                                 imageUrl: req.sender.profilePhotoUrl,
-                                                onConfirm: { 
-                                                    vm.accept(req) 
+                                                onConfirm: {
+                                                    vm.accept(req)
                                                 },
-                                                onDelete: { 
-                                                    vm.reject(req) 
+                                                onDelete: {
+                                                    vm.reject(req)
                                                 }
                                             )
                                         }
@@ -84,7 +83,7 @@ struct RequestsView: View {
                                     }
                                 }
                             }
-                            
+
                             // Loading indicator
                             if vm.isLoading {
                                 HStack {
@@ -95,11 +94,11 @@ struct RequestsView: View {
                                 }
                                 .padding(.vertical, 16)
                             }
-                            
+
                             Spacer(minLength: 24)
                         }
                     }
-                    
+
                     Spacer(minLength: 0)
                 }
                 .safeAreaPadding()
@@ -134,7 +133,7 @@ struct RequestRowView: View {
     var imageUrl: URL? = nil
     var onConfirm: (() -> Void)? = nil
     var onDelete:  (() -> Void)? = nil
-    
+
     var body: some View {
         HStack(spacing: 12) {
             // Profile photo
@@ -160,16 +159,16 @@ struct RequestRowView: View {
                     .frame(width: 48, height: 48)
                     .clipShape(Circle())
             }
-            
+
             // Member info
             VStack(alignment: .leading, spacing: 4) {
                 Text(name)
                     .foregroundStyle(Colors.primaryDark)
                     .font(.LibreBodoniBold(size: 16))
             }
-            
+
             Spacer()
-            
+
             // Action buttons - Instagram style (shorter width)
             HStack(spacing: 8) {
                 if let confirm = onConfirm {
@@ -185,7 +184,7 @@ struct RequestRowView: View {
                         confirm()
                     }
                 }
-                
+
                 if let delete = onDelete {
                     ActionButton(
                         title: "delete",
@@ -226,12 +225,12 @@ struct RequestsView_Previews: PreviewProvider {
         .init(id: "4", sender: .init(id: "4", name: "felix roberts", profilePhotoUrl: nil), createdAt: "2025-01-01T00:00:00.000Z"),
         .init(id: "5", sender: .init(id: "5", name: "tyler schuman", profilePhotoUrl: nil), createdAt: "2025-01-01T00:00:00.000Z")
     ]
-    
+
     static var previews: some View {
         GeometryReader { _ in
             ZStack {
                 Colors.faf8f4.ignoresSafeArea()
-                
+
                 VStack(spacing: 0) {
                     ZStack {
                         Text("requests")
@@ -241,7 +240,7 @@ struct RequestsView_Previews: PreviewProvider {
                     .padding(.top, 10)
                     .padding(.horizontal, 20)
                     .padding(.bottom, 50)
-                    
+
                     // Rows
                     ScrollView {
                         LazyVStack(spacing: 36) {
@@ -257,7 +256,7 @@ struct RequestsView_Previews: PreviewProvider {
                         }
                         .padding(.top, 30)
                     }
-                    
+
                     Spacer(minLength: 0)
                 }
                 .safeAreaPadding()
@@ -267,5 +266,4 @@ struct RequestsView_Previews: PreviewProvider {
         .environmentObject(AppController.shared)
     }
 }
-
 

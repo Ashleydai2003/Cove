@@ -16,19 +16,19 @@ import SwiftUI
 /// - Custom styling with diagonal separators
 /// - Navigation controls for the onboarding flow
 struct BirthdateView: View {
-    
+
     // MARK: - Properties
-    
+
     /// App controller for managing navigation and app state
     @EnvironmentObject var appController: AppController
-    
+
     /// Single string to store the complete birthdate (MMDDYYYY format)
     @State private var birthdateText: String = ""
     @State private var errorMessage: String = ""
-    
+
     /// Tracks if the hidden input field is focused
     @FocusState private var isInputFocused: Bool
-    
+
     /// Computed properties to extract individual components for display
     private var monthDisplay: String {
         let digits = Array(birthdateText).map(String.init)
@@ -39,7 +39,7 @@ struct BirthdateView: View {
         }
         return ""
     }
-    
+
     private var dayDisplay: String {
         let digits = Array(birthdateText).map(String.init)
         if digits.count >= 4 {
@@ -49,7 +49,7 @@ struct BirthdateView: View {
         }
         return ""
     }
-    
+
     private var yearDisplay: String {
         let digits = Array(birthdateText).map(String.init)
         if digits.count >= 8 {
@@ -63,14 +63,14 @@ struct BirthdateView: View {
         }
         return ""
     }
-    
+
     /// Computed property to check if all fields are filled
     private var isBirthdateComplete: Bool {
         birthdateText.count == 8
     }
-    
+
     // MARK: - Body
-    
+
     var body: some View {
         ZStack {
             OnboardingBackgroundView()
@@ -85,23 +85,21 @@ struct BirthdateView: View {
                     Spacer()
                 }
                 .padding(.top, 10)
-                
+
                 // Header text
                 VStack(alignment: .leading) {
                     Text("when's your \nbirthday?")
                         .foregroundStyle(Colors.primaryDark)
                         .font(.LibreBodoni(size: 40))
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        
-            
 
-                    Text("only your age will be displayed on your profile")
+Text("only your age will be displayed on your profile")
                         .foregroundStyle(Colors.primaryDark)
                         .font(.LeagueSpartan(size: 15))
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .padding(.top, 40)
-                
+
                 // Birthdate input fields
                 VStack(spacing: 8) {
                     ZStack {
@@ -113,11 +111,11 @@ struct BirthdateView: View {
                             .onChange(of: birthdateText) { oldValue, newValue in
                                 handleBirthdateInput(oldValue: oldValue, newValue: newValue)
                             }
-                        
+
                         // Visual representation of birthdate fields
                         HStack(spacing: 10) {
                             Spacer()
-                            
+
                             // Month display
                             VStack(alignment: .center) {
                                 Text(monthDisplay.isEmpty ? "mm" : monthDisplay)
@@ -126,11 +124,11 @@ struct BirthdateView: View {
                                     .font(.LibreCaslon(size: 24))
                                     .frame(width: 60, height: 30)
                             }
-                            
+
                             Text("/")
                                 .font(.LibreCaslon(size: 24))
                                 .foregroundStyle(Color.black)
-                            
+
                             // Day display
                             VStack {
                                 Text(dayDisplay.isEmpty ? "dd" : dayDisplay)
@@ -139,11 +137,11 @@ struct BirthdateView: View {
                                     .font(.LibreCaslon(size: 24))
                                     .frame(width: 60, height: 30)
                             }
-                            
+
                             Text("/")
                                 .font(.LibreCaslon(size: 24))
                                 .foregroundStyle(Color.black)
-                            
+
                             // Year display
                             VStack {
                                 Text(yearDisplay.isEmpty ? "yyyy" : yearDisplay)
@@ -152,14 +150,14 @@ struct BirthdateView: View {
                                     .font(.LibreCaslon(size: 24))
                                     .frame(width: 80, height: 30)
                             }
-                            
+
                             Spacer()
                         }
                         .onTapGesture {
                             isInputFocused = true
                         }
                     }
-                    
+
                     if !errorMessage.isEmpty {
                         Text(errorMessage)
                             .foregroundStyle(Color.red)
@@ -167,9 +165,9 @@ struct BirthdateView: View {
                     }
                 }
                 .padding(.top, 50)
-                
+
                 Spacer()
-                
+
             }
             .padding(.horizontal, 20)
             .safeAreaPadding()
@@ -179,27 +177,27 @@ struct BirthdateView: View {
             isInputFocused = true
         }
     }
-    
+
     // MARK: - Helper Methods
-    
+
     /// Handles birthdate input with improved focus management and backspace behavior
     private func handleBirthdateInput(oldValue: String, newValue: String) {
         // Clear error when editing
         errorMessage = ""
-        
+
         // Limit to 8 digits maximum (MMDDYYYY)
         if newValue.count > 8 {
             birthdateText = String(newValue.prefix(8))
             return
         }
-        
+
         // Only allow numeric input
         let filtered = newValue.filter { $0.isNumber }
         if filtered != newValue {
             birthdateText = filtered
             return
         }
-        
+
         // Auto-validate when all 8 digits are entered (with small delay)
         if newValue.count == 8 {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -207,7 +205,7 @@ struct BirthdateView: View {
             }
         }
     }
-    
+
     /// Validates the complete birthdate
     private func validateBirthdate() {
         // Extract month, day, year from birthdateText (MMDDYYYY format)
@@ -215,60 +213,60 @@ struct BirthdateView: View {
             errorMessage = "enter a valid birthdate"
             return
         }
-        
+
         let monthString = String(birthdateText.prefix(2))
         let dayString = String(birthdateText.dropFirst(2).prefix(2))
         let yearString = String(birthdateText.suffix(4))
-        
+
         guard let monthInt = Int(monthString),
               let dayInt = Int(dayString),
               let yearInt = Int(yearString) else {
             errorMessage = "enter a valid birthdate"
             return
         }
-        
+
         // Validate month is between 1-12
         guard monthInt >= 1 && monthInt <= 12 else {
             errorMessage = "enter a valid birthdate"
             return
         }
-        
+
         // Validate day is between 1-31 (basic check)
         guard dayInt >= 1 && dayInt <= 31 else {
             errorMessage = "enter a valid birthdate"
             return
         }
-        
+
         // Check if year is reasonable (not in future and not too old)
         let currentYear = Calendar.current.component(.year, from: Date())
         guard yearInt <= currentYear && yearInt >= currentYear - 120 else {
             errorMessage = "enter a valid birthdate"
             return
         }
-        
+
         // Create date components and validate the date actually exists
         var dateComponents = DateComponents()
         dateComponents.year = yearInt
         dateComponents.month = monthInt
         dateComponents.day = dayInt
-        
+
         // Convert DateComponents to Date - this will return nil for invalid dates like Feb 30th
         guard let birthDate = Calendar.current.date(from: dateComponents) else {
             errorMessage = "enter a valid birthdate"
             return
         }
-        
+
         // Verify the created date matches what we input (handles cases like Feb 30 -> Mar 2)
         let calendar = Calendar.current
         let createdMonth = calendar.component(.month, from: birthDate)
         let createdDay = calendar.component(.day, from: birthDate)
         let createdYear = calendar.component(.year, from: birthDate)
-        
+
         guard createdMonth == monthInt && createdDay == dayInt && createdYear == yearInt else {
             errorMessage = "enter a valid birthdate"
             return
         }
-        
+
         // Check if user is at least 18 years old
         let today = Date()
         let ageComponents = calendar.dateComponents([.year], from: birthDate, to: today)
@@ -276,10 +274,10 @@ struct BirthdateView: View {
             errorMessage = "you must be at least 18 years old"
             return
         }
-        
+
         // If we get here, the date is valid and user is over 18
         errorMessage = ""
-        // TODO: We should still use the smiley as the next button 
+        // TODO: We should still use the smiley as the next button
         // Store the Date object in UserDefaults
         Onboarding.storeBirthdate(birthDate: birthDate)
         // Navigate to next screen

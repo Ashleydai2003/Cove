@@ -13,14 +13,14 @@ struct CoveMember: Decodable, Identifiable, ContentComparable {
     let profilePhotoUrl: URL?
     let role: String
     let joinedAt: String
-    
+
     /// Returns the joinedAt date as a Date object (or now if parsing fails)
     var joinedDate: Date {
         let inputFormatter = DateFormatter()
         inputFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
         return inputFormatter.date(from: joinedAt) ?? Date()
     }
-    
+
     /// ContentComparable implementation - checks if meaningful content has changed
     func hasContentChanged(from other: CoveMember) -> Bool {
         return name != other.name ||

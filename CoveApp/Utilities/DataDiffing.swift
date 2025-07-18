@@ -22,11 +22,11 @@ extension Array where Element: ContentComparable & Identifiable {
         if self.count != other.count {
             return true
         }
-        
+
         // Create lookup dictionaries for efficient comparison
         let currentDict = Dictionary(uniqueKeysWithValues: self.map { ($0.id, $0) })
         let otherDict = Dictionary(uniqueKeysWithValues: other.map { ($0.id, $0) })
-        
+
         // Check if any existing items have content changes
         for (id, currentItem) in currentDict {
             if let otherItem = otherDict[id] {
@@ -38,14 +38,14 @@ extension Array where Element: ContentComparable & Identifiable {
                 return true
             }
         }
-        
+
         // Check for items that were removed
         for id in otherDict.keys {
             if currentDict[id] == nil {
                 return true
             }
         }
-        
+
         return false
     }
 }
@@ -115,4 +115,4 @@ func updateIfChanged<T: ContentComparable>(
         updateAction()
         return true
     }
-} 
+}

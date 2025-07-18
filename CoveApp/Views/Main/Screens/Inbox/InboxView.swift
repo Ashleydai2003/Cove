@@ -3,14 +3,14 @@ import SwiftUI
 struct InboxView: View {
     @EnvironmentObject private var appController: AppController
     @Environment(\.dismiss) private var dismiss
-    
+
     @ObservedObject private var viewModel: InboxViewModel = AppController.shared.inboxViewModel
-    
+
     var body: some View {
         ZStack {
             Colors.faf8f4
                 .ignoresSafeArea()
-            
+
             VStack {
                 // Header
                 HStack {
@@ -19,12 +19,12 @@ struct InboxView: View {
                             .font(.system(size: 18, weight: .medium))
                             .foregroundColor(Colors.primaryDark)
                     }
-                    
+
                     Spacer()
                 }
                 .padding(.horizontal, 24)
                 .padding(.top, 16)
-                
+
                 if viewModel.isLoading {
                     Spacer()
                     ProgressView()
@@ -41,7 +41,7 @@ struct InboxView: View {
                         Text("no invites yet")
                             .font(.LibreBodoniBold(size: 20))
                             .foregroundColor(Colors.primaryDark)
-                        
+
                         Text("when friends invite you to their coves, they'll appear here")
                             .font(.LibreBodoni(size: 16))
                             .foregroundColor(.gray)
@@ -66,14 +66,14 @@ struct InboxView: View {
                             }
                         }
                         .padding(.top, 30)
-                        
+
                         // Horizontal invites scroll view
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 16) {
                                 // Leading spacer for first card centering
                                 Color.clear
                                     .frame(width: 50)
-                                
+
                                 ForEach(viewModel.invites, id: \.id) { invite in
                                     if invite.isOpened {
                                         // Show InviteView for opened invites
@@ -101,7 +101,7 @@ struct InboxView: View {
                                         .frame(width: 260, height: 200)
                                     }
                                 }
-                                
+
                                 // Trailing spacer for last card centering
                                 Color.clear
                                     .frame(width: 50)
@@ -109,7 +109,7 @@ struct InboxView: View {
                             .padding(.vertical, 10)
                         }
                         .clipped()
-                        
+
                         Spacer()
                     }
                 }
@@ -127,7 +127,7 @@ struct InboxView: View {
 struct InviteEnvelopeView: View {
     let invite: InviteModel
     let onTap: () -> Void
-    
+
     var body: some View {
         Button(action: onTap) {
             ZStack {
@@ -149,17 +149,17 @@ struct InviteEnvelopeView: View {
                         )
                     )
                     .shadow(color: .black.opacity(invite.isOpened ? 0.08 : 0.15), radius: 8, x: 0, y: 4)
-                
+
                 // Envelope flap - different style for opened invites
                 VStack {
                     Triangle()
                         .fill(Color(red: invite.isOpened ? 0.80 : 0.88, green: invite.isOpened ? 0.76 : 0.80, blue: invite.isOpened ? 0.68 : 0.68))
                         .frame(height: 50)
                         .padding(.top, 8)
-                    
+
                     Spacer()
                 }
-                
+
                 // "Opened" indicator for opened invites
                 if invite.isOpened {
                     VStack {
@@ -178,30 +178,30 @@ struct InviteEnvelopeView: View {
                         Spacer()
                     }
                 }
-                
+
                 // Content
                 VStack(spacing: 10) {
                     Spacer()
-                    
+
                     Text(invite.cove.name)
                         .font(.LibreBodoniBold(size: 18))
                         .foregroundColor(invite.isOpened ? Colors.primaryDark.opacity(0.7) : Colors.primaryDark)
                         .multilineTextAlignment(.center)
                         .lineLimit(2)
-                    
+
                     Text(invite.cove.location)
                         .font(.LibreBodoni(size: 14))
                         .foregroundColor(.gray.opacity(invite.isOpened ? 0.7 : 1.0))
                         .multilineTextAlignment(.center)
                         .lineLimit(1)
-                    
+
                     if let senderName = invite.sender.name {
                         Text("from \(senderName)")
                             .font(.LibreBodoni(size: 12))
                             .foregroundColor(.gray.opacity(invite.isOpened ? 0.6 : 0.8))
                             .lineLimit(1)
                     }
-                    
+
                     Spacer()
                 }
                 .padding(16)
@@ -225,4 +225,4 @@ struct Triangle: Shape {
 
 #Preview {
     InboxView()
-} 
+}

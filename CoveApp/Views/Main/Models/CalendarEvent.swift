@@ -6,7 +6,7 @@
 
 import Foundation
 
-// TODO: we should return less information, only the information needed 
+// TODO: we should return less information, only the information needed
 
 /// CalendarEvent: Represents a single event in a cove's feed or calendar.
 /// - Used for event lists, event details, and event post views.
@@ -25,7 +25,7 @@ struct CalendarEvent: Decodable, Identifiable, ContentComparable {
     let goingCount: Int
     let createdAt: String
     let coverPhoto: CoverPhoto?
-    
+
     /// Returns the event date as a Date object (or now if parsing fails)
     var eventDate: Date {
         let inputFormatter = DateFormatter()
@@ -48,7 +48,7 @@ struct CalendarEvent: Decodable, Identifiable, ContentComparable {
         formatter.dateFormat = "h:mm a"
         return formatter.string(from: date)
     }
-    
+
     /// ContentComparable implementation - checks if meaningful content has changed
     func hasContentChanged(from other: CalendarEvent) -> Bool {
         return name != other.name ||
@@ -76,7 +76,7 @@ struct Event: Decodable {
     let rsvps: [EventRSVP]
     let coverPhoto: CoverPhoto?
     let isHost: Bool
-    
+
     var eventDate: Date {
         let inputFormatter = DateFormatter()
         inputFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
@@ -132,8 +132,6 @@ struct CalendarEventsResponse: Decodable {
     let events: [CalendarEvent]?
     let pagination: Pagination?
 }
-
-
 
 /// RSVP info for an event
 struct EventRSVP: Decodable {

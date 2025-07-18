@@ -13,13 +13,13 @@ struct RequestDTO: Decodable, Identifiable {
     let id: String
     let sender: Sender
     let createdAt: String // Keep as string for JSON decoding
-    
+
     // Computed property to convert string to Date when needed
     var createdAtAsDate: Date? {
         let formatter = ISO8601DateFormatter()
         return formatter.date(from: createdAt)
     }
-    
+
     struct Sender: Decodable {
         let id: String
         let name: String
@@ -34,7 +34,7 @@ struct RequestDTO: Decodable, Identifiable {
 struct RequestsResponse: Decodable {
     let requests: [RequestDTO]
     let pagination: Pagination
-    
+
     struct Pagination: Decodable {
         let hasMore: Bool
         let nextCursor: String?
@@ -51,14 +51,14 @@ struct SendRequestResponse: Decodable {
 struct ResolveRequestResponse: Decodable {
     let message: String
     let friendship: FriendshipRecord?
-    
+
     struct FriendshipRecord: Decodable {
         let id: String
         let user1Id: String
         let user2Id: String
         let status: String
         let createdAt: String // Keep as string for JSON decoding
-        
+
         // Computed property to convert string to Date when needed
         var createdAtAsDate: Date? {
             let formatter = ISO8601DateFormatter()
@@ -70,7 +70,7 @@ struct ResolveRequestResponse: Decodable {
 // MARK: — API
 
 struct FriendRequests {
-    
+
     /// Fetch pending requests (paginated)
     static func fetch(
         cursor: String? = nil,
@@ -79,7 +79,7 @@ struct FriendRequests {
     ) {
         var params: [String: Any] = ["limit": limit]
         if let c = cursor { params["cursor"] = c }
-        
+
         NetworkManager.shared.get(
             endpoint: "/friend-requests",
             parameters: params
@@ -96,14 +96,14 @@ struct FriendRequests {
             }
         }
     }
-    
+
     /// Send a friend request to another user
     static func send(
         to recipientId: String,
         completion: @escaping (Result<SendRequestResponse, NetworkError>) -> Void
     ) {
         let body: [String: Any] = ["toUserIds": [recipientId]]
-        
+
         NetworkManager.shared.post(
             endpoint: "/send-friend-request",
             parameters: body
@@ -120,7 +120,7 @@ struct FriendRequests {
             }
         }
     }
-    
+
     /// Accept or reject an incoming request
     static func resolve(
         requestId: String,
@@ -131,7 +131,7 @@ struct FriendRequests {
             "requestId": requestId,
             "action": action
         ]
-        
+
         NetworkManager.shared.post(
             endpoint: "/resolve-friend-request",
             parameters: body
@@ -149,7 +149,4 @@ struct FriendRequests {
         }
     }
 }
-
-
-
 

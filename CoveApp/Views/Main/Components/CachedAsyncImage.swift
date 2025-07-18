@@ -6,11 +6,11 @@ struct CachedAsyncImage<Content: View, Placeholder: View>: View {
     private let transaction: Transaction
     private let content: (Image) -> Content
     private let placeholder: () -> Placeholder
-    
+
     @State private var currentURL: URL?
     @State private var image: UIImage?
     @State private var isLoading = false
-    
+
     init(
         url: URL?,
         scale: CGFloat = 1.0,
@@ -24,7 +24,7 @@ struct CachedAsyncImage<Content: View, Placeholder: View>: View {
         self.content = content
         self.placeholder = placeholder
     }
-    
+
     var body: some View {
         Group {
             if let image = image {
@@ -37,10 +37,10 @@ struct CachedAsyncImage<Content: View, Placeholder: View>: View {
             await loadImage()
         }
     }
-    
+
     private func loadImage() async {
         guard let url = url else { return }
-        
+
         // Use ImageURLManager to get a valid URL
         do {
             let validURL = try await ImageURLManager.shared.getImageURL(for: url.absoluteString) {
@@ -49,13 +49,13 @@ struct CachedAsyncImage<Content: View, Placeholder: View>: View {
                 // In the future, we could make an API call here to get a new pre-signed URL
                 return url
             }
-            
+
             guard validURL != currentURL else { return }
             currentURL = validURL
-            
+
             isLoading = true
             defer { isLoading = false }
-            
+
             let (data, _) = try await URLSession.shared.data(from: validURL)
             if let image = UIImage(data: data) {
                 withTransaction(transaction) {
@@ -66,4 +66,4 @@ struct CachedAsyncImage<Content: View, Placeholder: View>: View {
             Log.debug("Error loading image: \(error)")
         }
     }
-} 
+}

@@ -16,39 +16,39 @@ class RequestsViewModel: ObservableObject {
     }
     @Published var errorMessage: String?
     @Published var lastFetched: Date?
-    
+
     // TODO: Update requests list when push notifications are received for new friend requests
     // Friend requests should only refresh when:
     // 1. Initial load (no cached data)
     // 2. User performs pull-to-refresh
     // 3. Push notification received for new friend request
     // No automatic cache expiration needed since requests don't change frequently
-    
+
     private let pageSize = 7
     private var loadingStart: Date?
-    
+
     /// Checks if we have any cached data
     var hasCachedData: Bool {
         return lastFetched != nil // Empty array is still valid cached data
     }
-    
+
     /// Friend requests don't expire automatically - only update on notifications
     var isCacheStale: Bool {
         return false // Never consider cache stale - only update on notifications or manual refresh
     }
-    
+
     init() {
         Log.debug("RequestsViewModel initialized")
     }
-    
+
     func loadNextPage() {
         guard !isLoading && hasMore else { return }
         isLoading = true
-        
+
         FriendRequests.fetch(cursor: nextCursor, limit: pageSize) { [weak self] result in
             guard let self = self else { return }
             self.isLoading = false
-            
+
             switch result {
             case .success(let resp):
                 if self.nextCursor == nil {
@@ -69,7 +69,7 @@ class RequestsViewModel: ObservableObject {
             }
         }
     }
-    
+
     /// Loads next page only if data is missing or stale
     func loadNextPageIfStale() {
         if !hasCachedData || isCacheStale {
@@ -80,14 +80,14 @@ class RequestsViewModel: ObservableObject {
             Log.debug("RequestsViewModel: using cached data – count=\(requests.count)")
         }
     }
-    
+
     func accept(_ req: RequestDTO) {
         Log.debug("Accepting friend request from \(req.sender.name)")
-        
+
         withAnimation {
             requests = requests.filter { $0.id != req.id }
         }
-        
+
         FriendRequests.resolve(requestId: req.id, action: "ACCEPT") { [weak self] result in
             guard let self = self else { return }
             DispatchQueue.main.async {
@@ -105,8 +105,7 @@ class RequestsViewModel: ObservableObject {
                     var arr = AppController.shared.friendsViewModel.friends
                     arr.append(friendDTO)
                     AppController.shared.friendsViewModel.friends = arr
-                    break // Already removed and UI updated
-            case .failure(let error):
+                case .failure(let error):
                     // Re-add on failure
                     var arr = self.requests
                     arr.append(req)
@@ -116,21 +115,20 @@ class RequestsViewModel: ObservableObject {
             }
         }
     }
-    
+
     func reject(_ req: RequestDTO) {
         Log.debug("Rejecting friend request from \(req.sender.name)")
-        
+
         withAnimation {
             requests = requests.filter { $0.id != req.id }
         }
-        
+
         FriendRequests.resolve(requestId: req.id, action: "REJECT") { [weak self] result in
             guard let self = self else { return }
             DispatchQueue.main.async {
             switch result {
             case .success:
-                    break
-            case .failure(let error):
+                case .failure(let error):
                     var arr = self.requests
                     arr.append(req)
                     withAnimation { self.requests = arr }
@@ -139,7 +137,7 @@ class RequestsViewModel: ObservableObject {
             }
         }
     }
-    
+
     /// Call this method when a push notification is received for a new friend request
     /// TODO: Implement this when push notifications are added
     func handleNewRequestNotification() {
@@ -148,4 +146,4 @@ class RequestsViewModel: ObservableObject {
         lastFetched = nil
         loadNextPage()
     }
-} 
+}

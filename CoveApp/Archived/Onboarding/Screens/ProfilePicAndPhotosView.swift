@@ -4,7 +4,6 @@
 //
 //  Created by Nesib Muhedin
 
-
 import SwiftUI
 
 struct ProfilePicAndPhotosView: View {
@@ -22,7 +21,7 @@ struct ProfilePicAndPhotosView: View {
         let isCircle: Bool
         let size: CGSize
         let message: String?
-        
+
         var body: some View {
             ZStack {
                 if isCircle {
@@ -62,7 +61,7 @@ struct ProfilePicAndPhotosView: View {
             case .extra(let idx): return idx
             }
         }
-        
+
         func hash(into hasher: inout Hasher) {
             switch self {
             case .main:
@@ -71,7 +70,7 @@ struct ProfilePicAndPhotosView: View {
                 hasher.combine(idx)
             }
         }
-        
+
         static func == (lhs: PickerType, rhs: PickerType) -> Bool {
             switch (lhs, rhs) {
             case (.main, .main):
@@ -249,11 +248,11 @@ struct ProfilePicAndPhotosView: View {
     ///   - isProfile: Whether this is the main profile picture
     private func uploadImage(_ uiImage: UIImage, isProfile: Bool) {
         let pickerType: PickerType = isProfile ? .main : .extra(extraImages.firstIndex(where: { $0 == uiImage }) ?? 0)
-        
+
         // Move image processing to background thread to prevent UI blocking
         DispatchQueue.global(qos: .userInitiated).async {
             guard let data = uiImage.jpegData(compressionQuality: 0.8) else { return }
-            
+
             // Network upload also happens on background thread
             UserImage.upload(imageData: data, isProfilePic: isProfile) { result in
                 // Update UI state on main thread to ensure thread safety

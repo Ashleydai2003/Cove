@@ -8,23 +8,23 @@ import Kingfisher
 import FirebaseAuth
 
 // MARK: - View Model
-// TODO: insn't this the same as what is being down in feed? 
+// TODO: insn't this the same as what is being down in feed?
 class EventPostViewModel: ObservableObject {
     @Published var event: Event?
     @Published var isLoading = false
     @Published var errorMessage: String?
     @Published var isDeleting = false
     @Published var isUpdatingRSVP = false
-    
+
     func fetchEventDetails(eventId: String, completion: (() -> Void)? = nil) {
         isLoading = true
-        
+
         NetworkManager.shared.get(endpoint: "/event", parameters: ["eventId": eventId]) { [weak self] (result: Result<EventResponse, NetworkError>) in
             guard let self = self else { return }
-            
+
             DispatchQueue.main.async {
                 self.isLoading = false
-                
+
                 switch result {
                 case .success(let response):
                     self.event = response.event
@@ -35,16 +35,16 @@ class EventPostViewModel: ObservableObject {
             }
         }
     }
-    
+
     func updateRSVP(eventId: String, status: String, completion: @escaping (Bool) -> Void) {
         isUpdatingRSVP = true
-        
+
         NetworkManager.shared.post(endpoint: "/update-event-rsvp", parameters: ["eventId": eventId, "status": status]) { [weak self] (result: Result<UpdateRSVPResponse, NetworkError>) in
             guard let self = self else { return }
-            
+
             DispatchQueue.main.async {
                 self.isUpdatingRSVP = false
-                
+
                 switch result {
                 case .success:
                     completion(true)
@@ -55,16 +55,16 @@ class EventPostViewModel: ObservableObject {
             }
         }
     }
-    
+
     func deleteEvent(eventId: String, completion: @escaping (Bool) -> Void) {
         isDeleting = true
-        
+
         NetworkManager.shared.post(endpoint: "/delete-event", parameters: ["eventId": eventId]) { [weak self] (result: Result<DeleteEventResponse, NetworkError>) in
             guard let self = self else { return }
-            
+
             DispatchQueue.main.async {
                 self.isDeleting = false
-                
+
                 switch result {
                 case .success:
                     completion(true)
@@ -75,16 +75,16 @@ class EventPostViewModel: ObservableObject {
             }
         }
     }
-    
+
     /// Updates the local event state to reflect RSVP changes without fetching from server
     func updateLocalRSVPStatus(status: String) {
         guard let currentEvent = event else { return }
-        
+
         // Update the current user's RSVP status in the local event
         if let currentUserId = Auth.auth().currentUser?.uid {
             // Create a new RSVPs array with the updated status
             var updatedRsvps = currentEvent.rsvps
-            
+
             // Find and update existing RSVP or add new one
             if let index = updatedRsvps.firstIndex(where: { $0.userId == currentUserId }) {
                 // Create a new RSVP with updated status
@@ -109,7 +109,7 @@ class EventPostViewModel: ObservableObject {
                 )
                 updatedRsvps.append(newRSVP)
             }
-            
+
             // Create a new Event instance with updated RSVPs
             let updatedEvent = Event(
                 id: currentEvent.id,
@@ -125,7 +125,7 @@ class EventPostViewModel: ObservableObject {
                 coverPhoto: currentEvent.coverPhoto,
                 isHost: currentEvent.isHost
             )
-            
+
             // Update the published event
             event = updatedEvent
         }
@@ -144,7 +144,7 @@ struct DeleteEventResponse: Decodable {
 struct UpdateRSVPResponse: Decodable {
     let message: String
     let rsvp: RSVPData
-    
+
     struct RSVPData: Decodable {
         let id: String
         let status: String
@@ -163,16 +163,16 @@ struct EventPostView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showingDeleteAlert = false
     @State private var currentRSVPStatus: String?
-    
+
     init(eventId: String, coveCoverPhoto: CoverPhoto? = nil) {
         self.eventId = eventId
         self.coveCoverPhoto = coveCoverPhoto
     }
-    
+
     var body: some View {
         ZStack {
             Colors.faf8f4.ignoresSafeArea()
-            
+
             if viewModel.isLoading {
                 ProgressView()
             } else if let event = viewModel.event {
@@ -186,9 +186,9 @@ struct EventPostView: View {
                                 Images.backArrow
                             }
                             .padding(.top, 16)
-                            
+
                             Spacer()
-                            
+
                             // Use provided cover photo first, fallback to fetched event data
                             let covePhotoUrl = coveCoverPhoto?.url ?? event.cove.coverPhoto?.url
                             if let urlString = covePhotoUrl, !urlString.isEmpty, let url = URL(string: urlString) {
@@ -214,9 +214,9 @@ struct EventPostView: View {
                                     .frame(width: 100, height: 100)
                                     .clipShape(Circle())
                             }
-                            
+
                             Spacer()
-                            
+
                             // Add delete button if user is the host
                             if event.isHost {
                                 Button {
@@ -230,13 +230,13 @@ struct EventPostView: View {
                             }
                         }
                         .padding(.horizontal, 16)
-                        
+
                         Text(event.name.isEmpty ? "Untitled" : event.name)
                             .foregroundStyle(Colors.primaryDark)
                             .font(.LibreBodoniBold(size: 26))
                             .frame(maxWidth: .infinity, alignment: .center)
                             .multilineTextAlignment(.center)
-                        
+
                         if let urlString = event.coverPhoto?.url, let url = URL(string: urlString) {
                             KFImage(url)
                                 .placeholder {
@@ -268,7 +268,7 @@ struct EventPostView: View {
                                 .clipShape(RoundedRectangle(cornerRadius: 10))
                                 .clipped()
                         }
-                        
+
                         VStack(alignment: .leading) {
                             HStack {
                                 Text(event.formattedDate)
@@ -279,16 +279,16 @@ struct EventPostView: View {
                                     .foregroundStyle(Colors.primaryDark)
                                     .font(.LibreBodoni(size: 18))
                             }
-                            
+
                             HStack {
                                 Image("location-pin")
                                     .frame(width: 15, height: 20)
-                                
+
                                 Text(event.location.isEmpty ? "TBD" : event.location)
                                     .foregroundStyle(Colors.primaryDark)
                                     .font(.LibreBodoniBold(size: 16))
                             }
-                            
+
                             HStack {
                                 Text("hosted by")
                                     .font(.LibreBodoni(size: 18))
@@ -298,22 +298,22 @@ struct EventPostView: View {
                                 .foregroundColor(Colors.primaryDark)
                             }
                         }
-                        
+
                         if let description = event.description {
                             Text(description)
                                 .foregroundStyle(Colors.k292929)
                                 .font(.LibreBodoni(size: 18))
                                 .multilineTextAlignment(.leading)
                         }
-                        
+
                         VStack(alignment: .leading) {
                             Text("guest list")
                                 .font(.LibreBodoni(size: 18))
                                 .foregroundColor(Colors.primaryDark)
-                            
+
                             // Filter RSVPs to only show "GOING" status
                             let goingRsvps = event.rsvps.filter { $0.status == "GOING" }
-                            
+
                             if goingRsvps.isEmpty {
                                 Text("no guests yet! send your invites!")
                                     .font(.LibreBodoni(size: 14))
@@ -357,7 +357,7 @@ struct EventPostView: View {
                                                 )
                                         }
                                     }
-                                    
+
                                     // Show "+X" if there are more than 4 people
                                     if goingRsvps.count > 4 {
                                         Text("+\(goingRsvps.count - 4)")
@@ -372,7 +372,7 @@ struct EventPostView: View {
                                 }
                             }
                         }
-                        
+
                         // Single RSVP button with two states
                             Button {
                             let currentStatus = currentRSVPStatus ?? event.rsvpStatus
@@ -398,7 +398,7 @@ struct EventPostView: View {
                             } label: {
                             let currentStatus = currentRSVPStatus ?? event.rsvpStatus
                             let isGoing = currentStatus == "GOING"
-                            
+
                             Text(isGoing ? "can't make it..." : "rsvp")
                                 .foregroundStyle(isGoing ? Colors.primaryDark : .white)
                                 .font(.LibreBodoni(size: 25))
@@ -411,7 +411,7 @@ struct EventPostView: View {
                                     )
                             }
                             .disabled(viewModel.isUpdatingRSVP)
-                        
+
                         Spacer(minLength: 24)
                     }
                     .padding(.horizontal, 50)
@@ -422,7 +422,7 @@ struct EventPostView: View {
                     Image(systemName: "exclamationmark.circle")
                         .font(.system(size: 40))
                         .foregroundColor(.gray)
-                    
+
                     Text(error)
                         .font(.LibreBodoni(size: 16))
                         .foregroundColor(.gray)

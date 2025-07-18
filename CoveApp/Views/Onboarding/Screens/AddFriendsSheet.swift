@@ -5,13 +5,13 @@
 
 import SwiftUI
 
-// MARK: - Row for each existing user 
+// MARK: - Row for each existing user
 private struct MatchedUserRow: View {
     let user: ContactMatcher.MatchedUser
     @State private var requestSent = false
     @State private var showError = false
     @State private var errorMessage = ""
-    
+
     var body: some View {
         HStack {
             AsyncImage(url: user.profilePhotoUrl) { img in
@@ -61,7 +61,7 @@ private struct NoMatchesView: View {
     let isLoading: Bool
     @Binding var showError: Bool
     let appController: AppController
-    
+
     var body: some View {
         ZStack {
             VStack(spacing: 20) {
@@ -69,11 +69,11 @@ private struct NoMatchesView: View {
                     .font(.LibreBodoni(size: 24))
                     .foregroundStyle(Colors.primaryDark)
                     .multilineTextAlignment(.center)
-                
+
                 Text("send them an invite?")
                     .font(.LeagueSpartan(size: 16))
                     .foregroundStyle(.black)
-                
+
                 Button(action: {
                     // Complete onboarding and navigate to data loading
                     completeOnboarding()
@@ -93,7 +93,7 @@ private struct NoMatchesView: View {
                     Button("Done", action: onDismiss)
                 }
             }
-            
+
             if isLoading {
                 Color.black.opacity(0.25).ignoresSafeArea()
                 ProgressView()
@@ -102,7 +102,7 @@ private struct NoMatchesView: View {
             }
         }
     }
-    
+
     private func completeOnboarding() {
         Onboarding.completeOnboarding { success in
             DispatchQueue.main.async {
@@ -127,11 +127,11 @@ struct AddFriendsSheet: View {
     let onDismiss: () -> Void
     @Binding var showError: Bool
     let appController: AppController
-    
+
     var body: some View {
         ZStack {
             Colors.faf8f4.ignoresSafeArea()
-            
+
             if showingNoMatches {
                 NoMatchesView(
                     onDismiss: {
@@ -148,7 +148,7 @@ struct AddFriendsSheet: View {
                         .font(.LibreBodoni(size: 24))
                         .foregroundStyle(Colors.primaryDark)
                         .padding(.top, 80)
-                    
+
                     ScrollView {
                         VStack(spacing: 16) {
                             ForEach(serverMatches) { user in
@@ -157,7 +157,7 @@ struct AddFriendsSheet: View {
                         }
                         .padding(.horizontal, 30)
                     }
-                    
+
                     Button(action: {
                         // Complete onboarding and navigate to data loading
                         completeOnboarding()
@@ -183,7 +183,7 @@ struct AddFriendsSheet: View {
             }
         }
     }
-    
+
     private func completeOnboarding() {
         Onboarding.completeOnboarding { success in
             DispatchQueue.main.async {
@@ -209,4 +209,4 @@ struct AddFriendsSheet: View {
         showError: .constant(false),
         appController: AppController.shared
     )
-} 
+}

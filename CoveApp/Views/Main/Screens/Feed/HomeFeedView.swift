@@ -10,20 +10,20 @@ struct HomeFeedView: View {
             }
         }
     }
-    
+
     @State private var selectedTab: Tab = .upcoming
     @EnvironmentObject var appController: AppController
-    
+
     var body: some View {
         NavigationStack {
             ZStack {
                 Colors.faf8f4
                     .ignoresSafeArea()
-                
+
         VStack(spacing: 0) {
             // Header
             CoveBannerView()
-            
+
             // Top Tabs
             PillTabBar(
                 titles: Tab.allCases.map { $0.title },
@@ -34,7 +34,7 @@ struct HomeFeedView: View {
             )
             .padding(.horizontal, 16)
             .padding(.bottom, 10)
-            
+
             // Tab Content
             ZStack {
                 switch selectedTab {
@@ -61,4 +61,4 @@ struct HomeFeedView: View {
 #Preview {
     HomeFeedView()
         .environmentObject(AppController.shared)
-} 
+}

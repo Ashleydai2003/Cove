@@ -4,7 +4,6 @@
 //
 //  Created by Assistant
 
-
 import SwiftUI
 
 // MARK: - Main View
@@ -13,23 +12,23 @@ struct CreateCoveView: View {
     @EnvironmentObject var appController: AppController
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel = NewCoveModel()
-    
+
     @FocusState private var isFocused: Bool
     @State private var showInviteSheet = false
-    
+
     // MARK: - Body
     var body: some View {
         ZStack {
             Colors.faf8f4.ignoresSafeArea()
-    
+
             VStack {
                 headerView
-                
+
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 8) {
                         coveNameSection
                         imagePickerSection
-                        
+
                         locationSection
                         descriptionSection
                         inviteButtonSection
@@ -37,7 +36,7 @@ struct CreateCoveView: View {
                     }
                     .padding(.horizontal, 32)
                 }
-                
+
                 Spacer(minLength: 24)
             }
             .padding(.top, 50)
@@ -88,23 +87,23 @@ extension CreateCoveView {
         VStack {
             HStack(alignment: .top) {
                 Spacer()
-                
+
                 Image("cove_logo_circle")
                     .resizable()
                     .scaledToFit()
                     .frame(width: 100, height: 100)
                     .padding(.leading, -10)
-                
+
                 Spacer()
             }
             .padding(.horizontal, 16)
-            
+
             Text("create a cove")
                 .font(.Lugrasimo(size: 35))
                 .foregroundColor(Colors.primaryDark)
         }
     }
-    
+
     // MARK: - Cove Name Section
     private var coveNameSection: some View {
         VStack {
@@ -114,7 +113,7 @@ extension CreateCoveView {
                         .foregroundColor(.white)
                         .font(.LibreBodoniBold(size: 22))
                 }
-                
+
                 TextField("untitled cove", text: $viewModel.name)
                     .foregroundStyle(Color.white)
                     .font(.LibreBodoniBold(size: 22))
@@ -127,7 +126,7 @@ extension CreateCoveView {
         .background(Colors.primaryDark)
         .cornerRadius(10)
     }
-    
+
     // MARK: - Description Section
     private var descriptionSection: some View {
         VStack {
@@ -139,7 +138,7 @@ extension CreateCoveView {
                         .padding(.top, 8)
                         .padding(.leading, 4)
                 }
-                
+
                 TextEditor(text: $viewModel.description)
                     .foregroundStyle(Color.black)
                     .font(.LibreBodoni(size: 16))
@@ -156,7 +155,7 @@ extension CreateCoveView {
         )
         .padding(.top, 8)
     }
-    
+
     // MARK: - Image Picker Section
     private var imagePickerSection: some View {
         Button {
@@ -170,7 +169,7 @@ extension CreateCoveView {
                         Circle()
                             .fill(Color.white)
                     )
-                
+
                 if let coverPhoto = viewModel.coverPhoto {
                     Image(uiImage: coverPhoto)
                         .resizable()
@@ -191,7 +190,7 @@ extension CreateCoveView {
         }
         .padding(.top, 16)
     }
-    
+
     // MARK: - Location Section
     private var locationSection: some View {
         Button {
@@ -202,14 +201,14 @@ extension CreateCoveView {
                     .font(.system(size: 20))
                     .foregroundStyle(Color.white)
                     .padding(.leading, 24)
-                
+
                 Text("location")
                     .foregroundStyle(Color.white)
                     .font(.LibreBodoniBold(size: 16))
                     .padding(.leading, 16)
-                
+
                 Spacer()
-                
+
                 Text(viewModel.location ?? "")
                     .foregroundStyle(Color.white)
                     .font(.LibreBodoniBold(size: 16))
@@ -224,7 +223,7 @@ extension CreateCoveView {
         }
         .padding(.top, 16)
     }
-    
+
     // MARK: - Invite Button Section
     private var inviteButtonSection: some View {
         Button {
@@ -235,20 +234,20 @@ extension CreateCoveView {
                     .font(.system(size: 20))
                     .foregroundStyle(Color.white)
                     .padding(.leading, 24)
-                
+
                 Text("invite")
                     .foregroundStyle(Color.white)
                     .font(.LibreBodoniBold(size: 16))
                     .padding(.leading, 16)
-                
+
                 Spacer()
-                
+
                 if viewModel.hasInvites {
                     HStack(spacing: 8) {
                         Text("\(viewModel.invitePhoneNumbers.count) added")
                             .foregroundStyle(Color.white)
                             .font(.LibreBodoni(size: 14))
-                        
+
                         Button(action: {
                             viewModel.clearInviteData()
                         }) {
@@ -268,7 +267,7 @@ extension CreateCoveView {
         }
         .padding(.top, 16)
     }
-    
+
     // MARK: - Create Button
     private var createButtonView: some View {
         Button {
@@ -302,7 +301,7 @@ extension CreateCoveView {
         .disabled(!viewModel.isFormValid || viewModel.isSubmitting)
         .padding(.top, 24)
     }
-    
+
     // MARK: - Keyboard Accessory
     private var keyboardAccessoryView: some View {
         HStack {
@@ -320,4 +319,4 @@ extension CreateCoveView {
 #Preview {
     CreateCoveView()
         .environmentObject(AppController.shared)
-} 
+}

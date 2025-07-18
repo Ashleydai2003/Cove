@@ -11,7 +11,7 @@ struct LocationSearchView: View {
     @StateObject private var viewModel = LocationSearchViewModel()
     var completion: (String?) -> Void
     @Environment(\.dismiss) var dismiss
-    
+
     var body: some View {
         NavigationView {
             ZStack {
@@ -36,18 +36,18 @@ struct LocationSearchView: View {
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
                     .padding(.top, 20)
-                    
+
                     // Search bar under title
                     HStack {
                         Image(systemName: "magnifyingglass")
                             .foregroundColor(Colors.k6F6F73)
                             .font(.system(size: 16))
-                        
+
                         TextField("enter address", text: $viewModel.searchQuery)
                             .font(.LibreBodoni(size: 16))
                             .foregroundColor(Colors.primaryDark)
                             .textFieldStyle(PlainTextFieldStyle())
-                        
+
                         if !viewModel.searchQuery.isEmpty {
                             Button {
                                 viewModel.searchQuery = ""
@@ -85,19 +85,19 @@ struct LocationSearchView: View {
                                     Image(systemName: "mappin.circle.fill")
                                         .foregroundColor(Colors.primaryDark)
                                         .font(.system(size: 20))
-                                    
+
                                     VStack(alignment: .leading, spacing: 4) {
                                         Text(result.title)
                                             .font(.LibreBodoniBold(size: 16))
                                             .foregroundColor(Colors.primaryDark)
                                             .multilineTextAlignment(.leading)
-                                        
+
                                         Text(result.subtitle)
                                             .font(.LeagueSpartan(size: 14))
                                             .foregroundColor(Colors.k6F6F73)
                                             .multilineTextAlignment(.leading)
                                     }
-                                    
+
                                     Spacer()
                                 }
                                 .padding(.vertical, 12)
@@ -122,6 +122,6 @@ struct LocationSearchView: View {
 
 #Preview {
     LocationSearchView { location in
-        
+
     }
 }

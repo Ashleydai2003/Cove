@@ -5,7 +5,7 @@ enum LocationUtils {
     static func getLocationName(latitude: Double, longitude: Double) async -> String {
         let geocoder = CLGeocoder()
         let location = CLLocation(latitude: latitude, longitude: longitude)
-        
+
         do {
             let placemarks = try await geocoder.reverseGeocodeLocation(location)
             if let placemark = placemarks.first {
@@ -18,4 +18,4 @@ enum LocationUtils {
         }
         return ""
     }
-} 
+}

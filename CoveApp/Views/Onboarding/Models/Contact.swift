@@ -21,7 +21,7 @@ struct ContactMatcher {
         let contacts: [MatchedUser]
         let pagination: PaginationInfo
     }
-    
+
     private struct PaginationInfo: Decodable {
         let hasMore: Bool
         let nextCursor: String?
@@ -57,7 +57,4 @@ struct ContactMatcher {
         }
     }
 }
-
-
-
 
