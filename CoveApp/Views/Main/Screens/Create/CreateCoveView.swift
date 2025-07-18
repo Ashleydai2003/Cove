@@ -64,6 +64,9 @@ struct CreateCoveView: View {
             )
         }
         .navigationBarBackButtonHidden()
+        .onTapGesture {
+            isFocused = false
+        }
         .alert("Error", isPresented: Binding(
             get: { viewModel.errorMessage != nil },
             set: { if !$0 { viewModel.errorMessage = nil } }
