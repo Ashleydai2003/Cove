@@ -44,4 +44,4 @@ struct AlertBannerView: View {
             }
         }
     }
-} 
+}

@@ -6,7 +6,7 @@
 import SwiftUI
 
 struct OnboardingFlow: View {
-    
+
     @EnvironmentObject var appController: AppController
 
     var body: some View {

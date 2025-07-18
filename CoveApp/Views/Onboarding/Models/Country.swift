@@ -4,11 +4,10 @@
 //
 //  Created by Nesib Muhedin
 
-
 import Foundation
 
 struct Country: Codable, Identifiable {
-    
+
     let id: String
     let name: String
     let flag: String

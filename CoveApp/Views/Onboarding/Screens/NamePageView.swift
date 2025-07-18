@@ -7,17 +7,17 @@ import UIKit
 /// Handles name input validation and navigation to birthdate screen
 struct NamePageView: View {
     // MARK: - Environment & State Properties
-    
+
     /// App controller for managing navigation and shared state
     @EnvironmentObject var appController: AppController
-    
+
     /// User's first and last name input fields
     @State private var firstName: String = ""
     @State private var lastName: String = ""
     @FocusState private var isFirstNameFocused: Bool
 
     // MARK: - View Body
-    
+
     var body: some View {
         ZStack {
             // Main content container
@@ -29,13 +29,13 @@ struct NamePageView: View {
                         .font(.LibreBodoni(size: 40))
                         .foregroundColor(Colors.primaryDark)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                    
+
                     Text("only your first name will be displayed.")
                         .font(.LeagueSpartan(size: 15))
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .padding(.top, 40)
-                
+
                 // MARK: - Name Input Section
                 VStack {
                     // First name input field
@@ -47,11 +47,11 @@ struct NamePageView: View {
                         .onChange(of: firstName) { oldValue, newValue in
                             firstName = newValue.lettersAndHyphensOnly
                         }
-                    
+
                     Divider()
                         .frame(height: 2)
                         .background(Color.black.opacity(0.58))
-                    
+
                     // Last name input field
                     TextField("last name", text: $lastName)
                         .font(.LibreCaslon(size: 25))
@@ -61,15 +61,15 @@ struct NamePageView: View {
                         .onChange(of: lastName) { oldValue, newValue in
                             lastName = newValue.lettersAndHyphensOnly
                         }
-                    
+
                     Divider()
                         .frame(height: 2)
                         .background(Color.black.opacity(0.58))
                 }
                 .padding(.top, 40)
-                
+
                 Spacer()
-                
+
                 // MARK: - Navigation Helper
                 HStack {
                     Spacer()
@@ -99,4 +99,4 @@ struct NamePageView: View {
 #Preview {
     NamePageView()
         .environmentObject(AppController.shared)
-} 
+}

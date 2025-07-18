@@ -19,14 +19,14 @@ struct ProfilePicView: View {
     private struct LoadingImageView: View {
         let size: CGSize
         let message: String?
-        
+
         var body: some View {
             ZStack {
                     Circle()
                         .fill(Colors.f3f3f3)
                         .frame(width: size.width, height: size.height)
                         .overlay(Circle().stroke(Color.black, lineWidth: 0.5))
-                
+
                 if let message = message {
                     Text(message)
                         .font(.LeagueSpartan(size: 12))
@@ -157,25 +157,25 @@ struct ProfilePicView: View {
         }
         .navigationBarBackButtonHidden()
     }
-    
+
     // MARK: - Onboarding Completion
-    
+
     private func completeOnboarding() {
         // Prevent multiple completion attempts
         guard !isCompletingOnboarding else { return }
-        
+
         isCompletingOnboarding = true
-        
+
         // Store the profile picture if one was selected
         if let mainImage = mainImage {
             Onboarding.storeProfilePic(mainImage)
         }
-        
+
         // Complete the onboarding process
         Onboarding.completeOnboarding { success in
             DispatchQueue.main.async {
                 isCompletingOnboarding = false
-                
+
                 if success {
                     // Navigate to data loading screen
                     appController.path = [.pluggingIn]

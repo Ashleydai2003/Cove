@@ -35,6 +35,14 @@
 	<true/>
 	<key>NSContactsUsageDescription</key>
 	<string>We need access to your contacts to see who's already on Cove.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>We need access to your camera so you can take and upload photos to your profile and events.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>We use your location to show relevant events and features near you.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>We need access to your photo library so you can select and upload photos to your profile and events.</string>
+	<key>NSUserTrackingUsageDescription</key>
+	<string>This identifier will be used to deliver personalized ads to you.</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>LibreBodoni-Italic-VariableFont_wght.ttf</string>

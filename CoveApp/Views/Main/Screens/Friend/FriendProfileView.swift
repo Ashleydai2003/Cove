@@ -188,4 +188,4 @@ private struct StatBlock: View {
                 .foregroundColor(Colors.k6F6F73)
         }
     }
-} 
+}

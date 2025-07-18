@@ -14,7 +14,7 @@ enum Images {
     static let downArrowSolid = Image("down-arrow-solid")
     static let lineDiagonal = Image("line-diagonal")
     static let loginBackground = Image("login_background")
-    
+
     static let skyscrapers = Image("skyscrapers")
     static let moreInfo = Image("more-info")
     static let profilePlaceholder = Image("profile-placeholder")

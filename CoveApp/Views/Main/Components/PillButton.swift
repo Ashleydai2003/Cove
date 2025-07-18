@@ -11,7 +11,7 @@ struct HobbyPill: View {
     let emoji: String?
     let isSelected: Bool
     let action: () -> Void
-    
+
     // Optional customization
     let height: CGFloat
     let cornerRadius: CGFloat
@@ -20,7 +20,7 @@ struct HobbyPill: View {
     let selectedTextColor: Color
     let unselectedTextColor: Color
     let font: Font
-    
+
     init(
         text: String,
         emoji: String? = nil,
@@ -46,7 +46,7 @@ struct HobbyPill: View {
         self.font = font
         self.action = action
     }
-    
+
     var body: some View {
         Button(action: action) {
             HStack(spacing: 4) {
@@ -82,7 +82,7 @@ struct StaticHobbyPill: View {
     let backgroundColor: Color
     let textColor: Color
     let font: Font
-    
+
     init(
         text: String,
         emoji: String? = nil,
@@ -100,7 +100,7 @@ struct StaticHobbyPill: View {
         self.textColor = textColor
         self.font = font
     }
-    
+
     var body: some View {
         HStack(spacing: 4) {
             if let emoji = emoji {
@@ -128,10 +128,10 @@ struct StaticHobbyPill: View {
 #Preview {
     VStack(spacing: 16) {
         HobbyPill(text: "Soccer Teams", emoji: "⚽️", isSelected: true) {}
-        
+
         HobbyPill(text: "Basketball Leagues", emoji: "🏀", isSelected: false) {}
-        
+
         StaticHobbyPill(text: "Static Hobby", emoji: "✨")
     }
     .padding()
-} 
+}

@@ -18,7 +18,7 @@ struct CoveMembersView: View {
     @State private var selectedMemberName: String = ""
     @State private var showSendInvites = false
     @EnvironmentObject var appController: AppController
-    
+
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: 16) {
@@ -28,9 +28,9 @@ struct CoveMembersView: View {
                         Text("\(cove.stats.memberCount) members")
                             .foregroundStyle(Colors.primaryDark)
                             .font(.LibreBodoniBold(size: 18))
-                        
+
                         Spacer()
-                        
+
                         // Show + button if current user is admin
                         if viewModel.isCurrentUserAdmin {
                             Button(action: {
@@ -45,7 +45,7 @@ struct CoveMembersView: View {
                     .padding(.horizontal, 24)
                     .padding(.top, 16)
                 }
-                
+
                 // Members list
                 LazyVStack(spacing: 12) {
                     ForEach(viewModel.members) { member in
@@ -69,7 +69,7 @@ struct CoveMembersView: View {
                     }
                 }
                 .padding(.horizontal, 24)
-                
+
                 // Loading indicator for members
                 if viewModel.isRefreshingMembers {
                     HStack {
@@ -80,14 +80,14 @@ struct CoveMembersView: View {
                     }
                     .padding(.vertical, 16)
                 }
-                
+
                 // Empty state
                 if viewModel.members.isEmpty && !viewModel.isRefreshingMembers {
                     VStack(spacing: 16) {
                         Image(systemName: "person.3")
                             .font(.system(size: 40))
                             .foregroundColor(Colors.primaryDark)
-                        
+
                         Text("no members found")
                             .font(.LibreBodoni(size: 16))
                             .foregroundColor(.gray)
@@ -96,7 +96,7 @@ struct CoveMembersView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.top, 100)
                 }
-                
+
                 Spacer(minLength: 24)
             }
         }
@@ -127,7 +127,7 @@ struct MemberRowView: View {
     @ObservedObject var mutualsViewModel: MutualsViewModel
     @ObservedObject var requestsViewModel: RequestsViewModel
     let onMessage: () -> Void
-    
+
     var body: some View {
         HStack(spacing: 12) {
             // Profile photo
@@ -159,20 +159,20 @@ struct MemberRowView: View {
                     .frame(width: 48, height: 48)
                     .clipShape(Circle())
             }
-            
+
             // Member info
             VStack(alignment: .leading, spacing: 4) {
                 Text(member.name)
                     .foregroundStyle(Colors.primaryDark)
                     .font(.LibreBodoniBold(size: 16))
-                
+
                 Text(member.role.capitalized)
                     .foregroundStyle(Colors.k292929)
                     .font(.LibreBodoni(size: 12))
             }
-            
+
             Spacer()
-            
+
             // Smart button logic according to requirements
             if member.id == currentUserId {
                 EmptyView() // No button for self
@@ -213,9 +213,9 @@ struct MemberRowView: View {
         }
         .padding(.vertical, 8)
     }
-    
+
     // MARK: - Computed Properties
-    
+
     /// Outgoing pending request
     private var isOutgoingPending: Bool {
         return mutualsViewModel.pendingRequests.contains(member.id)
@@ -225,14 +225,14 @@ struct MemberRowView: View {
     private var incomingRequest: RequestDTO? {
         return requestsViewModel.requests.first { $0.sender.id == member.id }
     }
-    
+
     /// Checks if the member is already a friend
     private var isFriend: Bool {
         return friendsViewModel.friends.contains { $0.id == member.id }
     }
-    
+
     // MARK: - Actions
-    
+
     /// Sends a friend request to this member
     private func sendFriendRequest() {
         mutualsViewModel.sendFriendRequest(to: member.id)
@@ -244,4 +244,4 @@ struct MemberRowView: View {
         viewModel: CoveModel(),
         onRefresh: {}
     )
-} 
+}

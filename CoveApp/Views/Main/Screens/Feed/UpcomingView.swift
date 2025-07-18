@@ -7,19 +7,19 @@ import SwiftUI
 
 // MARK: - UpcomingView
 struct UpcomingView: View {
-    
+
     @EnvironmentObject var appController: AppController
     @ObservedObject private var upcomingFeed: UpcomingFeed
-    
+
     init() {
         self._upcomingFeed = ObservedObject(wrappedValue: AppController.shared.upcomingFeed)
     }
-    
+
     var body: some View {
         ZStack {
             Colors.faf8f4
                 .ignoresSafeArea()
-            
+
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 5) {
                     contentView
@@ -33,7 +33,7 @@ struct UpcomingView: View {
                     }
                 }
             }
-            
+
             // FloatingActionView - only show for verified/admin users
             if isUserVerified {
                 VStack {
@@ -59,22 +59,22 @@ struct UpcomingView: View {
             Text(upcomingFeed.errorMessage ?? "")
         }
     }
-    
+
     // MARK: - Computed Properties
-    
+
     private var errorBinding: Binding<Bool> {
         Binding(
             get: { upcomingFeed.errorMessage != nil },
             set: { if !$0 { upcomingFeed.errorMessage = nil } }
         )
     }
-    
+
     /// Check if the current user is verified/admin
     private var isUserVerified: Bool {
         let verified = appController.profileModel.verified
         return verified
     }
-    
+
     @ViewBuilder
     private var contentView: some View {
         if upcomingFeed.isLoading && upcomingFeed.events.isEmpty {
@@ -107,13 +107,13 @@ private struct LoadingStateView: View {
 // MARK: - Error State
 private struct ErrorStateView: View {
     let message: String
-    
+
     var body: some View {
         VStack(spacing: 16) {
             Image(systemName: "exclamationmark.circle")
                 .font(.system(size: 40))
                 .foregroundColor(.gray)
-            
+
             Text(message)
                 .font(.LibreBodoni(size: 16))
                 .foregroundColor(.gray)
@@ -131,7 +131,7 @@ private struct EmptyStateView: View {
             Image(systemName: "calendar")
                 .font(.system(size: 40))
                 .foregroundColor(Colors.primaryDark)
-            
+
             Text("no upcoming events – create something epic!")
                 .font(.LibreBodoni(size: 16))
                 .foregroundColor(Colors.primaryDark)
@@ -145,11 +145,11 @@ private struct EmptyStateView: View {
 // MARK: - Events List
 private struct EventsListView: View {
     @ObservedObject private var upcomingFeed: UpcomingFeed
-    
+
     init() {
         self._upcomingFeed = ObservedObject(wrappedValue: AppController.shared.upcomingFeed)
     }
-    
+
     var body: some View {
         VStack(spacing: 0) {
             ForEach(Array(upcomingFeed.events.enumerated()), id: \.element.id) { idx, event in
@@ -159,13 +159,13 @@ private struct EventsListView: View {
                         loadMoreIfNeeded(at: idx)
                     }
             }
-            
+
             if upcomingFeed.isLoading && !upcomingFeed.events.isEmpty {
                 LoadingIndicatorView()
             }
         }
     }
-    
+
     private func loadMoreIfNeeded(at index: Int) {
         if index == upcomingFeed.events.count - 1 {
             upcomingFeed.loadMoreEventsIfNeeded()
@@ -192,4 +192,4 @@ struct UpcomingView_Previews: PreviewProvider {
         UpcomingView()
             .environmentObject(AppController.shared)
     }
-} 
+}

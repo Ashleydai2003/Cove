@@ -13,21 +13,21 @@ import UIKit
 struct CoveApp: App {
     // firebase delegate
     @UIApplicationDelegateAdaptor(FirebaseSetup.self) var firebase_delegate
-    
+
     /// Shared app controller instance - now properly managed by SwiftUI
     @StateObject private var appController = AppController.shared
-    
+
     init() {
         // For Injection (hot reloading)
         // Note flags -Xlinker -interposable under Other Linker Flags are for Injection
         #if DEBUG
         Bundle(path: "/Applications/InjectionIII.app/Contents/Resources/iOSInjection.bundle")?.load()
         #endif
-        
+
         let tabBarAppearance = UITabBarAppearance()
         tabBarAppearance.configureWithOpaqueBackground()
         tabBarAppearance.backgroundColor = UIColor(named: "CovePrimaryDarkColor")
-        
+
         // Selected item color
         UITabBar.appearance().tintColor = UIColor.systemBlue
         // Unselected item color
@@ -37,13 +37,13 @@ struct CoveApp: App {
         if #available(iOS 15.0, *) {
             UITabBar.appearance().scrollEdgeAppearance = tabBarAppearance
         }
-        
+
         // NOTE: Previously we force-reset the onboarding flag on every launch for
         // development. This caused fully-onboarded users to be treated as new
         // users and skip the data-loading flow. The line is now removed so the
         // persisted onboarding status returned from the backend is respected.
     }
-    
+
     var body: some Scene {
         WindowGroup {
             // Use Group & transitions for smoother authentication switches

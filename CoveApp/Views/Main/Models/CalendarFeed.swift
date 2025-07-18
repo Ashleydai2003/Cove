@@ -24,26 +24,26 @@ class CalendarFeed: ObservableObject {
     @Published var errorMessage: String?
     /// Last time events were fetched (for caching)
     @Published var lastFetched: Date?
-    
+
     // TODO: Adjust cache duration as needed - currently set to 30 minutes
     private let cacheTimeout: TimeInterval = 30 * 60 // 30 minutes
     private let pageSize = 10
-    
+
     /// Checks if we have any cached data
     var hasCachedData: Bool {
         return lastFetched != nil // Empty array is still valid cached data
     }
-    
+
     /// Checks if cache is stale (older than 30 minutes)
     var isCacheStale: Bool {
         guard let lastFetched = lastFetched else { return true }
         return Date().timeIntervalSince(lastFetched) > cacheTimeout
     }
-    
+
     init() {
         Log.debug("CalendarFeed initialized")
     }
-    
+
     /// Fetches calendar events from the backend, using cache if fresh.
     /// - Parameter forceRefresh: If true, bypasses cache and fetches fresh data
     /// - Parameter completion: Optional completion handler called when the fetch operation completes
@@ -54,31 +54,31 @@ class CalendarFeed: ObservableObject {
             completion?()
             return
         }
-        
+
         guard !isLoading else { return }
-        
+
         isLoading = true
         Log.debug("CalendarFeed: fetching events from backend…")
-        
+
         var parameters: [String: Any] = [
             "limit": pageSize
         ]
-        
+
         // Only include cursor if we're not refreshing and have one
         if !forceRefresh, let cursor = nextCursor {
             parameters["cursor"] = cursor
         }
-        
+
         NetworkManager.shared.get(endpoint: "/calendar-events", parameters: parameters) { [weak self] (result: Result<CalendarEventsResponse, NetworkError>) in
             guard let self = self else { return }
-            
+
             DispatchQueue.main.async {
                 self.isLoading = false
-                
+
                 switch result {
                 case .success(let response):
                     Log.debug("CalendarFeed: events fetched – count=\(response.events?.count ?? 0)")
-                    
+
                     if forceRefresh || self.nextCursor == nil {
                         // First page or refresh, replace existing data
                         self.events = response.events ?? []
@@ -86,18 +86,18 @@ class CalendarFeed: ObservableObject {
                         // Append new events to existing data
                         self.events.append(contentsOf: response.events ?? [])
                     }
-                    
+
                     self.hasMore = response.pagination?.hasMore ?? false
                     self.nextCursor = response.pagination?.nextCursor
 
                     // Prefetch cover photos
                     let urls = (response.events ?? []).compactMap { $0.coverPhoto?.url ?? $0.coveCoverPhoto?.url }
                     ImagePrefetcherUtil.prefetch(urlStrings: urls)
-                    
+
                     self.lastFetched = Date()
-                    
+
                     completion?()
-                    
+
                 case .failure(let error):
                     Log.error("CalendarFeed fetch failed: \(error.localizedDescription)")
                     self.errorMessage = error.localizedDescription
@@ -106,7 +106,7 @@ class CalendarFeed: ObservableObject {
             }
         }
     }
-    
+
     /// Forces a refresh of calendar events data, bypassing cache.
     func refreshCalendarEvents(completion: (() -> Void)? = nil) {
         Log.debug("CalendarFeed: forcing refresh of events data")
@@ -114,7 +114,7 @@ class CalendarFeed: ObservableObject {
         hasMore = true
         fetchCalendarEvents(forceRefresh: true, completion: completion)
     }
-    
+
     /// Loads more events if the user scrolls to the end of the list.
     func loadMoreEventsIfNeeded() {
         if hasMore && !isLoading && nextCursor != nil {
@@ -122,7 +122,7 @@ class CalendarFeed: ObservableObject {
             fetchCalendarEvents(forceRefresh: false)
         }
     }
-    
+
     /// Fetches calendar events only if data is missing or stale (older than 30 minutes)
     func fetchCalendarEventsIfStale(completion: (() -> Void)? = nil) {
         if !hasCachedData || isCacheStale {
@@ -134,14 +134,14 @@ class CalendarFeed: ObservableObject {
             completion?()
         }
     }
-    
+
     /// Gets events grouped by date for UI display
     var groupedEvents: [Date: [CalendarEvent]] {
         Dictionary(grouping: events) { event in
             Calendar.current.startOfDay(for: event.eventDate)
         }
     }
-    
+
     /// Formats date with ordinal suffix (e.g., "Friday April 5th")
     func formattedDateWithOrdinal(_ date: Date) -> String {
         let calendar = Calendar.current
@@ -165,7 +165,7 @@ class CalendarFeed: ObservableObject {
 
         return "\(formatter.string(from: date)) \(day)\(daySuffix)"
     }
-    
+
     /// Formats time from date string (e.g., "5:00 PM")
     func formattedTime(_ dateString: String) -> String {
         let inputFormatter = DateFormatter()
@@ -178,7 +178,7 @@ class CalendarFeed: ObservableObject {
             outputFormatter.timeZone = TimeZone.current
             return outputFormatter.string(from: date)
         }
-        
+
         return ""
     }
-} 
+}

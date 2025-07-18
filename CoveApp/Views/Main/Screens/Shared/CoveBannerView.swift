@@ -6,7 +6,7 @@ struct CoveBannerView: View {
     var onPaperPlane: (() -> Void)? = nil
     @State private var showInvites = false
     @State private var showMessageBanner = false
-    
+
     var body: some View {
         HStack(alignment: .center) {
             Text("cove")
@@ -14,9 +14,9 @@ struct CoveBannerView: View {
                 .foregroundColor(Colors.primaryDark)
             Spacer()
             HStack(spacing: 18) {
-                Button(action: { 
+                Button(action: {
                     showInvites = true
-                    onInbox?() 
+                    onInbox?()
                 }) {
                     Image(systemName: "envelope")
                         .resizable()
@@ -24,7 +24,7 @@ struct CoveBannerView: View {
                         .foregroundColor(Colors.primaryDark)
                 }
                 .buttonStyle(PlainButtonStyle())
-                
+
                 Button(action: {
                     onPaperPlane?()
                     withAnimation { showMessageBanner = true }
@@ -51,4 +51,4 @@ struct CoveBannerView: View {
 
 #Preview {
     CoveBannerView()
-} 
+}

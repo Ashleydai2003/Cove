@@ -96,4 +96,4 @@ class FriendProfileModel: ObservableObject {
         case pending
         case sendRequest
     }
-} 
+}

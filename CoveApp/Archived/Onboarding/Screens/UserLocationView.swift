@@ -6,19 +6,18 @@
 
 import SwiftUI
 
-
 struct UserLocationView: View {
-    
+
     /// App controller for managing navigation and shared state
     @EnvironmentObject var appController: AppController
-    
+
     @StateObject private var viewModel = UserLocationViewModel()
-    
+
     @FocusState private var isFocused: Bool
-    
+
     var body: some View {
         VStack {
-            
+
             HStack {
                 Button {
                     appController.path.removeLast()
@@ -28,13 +27,13 @@ struct UserLocationView: View {
                 Spacer()
             }
             .padding(.top, 10)
-            
+
             Text("where are you \nbased?")
                 .foregroundStyle(Colors.primaryDark)
                 .font(.LibreBodoniMedium(size: 40))
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.top, 20)
-            
+
             ScrollViewReader { proxy in
                 ScrollView(.vertical, showsIndicators: false) {
                     HStack(spacing: 16) {
@@ -55,12 +54,12 @@ struct UserLocationView: View {
                                         viewModel.state = newValue.lowercaseIfNotEmpty
                                     }
                             }
-                            
+
                             Divider()
                                 .frame(height: 2)
                                 .background(Color.black)
                         }
-                        
+
                         VStack {
                             ZStack {
                                 if viewModel.city.isEmpty {
@@ -78,14 +77,14 @@ struct UserLocationView: View {
                                         viewModel.city = newValue.lowercaseIfNotEmpty
                                     }
                             }
-                            
+
                             Divider()
                                 .frame(height: 2)
                                 .background(Color.black)
                         }
                     }
                     .padding(.top, 25)
-                    
+
                     VStack {
                         if let location = viewModel.locationManager.location {
                             MapView(userLocation: .constant(location), coordinate: $viewModel.selectedCoordinate)
@@ -98,7 +97,7 @@ struct UserLocationView: View {
                                 .frame(height: AppConstants.SystemSize.height * 0.3)
                         }
                     }
-                    
+
                     HStack {
                         VStack {
                             ZStack {
@@ -114,19 +113,19 @@ struct UserLocationView: View {
                                     .keyboardType(.numberPad)
                                     .focused($isFocused)
                             }
-                            
+
                             Divider()
                                 .frame(height: 2)
                                 .background(Color.black)
                         }
                         .frame(width: 100)
-                        
+
                         Spacer()
                     }
                     .padding(.top, 10)
                 }
             }
-            
+
             HStack {
                 Spacer()
                 Images.smily
@@ -139,7 +138,7 @@ struct UserLocationView: View {
                         appController.path.append(.almaMater)
                     }
             }
-            
+
         }
         .padding(.horizontal, 32)
         .background(OnboardingBackgroundView())
@@ -169,7 +168,7 @@ struct UserLocationView: View {
         }
         .navigationBarBackButtonHidden()
     }
-    
+
 }
 
 #Preview {
