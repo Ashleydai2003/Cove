@@ -47,7 +47,7 @@ class EventPostViewModel: ObservableObject {
 
                 switch result {
                 case .success:
-                    completion(true)
+                    () // No action needed
                 case .failure(let error):
                     self.errorMessage = error.localizedDescription
                     completion(false)
