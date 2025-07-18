@@ -127,7 +127,7 @@ jobs:
 
       - name: Run UI Tests
         if: steps.ios-changes.outputs.changes == 'true'
-        run: xcodebuild test -scheme Cove -project CoveApp/Cove.xcodeproj -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.2' -only-testing:CoveUITests CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
+        run: xcodebuild test -scheme Cove -project CoveApp/Cove.xcodeproj -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.2' -only-testing:CoveUITests -parallel-testing-enabled YES -fail-fast CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
 
       # Skip tests message
       - name: Skip tests
