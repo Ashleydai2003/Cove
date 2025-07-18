@@ -69,7 +69,7 @@ jobs:
 
       - name: Build (Debug, no signing)
         if: steps.ios-changes.outputs.changes == 'true'
-        run: xcodebuild -scheme Cove -project CoveApp/Cove.xcodeproj -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 15' build CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
+        run: xcodebuild -scheme Cove -project CoveApp/Cove.xcodeproj -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.5' build CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
 
       # Skip validation message
       - name: Skip validation
