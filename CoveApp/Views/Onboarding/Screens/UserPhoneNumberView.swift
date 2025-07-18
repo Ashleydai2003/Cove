@@ -98,6 +98,16 @@ struct UserPhoneNumberView: View {
         ZStack {
             OnboardingBackgroundView()
             VStack {
+                HStack {
+                    Button {
+                        appController.path.removeLast()
+                    } label: {
+                        Images.backArrow
+                    }
+                    Spacer()
+                }
+                .padding(.top, 10)
+
                 // MARK: - Header Section
                 headerSection
 
@@ -170,6 +180,7 @@ struct UserPhoneNumberView: View {
                 sendVerificationCodeWithFeedback()
             }
         }
+        .navigationBarBackButtonHidden(true)
     }
 
     // MARK: - View Components
