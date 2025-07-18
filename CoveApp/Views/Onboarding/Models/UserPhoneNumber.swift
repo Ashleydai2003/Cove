@@ -95,13 +95,17 @@ struct UserPhoneNumber {
     func sendVerificationCode(completion: @escaping (CodeSendResult) -> Void) {
         let fullPhoneNumber = getFullPhoneNumber()
 
+        print("[DEBUG] Attempting to send verification code to: \(fullPhoneNumber)")
         // Disable reCAPTCHA verification
         // TODO: REMOVE THIS AFTER GETTING TOKEN FOR TESTING!!!!
+        #if DEBUG
         Auth.auth().settings?.isAppVerificationDisabledForTesting = true
+        #endif
 
         PhoneAuthProvider.provider().verifyPhoneNumber(fullPhoneNumber, uiDelegate: nil) { verificationID, error in
             DispatchQueue.main.async {
                 if let error = error {
+                    print("[DEBUG] Firebase Auth Error: \(error.localizedDescription)")
                     Log.error("Firebase Auth Error: \(error.localizedDescription)")
                     AppController.shared.errorMessage = error.localizedDescription
                     let result = self.categorizeFirebaseError(error)
@@ -110,12 +114,14 @@ struct UserPhoneNumber {
                 }
 
                 if let verificationID = verificationID {
+                    print("[DEBUG] Received verificationID: \(verificationID)")
                     // Store the full phone number in UserDefaults
                     UserDefaults.standard.set(getFullPhoneNumber(), forKey: "UserPhoneNumber")
                     // Store the verification ID in UserDefaults
                     UserDefaults.standard.set(verificationID, forKey: "verification_id")
                     completion(.success)
                 } else {
+                    print("[DEBUG] Failed to get verification ID - no error but no ID received")
                     Log.error("Failed to get verification ID - no error but no ID received")
                     AppController.shared.errorMessage = "Failed to get verification ID"
                     completion(.unknownError("Failed to get verification ID"))
