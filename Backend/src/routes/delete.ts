@@ -215,8 +215,13 @@ export const handleDeleteUser = async (event: APIGatewayProxyEvent): Promise<API
         }
       });
 
-      // Delete cove images for coves created by the user
-      await tx.coveImage.deleteMany({
+      // Delete user's created events
+      await tx.event.deleteMany({
+        where: { hostId: userId }
+      });
+
+       // Delete cove images for coves created by the user
+       await tx.coveImage.deleteMany({
         where: {
           coveId: {
             in: userCoves.map(cove => cove.id)
@@ -224,13 +229,39 @@ export const handleDeleteUser = async (event: APIGatewayProxyEvent): Promise<API
         }
       });
 
-      // Delete user's created events
-      await tx.event.deleteMany({
-        where: { hostId: userId }
-      });
+      // TODO: decide if we want to delete the coves or not
+     
+      // Delete cove memberships for coves created by the user (to avoid FK constraint)
+      if (userCoves.length > 0) {
+        await tx.coveMember.deleteMany({
+          where: {
+            coveId: { in: userCoves.map(cove => cove.id) }
+          }
+        });
+        // Delete all RSVPs to events in coves created by the user
+        const coveEventIds = (await tx.event.findMany({
+          where: { coveId: { in: userCoves.map(cove => cove.id) } },
+          select: { id: true }
+        })).map(event => event.id);
+        if (coveEventIds.length > 0) {
+          await tx.eventRSVP.deleteMany({
+            where: { eventId: { in: coveEventIds } }
+          });
+          // Delete all event images for events in coves created by the user
+          await tx.eventImage.deleteMany({
+            where: { eventId: { in: coveEventIds } }
+          });
+        }
+        // Delete all events in coves created by the user (to avoid FK constraint)
+        await tx.event.deleteMany({
+          where: {
+            coveId: { in: userCoves.map(cove => cove.id) }
+          }
+        });
+      }
 
-      // Delete user's created coves
-      await tx.cove.deleteMany({
+       // Delete user's created coves
+       await tx.cove.deleteMany({
         where: { creatorId: userId }
       });
 
