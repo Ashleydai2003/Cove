@@ -42,13 +42,13 @@ class CoveModel: ObservableObject {
     @Published var eventsLastFetched: Date?
     /// Last time members were fetched (for separate caching)
     @Published var membersLastFetched: Date?
-    
+
     // Cache timeouts
     private let coveDetailsCacheTimeout: TimeInterval = 5 * 60 * 60 // 5 hours for cove details
     private let eventsCacheTimeout: TimeInterval = 5 * 60 // 5 minutes for events
     private let membersCacheTimeout: TimeInterval = 30 * 60 // 30 minutes for members
     private let pageSize = 5
-    
+
     /// Checks if we have complete data (both cove details and events)
     var hasCompleteData: Bool {
         return cove != nil && !events.isEmpty
@@ -57,51 +57,51 @@ class CoveModel: ObservableObject {
     var hasAnyData: Bool {
         return cove != nil
     }
-    
+
     /// Checks if we have any cached cove data
     var hasCachedData: Bool {
         return cove != nil && lastFetched != nil
     }
-    
+
     /// Checks if we have any cached events data
     var hasCachedEvents: Bool {
         return eventsLastFetched != nil
     }
-    
+
     /// Checks if we have any cached members data
     var hasCachedMembers: Bool {
         return membersLastFetched != nil
     }
-    
+
     /// Checks if cove details cache is stale (older than cache timeout)
     var isCacheStale: Bool {
         guard let lastFetch = lastFetched else { return true }
         return Date().timeIntervalSince(lastFetch) > coveDetailsCacheTimeout
     }
-    
+
     /// Checks if events cache is stale (older than cache timeout)
     var isEventsCacheStale: Bool {
         guard let lastFetch = eventsLastFetched else { return true }
         return Date().timeIntervalSince(lastFetch) > eventsCacheTimeout
     }
-    
+
     /// Checks if members cache is stale (older than cache timeout)
     var isMembersCacheStale: Bool {
         guard let lastFetch = membersLastFetched else { return true }
         return Date().timeIntervalSince(lastFetch) > membersCacheTimeout
     }
-    
+
     /// Checks if the current user is an admin of this cove
     var isCurrentUserAdmin: Bool {
         let currentUserId = Auth.auth().currentUser?.uid ?? AppController.shared.profileModel.userId
         guard !currentUserId.isEmpty else { return false }
         return members.first { $0.id == currentUserId }?.role.lowercased() == "admin"
     }
-    
+
     init() {
         Log.debug("📱 CoveModel initialized")
     }
-    
+
     /// Fetches cove details with caching support.
     /// Only fetches fresh data if cache is stale or no cached data exists.
     func fetchCoveDetails(coveId: String, forceRefresh: Bool = false) {
@@ -154,7 +154,7 @@ class CoveModel: ObservableObject {
             Log.debug("📱 CoveModel: ✅ Using fresh cached events data (\(events.count) events) - NO NETWORK REQUEST")
             return
         }
-        
+
         guard !isLoading && hasMore else { return }
         isLoading = true
         Log.debug("🔍 CoveModel: Fetching events...")
@@ -192,7 +192,7 @@ class CoveModel: ObservableObject {
         Log.debug("🔄 CoveModel: refreshCoveData() called for cove \(coveId) - forcing refresh with new data")
         fetchCoveDetails(coveId: coveId, forceRefresh: true)
     }
-    
+
     /// Forces a refresh of only cove details (header info), bypassing cache.
     func refreshCoveDetails() {
         guard let coveId = cove?.id else {
@@ -200,11 +200,11 @@ class CoveModel: ObservableObject {
             return
         }
         guard !isRefreshingCoveDetails else { return }
-        
+
         Log.debug("🔄 CoveModel: Refreshing cove details only")
         isRefreshingCoveDetails = true
         lastFetched = nil // Clear cache
-        
+
         NetworkManager.shared.get(endpoint: "/cove", parameters: ["coveId": coveId]) { [weak self] (result: Result<FeedCoveResponse, NetworkError>) in
             guard let self = self else { return }
             DispatchQueue.main.async {
@@ -212,7 +212,7 @@ class CoveModel: ObservableObject {
                 switch result {
                 case .success(let response):
                     Log.debug("✅ CoveModel: Cove details refresh completed: \(response.cove.name)")
-                    
+
                     // Use smart diffing to only update UI if content actually changed
                     updateIfChanged(
                         current: self.cove,
@@ -220,7 +220,7 @@ class CoveModel: ObservableObject {
                     ) {
                         self.cove = response.cove
                     }
-                    
+
                     self.lastFetched = Date()
                 case .failure(let error):
                     Log.debug("❌ CoveModel: Cove details refresh error: \(error.localizedDescription)")
@@ -229,7 +229,7 @@ class CoveModel: ObservableObject {
             }
         }
     }
-    
+
     /// Refreshes only the events data, keeping the cached cove details.
     func refreshEvents() {
         guard let coveId = cove?.id else {
@@ -237,19 +237,19 @@ class CoveModel: ObservableObject {
             return
         }
         guard !isRefreshingEvents else { return }
-        
+
         Log.critical("🔄 CoveModel: Refreshing events data for coveId: \(coveId)")
         isRefreshingEvents = true
         events = []
         nextCursor = nil
         hasMore = true
         eventsLastFetched = nil // Clear events cache
-        
+
         let parameters: [String: Any] = [
             "coveId": coveId,
             "limit": pageSize
         ]
-        
+
         NetworkManager.shared.get(endpoint: "/cove-events", parameters: parameters) { [weak self] (result: Result<CoveEventsResponse, NetworkError>) in
             guard let self = self else { return }
             DispatchQueue.main.async {
@@ -257,7 +257,7 @@ class CoveModel: ObservableObject {
                 switch result {
                 case .success(let response):
                     Log.debug("✅ CoveModel: Events refresh completed: \(response.events.count) events")
-                    
+
                     // Use smart diffing to only update UI if events actually changed
                     updateIfChanged(
                         current: self.events,
@@ -267,7 +267,7 @@ class CoveModel: ObservableObject {
                         self.hasMore = response.pagination.hasMore
                         self.nextCursor = response.pagination.nextCursor
                     }
-                    
+
                     self.eventsLastFetched = Date()
                 case .failure(let error):
                     Log.debug("❌ CoveModel: Events refresh error: \(error.localizedDescription)")
@@ -283,10 +283,10 @@ class CoveModel: ObservableObject {
             Log.debug("📱 CoveModel: ✅ Using fresh cached members data (\(members.count) members) - NO NETWORK REQUEST")
             return
         }
-        
+
         guard !isRefreshingMembers && hasMembersMore else { return }
         isRefreshingMembers = true
-        
+
         Log.debug("🔍 CoveModel: Fetching members...")
         let parameters: [String: Any] = {
             var params = [
@@ -298,7 +298,7 @@ class CoveModel: ObservableObject {
             }
             return params
         }()
-        
+
         NetworkManager.shared.get(endpoint: "/cove-members", parameters: parameters) { [weak self] (result: Result<CoveMembersResponse, NetworkError>) in
             guard let self = self else { return }
             DispatchQueue.main.async {
@@ -306,7 +306,7 @@ class CoveModel: ObservableObject {
                 switch result {
                 case .success(let response):
                     Log.debug("✅ CoveModel: Members received: \(response.members.count) members")
-                    
+
                     // Use smart diffing to only update UI if members actually changed
                     let newMembers = (self.membersCursor == nil) ? response.members : self.members + response.members
                     updateIfChanged(
@@ -323,7 +323,7 @@ class CoveModel: ObservableObject {
                         self.hasMembersMore = response.pagination.hasMore
                         self.membersCursor = response.pagination.nextCursor
                     }
-                    
+
                     self.membersLastFetched = Date()
                 case .failure(let error):
                     Log.debug("❌ CoveModel: Members error: \(error.localizedDescription)")
@@ -332,7 +332,7 @@ class CoveModel: ObservableObject {
             }
         }
     }
-    
+
     /// Refreshes only the members data, keeping the cached cove details.
     func refreshMembers() {
         guard let coveId = cove?.id else {
@@ -340,7 +340,7 @@ class CoveModel: ObservableObject {
             return
         }
         guard !isRefreshingMembers else { return }
-        
+
         Log.debug("🔄 CoveModel: Refreshing members data only")
         members = []
         membersCursor = nil
@@ -348,7 +348,7 @@ class CoveModel: ObservableObject {
         membersLastFetched = nil // Clear members cache
         fetchCoveMembers(coveId: coveId, forceRefresh: true)
     }
-    
+
     /// Loads more members if the user scrolls to the end of the list.
     func loadMoreMembersIfNeeded(currentMember: CoveMember) {
         if let lastMember = members.last,
@@ -361,7 +361,7 @@ class CoveModel: ObservableObject {
             fetchCoveMembers(coveId: coveId)
         }
     }
-    
+
     /// Loads more events if the user scrolls to the end of the list.
     func loadMoreEventsIfNeeded(currentEvent: CalendarEvent) {
         if let lastEvent = events.last,
@@ -410,7 +410,7 @@ struct FeedCoveDetails: Decodable, ContentComparable {
     let creator: Creator
     let coverPhoto: CoverPhoto?
     let stats: Stats
-    
+
     /// ContentComparable implementation - checks if meaningful content has changed
     func hasContentChanged(from other: FeedCoveDetails) -> Bool {
         return name != other.name ||
@@ -421,7 +421,7 @@ struct FeedCoveDetails: Decodable, ContentComparable {
                stats.eventCount != other.stats.eventCount ||
                coverPhoto?.url != other.coverPhoto?.url
     }
-    
+
     struct Creator: Decodable {
         let id: String
         let name: String
@@ -440,5 +440,4 @@ struct CoveEventsResponse: Decodable {
         let nextCursor: String?
     }
 }
-
 

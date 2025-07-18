@@ -7,7 +7,6 @@
 import SwiftUI
 import Kingfisher
 
-
 let tabIconSize: CGFloat = 10
 
 // MARK: - Image Extension for Tab Bar Icons
@@ -15,7 +14,7 @@ extension Image {
     func tabBarIcon(isSelected: Bool = false, isMiddleButton: Bool = false) -> some View {
         let baseSize: CGFloat = isMiddleButton ? 45 : 40
         let selectedSize: CGFloat = isMiddleButton ? 48 : 43
-        
+
         return self
             .resizable()
             .aspectRatio(contentMode: .fill)
@@ -29,11 +28,11 @@ extension Image {
 struct TabBarView: View {
     @Binding var selectedTab: Int
     @EnvironmentObject var appController: AppController
-    
+
     var body: some View {
         HStack {
             Spacer()
-            
+
             // Home Tab
             Button(action: { selectedTab = 1 }) {
                 Image(selectedTab == 1 ? "home_selected" : "home_unselected")
@@ -41,9 +40,9 @@ struct TabBarView: View {
                     .animation(.none, value: selectedTab)
             }
             .frame(maxWidth: 50, maxHeight: 50)
-            
+
             Spacer()
-            
+
             // Calendar Tab
             Button(action: { selectedTab = 2 }) {
                 Image(selectedTab == 2 ? "calendar_selected" : "calendar_unselected")
@@ -51,9 +50,9 @@ struct TabBarView: View {
                     .animation(.none, value: selectedTab)
             }
             .frame(maxWidth: 50, maxHeight: 50)
-            
+
             Spacer()
-            
+
             // Cove Tab
             Button(action: { selectedTab = 3 }) {
                 Image(selectedTab == 3 ? "cove_selected" : "cove_unselected")
@@ -61,9 +60,9 @@ struct TabBarView: View {
                     .animation(.none, value: selectedTab)
             }
             .frame(maxWidth: 56, maxHeight: 56)
-            
+
             Spacer()
-            
+
             // Friends Tab
             Button(action: { selectedTab = 4 }) {
                 Image(selectedTab == 4 ? "friends_selected" : "friends_unselected")
@@ -71,9 +70,9 @@ struct TabBarView: View {
                     .animation(.none, value: selectedTab)
             }
             .frame(maxWidth: 56, maxHeight: 56)
-            
+
             Spacer()
-            
+
             // Profile Tab with KFImage
             Button(action: { selectedTab = 5 }) {
                 if let profileImage = appController.profileModel.profileUIImage {
@@ -115,7 +114,7 @@ struct TabBarView: View {
                 }
             }
             .frame(maxWidth: 50, maxHeight: 50)
-            
+
             Spacer()
         }
         .padding(.vertical, 8)
@@ -133,7 +132,7 @@ struct HomeView: View {
     @State private var tabSelection = 1
     @State private var showInboxAutomatically = false
     @EnvironmentObject var appController: AppController
-    
+
     var body: some View {
         VStack(spacing: 0) {
             ZStack {
@@ -157,13 +156,13 @@ struct HomeView: View {
             Log.debug("🏠 HomeView: onAppear - shouldAutoShowInbox = \(appController.shouldAutoShowInbox)")
             Log.debug("🏠 HomeView: onAppear - inboxViewModel.hasUnopenedInvites = \(appController.inboxViewModel.hasUnopenedInvites)")
             Log.debug("🏠 HomeView: onAppear - inboxViewModel.invites.count = \(appController.inboxViewModel.invites.count)")
-            
+
             // Check for auto-show inbox in case we missed the initial trigger
             if appController.inboxViewModel.hasUnopenedInvites && !appController.shouldAutoShowInbox {
                 Log.debug("🏠 HomeView: Found unopened invites on appear, triggering auto-show")
                 appController.shouldAutoShowInbox = true
             }
-            
+
             // Fallback check after 2 seconds in case initial data loading is still in progress
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                 if appController.inboxViewModel.hasUnopenedInvites && !showInboxAutomatically && !appController.shouldAutoShowInbox {

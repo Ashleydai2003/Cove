@@ -17,26 +17,26 @@ class NewCoveModel: ObservableObject {
     @Published var coverPhoto: UIImage?
     @Published var isSubmitting = false
     @Published var errorMessage: String?
-    
+
     // Sheet States
     @Published var showImagePicker: Bool = false
     @Published var showLocationPicker: Bool = false
-    
+
     // Invite Properties
     @Published var invitePhoneNumbers: [String] = []
     @Published var inviteMessage: String = ""
-    
+
     // MARK: - Computed Properties
     var isFormValid: Bool {
         return !name.isEmpty && location != nil
     }
-    
+
     var hasInvites: Bool {
         return !invitePhoneNumbers.isEmpty
     }
-    
+
     // MARK: - Methods
-    
+
     /// Resets all form fields to their initial state
     func resetForm() {
         name = ""
@@ -50,23 +50,23 @@ class NewCoveModel: ObservableObject {
         invitePhoneNumbers = []
         inviteMessage = ""
     }
-    
+
     /// Stores phone numbers and message from SendInvitesView
     func storeInviteData(phoneNumbers: [String], message: String) {
         // Store the formatted phone numbers (these are already validated and formatted)
         invitePhoneNumbers = phoneNumbers
         inviteMessage = message
-        
+
         Log.debug("Stored invite data: count=\(phoneNumbers.count)")
     }
-    
+
     /// Clears all stored invite data
     func clearInviteData() {
         invitePhoneNumbers = []
         inviteMessage = ""
         Log.debug("Cleared invite data")
     }
-    
+
     /// Submits the cove to the backend and optionally sends invites
     func submitCove(completion: @escaping (Bool) -> Void) {
         guard isFormValid else {
@@ -74,20 +74,20 @@ class NewCoveModel: ObservableObject {
             completion(false)
             return
         }
-        
+
         guard self.location != nil else {
             errorMessage = "Location is required"
             completion(false)
             return
         }
-        
+
         isSubmitting = true
         errorMessage = nil
-        
+
         // Step 1: Create the cove first
         createCove { [weak self] success, coveId in
             guard let self = self else { return }
-            
+
             if success, let coveId = coveId {
                 // Step 2: Send invites if there are any
                 if self.hasInvites {
@@ -121,7 +121,7 @@ class NewCoveModel: ObservableObject {
             }
         }
     }
-    
+
     /// Creates the cove via API
     private func createCove(completion: @escaping (Bool, String?) -> Void) {
         // Prepare parameters - description is optional, coverPhoto is optional
@@ -129,20 +129,20 @@ class NewCoveModel: ObservableObject {
             "name": name,
             "location": location!
         ]
-        
+
         // Add description if not empty
         if !description.isEmpty {
             params["description"] = description
         }
-        
+
         // Add cover photo if provided
         if let image = coverPhoto,
            let coverPhotoData = image.jpegData(compressionQuality: 0.8) {
             params["coverPhoto"] = coverPhotoData.base64EncodedString()
         }
-        
+
         Log.debug("Creating cove with params: \(params.keys)")
-        
+
         NetworkManager.shared.post(
             endpoint: "/create-cove",
             parameters: params
@@ -160,22 +160,22 @@ class NewCoveModel: ObservableObject {
             }
         }
     }
-    
+
     /// Sends invites using the SendInvitesModel
     private func sendInvites(coveId: String, completion: @escaping (Bool) -> Void) {
         Log.debug("Sending invites for cove: \(coveId)")
-        
+
         // Prepare request body
         var requestBody: [String: Any] = [
             "coveId": coveId,
             "phoneNumbers": invitePhoneNumbers
         ]
-        
+
         // Add message if not empty
         if !inviteMessage.isEmpty {
             requestBody["message"] = inviteMessage
         }
-        
+
         NetworkManager.shared.post(
             endpoint: "/send-invite",
             parameters: requestBody
@@ -207,4 +207,4 @@ struct CreatedCove: Decodable {
     let description: String?
     let location: String
     let createdAt: String
-} 
+}

@@ -5,19 +5,19 @@ struct OtpVerify {
     /// API base URL and login path
     private static let apiBaseURL = AppConstants.API.baseURL
     private static let apiLoginPath = "/login"
-    
+
     /// Verifies the OTP code entered by the user
     /// - Parameters:
     ///   - code: The OTP code to verify
     ///   - completion: Callback with success status
     static func verifyOTP(_ code: String, completion: @escaping (Bool) -> Void) {
         Log.debug("Attempting to verify OTP code")
-        
+
         let credential = PhoneAuthProvider.provider().credential(
             withVerificationID: UserDefaults.standard.string(forKey: "verification_id") ?? "",
             verificationCode: code
         )
-        
+
         Auth.auth().signIn(with: credential) { authResult, error in
             DispatchQueue.main.async {
                 if let error = error {
@@ -27,7 +27,7 @@ struct OtpVerify {
                     completion(false)
                     return
                 }
-                
+
                 // Only print user if needed, don't bind unused
                 if authResult?.user != nil {
                     Log.debug("Successfully verified OTP and signed in")
@@ -48,35 +48,35 @@ struct OtpVerify {
             }
         }
     }
-    
+
     /// Clears verification state but keeps phone number for resending
     static func clearVerificationState() {
         Log.debug("Clearing verification state")
         UserDefaults.standard.removeObject(forKey: "verification_id")
         // Keep UserPhoneNumber for potential resending
     }
-    
+
     /// Handles authentication failure by resetting relevant state
     static func handleAuthFailure() {
         // Clear the stored phone number
         Log.debug("User Default Removed!")
         UserDefaults.standard.removeObject(forKey: "UserPhoneNumber")
-        
+
         // Clear the stored verification ID
         UserDefaults.standard.removeObject(forKey: "verification_id")
-        
+
         // Reset the navigation path to the phone number entry screen
         Task { @MainActor in
             AppController.shared.path = [.enterPhoneNumber]
         }
     }
-    
+
     /// Response model for login API
     struct LoginResponse: Decodable {
         let message: String
         let user: UserInfo
     }
-    
+
     /// User info model from login response
     struct UserInfo: Decodable {
         let uid: String
@@ -84,7 +84,7 @@ struct OtpVerify {
         let verified: Bool
         let cove: String?
     }
-    
+
     /// Makes a login request to the backend API
     /// - Parameters:
     ///   - completion: Callback with success status
@@ -93,7 +93,7 @@ struct OtpVerify {
         let parameters: [String: String] = [
             "phoneNumber": UserDefaults.standard.string(forKey: "UserPhoneNumber") ?? ""
         ]
-        
+
         // Make the request using NetworkManager with explicit type
         NetworkManager.shared.post(
             endpoint: apiLoginPath,
@@ -106,7 +106,7 @@ struct OtpVerify {
                     Task { @MainActor in
                         AppController.shared.profileModel.onboarding = loginResponse.user.onboarding
                         AppController.shared.profileModel.verified = loginResponse.user.verified
-                        
+
                         if loginResponse.user.onboarding {
                             // Skip adminVerify - send all users needing onboarding to userDetails
                             Log.debug("User needs onboarding, proceeding to userDetails")

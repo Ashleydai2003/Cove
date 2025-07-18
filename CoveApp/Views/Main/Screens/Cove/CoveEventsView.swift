@@ -14,7 +14,7 @@ import Kingfisher
 struct CoveEventsView: View {
     @ObservedObject var viewModel: CoveModel
     let onRefresh: () async -> Void
-    
+
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: 5) {
@@ -41,7 +41,7 @@ struct CoveEventsView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .padding(.top, 100)
                 }
-                
+
                 // Show loading indicator only for events
                 if viewModel.isRefreshingEvents || (viewModel.isLoading && !viewModel.events.isEmpty) {
                     HStack {
@@ -52,7 +52,7 @@ struct CoveEventsView: View {
                     }
                     .padding(.vertical, 16)
                 }
-                
+
                 Spacer(minLength: 24)
             }
             .padding(.horizontal, 24)
@@ -67,7 +67,7 @@ struct CoveEventsView: View {
 /// EventView: Displays a single event in the feed, including cover photo and details.
 struct EventView: View {
     let event: CalendarEvent
-    
+
     var body: some View {
         NavigationLink(value: event.id) {
             VStack(alignment: .leading) {
@@ -80,14 +80,14 @@ struct EventView: View {
                             .foregroundStyle(Color.black)
                             .font(.LibreBodoniSemiBold(size: 12))
                     }
-                    
+
                     Spacer()
-                    
+
                     Text(timeAgo(event.date))
                         .foregroundStyle(Color.black)
                         .font(.LibreBodoniSemiBold(size: 12))
                 }
-                
+
                 // Event cover photo using Kingfisher
                 if let urlString = event.coverPhoto?.url, let url = URL(string: urlString) {
                     KFImage(url)
@@ -109,7 +109,7 @@ struct EventView: View {
                         .frame(maxWidth: .infinity, maxHeight: 192)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
-                
+
                 Text(event.description ?? "")
                     .foregroundStyle(Color.black)
                     .font(.LibreBodoniSemiBold(size: 12))
@@ -118,18 +118,18 @@ struct EventView: View {
             .padding(.vertical, 10)
         }
     }
-    
+
     /// Returns a human-readable time-ago string for the event date.
     private func timeAgo(_ dateString: String) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
-        
+
         guard let date = formatter.date(from: dateString) else { return "" }
-        
+
         let calendar = Calendar.current
         let now = Date()
         let components = calendar.dateComponents([.hour, .day], from: date, to: now)
-        
+
         if let hours = components.hour, hours < 24 {
             return "\(hours)hr"
         } else if let days = components.day, days < 7 {
@@ -145,4 +145,4 @@ struct EventView: View {
         viewModel: CoveModel(),
         onRefresh: {}
     )
-} 
+}

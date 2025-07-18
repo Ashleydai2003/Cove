@@ -10,23 +10,23 @@ import SwiftUI
 struct CoveFeedView: View {
     @EnvironmentObject var appController: AppController
     @ObservedObject private var coveFeed: CoveFeed
-    
+
     init() {
         // Initialize with the shared instance
         self._coveFeed = ObservedObject(wrappedValue: AppController.shared.coveFeed)
     }
-    
-    // MARK: - Main Body 
+
+    // MARK: - Main Body
     var body: some View {
         NavigationStack {
         ZStack {
             Colors.faf8f4
                 .ignoresSafeArea()
-            
+
             VStack(spacing: 0) {
                 // Custom Header
                     CoveBannerView()
-                    
+
                     // Only show loading if we have no coves AND we're actively loading
                     // (coves should already be fetched during onboarding)
                     if coveFeed.userCoves.isEmpty && coveFeed.isLoading {
@@ -43,7 +43,7 @@ struct CoveFeedView: View {
                         Image(systemName: "exclamationmark.circle")
                             .font(.system(size: 40))
                             .foregroundColor(.gray)
-                        
+
                         Text(error)
                             .font(.LibreBodoni(size: 16))
                             .foregroundColor(.gray)
@@ -55,7 +55,7 @@ struct CoveFeedView: View {
                         Image(systemName: "house")
                             .font(.system(size: 40))
                             .foregroundColor(Colors.primaryDark)
-                        
+
                         Text("no coves found")
                             .font(.LibreBodoni(size: 16))
                             .foregroundColor(Colors.primaryDark)
@@ -117,7 +117,7 @@ struct CoveFeedView: View {
             Text(coveFeed.errorMessage ?? "")
         }
     }
-    
+
     // Helper function to find event cover photo from cached cove data
     private func findEventCoverPhoto(eventId: String) -> CoverPhoto? {
         // Search through all cached cove models to find the event

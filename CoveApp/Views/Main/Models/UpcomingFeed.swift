@@ -24,26 +24,26 @@ class UpcomingFeed: ObservableObject {
     @Published var errorMessage: String?
     /// Last time events were fetched (for caching)
     @Published var lastFetched: Date?
-    
+
     // TODO: Adjust cache duration as needed - currently set to 5 minutes
     private let cacheTimeout: TimeInterval = 5 * 60 // 5 minutes
     private let pageSize = 10
-    
+
     /// Checks if we have any cached data
     var hasCachedData: Bool {
         return lastFetched != nil // Empty array is still valid cached data
     }
-    
+
     /// Checks if cache is stale (older than 5 minutes)
     var isCacheStale: Bool {
         guard let lastFetched = lastFetched else { return true }
         return Date().timeIntervalSince(lastFetched) > cacheTimeout
     }
-    
+
     init() {
         Log.debug("UpcomingFeed initialized")
     }
-    
+
     /// Fetches upcoming events from the backend, using cache if fresh.
     /// - Parameter forceRefresh: If true, bypasses cache and fetches fresh data
     /// - Parameter completion: Optional completion handler called when the fetch operation completes
@@ -54,31 +54,31 @@ class UpcomingFeed: ObservableObject {
             completion?()
             return
         }
-        
+
         guard !isLoading else { return }
-        
+
         isLoading = true
         Log.debug("UpcomingFeed: fetching events from backend…")
-        
+
         var parameters: [String: Any] = [
             "limit": pageSize
         ]
-        
+
         // Only include cursor if we're not refreshing and have one
         if !forceRefresh, let cursor = nextCursor {
             parameters["cursor"] = cursor
         }
-        
+
         NetworkManager.shared.get(endpoint: "/upcoming-events", parameters: parameters) { [weak self] (result: Result<CalendarEventsResponse, NetworkError>) in
             guard let self = self else { return }
-            
+
             DispatchQueue.main.async {
                 self.isLoading = false
-                
+
                 switch result {
                 case .success(let response):
                     Log.debug("UpcomingFeed: events fetched count=\(response.events?.count ?? 0)")
-                    
+
                     if forceRefresh || self.nextCursor == nil {
                         // First page or refresh, replace existing data
                         self.events = response.events ?? []
@@ -86,17 +86,17 @@ class UpcomingFeed: ObservableObject {
                         // Append new events to existing data
                         self.events.append(contentsOf: response.events ?? [])
                     }
-                    
+
                     self.hasMore = response.pagination?.hasMore ?? false
                     self.nextCursor = response.pagination?.nextCursor
 
                     let urls = (response.events ?? []).compactMap { $0.coverPhoto?.url ?? $0.coveCoverPhoto?.url }
                     ImagePrefetcherUtil.prefetch(urlStrings: urls)
-                    
+
                     self.lastFetched = Date()
-                    
+
                     completion?()
-                    
+
                 case .failure(let error):
                     Log.error("UpcomingFeed fetch failed: \(error.localizedDescription)")
                     self.errorMessage = error.localizedDescription
@@ -105,7 +105,7 @@ class UpcomingFeed: ObservableObject {
             }
         }
     }
-    
+
     /// Forces a refresh of upcoming events data, bypassing cache.
     func refreshUpcomingEvents(completion: (() -> Void)? = nil) {
         Log.debug("UpcomingFeed: forcing refresh")
@@ -113,7 +113,7 @@ class UpcomingFeed: ObservableObject {
         hasMore = true
         fetchUpcomingEvents(forceRefresh: true, completion: completion)
     }
-    
+
     /// Loads more events if the user scrolls to the end of the list.
     func loadMoreEventsIfNeeded() {
         if hasMore && !isLoading && nextCursor != nil {
@@ -121,7 +121,7 @@ class UpcomingFeed: ObservableObject {
             fetchUpcomingEvents(forceRefresh: false)
         }
     }
-    
+
     /// Fetches upcoming events only if data is missing or stale (older than 5 minutes)
     func fetchUpcomingEventsIfStale(completion: (() -> Void)? = nil) {
         if !hasCachedData || isCacheStale {
@@ -133,14 +133,14 @@ class UpcomingFeed: ObservableObject {
             completion?()
         }
     }
-    
+
     /// Gets events grouped by date for UI display
     var groupedEvents: [Date: [CalendarEvent]] {
         return Dictionary(grouping: events) { event in
             event.eventDate
         }
     }
-    
+
     /// Formats date with ordinal suffix (e.g., "Friday April 5th")
     func formattedDateWithOrdinal(_ date: Date) -> String {
         let calendar = Calendar.current
@@ -164,7 +164,7 @@ class UpcomingFeed: ObservableObject {
 
         return "\(formatter.string(from: date)) \(day)\(daySuffix)"
     }
-    
+
     /// Formats time from date string (e.g., "5:00 PM")
     func formattedTime(_ dateString: String) -> String {
         let inputFormatter = DateFormatter()
@@ -177,7 +177,7 @@ class UpcomingFeed: ObservableObject {
             outputFormatter.timeZone = TimeZone.current
             return outputFormatter.string(from: date)
         }
-        
+
         return ""
     }
-} 
+}

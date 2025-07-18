@@ -14,34 +14,34 @@ class FriendsViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
     @Published var lastFetched: Date?
-    
+
     // TODO: Adjust cache duration as needed - currently set to 30 minutes
     private let cacheTimeout: TimeInterval = 30 * 60 // 30 minutes
     private let pageSize = 10
-    
+
     /// Checks if we have any cached data
     var hasCachedData: Bool {
         return lastFetched != nil // Empty array is still valid cached data
     }
-    
+
     /// Checks if cache is stale (older than cache timeout)
     var isCacheStale: Bool {
         guard let lastFetched = lastFetched else { return true }
         return Date().timeIntervalSince(lastFetched) > cacheTimeout
     }
-    
+
     init() {
         Log.debug("FriendsViewModel initialized")
     }
-    
+
     func loadNextPage() {
         guard !isLoading && hasMore else { return }
         isLoading = true
-        
+
         Friends.fetchFriends(cursor: nextCursor, limit: pageSize) { [weak self] result in
             guard let self = self else { return }
             self.isLoading = false
-            
+
             switch result {
             case .success(let resp):
                 // Use smart diffing to only update UI if friends data actually changed
@@ -64,14 +64,14 @@ class FriendsViewModel: ObservableObject {
                 // Prefetch newly fetched profile photos
                 let photoUrls = resp.friends.compactMap { $0.profilePhotoUrl?.absoluteString }
                 ImagePrefetcherUtil.prefetch(urlStrings: photoUrls)
-                
+
                 self.lastFetched = Date()
             case .failure(let error):
                 self.errorMessage = error.localizedDescription
             }
         }
     }
-    
+
     /// Loads next page only if data is missing or stale
     func loadNextPageIfStale() {
         if !hasCachedData || isCacheStale {
@@ -82,4 +82,4 @@ class FriendsViewModel: ObservableObject {
             Log.debug("FriendsViewModel: using cached friends count=\(friends.count)")
         }
     }
-} 
+}

@@ -6,18 +6,18 @@ import SwiftUI
 /// Dynamic expandable hobby selection with visual feedback
 struct HobbiesView: View {
     // MARK: - Environment & State Properties
-    
+
     /// App controller for managing navigation and shared state
     @EnvironmentObject var appController: AppController
-    
+
     /// Tracks which hobbies are currently selected
     @State private var selectedHobbies: Set<String> = []
-    
+
     /// Tracks which top-level buttons are expanded
     @State private var expandedButtons: Set<String> = []
-    
+
     // MARK: - Data
-    
+
     /// Sections with their respective hobby buttons
     private let hobbyDataSections: [(String, String, [(String, String, [(String, String)])])] = [
         ("going out", "🍻", [
@@ -108,7 +108,7 @@ struct HobbiesView: View {
             ("finance", "💰", [])
         ])
     ]
-    
+
     /// Flattened hobby data for existing logic compatibility
     private var hobbyData: [(String, String, [(String, String)])] {
         hobbyDataSections.flatMap { section in
@@ -117,14 +117,14 @@ struct HobbiesView: View {
             }
         }
     }
-    
+
     /// Data structure for unified button display
     private struct ButtonData: Identifiable {
         let id: String
         let text: String
         let emoji: String
         let isTopLevel: Bool
-        
+
         init(id: String, text: String, emoji: String, isTopLevel: Bool) {
             self.id = id
             self.text = text
@@ -132,11 +132,11 @@ struct HobbiesView: View {
             self.isTopLevel = isTopLevel
         }
     }
-    
+
     /// Helper function to get buttons for a specific section
     private func getSectionButtonsToShow(for sectionName: String, buttons: [(String, String, [(String, String)])]) -> [ButtonData] {
         var sectionButtons: [ButtonData] = []
-        
+
         for (topLevelName, topLevelEmoji, subOptions) in buttons {
             // Add the top-level button
             sectionButtons.append(ButtonData(
@@ -145,7 +145,7 @@ struct HobbiesView: View {
                 emoji: topLevelEmoji,
                 isTopLevel: true
             ))
-            
+
             // Add sub-buttons if expanded
             if expandedButtons.contains(topLevelName) {
                 for (subName, subEmoji) in subOptions {
@@ -158,16 +158,16 @@ struct HobbiesView: View {
                 }
             }
         }
-        
+
         return sectionButtons
     }
-    
+
     // MARK: - View Body
-    
+
     var body: some View {
         ZStack {
             OnboardingBackgroundView()
-            
+
             VStack {
                 // Back button
                 HStack {
@@ -179,27 +179,27 @@ struct HobbiesView: View {
                     Spacer()
                 }
                 .padding(.top, 10)
-                
+
                 // Header section
                 VStack(alignment: .leading, spacing: 10) {
                     Text("what do you want to do in your city?")
                         .foregroundStyle(Colors.primaryDark)
                         .font(.LibreBodoniMedium(size: 40))
                         .frame(maxWidth: .infinity, alignment: .leading)
-                    
+
                     Text("select whatever stands out to you")
                         .font(.LeagueSpartan(size: 15))
                         .foregroundColor(Colors.k0B0B0B)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .padding(.top, 40)
-                
+
                 // Dynamic expandable hobby buttons organized by sections
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 0) {
                         ForEach(Array(hobbyDataSections.enumerated()), id: \.offset) { sectionIndex, section in
                             let (sectionName, sectionEmoji, sectionButtons) = section
-                            
+
                             // Section header on its own line
                             HStack {
                                 Text("\(sectionEmoji) \(sectionName)")
@@ -211,7 +211,7 @@ struct HobbiesView: View {
                             }
                             .padding(.top, sectionIndex == 0 ? 0 : 20)
                             .padding(.bottom, 8)
-                            
+
                             // Buttons for this section in a grid
                             LazyVGrid(columns: [
                                 GridItem(.flexible(), spacing: 12),
@@ -233,7 +233,7 @@ struct HobbiesView: View {
                                                     expandedButtons.insert(buttonData.text)
                                                 }
                                             }
-                                            
+
                                             // Also toggle selection
                                             if selectedHobbies.contains(buttonData.text) {
                                                 selectedHobbies.remove(buttonData.text)
@@ -255,9 +255,9 @@ struct HobbiesView: View {
                     }
                     .padding(.top, 30)
                 }
-                
+
                 Spacer()
-                
+
                 // Continue button
                 HStack {
                     Spacer()
@@ -286,17 +286,17 @@ struct HobbyButton: View {
     let isSelected: Bool
     let borderWidth: CGFloat
     let action: () -> Void
-    
+
     var body: some View {
         Button(action: action) {
             HStack(spacing: 8) {
                 Text(emoji)
                     .font(.system(size: 16))
-                
+
                 Text(text)
                     .font(.LeagueSpartan(size: 14))
                     .foregroundColor(isSelected ? .white : Colors.primaryDark)
-                
+
                 Spacer()
             }
             .padding(.horizontal, 16)

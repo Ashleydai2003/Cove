@@ -3,17 +3,16 @@
 //  Cove
 //
 
-
 import Foundation
 import UIKit
 
 struct AppConstants {
-    
+
     static let SystemSize = UIScreen.main.bounds.size
     static let MainBundle = Bundle.main
-    
+
     // MARK: - API Configuration
-    
+
     /// API Configuration based on build configuration
     struct API {
         /// Returns the appropriate API base URL based on build configuration
@@ -27,7 +26,7 @@ struct AppConstants {
             return "https://api.coveapp.co"
             #endif
         }
-        
+
         /// Current environment name for debugging
         static var environment: String {
             #if DEBUG
@@ -37,5 +36,5 @@ struct AppConstants {
             #endif
         }
     }
-    
+
 }

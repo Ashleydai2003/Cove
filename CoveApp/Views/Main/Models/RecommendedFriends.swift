@@ -19,7 +19,7 @@ struct RecommendedFriendDTO: Decodable, Identifiable, ContentComparable {
     // Conform to Identifiable by using `id`
     var identifier: String { id }
     var uuid: UUID { UUID(uuidString: id) ?? UUID() }
-    
+
     /// ContentComparable implementation - checks if meaningful content has changed
     func hasContentChanged(from other: RecommendedFriendDTO) -> Bool {
         return name != other.name ||
@@ -73,4 +73,4 @@ class RecommendedFriends {
             }
         }
     }
-} 
+}

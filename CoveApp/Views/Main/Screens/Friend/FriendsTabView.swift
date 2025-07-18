@@ -11,10 +11,10 @@ struct FriendsTabView: View {
             }
         }
     }
-    
+
     @State private var selectedTab: Tab = .mutuals
     @EnvironmentObject var appController: AppController
-    
+
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
@@ -31,7 +31,7 @@ struct FriendsTabView: View {
                 )
                 .padding(.horizontal, 16)
                 .padding(.bottom, 10)
-                
+
                 // Tab Content (lists)
                 ZStack {
                     switch selectedTab {
@@ -56,4 +56,4 @@ struct FriendsTabView: View {
 #Preview {
     FriendsTabView()
         .environmentObject(AppController.shared)
-} 
+}

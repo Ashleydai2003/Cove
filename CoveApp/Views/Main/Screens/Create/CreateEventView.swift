@@ -4,7 +4,6 @@
 //
 //  Created by Nesib Muhedin
 
-
 import SwiftUI
 
 struct CustomDatePickerStyle: DatePickerStyle {
@@ -27,25 +26,25 @@ struct CreateEventView: View {
     @EnvironmentObject var appController: AppController
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel = NewEventModel()
-    
+
     @FocusState private var isFocused: Bool
-    
+
     var onEventCreated: (() -> Void)? = nil
-    
+
     // MARK: - Initializer
     init(coveId: String? = nil, onEventCreated: (() -> Void)? = nil) {
         self.coveId = coveId
         self.onEventCreated = onEventCreated
     }
-    
+
     // MARK: - Body
     var body: some View {
         ZStack {
             Colors.faf8f4.ignoresSafeArea()
-    
+
             VStack {
                 headerView
-                
+
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 8) {
                         eventNameSection
@@ -58,7 +57,7 @@ struct CreateEventView: View {
                     }
                     .padding(.horizontal, 32)
                 }
-                
+
                 Spacer(minLength: 24)
             }
             .padding(.top, 50)
@@ -110,23 +109,23 @@ extension CreateEventView {
         VStack {
             HStack(alignment: .top) {
                 Spacer()
-                
+
                 Image("confetti-dark")
                     .resizable()
                     .scaledToFit()
                     .frame(width: 100, height: 100)
                     .padding(.leading, -10)
-                
+
                 Spacer()
             }
             .padding(.horizontal, 16)
-            
+
             Text("host an event")
                 .font(.Lugrasimo(size: 35))
                 .foregroundColor(Colors.primaryDark)
         }
     }
-    
+
     // MARK: - Event Name Section
     private var eventNameSection: some View {
         VStack {
@@ -136,7 +135,7 @@ extension CreateEventView {
                         .foregroundColor(.white)
                         .font(.LibreBodoniBold(size: 22))
                 }
-                
+
                 TextField("untitled event", text: $viewModel.eventName)
                     .foregroundStyle(Color.white)
                     .font(.LibreBodoniBold(size: 22))
@@ -149,10 +148,8 @@ extension CreateEventView {
         .background(Colors.primaryDark)
         .cornerRadius(10)
     }
-    
 
-    
-    // MARK: - Image Picker Section
+// MARK: - Image Picker Section
     private var imagePickerSection: some View {
         Button {
             viewModel.showImagePicker = true
@@ -164,7 +161,7 @@ extension CreateEventView {
                         .foregroundColor(Colors.primaryDark)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
-                
+
                 Image(uiImage: viewModel.eventImage ?? UIImage())
                     .resizable()
                     .scaledToFill()
@@ -180,7 +177,7 @@ extension CreateEventView {
         }
         .padding(.top, 16)
     }
-    
+
     // MARK: - Date & Time Section
     private var dateTimeSection: some View {
         VStack(spacing: 8) {
@@ -189,7 +186,7 @@ extension CreateEventView {
         }
         .padding(.top, 16)
     }
-    
+
     // MARK: - Location Section
     private var locationSection: some View {
         Button {
@@ -200,14 +197,14 @@ extension CreateEventView {
                     .font(.system(size: 20))
                     .foregroundStyle(Color.white)
                     .padding(.leading, 24)
-                
+
                 Text("location")
                     .foregroundStyle(Color.white)
                     .font(.LibreBodoniBold(size: 16))
                     .padding(.leading, 16)
-                
+
                 Spacer()
-                
+
                 Text(viewModel.location ?? "")
                     .foregroundStyle(Color.white)
                     .font(.LibreBodoniBold(size: 16))
@@ -221,12 +218,12 @@ extension CreateEventView {
             )
         }
     }
-    
+
     // MARK: - Number of Spots Section
     private var spotsSection: some View {
         numberOfSpotsView
     }
-    
+
     // MARK: - Create Button
     private var createButtonView: some View {
         Button {
@@ -265,7 +262,7 @@ extension CreateEventView {
         .disabled(!viewModel.isFormValid || viewModel.isSubmitting)
         .padding(.top, 24)
     }
-    
+
     // MARK: - Date Picker
     private var chooseDateView: some View {
         Button {
@@ -276,14 +273,14 @@ extension CreateEventView {
                     .font(.system(size: 20))
                     .foregroundStyle(Color.white)
                     .padding(.leading, 24)
-                
+
                 Text("set a date")
                     .font(.LibreBodoniBold(size: 16))
                     .foregroundStyle(Color.white)
                     .padding(.leading, 16)
-                
+
                 Spacer()
-                
+
                 Text(viewModel.eventDate.formatted(date: .abbreviated, time: .omitted))
                     .font(.LibreBodoniBold(size: 16))
                     .foregroundStyle(Color.white)
@@ -296,7 +293,7 @@ extension CreateEventView {
             )
         }
     }
-    
+
     // MARK: - Time Picker
     private var chooseTimeView: some View {
         Button {
@@ -307,14 +304,14 @@ extension CreateEventView {
                     .font(.system(size: 20))
                     .foregroundStyle(Color.white)
                     .padding(.leading, 24)
-                
+
                 Text("time")
                     .font(.LibreBodoniBold(size: 16))
                     .foregroundStyle(Color.white)
                     .padding(.leading, 16)
-                
+
                 Spacer()
-                
+
                 Text(viewModel.eventTime.formatted(date: .omitted, time: .shortened))
                     .font(.LibreBodoniBold(size: 16))
                     .foregroundStyle(Color.white)
@@ -327,7 +324,7 @@ extension CreateEventView {
             )
         }
     }
-    
+
     // MARK: - Number of Spots Input
     private var numberOfSpotsView: some View {
         HStack {
@@ -335,7 +332,7 @@ extension CreateEventView {
                 .font(.system(size: 20))
                 .foregroundStyle(Color.white)
                 .padding(.leading, 15)
-            
+
             ZStack(alignment: .leading) {
                 if viewModel.numberOfSpots.isEmpty {
                     Text("number of spots")
@@ -343,7 +340,7 @@ extension CreateEventView {
                         .font(.LibreBodoniBold(size: 16))
                         .padding(.leading, 6)
                 }
-    
+
                 TextField("", text: $viewModel.numberOfSpots)
                     .foregroundStyle(Color.white)
                     .font(.LibreBodoniBold(size: 16))
@@ -360,7 +357,7 @@ extension CreateEventView {
                 .fill(Colors.primaryDark)
         )
     }
-    
+
     // MARK: - Keyboard Accessory
     private var keyboardAccessoryView: some View {
         HStack {
@@ -374,8 +371,6 @@ extension CreateEventView {
         .background(Color(.systemGray6))
     }
 }
-
-
 
 #Preview {
     CreateEventView(coveId: nil)

@@ -7,17 +7,17 @@ struct FriendsView: View {
     @EnvironmentObject var appController: AppController
     @State private var showMessageBanner = false
     @State private var selectedFriendName: String = ""
-    
+
     // Use the shared instance from AppController
     private var vm: FriendsViewModel {
         appController.friendsViewModel
     }
-    
+
     var body: some View {
         GeometryReader { _ in
             ZStack {
                 Colors.faf8f4.ignoresSafeArea()
-                
+
                 VStack(spacing: 0) {
                     // Error banner
                     if let msg = vm.errorMessage {
@@ -29,7 +29,7 @@ struct FriendsView: View {
                             .padding(.horizontal, 20)
                             .transition(.slide)
                     }
-                    
+
                     // Friends list
                     ScrollView {
                         LazyVStack(spacing: 36) {
@@ -39,7 +39,7 @@ struct FriendsView: View {
                                     Image(systemName: "person.2.slash")
                                         .font(.system(size: 40))
                                         .foregroundColor(Colors.primaryDark)
-                                    
+
                                     Text("no friends yet – say hi to someone!")
                                         .font(.LibreBodoni(size: 16))
                                         .foregroundColor(Colors.primaryDark)
@@ -67,7 +67,7 @@ struct FriendsView: View {
                                         }
                                     }
                                 }
-                                
+
                                 if vm.isLoading {
                                     ProgressView().padding()
                                 }
@@ -75,7 +75,7 @@ struct FriendsView: View {
                         }
                         .padding(.top, 30)
                     }
-                    
+
                     Spacer(minLength: 0)
                 }
                 .safeAreaPadding()
@@ -101,7 +101,7 @@ struct FriendRowView: View {
     let name: String
     var imageUrl: URL? = nil
     var onMessage: (() -> Void)? = nil
-    
+
     var body: some View {
         HStack(spacing: 10) {
             if let url = imageUrl {
@@ -120,13 +120,13 @@ struct FriendRowView: View {
                     .frame(width: 60, height: 60)
                     .clipShape(Circle())
             }
-            
+
             Text(name)
                 .font(.LibreBodoni(size: 14))
                 .foregroundStyle(Color.black)
-            
+
             Spacer()
-            
+
             if let message = onMessage {
                 ActionButton.message {
                     message()
@@ -139,4 +139,4 @@ struct FriendRowView: View {
 
 #Preview {
     FriendsView()
-} 
+}

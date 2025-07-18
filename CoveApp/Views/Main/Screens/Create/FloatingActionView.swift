@@ -14,13 +14,13 @@ struct FloatingActionView: View {
     @State private var showCreateEventSheet = false
     @State private var showCreateCoveSheet = false
     @EnvironmentObject private var appController: AppController
-    
+
     // MARK: - Initializer
     init(coveId: String? = nil, onEventCreated: (() -> Void)? = nil) {
         self.coveId = coveId
         self.onEventCreated = onEventCreated
     }
-    
+
     var body: some View {
         VStack(alignment: .trailing, spacing: 16) {
             // Menu options - appear above the + button
@@ -52,7 +52,7 @@ struct FloatingActionView: View {
                             )
                         }
                     }
-                    
+
                     // Event option - only show when there's a cove context
                     if coveId != nil {
                     Button(action: {
@@ -83,7 +83,7 @@ struct FloatingActionView: View {
                 .frame(maxWidth: 160) // Increase width to prevent text wrapping
                 .transition(.opacity.combined(with: .scale))
             }
-            
+
             // Main + button - always visible at bottom right
             Button(action: {
                 withAnimation(.easeInOut(duration: 0.2)) {
@@ -115,4 +115,4 @@ struct FloatingActionView: View {
 #Preview {
     FloatingActionView(coveId: nil, onEventCreated: nil)
         .environmentObject(AppController.shared)
-} 
+}

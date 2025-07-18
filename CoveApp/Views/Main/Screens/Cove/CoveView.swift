@@ -19,19 +19,19 @@ struct CoveView: View {
             }
         }
     }
-    
+
     @ObservedObject var viewModel: CoveModel
     let coveId: String
     @EnvironmentObject var appController: AppController
     @Environment(\.dismiss) private var dismiss
     @State private var selectedTab: Tab = .events
-    
-    // TODO: admin can update cove cover photo 
-    
+
+    // TODO: admin can update cove cover photo
+
     var body: some View {
         ZStack {
             Colors.faf8f4.ignoresSafeArea()
-            
+
             if viewModel.isLoading && viewModel.events.isEmpty {
                 VStack(spacing: 16) {
                     ProgressView()
@@ -44,7 +44,7 @@ struct CoveView: View {
             } else if let cove = viewModel.cove {
                 VStack(spacing: 0) {
                     // Fixed header (stationary, long press to refresh cove details - 5 hour cache)
-                    CoveHeaderView(cove: cove, 
+                    CoveHeaderView(cove: cove,
                                  onBackTapped: { dismiss() },
                                  isRefreshing: viewModel.isRefreshingCoveDetails,
                                  onRefresh: {
@@ -56,7 +56,7 @@ struct CoveView: View {
                         }
                     })
                     .background(Colors.faf8f4)
-                    
+
                     // Top Tabs
                     PillTabBar(
                         titles: Tab.allCases.map { $0.title },
@@ -66,7 +66,7 @@ struct CoveView: View {
                         )
                     )
                     .padding(16)
-                    
+
                     // Tab Content
                     ZStack {
                         switch selectedTab {
@@ -99,7 +99,7 @@ struct CoveView: View {
                     Image(systemName: "exclamationmark.circle")
                         .font(.system(size: 40))
                         .foregroundColor(.gray)
-                    
+
                     Text(error)
                         .font(.LibreBodoni(size: 16))
                         .foregroundColor(.gray)
@@ -107,7 +107,7 @@ struct CoveView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            
+
             // Floating Action Button
             VStack {
                 Spacer()
@@ -117,7 +117,7 @@ struct CoveView: View {
                         viewModel.refreshEvents()
                     })
                         .padding(.trailing, 24)
-                        .padding(.bottom, 30) 
+                        .padding(.bottom, 30)
                 }
             }
         }

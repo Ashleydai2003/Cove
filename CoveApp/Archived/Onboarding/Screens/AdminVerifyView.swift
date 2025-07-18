@@ -3,16 +3,16 @@ import SwiftUI
 /// View shown when a user needs to verify their admin status
 struct AdminVerifyView: View {
     @EnvironmentObject var appController: AppController
-    
+
     // MARK: Data Shared with me
     private var adminCove: String = Onboarding.getAdminCove() ?? "create new cove!"
-    
+
     var body: some View {
         ZStack {
             // Off-white background
             Colors.faf8f4
                 .ignoresSafeArea()
-            
+
             VStack {
                 // Title and message
                 Text("you're an admin \nfor...")
@@ -20,21 +20,21 @@ struct AdminVerifyView: View {
                     .foregroundColor(Colors.primaryDark)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.vertical, 20)
-                
+
                 // Large primary dark square with text
                 ZStack {
                     Rectangle()
                         .fill(Colors.primaryDark)
                         .aspectRatio(1, contentMode: .fit)
                         .cornerRadius(10)
-                    
+
                     VStack(spacing: 20) {
                         Text(adminCove)
                             .font(.LibreBodoni(size: 40))
                             .foregroundColor(.white)
                             .frame(maxWidth: 200, maxHeight: 150, alignment: .center)
                             .multilineTextAlignment(.center)
-                        
+
                         Button {
                             appController.path.append(.userDetails)
                         } label: {
@@ -60,7 +60,7 @@ struct AdminVerifyView: View {
                     }
                 }
                 .padding(.top, 30)
-                
+
                 Spacer()
             }
             .padding(.horizontal, 20)
@@ -74,4 +74,4 @@ struct AdminVerifyView: View {
 #Preview {
     AdminVerifyView()
         .environmentObject(AppController.shared)
-} 
+}

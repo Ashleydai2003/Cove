@@ -6,13 +6,13 @@ struct InviteView: View {
     let invite: InviteModel
     let onAccept: () -> Void
     let onDecline: () -> Void
-    
+
     var body: some View {
         ZStack {
             // Background using app's primary dark color
             Colors.primaryDark
                 .ignoresSafeArea()
-            
+
             VStack(spacing: 0) {
                 // Header section
                 VStack(spacing: 12) {
@@ -21,7 +21,7 @@ struct InviteView: View {
                         .foregroundColor(.white)
                         .multilineTextAlignment(.center)
                         .minimumScaleFactor(0.7)
-                    
+
                     Text(invite.cove.name)
                         .font(.LibreBodoniBold(size: 24))
                         .foregroundColor(.white)
@@ -31,7 +31,7 @@ struct InviteView: View {
                 }
                 .frame(maxHeight: .infinity, alignment: .center)
                 .padding(.horizontal, 32)
-                
+
                 // Cove cover photo
                 Group {
                     if let coverPhotoUrlString = invite.cove.coverPhotoUrl,
@@ -73,7 +73,7 @@ struct InviteView: View {
                 }
                 .frame(maxHeight: .infinity)
                 .id("photo-\(invite.id)-\(invite.cove.coverPhotoUrl ?? "none")")  // Force refresh when photo URL changes
-                
+
                 // Bottom section
                 VStack(spacing: 0) {
                     // Location
@@ -85,14 +85,14 @@ struct InviteView: View {
                         .minimumScaleFactor(0.8)
                         .padding(.horizontal, 32)
                         .padding(.top, 24)
-                    
+
                     // Message section
                     if let message = invite.message, !message.isEmpty {
                         VStack(spacing: 8) {
                             Text("message from the host:")
                                 .font(.LibreBodoni(size: 14))
                                 .foregroundColor(.white)
-                            
+
                             Text(message)
                                 .font(.LibreBodoni(size: 14))
                                 .foregroundColor(.white)
@@ -103,9 +103,9 @@ struct InviteView: View {
                         .padding(.horizontal, 32)
                         .padding(.top, 20)
                     }
-                    
+
                     Spacer()
-                    
+
                     // Action buttons
                     HStack(spacing: 12) {
                         Button(action: {
@@ -121,7 +121,7 @@ struct InviteView: View {
                                 .cornerRadius(22)
                         }
                         .buttonStyle(.plain)
-                        
+
                         Button(action: {
                             Log.debug("🔴 DECLINE BUTTON TAPPED for invite: \(invite.id)")
                             onDecline()
@@ -169,10 +169,10 @@ struct InviteView: View {
             profilePhotoId: "profile-photo-id"
         )
     )
-    
+
     InviteView(
         invite: sampleInvite,
         onAccept: {},
         onDecline: {}
     )
-} 
+}

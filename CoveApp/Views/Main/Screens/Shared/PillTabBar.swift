@@ -9,7 +9,7 @@ struct PillTabBar: View {
     var textColor: Color = Colors.primaryDark
     var selectedTextColor: Color = .white
     var font: Font = .LibreBodoni(size: 16)
-    
+
     var body: some View {
         GeometryReader { geometry in
             let tabCount = titles.count
@@ -50,4 +50,4 @@ private struct PillTabBarPreview: View {
         PillTabBar(titles: ["one", "two", "three"], selectedIndex: $selected)
             .padding()
     }
-} 
+}

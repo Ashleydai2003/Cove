@@ -11,7 +11,7 @@ import Combine
 import Contacts
 
 class LocationSearchViewModel: NSObject, ObservableObject {
-    
+
     @Published var searchQuery = ""
     @Published var searchResults: [MKLocalSearchCompletion] = []
 
@@ -46,7 +46,7 @@ class LocationSearchViewModel: NSObject, ObservableObject {
             }
         }
     }
-    
+
     func formattedAddress(from placemark: CLPlacemark) -> String {
         var addressParts: [String] = []
 
@@ -56,23 +56,23 @@ class LocationSearchViewModel: NSObject, ObservableObject {
            !name.contains(city) {
             addressParts.append(name)
         }
-        
+
         if let street = placemark.thoroughfare {
             addressParts.append(street)
         }
-        
+
         if let city = placemark.locality {
             addressParts.append(city)
         }
-        
+
         if let state = placemark.administrativeArea {
             addressParts.append(state)
         }
-        
+
         if let postalCode = placemark.postalCode {
             addressParts.append(postalCode)
         }
-        
+
         if let country = placemark.country {
             addressParts.append(country)
         }
@@ -82,7 +82,7 @@ class LocationSearchViewModel: NSObject, ObservableObject {
 }
 
 extension LocationSearchViewModel: MKLocalSearchCompleterDelegate {
-    
+
     func completerDidUpdateResults(_ completer: MKLocalSearchCompleter) {
         DispatchQueue.main.async {
             self.searchResults = completer.results

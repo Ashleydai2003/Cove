@@ -14,7 +14,7 @@ enum Log {
     private static let subsystem = Bundle.main.bundleIdentifier ?? "CoveApp"
     private static let general = Logger(subsystem: subsystem, category: "general")
     private static let network = Logger(subsystem: subsystem, category: "network")
-    
+
     /// Debug logging - only in DEBUG builds, minimal essential information
     static func debug(_ message: String, category: String = "general") {
         #if DEBUG
@@ -25,7 +25,7 @@ enum Log {
         }
         #endif
     }
-    
+
     /// Error logging - always logged, essential for crash triage
     static func error(_ message: String, category: String = "general") {
         if category == "network" {
@@ -34,7 +34,7 @@ enum Log {
             general.error("\(message, privacy: .public)")
         }
     }
-    
+
     /// Critical debug logging - only for essential flow points
     static func critical(_ message: String, category: String = "general") {
         #if DEBUG
@@ -45,4 +45,4 @@ enum Log {
         }
         #endif
     }
-} 
+}

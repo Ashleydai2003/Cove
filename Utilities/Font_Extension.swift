@@ -7,7 +7,6 @@
 
 import SwiftUI
 
-
 // Custom Fonts
 extension Font {
     static func LibreBodoni(size: CGFloat) -> Font {
@@ -22,7 +21,7 @@ extension Font {
     static func LibreBodoniBold(size: CGFloat) -> Font {
         return .custom("LibreBodoni-Regular_Bold", size: size)
     }
-    
+
     static func LeagueSpartan(size: CGFloat) -> Font {
         return .custom("LeagueSpartan-Regular", size: size)
     }
@@ -32,7 +31,7 @@ extension Font {
     static func LeagueSpartanSemiBold(size: CGFloat) -> Font {
         return .custom("LeagueSpartan-SemiBold", size: size)
     }
-    
+
     static func LibreCaslon(size: CGFloat) -> Font {
         return .custom("LibreCaslontext-Regular", size: size)
     }

@@ -7,29 +7,29 @@
 import SwiftUI
 
 struct CitySelectionView: View {
-    
+
     /// App controller for managing navigation and shared state
     @EnvironmentObject var appController: AppController
-    
+
     @State private var searchCity = ""
     @State private var showCityDropdown = false
     @FocusState private var isCityFocused: Bool
-    
+
     @State private var cities: [String] = [
-        "New York", "San Francisco", "Los Angeles", "Boston", "Chicago", "Seattle", "Austin", 
-        "Washington D.C.", "Denver", "Atlanta", "Philadelphia", "San Diego", "Miami", "Portland", 
-        "Nashville", "Dallas", "Houston", "Phoenix", "Minneapolis", "Charlotte", "Raleigh", 
-        "Tampa", "Orlando", "San Jose", "Oakland", "Sacramento", "Boulder", "Madison", 
-        "Ann Arbor", "Pittsburgh", "Baltimore", "Richmond", "Columbus", "Cincinnati", 
-        "Cleveland", "Detroit", "Milwaukee", "Kansas City", "St. Louis", "New Orleans", 
-        "Salt Lake City", "Boise", "Las Vegas", "Tucson", "Albuquerque", "Oklahoma City", 
+        "New York", "San Francisco", "Los Angeles", "Boston", "Chicago", "Seattle", "Austin",
+        "Washington D.C.", "Denver", "Atlanta", "Philadelphia", "San Diego", "Miami", "Portland",
+        "Nashville", "Dallas", "Houston", "Phoenix", "Minneapolis", "Charlotte", "Raleigh",
+        "Tampa", "Orlando", "San Jose", "Oakland", "Sacramento", "Boulder", "Madison",
+        "Ann Arbor", "Pittsburgh", "Baltimore", "Richmond", "Columbus", "Cincinnati",
+        "Cleveland", "Detroit", "Milwaukee", "Kansas City", "St. Louis", "New Orleans",
+        "Salt Lake City", "Boise", "Las Vegas", "Tucson", "Albuquerque", "Oklahoma City",
         "Omaha", "Des Moines", "Buffalo", "Hartford"
     ]
-    
+
     var body: some View {
         ZStack {
             OnboardingBackgroundView()
-            
+
             VStack {
                 // Back button
                 HStack {
@@ -41,21 +41,21 @@ struct CitySelectionView: View {
                     Spacer()
                 }
                 .padding(.top, 10)
-                
+
                 // Header section
                 VStack(alignment: .leading, spacing: 10) {
                     Text("what city are you \nliving in?")
                         .foregroundStyle(Colors.primaryDark)
                         .font(.LibreBodoniMedium(size: 40))
                         .frame(maxWidth: .infinity, alignment: .leading)
-                    
+
                     Text("connect with others in your area. (optional)")
                         .font(.LeagueSpartan(size: 15))
                         .foregroundColor(Colors.k0B0B0B)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .padding(.top, 40)
-                
+
                 // City search input section
                 VStack(spacing: 8) {
                     ZStack(alignment: .leading) {
@@ -64,7 +64,7 @@ struct CitySelectionView: View {
                                 .foregroundColor(Colors.k656566)
                                 .font(.LeagueSpartan(size: 30))
                         }
-                        
+
                         TextField("", text: $searchCity)
                             .font(.LeagueSpartan(size: 30))
                             .foregroundStyle(Colors.k060505)
@@ -81,13 +81,13 @@ struct CitySelectionView: View {
                                 }
                             }
                     }
-                    
+
                     Divider()
                         .frame(height: 2)
                         .background(Colors.k060505)
                 }
                 .padding(.top, 30)
-                
+
                 // City suggestions list
                 if searchCity.count > 0 && showCityDropdown {
                     VStack(spacing: 0) {
@@ -110,7 +110,7 @@ struct CitySelectionView: View {
                                             .padding(.vertical, 12)
                                     }
                                     .background(Color.clear)
-                                    
+
                                     if city != filteredCities.last {
                                         Divider()
                                             .background(Colors.k060505.opacity(0.2))
@@ -125,9 +125,9 @@ struct CitySelectionView: View {
                     .padding(.top, 10)
                     .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 5)
                 }
-                
+
                 Spacer()
-                
+
                 // Continue button
                 HStack {
                     Spacer()
@@ -151,7 +151,7 @@ struct CitySelectionView: View {
             isCityFocused = true
         }
     }
-    
+
     var filteredCities: [String] {
         if searchCity.isEmpty {
             return cities
@@ -163,4 +163,4 @@ struct CitySelectionView: View {
 
 #Preview {
     CitySelectionView()
-} 
+}

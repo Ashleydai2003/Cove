@@ -15,7 +15,7 @@ struct EventSummaryView: View {
     var type: EventSummaryType = .feed // Default type
     @EnvironmentObject private var appController: AppController
     @State private var imageLoaded = false
-    
+
     var body: some View {
         NavigationLink(value: event.id) {
             VStack(alignment: .leading, spacing: 0) {
@@ -69,7 +69,7 @@ struct EventSummaryView: View {
                     if type != .calendar && imageLoaded {
                         // Use Firebase Auth current user ID for comparison
                         let currentUserId = Auth.auth().currentUser?.uid ?? ""
-                        
+
                         if event.hostId == currentUserId {
                             // Show hosting overlay for event hosts
                             Rectangle()
@@ -127,7 +127,7 @@ struct EventSummaryView: View {
                     .foregroundColor(.black)
                     .padding(.top, 4)
                     .padding(.horizontal, 2)
-                
+
                 // Host info
                 HStack(spacing: 4) {
                     Text("hosted by")
@@ -235,4 +235,4 @@ struct EventSummaryView: View {
         labelFormatter.dateFormat = "h:mm a"
         return labelFormatter.string(from: date)
     }
-} 
+}

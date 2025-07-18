@@ -21,21 +21,21 @@ class NewEventModel: ObservableObject {
     @Published var coveId: String = ""
     @Published var isSubmitting = false
     @Published var errorMessage: String?
-    
+
     // Sheet States
     @Published var showImagePicker: Bool = false
     @Published var showLocationPicker: Bool = false
     @Published var showDatePicker: Bool = false
     @Published var showTimePicker: Bool = false
-    
+
     // MARK: - Computed Properties
     var isFormValid: Bool {
         // Only event name and location are required
         return !eventName.isEmpty && location != nil
     }
-    
+
     // MARK: - Methods
-    
+
     /// Resets all form fields to their initial state
     func resetForm() {
         eventName = ""
@@ -52,7 +52,7 @@ class NewEventModel: ObservableObject {
         showDatePicker = false
         showTimePicker = false
     }
-    
+
     /// Submits the event to the backend
     func submitEvent(completion: @escaping (Bool) -> Void) {
         guard isFormValid else {
@@ -60,19 +60,19 @@ class NewEventModel: ObservableObject {
             completion(false)
             return
         }
-        
+
         guard let location = self.location else {
             errorMessage = "Location is required"
             completion(false)
             return
         }
-        
+
         isSubmitting = true
         errorMessage = nil
-        
+
         // Format date to ISO 8601
         let finalDate: String = combineDateTime(date: eventDate, time: eventTime) ?? ""
-        
+
         // Build parameters with optional cover photo
         var params: [String: Any] = [
             "name": eventName,
@@ -81,24 +81,24 @@ class NewEventModel: ObservableObject {
             "location": location,
             "coveId": coveId
         ]
-        
+
         // Debug: Log the current userId from Firebase Auth
         let firebaseUserId = Auth.auth().currentUser?.uid ?? "no-firebase-user"
         Log.critical("Creating event - Firebase userId: '\(firebaseUserId)', ProfileModel userId: '\(AppController.shared.profileModel.userId)'")
-        
+
         // Add cover photo if provided
         if let image = eventImage,
            let coverPhoto = image.jpegData(compressionQuality: 0.8) {
             params["coverPhoto"] = coverPhoto.base64EncodedString()
         }
-        
+
         NetworkManager.shared.post(
             endpoint: "/create-event",
             parameters: params
         ) { (result: Result<CreateEventResponse, NetworkError>) in
             DispatchQueue.main.async {
                 self.isSubmitting = false
-                
+
                 switch result {
                 case .success(let response):
                     Log.debug("✅ Event created successfully: \(response)")
@@ -112,12 +112,12 @@ class NewEventModel: ObservableObject {
             }
         }
     }
-    
+
     /// Combines date and time into an ISO 8601 string
     private func combineDateTime(date: Date, time: Date, calendar: Calendar = Calendar.current) -> String? {
         let dateComponents = calendar.dateComponents([.year, .month, .day], from: date)
         let timeComponents = calendar.dateComponents([.hour, .minute, .second], from: time)
-        
+
         var combinedComponents = DateComponents()
         combinedComponents.year = dateComponents.year
         combinedComponents.month = dateComponents.month
@@ -125,13 +125,13 @@ class NewEventModel: ObservableObject {
         combinedComponents.hour = timeComponents.hour
         combinedComponents.minute = timeComponents.minute
         combinedComponents.second = timeComponents.second
-        
+
         guard let combinedDate = calendar.date(from: combinedComponents) else { return nil }
-        
+
         let formatter = ISO8601DateFormatter()
         formatter.timeZone = TimeZone.current
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        
+
         return formatter.string(from: combinedDate)
     }
 }
@@ -155,4 +155,3 @@ struct CreatedEvent: Decodable {
     let createdAt: String
 }
 
- 
