@@ -350,6 +350,7 @@ struct OtpVerifyView: View {
         resendCode { result in
             switch result {
             case .success:
+                // No action needed
                 statusMessage = "Code sent!"
                 messageType = .success
                 otpText = "" // Clear OTP input

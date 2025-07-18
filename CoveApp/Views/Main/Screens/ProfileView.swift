@@ -1079,6 +1079,7 @@ struct ProfileView: View {
         ) { result in
             switch result {
             case .success:
+                // No action needed
                 Log.debug("✅ Profile updated successfully")
                 // The ProfileModel will automatically update its properties after successful backend call
                 completion(true)
