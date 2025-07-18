@@ -455,8 +455,7 @@ class ProfileModel: ObservableObject {
         }
     }
 
-    // TODO: Refactor to reduce cyclomatic complexity - consider using a builder pattern or configuration object
-    // swiftlint:disable:next cyclomatic_complexity
+    // swiftlint:disable cyclomatic_complexity
     func updateProfile(
         name: String? = nil,
         birthdate: String? = nil,
@@ -475,6 +474,7 @@ class ProfileModel: ObservableObject {
         isOnboarding: Bool = false,
         completion: @escaping (Result<Void, NetworkError>) -> Void
     ) {
+        // TODO: Refactor to reduce cyclomatic complexity - consider using a builder pattern or configuration object
         let updateData = ProfileUpdateData(
             name: name, birthdate: birthdate, interests: interests, bio: bio,
             latitude: latitude, longitude: longitude, almaMater: almaMater,
@@ -484,6 +484,7 @@ class ProfileModel: ObservableObject {
         )
         handleImageUploadAndUpdate(updateData: updateData, completion: completion)
     }
+    // swiftlint:enable cyclomatic_complexity
 
     // Helper to handle image upload and call completion
     private func handleImageUploadAndUpdate(

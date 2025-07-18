@@ -105,8 +105,7 @@ class RequestsViewModel: ObservableObject {
                     var arr = AppController.shared.friendsViewModel.friends
                     arr.append(friendDTO)
                     AppController.shared.friendsViewModel.friends = arr
-                    break // Already removed and UI updated
-            case .failure(let error):
+                case .failure(let error):
                     // Re-add on failure
                     var arr = self.requests
                     arr.append(req)
@@ -129,8 +128,7 @@ class RequestsViewModel: ObservableObject {
             DispatchQueue.main.async {
             switch result {
             case .success:
-                    break
-            case .failure(let error):
+                case .failure(let error):
                     var arr = self.requests
                     arr.append(req)
                     withAnimation { self.requests = arr }
