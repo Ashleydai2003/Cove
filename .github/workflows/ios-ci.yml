@@ -125,7 +125,7 @@ jobs:
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: '16.0'
+          xcode-version: 'latest-stable'
 
       # Comment out certificate installation for now since we don't have the secrets configured
       # - name: Install certificates
