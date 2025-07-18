@@ -100,7 +100,7 @@ class MutualsViewModel: ObservableObject {
                 guard let self = self else { return }
                 switch result {
                 case .success:
-                    // No action needed
+                    () // No action needed
                 case .failure(let error):
                     var reverted = self.pendingRequests
                     reverted.remove(userId)

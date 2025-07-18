@@ -147,7 +147,7 @@ class InboxViewModel: ObservableObject {
             DispatchQueue.main.async {
                 switch result {
                 case .success:
-                    // No action needed
+                    () // No action needed
                 case .failure(let error):
                     // Re-add on failure (new reference again)
                     var arr = self.invites
