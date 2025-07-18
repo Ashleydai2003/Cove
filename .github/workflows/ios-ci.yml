@@ -40,6 +40,17 @@ jobs:
             fi
           fi
 
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: 'latest-stable'
+
+      - name: Show Xcode version
+        run: |
+          which xcodebuild
+          xcodebuild -version
+
+      # Check for disallowed print() statements
       - name: Check for disallowed print() statements
         if: steps.ios-changes.outputs.changes == 'true'
         run: ./scripts/check_no_prints.sh
