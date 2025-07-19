@@ -7,6 +7,13 @@ variable "aws_region" {
   default     = "us-west-1"
 }
 
+variable "github_token" {
+  description = "GitHub Personal Access Token for private repository access"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
 # Common tags to be applied to all resources
 locals {
   common_tags = {

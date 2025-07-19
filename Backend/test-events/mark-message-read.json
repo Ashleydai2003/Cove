@@ -1,0 +1,9 @@
+{
+  "httpMethod": "POST",
+  "path": "/mark-message-read",
+  "headers": {
+    "Authorization": "Bearer test-token"
+  },
+  "body": "{\"messageId\":\"message123\"}",
+  "isBase64Encoded": false
+} 

@@ -36,5 +36,40 @@ struct AppConstants {
             #endif
         }
     }
+    
+    /// WebSocket Configuration based on build configuration
+    struct WebSocket {
+        /// Returns the appropriate WebSocket URL based on build configuration
+        static var socketURL: String {
+            #if DEBUG
+            // In Debug mode, use local Socket.io server
+            return "ws://localhost:3001"
+            #else
+            // In Release mode, use production Socket.io server
+            return "ws://54.215.105.249:3001"
+            #endif
+        }
+        
+        /// Returns the secure WebSocket URL (WSS) for production
+        static var secureSocketURL: String {
+            #if DEBUG
+            // In Debug mode, use local Socket.io server
+            return "ws://localhost:3001"
+            #else
+            // In Release mode, use secure WebSocket (when SSL is configured)
+            // TODO: Update this when SSL certificate is configured
+            return "ws://54.215.105.249:3001"
+            #endif
+        }
+        
+        /// Current WebSocket environment for debugging
+        static var environment: String {
+            #if DEBUG
+            return "Development (Local Socket.io)"
+            #else
+            return "Production (EC2 Socket.io)"
+            #endif
+        }
+    }
 
 }

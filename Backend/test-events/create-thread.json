@@ -1,0 +1,9 @@
+{
+  "httpMethod": "POST",
+  "path": "/create-thread",
+  "headers": {
+    "Authorization": "Bearer test-token"
+  },
+  "body": "{\"participantIds\":[\"rVlfUnfbUXeM2rgoXi3HsAk8dvt1\",\"anotherUserId123\"]}",
+  "isBase64Encoded": false
+} 
