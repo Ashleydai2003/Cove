@@ -284,7 +284,7 @@ resource "aws_instance" "socket_server" {
               # Install dependencies
               npm install
               
-              # Build Docker image
+              # Build Docker image with memory optimization
               docker build -f Dockerfile.socket -t socket-server . || {
                 echo "Failed to build Docker image"
                 echo "Docker build logs:"
