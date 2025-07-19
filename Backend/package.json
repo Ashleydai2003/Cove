@@ -20,7 +20,9 @@
     "dev:full": "npm run db:start && sleep 5 && npm run minio:setup && npm run emulators:start & npm run dev",
     "dev:stop": "npm run dev:stop:server && npm run db:stop && npm run emulators:stop",
     "emulators:start": "firebase emulators:start --only auth",
-    "emulators:stop": "pkill -f 'firebase emulators:start' || echo 'Emulator not running'"
+    "emulators:stop": "pkill -f 'firebase emulators:start' || echo 'Emulator not running'",
+    "socket:dev": "dotenv -e env.development -- ts-node src/socket-server.ts",
+    "socket:prod": "dotenv -e env.production -- ts-node src/socket-server.ts"
   },
   "keywords": [],
   "author": "",
@@ -37,7 +39,9 @@
     "dotenv": "^16.5.0",
     "firebase-admin": "^12.0.0",
     "jsonwebtoken": "^9.0.2",
-    "pg": "^8.11.3"
+    "pg": "^8.11.3",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.130",

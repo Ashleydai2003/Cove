@@ -46,6 +46,71 @@ Returns:
   * createdAt: DateTime
 }
 
+### `/create-thread`
+
+Creates a new messaging thread between users. If a thread already exists between the specified participants, returns the existing thread.
+
+Takes Data Parameters:
+* participantIds: String[] (required) - Array of user IDs to include in the thread (excluding the current user)
+
+Returns:
+* message: String
+* thread: {
+  * id: String
+  * createdAt: DateTime
+  * updatedAt: DateTime
+  * members: Array<{
+    * id: String
+    * userId: String
+    * user: {
+      * id: String
+      * name: String
+    }
+  }>
+}
+
+### `/send-message`
+
+Sends a message to a thread. User must be a member of the thread.
+
+Takes Data Parameters:
+* threadId: String (required) - ID of the thread to send message to
+* content: String (required) - Message content
+
+Returns:
+* message: String
+* messageData: {
+  * id: String
+  * threadId: String
+  * senderId: String
+  * content: String
+  * createdAt: DateTime
+  * sender: {
+    * id: String
+    * name: String
+  }
+}
+
+### `/mark-message-read`
+
+Marks a message as read by the current user. User must be a member of the thread containing the message.
+
+Takes Data Parameters:
+* messageId: String (required) - ID of the message to mark as read
+
+Returns:
+* message: String
+
+### `/update-fcm-token`
+
+Updates the user's Firebase Cloud Messaging token for push notifications.
+
+Takes Data Parameters:
+* fcmToken: String (required) - The FCM token from the client
+
+Returns:
+* message: String
+
 ### `/login`
 
 Authenticates a user and returns their basic information.
@@ -310,6 +375,68 @@ Returns:
     * coveCount: Number - Number of coves the user is a member of
   }
 }
+
+### `/threads`
+
+Retrieves all threads that the authenticated user is a member of, ordered by most recent activity.
+
+Returns:
+* threads: Array<{
+  * id: String
+  * createdAt: DateTime
+  * updatedAt: DateTime
+  * members: Array<{
+    * id: String
+    * userId: String
+    * user: {
+      * id: String
+      * name: String
+    }
+  }>
+  * lastMessage: {
+    * id: String
+    * content: String
+    * createdAt: DateTime
+    * sender: {
+      * id: String
+      * name: String
+    }
+  } | null
+  * _count: {
+    * messages: Number
+  }
+}>
+
+### `/thread-messages`
+
+Retrieves messages for a specific thread with pagination. User must be a member of the thread.
+
+Takes Query String Parameters:
+* threadId: String (required) - ID of the thread to get messages for
+* limit: Number (optional, defaults to 50, max 100)
+* cursor: String (optional, for pagination)
+
+Returns:
+* messages: Array<{
+  * id: String
+  * threadId: String
+  * senderId: String
+  * content: String
+  * createdAt: DateTime
+  * sender: {
+    * id: String
+    * name: String
+  }
+  * reads: Array<{
+    * id: String
+    * readAt: DateTime
+    * user: {
+      * id: String
+      * name: String
+    }
+  }>
+}>
+* nextCursor: String | null - For pagination
 
 ### `/cove-events`
 
