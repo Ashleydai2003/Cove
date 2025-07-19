@@ -31,6 +31,18 @@ struct OtpVerify {
                 // Only print user if needed, don't bind unused
                 if authResult?.user != nil {
                     Log.debug("Successfully verified OTP and signed in")
+                    
+                    // TEMPORARY: Print Firebase ID token for testing (remove in production)
+                    authResult?.user.getIDToken { token, error in
+                        if let token = token {
+                            print("🔥 FIREBASE ID TOKEN FOR TESTING:")
+                            print("🔥 \(token)")
+                            print("🔥 Copy this token to test WebSocket authentication")
+                        } else if let error = error {
+                            print("🔥 Error getting Firebase token: \(error.localizedDescription)")
+                        }
+                    }
+                    
                     // Make login request to backend
                     makeLoginRequest { success in
                         if success {

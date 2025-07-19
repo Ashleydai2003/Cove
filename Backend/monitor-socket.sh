@@ -44,7 +44,7 @@ print_metric() {
 # Get instance ID from Terraform output
 get_instance_id() {
     cd ../Infra
-    terraform output -raw socket_instance_id 2>/dev/null || {
+    terraform output -raw socket_server_instance_id 2>/dev/null || {
         print_error "Could not get instance ID from Terraform. Make sure you're in the Backend directory."
         exit 1
     }

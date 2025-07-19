@@ -11,6 +11,7 @@
 		3C29BAAE2DBC90B700C73EC3 /* Inject in Frameworks */ = {isa = PBXBuildFile; productRef = 3C29BAAD2DBC90B700C73EC3 /* Inject */; };
 		3CFAEF792DBDCA4700148161 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 3CFAEF782DBDCA4700148161 /* FirebaseAnalytics */; };
 		3CFAEF7B2DBDCA4700148161 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 3CFAEF7A2DBDCA4700148161 /* FirebaseAuth */; };
+		C405CFAC2E2BE6AF0011CEFD /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = C405CFAB2E2BE6AF0011CEFD /* FirebaseMessaging */; };
 		C47F61512E1127DB00060EB0 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = C47F61502E1127DB00060EB0 /* Kingfisher */; };
 		EC736BC02DCEEC5C003F3FFA /* IQKeyboardManagerSwift in Frameworks */ = {isa = PBXBuildFile; productRef = EC736BBF2DCEEC5C003F3FFA /* IQKeyboardManagerSwift */; };
 /* End PBXBuildFile section */
@@ -83,6 +84,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C405CFAC2E2BE6AF0011CEFD /* FirebaseMessaging in Frameworks */,
 				3CFAEF792DBDCA4700148161 /* FirebaseAnalytics in Frameworks */,
 				EC736BC02DCEEC5C003F3FFA /* IQKeyboardManagerSwift in Frameworks */,
 				3CFAEF7B2DBDCA4700148161 /* FirebaseAuth in Frameworks */,
@@ -154,6 +156,7 @@
 				3CFAEF7A2DBDCA4700148161 /* FirebaseAuth */,
 				EC736BBF2DCEEC5C003F3FFA /* IQKeyboardManagerSwift */,
 				C47F61502E1127DB00060EB0 /* Kingfisher */,
+				C405CFAB2E2BE6AF0011CEFD /* FirebaseMessaging */,
 			);
 			productName = Cove;
 			productReference = C44B02E62DADAFAF00AFF42B /* Cove.app */;
@@ -600,6 +603,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 3CFAEF772DBDCA4700148161 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseAuth;
+		};
+		C405CFAB2E2BE6AF0011CEFD /* FirebaseMessaging */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3CFAEF772DBDCA4700148161 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseMessaging;
 		};
 		C47F61502E1127DB00060EB0 /* Kingfisher */ = {
 			isa = XCSwiftPackageProductDependency;
