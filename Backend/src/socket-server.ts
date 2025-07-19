@@ -2,11 +2,16 @@
 
 import express from 'express';
 import { createServer } from 'http';
-import { Server } from 'socket.io';
+import { Server, Socket } from 'socket.io';
 import * as admin from 'firebase-admin';
 import { initializeFirebase } from './middleware/firebase';
 import { initializeDatabase } from './config/database';
 import cors from 'cors';
+
+// Extend Socket interface to include user property
+interface AuthenticatedSocket extends Socket {
+  user: admin.auth.DecodedIdToken;
+}
 
 const app = express();
 const server = createServer(app);
@@ -30,7 +35,7 @@ io.use(async (socket, next) => {
 
     // Verify Firebase token
     const decodedToken = await admin.auth().verifyIdToken(token);
-    socket.user = decodedToken;
+    (socket as AuthenticatedSocket).user = decodedToken;
     next();
   } catch (error) {
     console.error('Socket authentication error:', error);
@@ -42,7 +47,8 @@ io.use(async (socket, next) => {
 const onlineUsers = new Map<string, string>(); // userId -> socketId
 
 io.on('connection', async (socket) => {
-  const userId = socket.user.uid;
+  const authenticatedSocket = socket as AuthenticatedSocket;
+  const userId = authenticatedSocket.user.uid;
   console.log(`User ${userId} connected`);
 
   // Add user to online users
