@@ -184,14 +184,14 @@ class WebSocketManager: ObservableObject {
             }
             
         @unknown default:
-            Log.warning("Unknown WebSocket message type", category: "websocket")
+            Log.debug("Unknown WebSocket message type", category: "websocket")
         }
     }
     
     /// Handle Socket.io specific messages
     private func handleSocketMessage(_ message: [String: Any]) {
         guard let type = message["type"] as? String else {
-            Log.warning("WebSocket message missing type", category: "websocket")
+            Log.debug("WebSocket message missing type", category: "websocket")
             return
         }
         
