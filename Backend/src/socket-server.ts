@@ -23,11 +23,23 @@ const io = new Server(server, {
 });
 
 // Initialize Firebase
-initializeFirebase();
+let firebaseInitialized = false;
+initializeFirebase().then(() => {
+  firebaseInitialized = true;
+  console.log('Firebase initialized successfully');
+}).catch(error => {
+  console.error('Failed to initialize Firebase:', error);
+  process.exit(1);
+});
 
 // Socket authentication middleware
 io.use(async (socket, next) => {
   try {
+    // Check if Firebase is initialized
+    if (!firebaseInitialized) {
+      return next(new Error('Firebase not initialized yet'));
+    }
+
     const token = socket.handshake.auth.token;
     if (!token) {
       return next(new Error('Authentication token required'));
