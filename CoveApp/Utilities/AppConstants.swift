@@ -36,7 +36,7 @@ struct AppConstants {
             #endif
         }
     }
-    
+
     /// WebSocket Configuration based on build configuration
     struct WebSocket {
         /// Returns the appropriate WebSocket URL based on build configuration
@@ -46,7 +46,7 @@ struct AppConstants {
             return "ws://localhost:3001"
             #else
             // In Release mode, use production Socket.io server
-            return "ws://54.215.105.249:3001"
+            return "ws://13.52.150.178:3001"
             #endif
         }
         
@@ -58,7 +58,7 @@ struct AppConstants {
             #else
             // In Release mode, use secure WebSocket (when SSL is configured)
             // TODO: Update this when SSL certificate is configured
-            return "ws://54.215.105.249:3001"
+            return "ws://13.52.150.178:3001"
             #endif
         }
         
