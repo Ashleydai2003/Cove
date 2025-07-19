@@ -17,9 +17,12 @@ const app = express();
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "*", // Configure this properly for production
-    methods: ["GET", "POST"]
-  }
+    origin: process.env.ALLOWED_ORIGINS?.split(',') || ["https://your-app-domain.com"], // Restrict to your app domains
+    methods: ["GET", "POST"],
+    credentials: true
+  },
+  transports: ['websocket', 'polling'], // Explicitly define transports
+  allowEIO3: false // Disable older Socket.IO versions
 });
 
 // Initialize Firebase
@@ -32,6 +35,9 @@ initializeFirebase().then(() => {
   process.exit(1);
 });
 
+// Rate limiting map
+const connectionAttempts = new Map<string, { count: number, lastAttempt: number }>();
+
 // Socket authentication middleware
 io.use(async (socket, next) => {
   try {
@@ -39,6 +45,22 @@ io.use(async (socket, next) => {
     if (!firebaseInitialized) {
       return next(new Error('Firebase not initialized yet'));
     }
+
+    // Rate limiting
+    const clientIP = socket.handshake.address;
+    const now = Date.now();
+    const attempts = connectionAttempts.get(clientIP) || { count: 0, lastAttempt: 0 };
+    
+    if (now - attempts.lastAttempt < 60000) { // 1 minute window
+      if (attempts.count >= 10) { // Max 10 attempts per minute
+        return next(new Error('Too many connection attempts'));
+      }
+      attempts.count++;
+    } else {
+      attempts.count = 1;
+    }
+    attempts.lastAttempt = now;
+    connectionAttempts.set(clientIP, attempts);
 
     const token = socket.handshake.auth.token;
     if (!token) {
@@ -283,7 +305,7 @@ app.get('/health', (req, res) => {
 
 const PORT = process.env.SOCKET_PORT || 3001;
 
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`Socket.io server running on port ${PORT}`);
 });
 

@@ -13,7 +13,7 @@ async function testWebSocketAuth() {
         return;
     }
     
-    const socket = io('ws://184.169.158.228:3001', {
+    const socket = io('ws://52.9.190.97:3001', {
         auth: {
             token: firebaseToken
         }
