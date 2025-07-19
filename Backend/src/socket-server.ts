@@ -303,7 +303,7 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', onlineUsers: onlineUsers.size });
 });
 
-const PORT = process.env.SOCKET_PORT || 3001;
+const PORT = parseInt(process.env.SOCKET_PORT || '3001', 10);
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`Socket.io server running on port ${PORT}`);
