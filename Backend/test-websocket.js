@@ -4,7 +4,7 @@ const { io } = require('socket.io-client');
 async function testWebSocket() {
     console.log('🧪 Testing WebSocket connection...');
     
-    const socket = io('ws://52.9.190.97:3001', {
+    const socket = io('ws://13.52.150.178:3001', {
         auth: {
             token: 'test-token' // This will fail auth, but we can test connection
         }

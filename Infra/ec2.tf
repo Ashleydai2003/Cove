@@ -209,7 +209,7 @@ resource "aws_instance" "migration" {
 resource "aws_instance" "socket_server" {
   ami                    = "ami-04fc83311a8d478df"  # Amazon Linux 2023
   instance_type          = "t3.small"               # 2 vCPU, 2 GB RAM
-  subnet_id              = aws_subnet.public_subnet_1.id  # Public subnet for Socket.io access
+  subnet_id              = aws_subnet.public_subnet_1.id  # Public subnet for internet access
   vpc_security_group_ids = [aws_security_group.socket_sg.id]
   iam_instance_profile   = aws_iam_instance_profile.socket.name
   # Using SSM instead of SSH key for secure access

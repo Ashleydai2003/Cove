@@ -21,7 +21,8 @@ resource "aws_security_group" "vpce_sg" {
     protocol        = "tcp"
     security_groups = [
       aws_security_group.lambda_sg.id,
-      aws_security_group.migration_sg.id  # Add EC2 migration security group
+      aws_security_group.migration_sg.id,  # Add EC2 migration security group
+      aws_security_group.socket_sg.id      # Add socket server security group
     ]
   }
 
@@ -44,7 +45,7 @@ resource "aws_vpc_endpoint" "secretsmanager" {
   vpc_id            = aws_vpc.main_vpc.id
   service_name      = "com.amazonaws.${var.aws_region}.secretsmanager"  # Secrets Manager service endpoint
   vpc_endpoint_type = "Interface"  # Interface endpoint type for private connectivity
-  subnet_ids        = [aws_subnet.private_subnet_1.id, aws_subnet.private_subnet_2.id]  # Place in private subnets
+  subnet_ids        = [aws_subnet.private_subnet_1.id, aws_subnet.private_subnet_2.id]  # Place in private subnets only (different AZs)
   security_group_ids = [aws_security_group.vpce_sg.id]  # Use VPC endpoint security group
 
   private_dns_enabled = true  # Enable private DNS for the endpoint
