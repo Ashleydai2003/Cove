@@ -2,11 +2,13 @@
 
 import express from 'express';
 import { createServer } from 'http';
+import { createServer as createHttpsServer } from 'https';
 import { Server, Socket } from 'socket.io';
 import * as admin from 'firebase-admin';
 import { initializeFirebase } from './middleware/firebase';
 import { initializeDatabase } from './config/database';
 import cors from 'cors';
+import fs from 'fs';
 
 // Extend Socket interface to include user property
 interface AuthenticatedSocket extends Socket {
@@ -14,15 +16,105 @@ interface AuthenticatedSocket extends Socket {
 }
 
 const app = express();
-const server = createServer(app);
+
+// Enhanced CORS configuration
+const corsOptions = {
+  origin: function (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
+    // Allow requests with no origin (like mobile apps or Postman)
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [
+      'https://coveapp.co',
+      'https://www.coveapp.co',
+      'https://api.coveapp.co',
+      'http://localhost:3000', // Development
+      'http://localhost:8080', // iOS Simulator
+      'capacitor://localhost', // iOS Capacitor
+      'ionic://localhost' // Ionic
+    ];
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn(`Blocked request from unauthorized origin: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+};
+
+app.use(cors(corsOptions));
+
+// SSL Configuration
+let server;
+const isProduction = process.env.NODE_ENV === 'production';
+
+if (isProduction) {
+  // Production: Use SSL certificates
+  try {
+    const privateKey = fs.readFileSync(process.env.SSL_PRIVATE_KEY_PATH || '/etc/ssl/private/server.key', 'utf8');
+    const certificate = fs.readFileSync(process.env.SSL_CERTIFICATE_PATH || '/etc/ssl/certs/server.crt', 'utf8');
+    
+    const credentials = {
+      key: privateKey,
+      cert: certificate
+    };
+    
+    server = createHttpsServer(credentials, app);
+    console.log('🔒 SSL enabled for production');
+  } catch (error) {
+    console.warn('⚠️  SSL certificates not found, falling back to HTTP');
+    server = createServer(app);
+  }
+} else {
+  // Development: Use HTTP
+  server = createServer(app);
+  console.log('⚠️  Running in development mode (HTTP only)');
+}
+
+// Enhanced Socket.io configuration with security improvements
 const io = new Server(server, {
   cors: {
-    origin: process.env.ALLOWED_ORIGINS?.split(',') || ["https://your-app-domain.com"], // Restrict to your app domains
+    origin: function (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
+      // Allow requests with no origin (like mobile apps)
+      if (!origin) return callback(null, true);
+      
+      const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [
+        'https://coveapp.co',
+        'https://www.coveapp.co',
+        'https://api.coveapp.co',
+        'http://localhost:3000', // Development
+        'http://localhost:8080', // iOS Simulator
+        'capacitor://localhost', // iOS Capacitor
+        'ionic://localhost' // Ionic
+      ];
+      
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        console.warn(`Blocked WebSocket connection from unauthorized origin: ${origin}`);
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     methods: ["GET", "POST"],
     credentials: true
   },
   transports: ['websocket', 'polling'], // Explicitly define transports
-  allowEIO3: false // Disable older Socket.IO versions
+  allowEIO3: false, // Disable older Socket.IO versions for security
+  pingTimeout: 60000, // 60 seconds
+  pingInterval: 25000, // 25 seconds
+  maxHttpBufferSize: 1e6, // 1MB max message size
+  allowRequest: (req, callback) => {
+    // Additional request validation
+    const userAgent = req.headers['user-agent'];
+    if (userAgent && userAgent.includes('curl')) {
+      // Block curl requests to prevent abuse
+      return callback(null, false);
+    }
+    callback(null, true);
+  }
 });
 
 // Initialize Firebase
@@ -38,7 +130,7 @@ initializeFirebase().then(() => {
 // Rate limiting map
 const connectionAttempts = new Map<string, { count: number, lastAttempt: number }>();
 
-// Socket authentication middleware
+// Socket authentication middleware with enhanced security
 io.use(async (socket, next) => {
   try {
     // Check if Firebase is initialized
@@ -46,13 +138,17 @@ io.use(async (socket, next) => {
       return next(new Error('Firebase not initialized yet'));
     }
 
-    // Rate limiting
+    // Enhanced rate limiting
     const clientIP = socket.handshake.address;
     const now = Date.now();
     const attempts = connectionAttempts.get(clientIP) || { count: 0, lastAttempt: 0 };
     
-    if (now - attempts.lastAttempt < 60000) { // 1 minute window
-      if (attempts.count >= 10) { // Max 10 attempts per minute
+    const maxAttempts = parseInt(process.env.MAX_CONNECTION_ATTEMPTS || '5');
+    const rateLimitWindow = parseInt(process.env.RATE_LIMIT_WINDOW_MS || '60000');
+    
+    if (now - attempts.lastAttempt < rateLimitWindow) {
+      if (attempts.count >= maxAttempts) {
+        console.warn(`Rate limit exceeded for IP: ${clientIP}`);
         return next(new Error('Too many connection attempts'));
       }
       attempts.count++;
@@ -67,8 +163,24 @@ io.use(async (socket, next) => {
       return next(new Error('Authentication token required'));
     }
 
-    // Verify Firebase token
-    const decodedToken = await admin.auth().verifyIdToken(token);
+    // Enhanced token validation
+    if (typeof token !== 'string' || token.length < 10) {
+      return next(new Error('Invalid token format'));
+    }
+
+    // Verify Firebase token with additional checks
+    const decodedToken = await admin.auth().verifyIdToken(token, true); // Force refresh check
+    
+    // Additional security checks
+    if (!decodedToken.uid) {
+      return next(new Error('Invalid token: missing UID'));
+    }
+    
+    if (decodedToken.auth_time && (Date.now() / 1000) - decodedToken.auth_time > 3600) {
+      // Token is older than 1 hour, consider refreshing
+      console.warn(`Token for user ${decodedToken.uid} is older than 1 hour`);
+    }
+
     (socket as AuthenticatedSocket).user = decodedToken;
     next();
   } catch (error) {
@@ -300,13 +412,20 @@ io.on('connection', async (socket) => {
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', onlineUsers: onlineUsers.size });
+  res.json({ 
+    status: 'ok', 
+    onlineUsers: onlineUsers.size,
+    ssl: isProduction,
+    timestamp: new Date().toISOString()
+  });
 });
 
 const PORT = parseInt(process.env.SOCKET_PORT || '3001', 10);
 
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`Socket.io server running on port ${PORT}`);
+  const protocol = isProduction ? 'WSS' : 'WS';
+  console.log(`🔒 Socket.io server running on port ${PORT} (${protocol})`);
+  console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
 });
 
 export default server; 
