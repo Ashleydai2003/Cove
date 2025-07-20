@@ -27,7 +27,7 @@ class SocketTest {
     private func setupSocket(with token: String) {
         print("🔧 Setting up socket with token: \(String(token.prefix(20)))...")
         
-        // Use exact configuration that matches updated server
+        // Use exact configuration that matches the working example
         let socketURL = "wss://socket.coveapp.co:3001"
         print("🔗 Connecting to: \(socketURL)")
         
@@ -35,8 +35,9 @@ class SocketTest {
             socketURL: URL(string: socketURL)!,
             config: [
                 .log(true),
-                .forceWebsockets(true),  // 🔥 CRITICAL: Force WebSocket
-                .connectParams(["token": token])
+                .compress,
+                .connectParams(["token": token]),
+                .forceWebsockets(true)
             ]
         )
 

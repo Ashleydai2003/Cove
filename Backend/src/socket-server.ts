@@ -76,36 +76,17 @@ if (isProduction) {
 
 // Enhanced Socket.io configuration with security improvements
 const io = new Server(server, {
+  transports: ['websocket'],  // 🔥 CRITICAL: Only WebSocket transport
+  allowUpgrades: false,       // 🔥 CRITICAL: Prevent fallback to polling
   cors: {
-    origin: function (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
-      // Allow requests with no origin (like mobile apps)
-      if (!origin) return callback(null, true);
-      
-      const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [
-        'https://coveapp.co',
-        'https://www.coveapp.co',
-        'https://api.coveapp.co',
-        'http://localhost:3000', // Development
-        'http://localhost:8080', // iOS Simulator
-        'capacitor://localhost', // iOS Capacitor
-        'ionic://localhost' // Ionic
-      ];
-      
-      if (allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        console.warn(`Blocked WebSocket connection from unauthorized origin: ${origin}`);
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
+    origin: "*", // 🔥 TEMPORARY: Allow all origins for testing
     methods: ["GET", "POST"],
     credentials: true
   },
-  transports: ['websocket'], // 🔥 CRITICAL: Only WebSocket transport
-  allowEIO3: true, // Enable EIO3 for iOS client compatibility
-  pingTimeout: 60000, // 60 seconds
-  pingInterval: 25000, // 25 seconds
-  maxHttpBufferSize: 1e6, // 1MB max message size
+  allowEIO3: true,           // Enable EIO3 for iOS client compatibility
+  pingTimeout: 60000,        // 60 seconds
+  pingInterval: 25000,       // 25 seconds
+  maxHttpBufferSize: 1e6,    // 1MB max message size
   allowRequest: (req, callback) => {
     // Additional request validation
     const userAgent = req.headers['user-agent'];
@@ -115,10 +96,8 @@ const io = new Server(server, {
     }
     callback(null, true);
   },
-  // Additional compatibility settings for older clients
   upgradeTimeout: 10000,
-  allowUpgrades: false, // 🔥 CRITICAL: Prevent fallback to polling
-  perMessageDeflate: false // Disable compression for better compatibility
+  perMessageDeflate: false   // Disable compression for better compatibility
 });
 
 // Initialize Firebase
