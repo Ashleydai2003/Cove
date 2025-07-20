@@ -25,12 +25,13 @@ export const initializeFirebase = async () => {
   }
 
   // Otherwise, use AWS Secrets Manager (production)
-  const secretId = 'firebaseSDK';  // Using the name from AWS
+  const secretId = 'firebaseSDK';
   if (!secretId) {
     throw new Error('Firebase secret name is not set');
   }
 
   try {
+    console.log('[firebase] Attempting to retrieve Firebase credentials from Secrets Manager...');
     const response = await secretsManager.send(
       new GetSecretValueCommand({
         SecretId: secretId,
@@ -43,6 +44,7 @@ export const initializeFirebase = async () => {
     }
 
     const credentials = JSON.parse(response.SecretString);
+    console.log('[firebase] Successfully retrieved Firebase credentials from Secrets Manager');
 
     admin.initializeApp({
       credential: admin.credential.cert({
@@ -53,6 +55,7 @@ export const initializeFirebase = async () => {
     });
 
     firebaseInitialized = true;
+    console.log('[firebase] Initialized Firebase Admin with Secrets Manager credentials');
   } catch (error) {
     console.error('Error retrieving Firebase credentials:', error);
     throw error;

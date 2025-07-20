@@ -36,6 +36,12 @@ import {
   handleGetInvites,
   handleOpenInvite,
   handleRejectInvite,
+  handleCreateThread,
+  handleSendMessage,
+  handleGetThreads,
+  handleGetThreadMessages,
+  handleMarkMessageRead,
+  handleUpdateFCMToken,
 } from './routes';
 
 export const handler = async (
@@ -110,6 +116,19 @@ export const handler = async (
         return handleOpenInvite(event);
       case '/reject-invite':
         return handleRejectInvite(event);
+      // Messaging routes
+      case '/create-thread':
+        return handleCreateThread(event);
+      case '/send-message':
+        return handleSendMessage(event);
+      case '/threads':
+        return handleGetThreads(event);
+      case '/thread-messages':
+        return handleGetThreadMessages(event);
+      case '/mark-message-read':
+        return handleMarkMessageRead(event);
+      case '/update-fcm-token':
+        return handleUpdateFCMToken(event);
       default:
         // Handle common web standard files
         switch (event.path) {

@@ -1,0 +1,9 @@
+{
+  "httpMethod": "POST",
+  "path": "/send-message",
+  "headers": {
+    "Authorization": "Bearer test-token"
+  },
+  "body": "{\"threadId\":\"thread123\",\"content\":\"Hey! How are you doing?\"}",
+  "isBase64Encoded": false
+} 

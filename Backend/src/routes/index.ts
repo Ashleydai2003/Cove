@@ -11,3 +11,4 @@ export { handleCreateCove, handleGetCove, handleGetCoveMembers, handleGetUserCov
 export { handleSendFriendRequest, handleResolveFriendRequest, handleGetFriends, handleGetFriendRequests, handleGetRecommendedFriends } from './friend';
 export { handleDeleteUser, handleDeleteEvent } from './delete';
 export { handleSendInvite, handleGetInvites, handleOpenInvite, handleRejectInvite } from './invites';
+export { handleCreateThread, handleSendMessage, handleGetThreads, handleGetThreadMessages, handleMarkMessageRead, handleUpdateFCMToken } from './messaging';

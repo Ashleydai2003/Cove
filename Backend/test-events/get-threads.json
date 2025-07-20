@@ -1,0 +1,8 @@
+{
+  "httpMethod": "GET",
+  "path": "/threads",
+  "headers": {
+    "Authorization": "Bearer test-token"
+  },
+  "isBase64Encoded": false
+} 

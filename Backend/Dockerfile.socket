@@ -1,0 +1,62 @@
+# Multi-stage build for Socket.io server
+FROM node:18-alpine AS builder
+
+# Install build dependencies including zip
+RUN apk add --no-cache zip
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm ci
+
+# Copy source code
+COPY . .
+
+# Build the socket server specifically
+RUN npm run build:socket
+
+# Production stage
+FROM node:18-alpine AS production
+
+# Install security updates and required packages
+RUN apk update && apk upgrade && \
+    apk add --no-cache \
+    openssl \
+    ca-certificates \
+    curl \
+    && rm -rf /var/cache/apk/*
+
+# Create app directory
+WORKDIR /app
+
+# Create SSL directory
+RUN mkdir -p /etc/ssl/private /etc/ssl/certs
+
+# Copy built application from builder stage
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package*.json ./
+
+# Create non-root user for security
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S socketio -u 1001
+
+# Change ownership of app directory
+RUN chown -R socketio:nodejs /app
+
+# Switch to non-root user
+USER socketio
+
+# Expose port
+EXPOSE 3001
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:3001/health || exit 1
+
+# Start the application
+CMD ["node", "dist/socket-server.js"] 
