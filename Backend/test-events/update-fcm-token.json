@@ -1,0 +1,9 @@
+{
+  "httpMethod": "POST",
+  "path": "/update-fcm-token",
+  "headers": {
+    "Authorization": "Bearer test-token"
+  },
+  "body": "{\"fcmToken\":\"fcm_token_123456789\"}",
+  "isBase64Encoded": false
+} 

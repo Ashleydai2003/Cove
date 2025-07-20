@@ -42,6 +42,7 @@ model User {
   phone           String      @unique
   onboarding      Boolean     @default(true)
   verified        Boolean     @default(false)  // IMPORTANT: in MVP, only verified users can create Coves
+  fcmToken        String?     // For push notifications
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 
@@ -65,6 +66,11 @@ model User {
   
   // Cove invites sent
   sentInvites            Invite[]        @relation("SentInvites")
+
+  // Messaging relations
+  sentMessages     Message[]
+  threadMemberships ThreadMember[]
+  messageReads      MessageRead[]
 } 
 
 // UserProfile Model
@@ -231,4 +237,70 @@ model Invite {
   @@unique([phoneNumber, coveId]) // Prevent duplicate invites to same cove
   @@index([phoneNumber]) // For efficient lookups by phone number
   @@index([coveId]) // For efficient lookups by cove
+}
+
+// Messaging Models
+
+// Thread model for direct message conversations
+model Thread {
+  id          String          @id @default(cuid())
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  lastMessageId String?
+  lastMessage Message?        @relation("ThreadLastMessage", fields: [lastMessageId], references: [id])
+  
+  // Relations
+  messages    Message[]
+  members     ThreadMember[]
+}
+
+// ThreadMember model for managing thread participants
+model ThreadMember {
+  id        String   @id @default(cuid())
+  threadId  String
+  userId    String
+  joinedAt  DateTime @default(now())
+  
+  // Relations
+  thread    Thread   @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([threadId, userId])
+  @@index([userId])
+  @@index([threadId])
+}
+
+// Message model for storing individual messages
+model Message {
+  id        String   @id @default(cuid())
+  threadId  String
+  senderId  String
+  content   String
+  createdAt DateTime @default(now())
+  
+  // Relations
+  thread    Thread   @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  reads     MessageRead[]
+  threadLastMessage Thread[] @relation("ThreadLastMessage")
+
+  @@index([threadId])
+  @@index([senderId])
+  @@index([createdAt])
+}
+
+// MessageRead model for tracking read receipts
+model MessageRead {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  readAt    DateTime @default(now())
+  
+  // Relations
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+  @@index([messageId])
+  @@index([userId])
 }

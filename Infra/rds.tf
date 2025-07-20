@@ -17,14 +17,15 @@ resource "aws_security_group" "rds_sg" {
   description = "Allow inbound traffic on port 5432 (PostgreSQL) from Lambda and EC2 migration instance"
   vpc_id      = aws_vpc.main_vpc.id
   
-  # Inbound rules: Allow access from Lambda security group and EC2 migration instance on port 5432
+  # Inbound rules: Allow access from Lambda security group, EC2 migration instance, and Socket.io server on port 5432
   ingress {
     from_port       = 5432
     to_port         = 5432
     protocol        = "tcp"
     security_groups = [
-      aws_security_group.lambda_sg.id,  # Allow access from Lambda security group
-      aws_security_group.migration_sg.id # Allow access from EC2 migration instance
+      aws_security_group.lambda_sg.id,      # Allow access from Lambda security group
+      aws_security_group.migration_sg.id,   # Allow access from EC2 migration instance
+      aws_security_group.socket_sg.id       # Allow access from Socket.io server
     ]
   }
 
