@@ -6,6 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "rm -rf dist && prisma generate && esbuild ./src --bundle --platform=node --target=node18 --outfile=dist/index.js --format=cjs && cd dist && cp -r ../node_modules/.prisma . && cp ../node_modules/prisma/build/index.js prisma.js && zip -r index.zip index.js .prisma prisma.js",
+    "build:socket": "rm -rf dist && prisma generate && esbuild ./src/socket-server.ts --bundle --platform=node --target=node18 --outfile=dist/socket-server.js --format=cjs && cd dist && cp -r ../node_modules/.prisma . && cp ../node_modules/prisma/build/index.js prisma.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate:dev": "dotenv -e env.development -- prisma migrate dev",
     "prisma:migrate:deploy": "NODE_ENV=production ts-node src/scripts/migrate.ts",
