@@ -27,13 +27,16 @@ class SocketTest {
     private func setupSocket(with token: String) {
         print("🔧 Setting up socket with token: \(String(token.prefix(20)))...")
         
-        // Try using Authorization header approach
+        // Use exact configuration that matches updated server
+        let socketURL = "wss://socket.coveapp.co:3001"
+        print("🔗 Connecting to: \(socketURL)")
+        
         manager = SocketManager(
-            socketURL: URL(string: "wss://socket.coveapp.co:3001")!,
+            socketURL: URL(string: socketURL)!,
             config: [
                 .log(true),
-                .forceWebsockets(true),
-                .extraHeaders(["Authorization": "Bearer \(token)"])
+                .forceWebsockets(true),  // 🔥 CRITICAL: Force WebSocket
+                .connectParams(["token": token])
             ]
         )
 
@@ -71,10 +74,40 @@ class SocketTest {
     }
 
     func connect() {
-        print("🚀 Connecting to Socket.IO...")
-        socket?.connect()
+        print("🚀 Connecting to WebSocket...")
+        
+        // First test basic connectivity
+        testBasicConnectivity { isReachable in
+            if isReachable {
+                print("✅ Server is reachable, attempting WebSocket connection...")
+                self.socket?.connect()
+            } else {
+                print("❌ Server is not reachable - network issue!")
+            }
+        }
     }
-
+    
+    private func testBasicConnectivity(completion: @escaping (Bool) -> Void) {
+        let url = URL(string: "https://socket.coveapp.co:3001")!
+        var request = URLRequest(url: url)
+        request.timeoutInterval = 10
+        
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    print("❌ Network error: \(error.localizedDescription)")
+                    completion(false)
+                } else if let httpResponse = response as? HTTPURLResponse {
+                    print("✅ Server responded with status: \(httpResponse.statusCode)")
+                    completion(true)
+                } else {
+                    print("⚠️  Unexpected response type")
+                    completion(false)
+                }
+            }
+        }.resume()
+    }
+    
     func disconnect() {
         socket?.disconnect()
     }
