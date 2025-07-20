@@ -83,6 +83,9 @@ class AppController: ObservableObject {
     /// Shared InboxViewModel instance for cove invites and caching logic
     @Published var inboxViewModel = InboxViewModel()
 
+    /// Shared MessagingViewModel instance for direct messaging and caching logic
+    @Published var messagingViewModel = MessagingViewModel()
+
     /// Whether to automatically show the inbox on home screen (when there are unopened invites)
     @Published var shouldAutoShowInbox = false
 
@@ -145,6 +148,8 @@ class AppController: ObservableObject {
     func initializeAfterLogin() {
         // Initialize inbox - it will call checkForAutoShowInbox when data loads
         inboxViewModel.initialize()
+        // Initialize messaging
+        messagingViewModel.initialize()
     }
 
     /// Called by InboxViewModel when invites are loaded to check if inbox should auto-show
@@ -170,6 +175,7 @@ class AppController: ObservableObject {
         requestsViewModel = RequestsViewModel()
         mutualsViewModel = MutualsViewModel()
         inboxViewModel.clear()
+        messagingViewModel.clear()
 
         // Reset UI state
         path = [] // ensure OnboardingFlow starts at LoginView after logout

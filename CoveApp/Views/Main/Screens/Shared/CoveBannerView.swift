@@ -1,11 +1,10 @@
 import SwiftUI
 
-// Uses AlertBannerView for messaging placeholder
 struct CoveBannerView: View {
     var onInbox: (() -> Void)? = nil
     var onPaperPlane: (() -> Void)? = nil
     @State private var showInvites = false
-    @State private var showMessageBanner = false
+    @State private var showMessaging = false
 
     var body: some View {
         HStack(alignment: .center) {
@@ -27,7 +26,7 @@ struct CoveBannerView: View {
 
                 Button(action: {
                     onPaperPlane?()
-                    withAnimation { showMessageBanner = true }
+                    showMessaging = true
                 }) {
                     Image(systemName: "paperplane")
                         .resizable()
@@ -42,10 +41,9 @@ struct CoveBannerView: View {
         .sheet(isPresented: $showInvites) {
             InboxView()
         }
-        .overlay(
-            AlertBannerView(message: "direct messaging coming soon!", isVisible: $showMessageBanner)
-                .animation(.easeInOut, value: showMessageBanner)
-        )
+        .sheet(isPresented: $showMessaging) {
+            MessagingView()
+        }
     }
 }
 

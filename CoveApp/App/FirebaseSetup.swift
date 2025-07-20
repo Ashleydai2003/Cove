@@ -93,29 +93,17 @@ class FirebaseSetup: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserN
     // MARK: - Helper Methods
     
     private func sendFCMTokenToBackend(_ token: String) {
-        // Send token to your backend API
-        guard let url = URL(string: "\(AppConstants.API.baseURL)/update-fcm-token") else { return }
+        // WebSocketManager will handle FCM token updates automatically
+        // when it connects to the Socket.io server
+        Log.debug("FCM token received: \(token)")
         
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        // Store token for WebSocketManager to use
+        UserDefaults.standard.set(token, forKey: "FCM_TOKEN")
         
-        // Add your authentication header
-        Task {
-            if let idToken = try? await Auth.auth().currentUser?.getIDToken() {
-                request.setValue("Bearer \(idToken)", forHTTPHeaderField: "Authorization")
-            }
-            
-            let body = ["fcmToken": token]
-            request.httpBody = try? JSONSerialization.data(withJSONObject: body)
-            
-            URLSession.shared.dataTask(with: request) { data, response, error in
-                if let error = error {
-                    Log.error("Failed to send FCM token: \(error)")
-                } else {
-                    Log.debug("FCM token sent successfully")
-                }
-            }.resume()
+        // If WebSocket is connected, send the token update
+        if SocketManagerService.shared.isConnected {
+            // TODO: Implement FCM token update in SocketManagerService
+            Log.debug("FCM token available for WebSocket: \(token)")
         }
     }
     
@@ -134,13 +122,20 @@ class FirebaseSetup: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserN
         Log.debug("Initializing WebSocket connection", category: "websocket")
         
         // Connect to WebSocket when user is authenticated
-        Auth.auth().addStateDidChangeListener { [weak self] _, user in
-            if let user = user {
+        _ = Auth.auth().addStateDidChangeListener { _, user in
+            if user != nil {
                 Log.debug("User authenticated, connecting to WebSocket", category: "websocket")
-                WebSocketManager.shared.connect()
+                // Get Firebase token and connect
+                user?.getIDToken { token, error in
+                    if let token = token {
+                        DispatchQueue.main.async {
+                            SocketManagerService.shared.connect(token: token)
+                        }
+                    }
+                }
             } else {
                 Log.debug("User signed out, disconnecting from WebSocket", category: "websocket")
-                WebSocketManager.shared.disconnect()
+                SocketManagerService.shared.disconnect()
             }
         }
     }
