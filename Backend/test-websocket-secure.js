@@ -1,6 +1,7 @@
 const io = require('socket.io-client');
 
 // Test secure WebSocket connection and database connectivity
+// Using auth method (Node.js style) - backend now supports both auth and query
 const socket = io('wss://socket.coveapp.co:3001', {
   transports: ['websocket'],
   timeout: 5000,

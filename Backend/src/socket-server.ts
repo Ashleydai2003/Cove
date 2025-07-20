@@ -135,6 +135,8 @@ io.use(async (socket, next) => {
   try {
     // Check if Firebase is initialized
     if (!firebaseInitialized) {
+      console.error('🔥 Socket auth failed: Firebase not initialized');
+      socket.emit("unauthorized", { message: "Server not ready", detail: "Firebase not initialized" });
       return next(new Error('Firebase not initialized yet'));
     }
 
@@ -149,6 +151,7 @@ io.use(async (socket, next) => {
     if (now - attempts.lastAttempt < rateLimitWindow) {
       if (attempts.count >= maxAttempts) {
         console.warn(`Rate limit exceeded for IP: ${clientIP}`);
+        socket.emit("unauthorized", { message: "Rate limit exceeded", detail: "Too many connection attempts" });
         return next(new Error('Too many connection attempts'));
       }
       attempts.count++;
@@ -161,11 +164,15 @@ io.use(async (socket, next) => {
     // Check both auth and query for token (iOS uses query, Node.js uses auth)
     const token = socket.handshake.auth.token || socket.handshake.query.token;
     if (!token) {
+      console.error('🔥 Socket auth failed: No token provided');
+      socket.emit("unauthorized", { message: "Authentication token required", detail: "No token provided" });
       return next(new Error('Authentication token required'));
     }
 
     // Enhanced token validation
     if (typeof token !== 'string' || token.length < 10) {
+      console.error('🔥 Socket auth failed: Invalid token format');
+      socket.emit("unauthorized", { message: "Invalid token format", detail: "Token too short or invalid" });
       return next(new Error('Invalid token format'));
     }
 
@@ -174,6 +181,8 @@ io.use(async (socket, next) => {
     
     // Additional security checks
     if (!decodedToken.uid) {
+      console.error('🔥 Socket auth failed: Invalid token - missing UID');
+      socket.emit("unauthorized", { message: "Invalid token", detail: "Missing UID" });
       return next(new Error('Invalid token: missing UID'));
     }
     
@@ -185,7 +194,9 @@ io.use(async (socket, next) => {
     (socket as AuthenticatedSocket).user = decodedToken;
     next();
   } catch (error) {
-    console.error('Socket authentication error:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('🔥 Socket auth failed:', errorMessage);
+    socket.emit("unauthorized", { message: "Authentication failed", detail: errorMessage });
     next(new Error('Authentication failed'));
   }
 });

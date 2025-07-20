@@ -125,12 +125,14 @@ class FirebaseSetup: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserN
         _ = Auth.auth().addStateDidChangeListener { _, user in
             if user != nil {
                 Log.debug("User authenticated, connecting to WebSocket", category: "websocket")
-                // Get Firebase token and connect
-                user?.getIDToken { token, error in
+                // Get fresh Firebase token and connect
+                user?.getIDTokenForcingRefresh(true) { token, error in
                     if let token = token {
                         DispatchQueue.main.async {
                             SocketManagerService.shared.connect(token: token)
                         }
+                    } else if let error = error {
+                        Log.error("Failed to get fresh token: \(error.localizedDescription)", category: "websocket")
                     }
                 }
             } else {

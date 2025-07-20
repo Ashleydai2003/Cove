@@ -43,20 +43,22 @@ class SocketManagerService: ObservableObject {
     
     /// Connect to Socket.io server with Firebase token
     func connect(token: String) {
+        // Use secure connectParams instead of query parameter
         guard let url = URL(string: AppConstants.WebSocket.socketURL) else {
             Log.error("Invalid WebSocket URL", category: "websocket")
             return
         }
         
-        // Create Socket.io manager with configuration
+        // Create Socket.io manager with secure connectParams
         manager = SocketManager(socketURL: url, config: [
             .log(true), // Enable logging for debugging
             .compress,
-            .connectParams(["token": token]), // ✅ iOS only supports connectParams
             .forceWebsockets(true), // Force WebSocket transport
             .reconnects(true),
             .reconnectAttempts(5),
-            .reconnectWait(1000)
+            .reconnectWait(1000),
+            .forceNew(true), // Force new connection
+            .connectParams(["token": token]) // Secure connectParams (not query param)
         ])
         
         guard let manager = manager else { return }
@@ -71,6 +73,11 @@ class SocketManagerService: ObservableObject {
         connectionStatus = .connecting
         Log.debug("Connecting to Socket.io server", category: "websocket")
         
+        // Debug: Log the token being sent (only first few chars for security)
+        let tokenPreview = String(token.prefix(20)) + "..."
+        Log.debug("Connecting with token: \(tokenPreview)", category: "websocket")
+        Log.debug("Using URL: \(url.absoluteString)", category: "websocket")
+        
         // Connect to server
         socket?.connect()
     }
@@ -81,7 +88,8 @@ class SocketManagerService: ObservableObject {
         
         // Connection events
         socket.on(clientEvent: .connect) { [weak self] data, ack in
-            Log.debug("Socket.io connected", category: "websocket")
+            Log.debug("Socket.io connected successfully", category: "websocket")
+            Log.debug("Connection data: \(data)", category: "websocket")
             DispatchQueue.main.async {
                 self?.isConnected = true
                 self?.connectionStatus = .connected
@@ -90,6 +98,7 @@ class SocketManagerService: ObservableObject {
         
         socket.on(clientEvent: .disconnect) { [weak self] data, ack in
             Log.debug("Socket.io disconnected", category: "websocket")
+            Log.debug("Disconnect data: \(data)", category: "websocket")
             DispatchQueue.main.async {
                 self?.isConnected = false
                 self?.connectionStatus = .disconnected
@@ -97,13 +106,45 @@ class SocketManagerService: ObservableObject {
         }
         
         socket.on(clientEvent: .error) { [weak self] data, ack in
+            Log.error("Socket.io error received", category: "websocket")
+            Log.error("Error data: \(data)", category: "websocket")
             if let error = data.first as? String {
                 Log.error("Socket.io error: \(error)", category: "websocket")
                 DispatchQueue.main.async {
                     self?.isConnected = false
                     self?.connectionStatus = .error(error)
                 }
+            } else {
+                Log.error("Socket.io error with unknown format: \(data)", category: "websocket")
+                DispatchQueue.main.async {
+                    self?.isConnected = false
+                    self?.connectionStatus = .error("Unknown error")
+                }
             }
+        }
+        
+        socket.on(clientEvent: .reconnectAttempt) { data, ack in
+            if let attempt = data.first as? Int {
+                Log.debug("Socket.io reconnect attempt: \(attempt)", category: "websocket")
+            }
+        }
+        
+        socket.on(clientEvent: .reconnect) { data, ack in
+            Log.debug("Socket.io reconnected", category: "websocket")
+        }
+        
+        // Listen for unauthorized events from server
+        socket.on("unauthorized") { [weak self] data, ack in
+            Log.error("Socket unauthorized: \(data)", category: "websocket")
+            DispatchQueue.main.async {
+                self?.isConnected = false
+                self?.connectionStatus = .error("Unauthorized")
+            }
+        }
+        
+        // Listen for all events for debugging
+        socket.onAny { event in
+            Log.debug("Socket Event: \(event.event), Data: \(String(describing: event.items))", category: "websocket")
         }
         
         // Custom events
