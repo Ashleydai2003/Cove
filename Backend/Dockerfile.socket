@@ -11,13 +11,13 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm ci --only=production
+RUN npm ci
 
 # Copy source code
 COPY . .
 
-# Build the application
-RUN npm run build
+# Build the socket server specifically
+RUN npm run build:socket
 
 # Production stage
 FROM node:18-alpine AS production
