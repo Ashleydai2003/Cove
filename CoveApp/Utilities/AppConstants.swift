@@ -46,7 +46,7 @@ struct AppConstants {
             return "ws://localhost:3001"
             #else
             // In Release mode, use secure WebSocket (WSS) for production
-            return "wss://13.52.150.178:3001"
+            return "wss://socket.coveapp.co:3001"
             #endif
         }
         
@@ -57,7 +57,7 @@ struct AppConstants {
             return "ws://localhost:3001"
             #else
             // In Release mode, use secure WebSocket (WSS) for production
-            return "wss://13.52.150.178:3001"
+            return "wss://socket.coveapp.co:3001"
             #endif
         }
         

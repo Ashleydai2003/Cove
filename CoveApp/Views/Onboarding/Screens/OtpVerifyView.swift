@@ -71,7 +71,18 @@ struct OtpVerifyView: View {
     /// Formats the phone number with hyphens for display
     private var formattedPhoneNumber: String {
         let phoneNumber = UserDefaults.standard.string(forKey: "UserPhoneNumber") ?? ""
-        let digits = phoneNumber.filter { $0.isNumber }
+        
+        // Remove the country code (+1) if present to get just the local number
+        let localNumber: String
+        if phoneNumber.hasPrefix("+1") && phoneNumber.count > 2 {
+            localNumber = String(phoneNumber.dropFirst(2))
+        } else if phoneNumber.hasPrefix("1") && phoneNumber.count > 1 {
+            localNumber = String(phoneNumber.dropFirst(1))
+        } else {
+            localNumber = phoneNumber
+        }
+        
+        let digits = localNumber.filter { $0.isNumber }
         if digits.count == 10 {
             let areaCode = String(digits.prefix(3))
             let middle = String(digits[digits.index(digits.startIndex, offsetBy: 3)..<digits.index(digits.startIndex, offsetBy: 6)])
@@ -393,7 +404,18 @@ struct OtpVerifyView: View {
             return
         }
 
-        let userPhone = UserPhoneNumber(number: phoneNumber, country: Country(id: "0235", name: "USA", flag: "🇺🇸", code: "US", dial_code: "+1", pattern: "### ### ####", limit: 17))
+        // The phone number in UserDefaults already includes the country code
+        // We need to extract just the local number for UserPhoneNumber
+        let localNumber: String
+        if phoneNumber.hasPrefix("+1") && phoneNumber.count > 2 {
+            localNumber = String(phoneNumber.dropFirst(2))
+        } else if phoneNumber.hasPrefix("1") && phoneNumber.count > 1 {
+            localNumber = String(phoneNumber.dropFirst(1))
+        } else {
+            localNumber = phoneNumber
+        }
+
+        let userPhone = UserPhoneNumber(number: localNumber, country: Country(id: "0235", name: "USA", flag: "🇺🇸", code: "US", dial_code: "+1", pattern: "### ### ####", limit: 17))
         userPhone.sendVerificationCode { result in
             completion(result)
         }
