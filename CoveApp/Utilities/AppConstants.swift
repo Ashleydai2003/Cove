@@ -41,20 +41,13 @@ struct AppConstants {
     struct WebSocket {
         /// Returns the WebSocket URL
         static var socketURL: String {
-            #if DEBUG
-            return "ws://localhost:3001"
-            #else
+            // Always use production socket server since local development doesn't run socket server
             return "wss://socket.coveapp.co:3001"
-            #endif
         }
         
         /// Current WebSocket environment for debugging
         static var environment: String {
-            #if DEBUG
-            return "Development (Local Socket.io)"
-            #else
             return "Production (Secure WSS Socket.io)"
-            #endif
         }
     }
 
