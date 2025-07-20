@@ -1,6 +1,9 @@
 # Multi-stage build for Socket.io server
 FROM node:18-alpine AS builder
 
+# Install build dependencies including zip
+RUN apk add --no-cache zip
+
 # Set working directory
 WORKDIR /app
 
@@ -24,6 +27,7 @@ RUN apk update && apk upgrade && \
     apk add --no-cache \
     openssl \
     ca-certificates \
+    curl \
     && rm -rf /var/cache/apk/*
 
 # Create app directory
