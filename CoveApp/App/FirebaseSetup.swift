@@ -38,7 +38,7 @@ class FirebaseSetup: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserN
         #endif
 
         // Initialize WebSocket connection after Firebase setup
-        initializeWebSocketConnection()
+        // initializeWebSocketConnection() // Temporarily removed - will reimplement
 
         return true
     }
@@ -93,18 +93,14 @@ class FirebaseSetup: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserN
     // MARK: - Helper Methods
     
     private func sendFCMTokenToBackend(_ token: String) {
-        // WebSocketManager will handle FCM token updates automatically
-        // when it connects to the Socket.io server
+        // FCM token will be handled when WebSocket is reimplemented
         Log.debug("FCM token received: \(token)")
         
-        // Store token for WebSocketManager to use
+        // Store token for future WebSocket implementation
         UserDefaults.standard.set(token, forKey: "FCM_TOKEN")
         
-        // If WebSocket is connected, send the token update
-        if SocketManagerService.shared.isConnected {
-            // TODO: Implement FCM token update in SocketManagerService
-            Log.debug("FCM token available for WebSocket: \(token)")
-        }
+        // TODO: Implement FCM token update when WebSocket is reimplemented
+        Log.debug("FCM token available for WebSocket: \(token)")
     }
     
     private func handleNotificationTap(_ userInfo: [AnyHashable: Any]) {
@@ -118,27 +114,28 @@ class FirebaseSetup: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserN
     
     // MARK: - WebSocket Management
     
-    private func initializeWebSocketConnection() {
-        Log.debug("Initializing WebSocket connection", category: "websocket")
-        
-        // Connect to WebSocket when user is authenticated
-        _ = Auth.auth().addStateDidChangeListener { _, user in
-            if user != nil {
-                Log.debug("User authenticated, connecting to WebSocket", category: "websocket")
-                // Get fresh Firebase token and connect
-                user?.getIDTokenForcingRefresh(true) { token, error in
-                    if let token = token {
-                        DispatchQueue.main.async {
-                            SocketManagerService.shared.connect(token: token)
-                        }
-                    } else if let error = error {
-                        Log.error("Failed to get fresh token: \(error.localizedDescription)", category: "websocket")
-                    }
-                }
-            } else {
-                Log.debug("User signed out, disconnecting from WebSocket", category: "websocket")
-                SocketManagerService.shared.disconnect()
-            }
-        }
-    }
+    // WebSocket will be reimplemented from scratch
+    // private func initializeWebSocketConnection() {
+    //     Log.debug("Initializing WebSocket connection", category: "websocket")
+    //     
+    //     // Connect to WebSocket when user is authenticated
+    //     _ = Auth.auth().addStateDidChangeListener { _, user in
+    //         if user != nil {
+    //             Log.debug("User authenticated, connecting to WebSocket", category: "websocket")
+    //             // Get fresh Firebase token and connect
+    //             user?.getIDTokenForcingRefresh(true) { token, error in
+    //                 if let token = token {
+    //                     DispatchQueue.main.async {
+    //                         // TODO: Implement WebSocket connection
+    //                     }
+    //                 } else if let error = error {
+    //                     Log.error("Failed to get fresh token: \(error.localizedDescription)", category: "websocket")
+    //                 }
+    //             }
+    //         } else {
+    //             Log.debug("User signed out, disconnecting from WebSocket", category: "websocket")
+    //             // TODO: Implement WebSocket disconnection
+    //         }
+    //     }
+    // }
 }
