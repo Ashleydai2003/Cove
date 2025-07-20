@@ -37,7 +37,11 @@ class SocketTest {
                 .log(true),
                 .compress,
                 .connectParams(["token": token]),
-                .forceWebsockets(true)
+                .forceWebsockets(true),
+                .version(.three),       // 🔥 CRITICAL: Use Socket.IO v4 protocol (matches server v4.8.1)
+                .reconnects(true),
+                .reconnectAttempts(5),
+                .reconnectWait(1000)
             ]
         )
 

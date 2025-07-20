@@ -79,11 +79,32 @@ const io = new Server(server, {
   transports: ['websocket'],  // 🔥 CRITICAL: Only WebSocket transport
   allowUpgrades: false,       // 🔥 CRITICAL: Prevent fallback to polling
   cors: {
-    origin: "*", // 🔥 TEMPORARY: Allow all origins for testing
+    origin: function (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
+      // Allow requests with no origin (like mobile apps)
+      if (!origin) return callback(null, true);
+      
+      const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [
+        'https://coveapp.co',
+        'https://www.coveapp.co',
+        'https://api.coveapp.co',
+        'http://localhost:3000', // Development
+        'http://localhost:8080', // iOS Simulator
+        'capacitor://localhost', // iOS Capacitor
+        'ionic://localhost' // Ionic
+      ];
+      
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        console.warn(`Blocked WebSocket connection from unauthorized origin: ${origin}`);
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     methods: ["GET", "POST"],
     credentials: true
   },
   allowEIO3: true,           // Enable EIO3 for iOS client compatibility
+  allowEIO4: true,           // Enable EIO4 for newer clients
   pingTimeout: 60000,        // 60 seconds
   pingInterval: 25000,       // 25 seconds
   maxHttpBufferSize: 1e6,    // 1MB max message size
@@ -98,7 +119,7 @@ const io = new Server(server, {
   },
   upgradeTimeout: 10000,
   perMessageDeflate: false   // Disable compression for better compatibility
-});
+} as any);
 
 // Initialize Firebase
 let firebaseInitialized = false;
