@@ -102,7 +102,7 @@ const io = new Server(server, {
     credentials: true
   },
   transports: ['websocket', 'polling'], // Explicitly define transports
-  allowEIO3: false, // Disable older Socket.IO versions for security
+  allowEIO3: true, // Enable EIO3 for iOS client compatibility
   pingTimeout: 60000, // 60 seconds
   pingInterval: 25000, // 25 seconds
   maxHttpBufferSize: 1e6, // 1MB max message size
@@ -114,7 +114,11 @@ const io = new Server(server, {
       return callback(null, false);
     }
     callback(null, true);
-  }
+  },
+  // Additional compatibility settings for older clients
+  upgradeTimeout: 10000,
+  allowUpgrades: true,
+  perMessageDeflate: false // Disable compression for better compatibility
 });
 
 // Initialize Firebase
