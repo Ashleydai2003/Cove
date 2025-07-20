@@ -101,7 +101,7 @@ const io = new Server(server, {
     methods: ["GET", "POST"],
     credentials: true
   },
-  transports: ['websocket', 'polling'], // Explicitly define transports
+  transports: ['websocket'], // 🔥 CRITICAL: Only WebSocket transport
   allowEIO3: true, // Enable EIO3 for iOS client compatibility
   pingTimeout: 60000, // 60 seconds
   pingInterval: 25000, // 25 seconds
@@ -117,7 +117,7 @@ const io = new Server(server, {
   },
   // Additional compatibility settings for older clients
   upgradeTimeout: 10000,
-  allowUpgrades: true,
+  allowUpgrades: false, // 🔥 CRITICAL: Prevent fallback to polling
   perMessageDeflate: false // Disable compression for better compatibility
 });
 
