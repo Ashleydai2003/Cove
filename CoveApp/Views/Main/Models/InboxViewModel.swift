@@ -147,7 +147,9 @@ class InboxViewModel: ObservableObject {
             DispatchQueue.main.async {
                 switch result {
                 case .success:
-                    () // No action needed
+                    Log.debug("✅ Successfully joined cove \(invite.cove.id), refreshing all feeds...")
+                    // Refresh all feeds to show the newly joined cove and its events
+                    self.refreshAllFeeds()
                 case .failure(let error):
                     // Re-add on failure (new reference again)
                     var arr = self.invites
