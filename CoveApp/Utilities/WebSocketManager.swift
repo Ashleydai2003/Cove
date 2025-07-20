@@ -7,315 +7,291 @@
 
 import Foundation
 import FirebaseAuth
-import os
+import SocketIO
 
-/// Secure WebSocket Manager for Socket.io connections
-class WebSocketManager: ObservableObject {
-    /// Singleton instance
-    static let shared = WebSocketManager()
+/// Socket.io Manager Service using official Socket.IO-Client-Swift
+class SocketManagerService: ObservableObject {
+    static let shared = SocketManagerService()
     
-    /// Connection state
-    @Published var isConnected = false
+    @Published var isConnected: Bool = false
     @Published var connectionStatus: ConnectionStatus = .disconnected
     
-    /// Socket.io connection
-    private var socket: URLSessionWebSocketTask?
-    private var reconnectTimer: Timer?
-    private let maxReconnectAttempts = 5
-    private var reconnectAttempts = 0
+    private var manager: SocketManager?
+    private var socket: SocketIOClient?
     
-    /// Connection status enum
-    enum ConnectionStatus {
+    enum ConnectionStatus: Equatable {
         case disconnected
         case connecting
         case connected
-        case reconnecting
         case error(String)
-    }
-    
-    private init() {
-        Log.debug("WebSocketManager initialized", category: "websocket")
-    }
-    
-    // MARK: - Connection Management
-    
-    /// Connect to Socket.io server with Firebase authentication
-    func connect() {
-        guard !isConnected else {
-            Log.debug("Already connected to WebSocket", category: "websocket")
-            return
-        }
         
-        connectionStatus = .connecting
-        Log.debug("Connecting to WebSocket: \(AppConstants.WebSocket.socketURL)", category: "websocket")
-        
-        // Get Firebase ID token for authentication
-        Auth.auth().currentUser?.getIDToken { [weak self] token, error in
-            guard let self = self else { return }
-            
-            if let error = error {
-                Log.error("Failed to get Firebase token: \(error.localizedDescription)", category: "websocket")
-                self.connectionStatus = .error("Authentication failed")
-                return
+        static func == (lhs: ConnectionStatus, rhs: ConnectionStatus) -> Bool {
+            switch (lhs, rhs) {
+            case (.disconnected, .disconnected),
+                 (.connecting, .connecting),
+                 (.connected, .connected):
+                return true
+            case (.error(let lhsError), .error(let rhsError)):
+                return lhsError == rhsError
+            default:
+                return false
             }
-            
-            guard let token = token else {
-                Log.error("No Firebase token available", category: "websocket")
-                self.connectionStatus = .error("No authentication token")
-                return
-            }
-            
-            // Create WebSocket connection with authentication
-            self.createWebSocketConnection(token: token)
         }
     }
     
-    /// Create WebSocket connection with authentication
-    private func createWebSocketConnection(token: String) {
+    private init() {}
+    
+    /// Connect to Socket.io server with Firebase token
+    func connect(token: String) {
         guard let url = URL(string: AppConstants.WebSocket.socketURL) else {
-            Log.error("Invalid WebSocket URL: \(AppConstants.WebSocket.socketURL)", category: "websocket")
-            connectionStatus = .error("Invalid URL")
+            Log.error("Invalid WebSocket URL", category: "websocket")
             return
         }
         
-        var request = URLRequest(url: url)
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        // Create Socket.io manager with configuration
+        manager = SocketManager(socketURL: url, config: [
+            .log(true), // Enable logging for debugging
+            .compress,
+            .connectParams(["token": token]), // ✅ iOS only supports connectParams
+            .forceWebsockets(true), // Force WebSocket transport
+            .reconnects(true),
+            .reconnectAttempts(5),
+            .reconnectWait(1000)
+        ])
         
-        socket = URLSession.shared.webSocketTask(with: request)
-        socket?.resume()
+        guard let manager = manager else { return }
         
-        // Start receiving messages
-        receiveMessage()
+        // Get the default socket
+        socket = manager.defaultSocket
         
-        // Send authentication message
-        sendAuthenticationMessage(token: token)
+        // Set up event handlers
+        setupEventHandlers()
+        
+        // Connect to server with authentication
+        connectionStatus = .connecting
+        Log.debug("Connecting to Socket.io server", category: "websocket")
+        
+        // Connect to server
+        socket?.connect()
     }
     
-    /// Send authentication message to Socket.io server
-    private func sendAuthenticationMessage(token: String) {
-        let authMessage = [
-            "type": "auth",
-            "token": token
+    /// Set up Socket.io event handlers
+    private func setupEventHandlers() {
+        guard let socket = socket else { return }
+        
+        // Connection events
+        socket.on(clientEvent: .connect) { [weak self] data, ack in
+            Log.debug("Socket.io connected", category: "websocket")
+            DispatchQueue.main.async {
+                self?.isConnected = true
+                self?.connectionStatus = .connected
+            }
+        }
+        
+        socket.on(clientEvent: .disconnect) { [weak self] data, ack in
+            Log.debug("Socket.io disconnected", category: "websocket")
+            DispatchQueue.main.async {
+                self?.isConnected = false
+                self?.connectionStatus = .disconnected
+            }
+        }
+        
+        socket.on(clientEvent: .error) { [weak self] data, ack in
+            if let error = data.first as? String {
+                Log.error("Socket.io error: \(error)", category: "websocket")
+                DispatchQueue.main.async {
+                    self?.isConnected = false
+                    self?.connectionStatus = .error(error)
+                }
+            }
+        }
+        
+        // Custom events
+        socket.on("new_message") { [weak self] data, ack in
+            Log.debug("Received new message event", category: "websocket")
+            if let messageData = data.first as? [String: Any] {
+                self?.handleNewMessage(messageData)
+            }
+        }
+        
+        socket.on("typing_start") { [weak self] data, ack in
+            Log.debug("Received typing start event", category: "websocket")
+            if let typingData = data.first as? [String: Any] {
+                self?.handleTypingIndicator(typingData, isTyping: true)
+            }
+        }
+        
+        socket.on("typing_stop") { [weak self] data, ack in
+            Log.debug("Received typing stop event", category: "websocket")
+            if let typingData = data.first as? [String: Any] {
+                self?.handleTypingIndicator(typingData, isTyping: false)
+            }
+        }
+        
+        socket.on("message_read") { [weak self] data, ack in
+            Log.debug("Received message read event", category: "websocket")
+            if let readData = data.first as? [String: Any] {
+                self?.handleMessageRead(readData)
+            }
+        }
+        
+        socket.on("user_status") { [weak self] data, ack in
+            Log.debug("Received user status event", category: "websocket")
+            if let statusData = data.first as? [String: Any] {
+                self?.handleUserStatus(statusData)
+            }
+        }
+    }
+    
+    /// Send message to specific thread
+    func sendMessage(threadId: String, content: String) {
+        guard let socket = socket, isConnected else {
+            Log.error("Cannot send message - not connected", category: "websocket")
+            return
+        }
+        
+        let messageData: [String: Any] = [
+            "threadId": threadId,
+            "content": content
         ]
         
-        sendMessage(authMessage)
+        socket.emit("send_message", messageData)
+        Log.debug("Sent message to thread \(threadId)", category: "websocket")
+    }
+    
+    /// Send typing indicator
+    func sendTyping(threadId: String, isTyping: Bool) {
+        guard let socket = socket, isConnected else {
+            Log.error("Cannot send typing indicator - not connected", category: "websocket")
+            return
+        }
+        
+        let event = isTyping ? "typing_start" : "typing_stop"
+        let typingData: [String: Any] = [
+            "threadId": threadId
+        ]
+        
+        socket.emit(event, typingData)
+        Log.debug("Sent \(event) for thread \(threadId)", category: "websocket")
+    }
+    
+    /// Mark message as read
+    func markMessageAsRead(messageId: String, threadId: String) {
+        guard let socket = socket, isConnected else {
+            Log.error("Cannot mark message as read - not connected", category: "websocket")
+            return
+        }
+        
+        let readData: [String: Any] = [
+            "messageId": messageId,
+            "threadId": threadId
+        ]
+        
+        socket.emit("mark_read", readData)
+        Log.debug("Marked message \(messageId) as read", category: "websocket")
+    }
+    
+    /// Join a thread
+    func joinThread(threadId: String) {
+        guard let socket = socket, isConnected else {
+            Log.error("Cannot join thread - not connected", category: "websocket")
+            return
+        }
+        
+        let joinData: [String: Any] = [
+            "threadId": threadId
+        ]
+        
+        socket.emit("join_thread", joinData)
+        Log.debug("Joined thread \(threadId)", category: "websocket")
+    }
+    
+    /// Leave a thread
+    func leaveThread(threadId: String) {
+        guard let socket = socket, isConnected else {
+            Log.error("Cannot leave thread - not connected", category: "websocket")
+            return
+        }
+        
+        let leaveData: [String: Any] = [
+            "threadId": threadId
+        ]
+        
+        socket.emit("leave_thread", leaveData)
+        Log.debug("Left thread \(threadId)", category: "websocket")
+    }
+    
+    /// Handle new message event
+    private func handleNewMessage(_ data: [String: Any]) {
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(
+                name: .newMessageReceived,
+                object: nil,
+                userInfo: data
+            )
+        }
+    }
+    
+    /// Handle typing indicator
+    private func handleTypingIndicator(_ data: [String: Any], isTyping: Bool) {
+        var updatedData = data
+        updatedData["isTyping"] = isTyping
+        
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(
+                name: .typingIndicatorChanged,
+                object: nil,
+                userInfo: updatedData
+            )
+        }
+    }
+    
+    /// Handle message read
+    private func handleMessageRead(_ data: [String: Any]) {
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(
+                name: .messageRead,
+                object: nil,
+                userInfo: data
+            )
+        }
+    }
+    
+    /// Handle user status
+    private func handleUserStatus(_ data: [String: Any]) {
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(
+                name: .userStatusChanged,
+                object: nil,
+                userInfo: data
+            )
+        }
     }
     
     /// Disconnect from WebSocket
     func disconnect() {
         Log.debug("Disconnecting from WebSocket", category: "websocket")
         
-        reconnectTimer?.invalidate()
-        reconnectTimer = nil
-        reconnectAttempts = 0
-        
-        socket?.cancel()
+        socket?.disconnect()
         socket = nil
+        manager = nil
         
-        isConnected = false
-        connectionStatus = .disconnected
-    }
-    
-    // MARK: - Message Handling
-    
-    /// Send message to WebSocket
-    func sendMessage(_ message: [String: Any]) {
-        guard let socket = socket else {
-            Log.error("Cannot send message: WebSocket not connected", category: "websocket")
-            return
-        }
-        
-        do {
-            let data = try JSONSerialization.data(withJSONObject: message)
-            let webSocketMessage = URLSessionWebSocketTask.Message.data(data)
-            
-            socket.send(webSocketMessage) { [weak self] error in
-                if let error = error {
-                    Log.error("Failed to send WebSocket message: \(error.localizedDescription)", category: "websocket")
-                    self?.handleConnectionError(error)
-                } else {
-                    Log.debug("WebSocket message sent successfully", category: "websocket")
-                }
-            }
-        } catch {
-            Log.error("Failed to serialize WebSocket message: \(error.localizedDescription)", category: "websocket")
+        DispatchQueue.main.async {
+            self.isConnected = false
+            self.connectionStatus = .disconnected
         }
     }
     
-    /// Receive messages from WebSocket
-    private func receiveMessage() {
-        socket?.receive { [weak self] result in
-            guard let self = self else { return }
-            
-            switch result {
-            case .success(let message):
-                self.handleReceivedMessage(message)
-                // Continue receiving messages
-                self.receiveMessage()
-                
-            case .failure(let error):
-                Log.error("WebSocket receive error: \(error.localizedDescription)", category: "websocket")
-                self.handleConnectionError(error)
-            }
-        }
+    /// Get current status for UI
+    var currentStatus: ConnectionStatus {
+        return connectionStatus
     }
-    
-    /// Handle received WebSocket message
-    private func handleReceivedMessage(_ message: URLSessionWebSocketTask.Message) {
-        switch message {
-        case .data(let data):
-            do {
-                if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
-                    handleSocketMessage(json)
-                }
-            } catch {
-                Log.error("Failed to parse WebSocket message: \(error.localizedDescription)", category: "websocket")
-            }
-            
-        case .string(let string):
-            do {
-                if let data = string.data(using: .utf8),
-                   let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
-                    handleSocketMessage(json)
-                }
-            } catch {
-                Log.error("Failed to parse WebSocket string message: \(error.localizedDescription)", category: "websocket")
-            }
-            
-        @unknown default:
-            Log.debug("Unknown WebSocket message type", category: "websocket")
-        }
-    }
-    
-    /// Handle Socket.io specific messages
-    private func handleSocketMessage(_ message: [String: Any]) {
-        guard let type = message["type"] as? String else {
-            Log.debug("WebSocket message missing type", category: "websocket")
-            return
-        }
-        
-        switch type {
-        case "auth_success":
-            Log.debug("WebSocket authentication successful", category: "websocket")
-            isConnected = true
-            connectionStatus = .connected
-            reconnectAttempts = 0
-            
-        case "auth_error":
-            Log.error("WebSocket authentication failed", category: "websocket")
-            connectionStatus = .error("Authentication failed")
-            
-        case "new_message":
-            handleNewMessage(message)
-            
-        case "typing_start", "typing_stop":
-            handleTypingIndicator(message)
-            
-        case "message_read":
-            handleMessageRead(message)
-            
-        case "user_online", "user_offline":
-            handleUserStatus(message)
-            
-        default:
-            Log.debug("Received WebSocket message: \(type)", category: "websocket")
-        }
-    }
-    
-    // MARK: - Message Handlers
-    
-    private func handleNewMessage(_ message: [String: Any]) {
-        // Handle new message notification
-        Log.debug("New message received", category: "websocket")
-        // TODO: Implement message handling logic
-    }
-    
-    private func handleTypingIndicator(_ message: [String: Any]) {
-        // Handle typing indicator
-        Log.debug("Typing indicator received", category: "websocket")
-        // TODO: Implement typing indicator logic
-    }
-    
-    private func handleMessageRead(_ message: [String: Any]) {
-        // Handle message read receipt
-        Log.debug("Message read receipt received", category: "websocket")
-        // TODO: Implement read receipt logic
-    }
-    
-    private func handleUserStatus(_ message: [String: Any]) {
-        // Handle user online/offline status
-        Log.debug("User status update received", category: "websocket")
-        // TODO: Implement user status logic
-    }
-    
-    // MARK: - Error Handling & Reconnection
-    
-    private func handleConnectionError(_ error: Error) {
-        Log.error("WebSocket connection error: \(error.localizedDescription)", category: "websocket")
-        
-        isConnected = false
-        connectionStatus = .error(error.localizedDescription)
-        
-        // Attempt reconnection if we haven't exceeded max attempts
-        if reconnectAttempts < maxReconnectAttempts {
-            attemptReconnection()
-        } else {
-            Log.error("Max reconnection attempts reached", category: "websocket")
-            connectionStatus = .error("Connection failed after \(maxReconnectAttempts) attempts")
-        }
-    }
-    
-    private func attemptReconnection() {
-        reconnectAttempts += 1
-        connectionStatus = .reconnecting
-        
-        Log.debug("Attempting WebSocket reconnection (\(reconnectAttempts)/\(maxReconnectAttempts))", category: "websocket")
-        
-        // Exponential backoff: 1s, 2s, 4s, 8s, 16s
-        let delay = TimeInterval(pow(2.0, Double(reconnectAttempts - 1)))
-        
-        reconnectTimer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { [weak self] _ in
-            self?.connect()
-        }
-    }
-    
-    // MARK: - Public Interface
-    
-    /// Send a message to a specific thread
-    func sendMessage(to threadId: String, content: String) {
-        let message = [
-            "type": "send_message",
-            "threadId": threadId,
-            "content": content
-        ]
-        sendMessage(message)
-    }
-    
-    /// Start typing indicator
-    func startTyping(in threadId: String) {
-        let message = [
-            "type": "typing_start",
-            "threadId": threadId
-        ]
-        sendMessage(message)
-    }
-    
-    /// Stop typing indicator
-    func stopTyping(in threadId: String) {
-        let message = [
-            "type": "typing_stop",
-            "threadId": threadId
-        ]
-        sendMessage(message)
-    }
-    
-    /// Mark message as read
-    func markMessageAsRead(messageId: String) {
-        let message = [
-            "type": "mark_read",
-            "messageId": messageId
-        ]
-        sendMessage(message)
-    }
+}
+
+// MARK: - Notification Names
+extension Notification.Name {
+    static let newMessageReceived = Notification.Name("newMessageReceived")
+    static let typingIndicatorChanged = Notification.Name("typingIndicatorChanged")
+    static let messageRead = Notification.Name("messageRead")
+    static let userStatusChanged = Notification.Name("userStatusChanged")
 } 

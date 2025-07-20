@@ -158,7 +158,8 @@ io.use(async (socket, next) => {
     attempts.lastAttempt = now;
     connectionAttempts.set(clientIP, attempts);
 
-    const token = socket.handshake.auth.token;
+    // Check both auth and query for token (iOS uses query, Node.js uses auth)
+    const token = socket.handshake.auth.token || socket.handshake.query.token;
     if (!token) {
       return next(new Error('Authentication token required'));
     }
@@ -196,6 +197,8 @@ io.on('connection', async (socket) => {
   const authenticatedSocket = socket as AuthenticatedSocket;
   const userId = authenticatedSocket.user.uid;
   console.log(`User ${userId} connected`);
+  console.log('Socket handshake query:', socket.handshake.query);
+  console.log('Socket handshake auth:', socket.handshake.auth);
 
   // Add user to online users
   onlineUsers.set(userId, socket.id);
