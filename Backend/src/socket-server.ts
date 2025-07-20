@@ -165,8 +165,17 @@ io.use(async (socket, next) => {
     attempts.lastAttempt = now;
     connectionAttempts.set(clientIP, attempts);
 
-    // Check both auth and query for token (iOS uses query, Node.js uses auth)
-    const token = socket.handshake.auth.token || socket.handshake.query.token;
+    // Check auth, query, and Authorization header for token
+    const authToken = socket.handshake.auth.token;
+    const queryToken = socket.handshake.query.token;
+    const authHeader = socket.handshake.headers.authorization;
+    
+    let token = authToken || queryToken;
+    
+    // Extract token from Authorization header if present
+    if (!token && authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7); // Remove 'Bearer ' prefix
+    }
     if (!token) {
       console.error('🔥 Socket auth failed: No token provided');
       socket.emit("unauthorized", { message: "Authentication token required", detail: "No token provided" });
