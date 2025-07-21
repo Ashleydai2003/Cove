@@ -95,8 +95,7 @@ struct UserPhoneNumber {
     func sendVerificationCode(completion: @escaping (CodeSendResult) -> Void) {
         let fullPhoneNumber = getFullPhoneNumber()
 
-        // Disable reCAPTCHA verification
-        // TODO: REMOVE THIS AFTER GETTING TOKEN FOR TESTING!!!!
+        // Disable reCAPTCHA verification for debug builds
         #if DEBUG
         Auth.auth().settings?.isAppVerificationDisabledForTesting = true
         #endif

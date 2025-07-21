@@ -1,7 +1,6 @@
 // /Backend/src/index.ts
 
-// This file is supposed to be the entry point for the backend application.
-// Currently, it is just a placeholder hello world function
+// Entry point for the backend application Lambda handler
 
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 import {

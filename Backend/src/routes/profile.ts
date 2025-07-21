@@ -1,5 +1,4 @@
-// Currently a placeholder route
-// This will be used to retrieve profile information in the future
+// Profile route for retrieving user profile information
 
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { authMiddleware } from '../middleware/auth';
