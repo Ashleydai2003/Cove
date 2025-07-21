@@ -293,7 +293,7 @@ struct RelationStatusPicker: View {
     let onStatusChange: (String) -> Void
     @State private var showingPicker = false
 
-    private let statusOptions = ["Single", "Taken", "It's Complicated"]
+    private let statusOptions = ["single", "taken", "it's complicated"]
 
     var body: some View {
         Button(action: {
@@ -412,7 +412,7 @@ struct InterestsSection: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             if interests.isEmpty && !isEditing {
-                StaticHobbyPill(text: "whoops! add your passtimes!", textColor: Colors.k6F6F73)
+                StaticHobbyPill(text: "whoops! add your interests!", textColor: Colors.k6F6F73)
             } else {
                 LazyVGrid(columns: columns, spacing: 12) {
                     ForEach(interests, id: \.self) { hobby in
@@ -439,7 +439,7 @@ struct InterestsSection: View {
 
                     if isEditing {
                         StaticHobbyPill(
-                            text: "add hobby",
+                            text: "add interest",
                             emoji: "➕",
                             textColor: Colors.primaryDark
                         )
