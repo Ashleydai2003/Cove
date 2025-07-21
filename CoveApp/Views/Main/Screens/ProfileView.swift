@@ -511,12 +511,12 @@ struct BlankLocationPopup: View {
     }
 }
 
-// MARK: - Hobbies Selection View
+// MARK: - Hobbies Selection View (Updated to use shared data)
 struct HobbiesSelectionView: View {
     let selectedHobbies: Set<String>
     let onHobbiesSelected: (Set<String>) -> Void
     @State private var currentSelection: Set<String>
-    @State private var searchText: String = ""
+    @State private var expandedButtons: Set<String> = []
     @Environment(\.dismiss) private var dismiss
 
     init(selectedHobbies: Set<String>, onHobbiesSelected: @escaping (Set<String>) -> Void) {
@@ -525,173 +525,92 @@ struct HobbiesSelectionView: View {
         self._currentSelection = State(initialValue: selectedHobbies)
     }
 
-    private let hobbyCategories: [(String, [(String, String)])] = [
-        ("Sports & Fitness 🏃‍♀️", [
-            ("Soccer Teams", "⚽️"),
-            ("Basketball Leagues", "🏀"),
-            ("Tennis Groups", "🎾"),
-            ("Hiking Groups", "🥾"),
-            ("Yoga Classes", "🧘‍♀️"),
-            ("Surfing Meetups", "🏄‍♀️"),
-            ("Rock Climbing", "🧗‍♀️"),
-            ("Swimming Clubs", "🏊‍♀️"),
-            ("Running Groups", "🏃‍♀️"),
-            ("Volleyball Teams", "🏐"),
-            ("Spin Classes", "🚴‍♀️"),
-            ("Boxing Clubs", "🥊"),
-            ("CrossFit Groups", "💪"),
-            ("Dance Fitness", "💃"),
-            ("Beach Volleyball", "🏖️"),
-            ("Ultimate Frisbee", "🥏"),
-            ("Pickleball Clubs", "🏓"),
-            ("Golf Leagues", "⛳️")
-        ]),
-        ("Creative Pursuits 🎨", [
-            ("Art Museums", "🖼️"),
-            ("Pottery Classes", "🏺"),
-            ("Dance Studios", "💃"),
-            ("Music Festivals", "🎵"),
-            ("Theater Groups", "🎭"),
-            ("Cooking Classes", "👨‍🍳"),
-            ("Craft Workshops", "✂️"),
-            ("Writing Circles", "✍️"),
-            ("Film Clubs", "🎬"),
-            ("Photography Walks", "📸"),
-            ("Painting Classes", "🎨"),
-            ("Sculpture Workshops", "🗿"),
-            ("Jewelry Making", "💍"),
-            ("Glass Blowing", "🔥"),
-            ("Digital Art Clubs", "🖥️"),
-            ("Street Art Tours", "🎯"),
-            ("Fashion Design", "👗"),
-            ("Woodworking", "🪚")
-        ]),
-        ("Entertainment 🎉", [
-            ("Cocktail Bars", "🍸"),
-            ("Clubs", "🍷"),
-            ("Wine Tastings", "🍷"),
-            ("Comedy Clubs", "😄"),
-            ("Karaoke Nights", "🎤"),
-            ("Escape Rooms", "🔐"),
-            ("Bowling Leagues", "🎳"),
-            ("Live Music Venues", "🎸"),
-            ("Jazz Clubs", "🎺"),
-            ("Rooftop Bars", "🌆"),
-            ("Beer Gardens", "🍺"),
-            ("Game Nights", "🎲"),
-            ("Dance Clubs", "💃"),
-            ("Piano Bars", "🎹"),
-            ("Magic Shows", "🎩"),
-            ("Burlesque Shows", "✨"),
-            ("Improv Classes", "🎭"),
-            ("Casino Nights", "🎰")
-        ]),
-        ("Social Activities 🌟", [
-            ("Book Clubs", "📚"),
-            ("Travel Groups", "✈️"),
-            ("Founders Groups", "💻"),
-            ("Chess Clubs", "♟️"),
-            ("Volunteer Groups", "🤝"),
-            ("Language Exchange", "🗣️"),
-            ("Food Tours", "🍽️"),
-            ("Coffee Meetups", "☕️"),
-            ("Tech Meetups", "💻"),
-            ("Gardening Clubs", "🌱"),
-            ("Cultural Events", "🎪"),
-            ("Philosophy Clubs", "🤔"),
-            ("Astronomy Groups", "🔭"),
-            ("Hiking Meetups", "🥾"),
-            ("Wine & Paint", "🎨"),
-            ("Cooking Classes", "👨‍🍳"),
-            ("Board Game Nights", "🎲"),
-            ("Trivia Teams", "🧠")
-        ])
-    ]
-
-    private var filteredCategories: [(String, [(String, String)])] {
-        if searchText.isEmpty {
-            return hobbyCategories
-        }
-
-        return hobbyCategories.compactMap { category in
-            let filteredHobbies = category.1.filter { hobby in
-                hobby.0.lowercased().contains(searchText.lowercased())
-            }
-
-            if filteredHobbies.isEmpty {
-                return nil
-            }
-
-            return (category.0, filteredHobbies)
-        }
-    }
-
-    private let columns = [
-        GridItem(.flexible(), spacing: 12),
-        GridItem(.flexible(), spacing: 12)
-    ]
+    private let hobbyDataSections: [HobbySection] = HobbiesData.hobbyDataSections
 
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-                // Search bar
-                HStack {
-                    Image(systemName: "magnifyingglass")
-                        .foregroundColor(.gray)
-                    TextField("Search hobbies...", text: $searchText)
-                        .font(.LeagueSpartan(size: 14))
-                    if !searchText.isEmpty {
-                        Button(action: {
-                            searchText = ""
-                        }) {
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundColor(.gray)
-                        }
-                    }
+                // Header
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("select your interests")
+                        .foregroundStyle(Colors.primaryDark)
+                        .font(.LibreBodoniMedium(size: 28))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                    Text("select whatever stands out to you")
+                        .font(.LeagueSpartan(size: 15))
+                        .foregroundColor(Colors.k0B0B0B)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .padding(8)
-                .background(Color.gray.opacity(0.1))
-                .cornerRadius(10)
-                .padding()
+                .padding(.horizontal, 32)
+                .padding(.top, 20)
 
-                // Hobbies grid
+                // Dynamic expandable hobby buttons organized by sections
                 ScrollView(showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: 24) {
-                        ForEach(filteredCategories, id: \.0) { category in
-                            VStack(alignment: .leading, spacing: 12) {
-                                Text(category.0)
-                                    .font(.LeagueSpartan(size: 16))
-                                    .foregroundStyle(Colors.primaryLight)
-                                    .padding(.horizontal)
+                    VStack(spacing: 0) {
+                        ForEach(Array(hobbyDataSections.enumerated()), id: \.offset) { sectionIndex, section in
+                            let sectionName = section.name
+                            let sectionEmoji = section.emoji
+                            let sectionButtons = section.buttons
 
-                                LazyVGrid(columns: columns, spacing: 12) {
-                                    ForEach(category.1, id: \.0) { hobby in
-                                        Button(action: {
-                                            if currentSelection.contains(hobby.0) {
-                                                currentSelection.remove(hobby.0)
-                                            } else {
-                                                currentSelection.insert(hobby.0)
-                                            }
-                                        }) {
-                                            HobbyPill(
-                                                text: hobby.0,
-                                                emoji: hobby.1,
-                                                isSelected: currentSelection.contains(hobby.0)
-                                            ) {
-                                                if currentSelection.contains(hobby.0) {
-                                                    currentSelection.remove(hobby.0)
-                                                } else {
-                                                    currentSelection.insert(hobby.0)
-                                            }
-                                            }
-                                        }
+                            // Section header on its own line
+                            HStack {
+                                Text("\(sectionEmoji) \(sectionName)")
+                                    .font(.LeagueSpartan(size: 18))
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(Colors.primaryDark)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                Spacer()
+                            }
+                            .padding(.top, sectionIndex == 0 ? 0 : 20)
+                            .padding(.bottom, 8)
+                            .padding(.horizontal, 32)
+
+                            // Buttons for this section in a grid
+                            let sectionButtonData = HobbiesData.getSectionButtonsToShow(for: sectionName, buttons: sectionButtons, expandedButtons: expandedButtons)
+                            
+                            LazyVGrid(columns: [
+                                GridItem(.flexible(), spacing: 12),
+                                GridItem(.flexible(), spacing: 12)
+                            ], spacing: 12) {
+                                ForEach(sectionButtonData, id: \.id) { buttonData in
+                                    HobbyButton(
+                                        text: buttonData.text,
+                                        emoji: buttonData.emoji,
+                                        isSelected: currentSelection.contains(buttonData.text),
+                                        borderWidth: buttonData.isTopLevel ? 2 : 1
+                                    ) {
+                                        handleHobbyButtonTap(buttonData: buttonData)
                                     }
                                 }
-                                .padding(.horizontal)
                             }
+                            .padding(.horizontal, 32)
                         }
                     }
+                    .padding(.top, 20)
                 }
+
+                Spacer()
+
+                // Done button
+                HStack {
+                    Spacer()
+                    Button(action: {
+                        onHobbiesSelected(currentSelection)
+                    }) {
+                        Text("done")
+                            .font(.LibreBodoni(size: 18))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 40)
+                            .padding(.vertical, 12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 25)
+                                    .fill(Colors.primaryDark)
+                            )
+                    }
+                    .padding(.bottom, 20)
+                }
+                .padding(.horizontal, 32)
             }
             .navigationTitle("Select Hobbies")
             .navigationBarTitleDisplayMode(.inline)
@@ -701,11 +620,35 @@ struct HobbiesSelectionView: View {
                         dismiss()
                     }
                 }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
-                        onHobbiesSelected(currentSelection)
-                    }
+            }
+        }
+    }
+    
+    // MARK: - Helper Functions
+    
+    private func handleHobbyButtonTap(buttonData: HobbiesData.ButtonData) {
+        if buttonData.isTopLevel {
+            // Top-level button: toggle expansion and selection
+            withAnimation(.easeInOut(duration: 0.3)) {
+                if expandedButtons.contains(buttonData.text) {
+                    expandedButtons.remove(buttonData.text)
+                } else {
+                    expandedButtons.insert(buttonData.text)
                 }
+            }
+
+            // Also toggle selection
+            if currentSelection.contains(buttonData.text) {
+                currentSelection.remove(buttonData.text)
+            } else {
+                currentSelection.insert(buttonData.text)
+            }
+        } else {
+            // Sub-level button: only toggle selection
+            if currentSelection.contains(buttonData.text) {
+                currentSelection.remove(buttonData.text)
+            } else {
+                currentSelection.insert(buttonData.text)
             }
         }
     }
