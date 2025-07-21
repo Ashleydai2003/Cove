@@ -8,6 +8,12 @@
 import SwiftUI
 import UIKit
 
+// MARK: - DEVELOPMENT FLAGS
+#if DEBUG
+/// Set this to true to skip onboarding flow entirely for development
+private let SKIP_ONBOARDING_FOR_DEV = true
+#endif
+
 // TODO: fix dark mode
 @main
 struct CoveApp: App {
@@ -48,6 +54,36 @@ struct CoveApp: App {
         WindowGroup {
             // Use Group & transitions for smoother authentication switches
             Group {
+                #if DEBUG
+                if SKIP_ONBOARDING_FOR_DEV {
+                    // DEV: Skip onboarding entirely
+                    HomeView()
+                        .environmentObject(appController)
+                        .preferredColorScheme(.light)
+                } else {
+                    // Normal DEBUG logic
+                    if appController.isLoggedIn {
+                        // Main app flow - tab-based navigation
+                        HomeView()
+                            .environmentObject(appController)
+                            .preferredColorScheme(.light)
+                            .transition(.asymmetric(
+                                insertion: .move(edge: .trailing).combined(with: .opacity),
+                                removal: .move(edge: .leading).combined(with: .opacity)
+                            ))
+                    } else {
+                        // Onboarding flow - linear navigation
+                        OnboardingFlow()
+                            .environmentObject(appController)
+                            .preferredColorScheme(.light)
+                            .transition(.asymmetric(
+                                insertion: .move(edge: .leading).combined(with: .opacity),
+                                removal: .move(edge: .trailing).combined(with: .opacity)
+                            ))
+                    }
+                }
+                #else
+                // RELEASE logic
                 if appController.isLoggedIn {
                     // Main app flow - tab-based navigation
                     HomeView()
@@ -67,6 +103,7 @@ struct CoveApp: App {
                             removal: .move(edge: .trailing).combined(with: .opacity)
                         ))
                 }
+                #endif
             }
             .animation(.easeInOut(duration: 0.45), value: appController.isLoggedIn)
         }
