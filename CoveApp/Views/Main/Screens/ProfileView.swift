@@ -134,7 +134,7 @@ struct ProfileHeader: View {
 
             // MARK: - Profile header
             if isEditing {
-                TextField("Name", text: $name, onCommit: { onNameChange(name) })
+                TextField("name", text: $name, onCommit: { onNameChange(name) })
                     .font(.LibreBodoniMedium(size: 35))
                     .foregroundColor(Colors.primaryDark)
                     .multilineTextAlignment(.center)
@@ -190,7 +190,7 @@ struct ProfileHeader: View {
 
                     if isEditing {
                         // TODO: this should maybe also be a drop down select
-                        TextField("Gender", text: $gender, onCommit: { onGenderChange(gender) })
+                        TextField("gender", text: $gender, onCommit: { onGenderChange(gender) })
                             .font(.LibreBodoni(size: 15))
                             .foregroundColor(Colors.primaryDark)
                             .multilineTextAlignment(.center)
@@ -232,7 +232,7 @@ struct ProfileHeader: View {
 
                     if isEditing {
                         HStack {
-                            TextField("Job", text: $job, onCommit: { onJobChange(job) })
+                            TextField("job", text: $job, onCommit: { onJobChange(job) })
                                 .font(.LibreBodoni(size: 15))
                                 .foregroundColor(Colors.primaryDark)
                                 .textFieldStyle(PlainTextFieldStyle())
@@ -251,7 +251,7 @@ struct ProfileHeader: View {
                                 .font(.LibreBodoni(size: 15))
                                 .foregroundColor(Colors.primaryDark)
 
-                            TextField("Work Location", text: $workLocation, onCommit: { onWorkLocationChange(workLocation) })
+                            TextField("work location", text: $workLocation, onCommit: { onWorkLocationChange(workLocation) })
                                 .font(.LibreBodoni(size: 15))
                                 .foregroundColor(Colors.primaryDark)
                                 .textFieldStyle(PlainTextFieldStyle())
@@ -406,7 +406,7 @@ struct InterestsSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("past times")
+            Text("interests")
                 .font(.LibreBodoni(size: 18))
                 .foregroundColor(Colors.primaryDark)
                 .frame(maxWidth: .infinity, alignment: .leading)
