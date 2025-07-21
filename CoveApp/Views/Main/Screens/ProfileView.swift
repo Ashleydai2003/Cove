@@ -462,42 +462,133 @@ struct InterestsSection: View {
     }
 }
 
-// MARK: - Blank Location Popup (Placeholder)
-struct BlankLocationPopup: View {
+// MARK: - Location Selection Popup (Identical to Onboarding)
+struct LocationSelectionPopup: View {
     let currentAddress: String
     let onLocationSelected: (String, CLLocationCoordinate2D) -> Void
     @Environment(\.dismiss) private var dismiss
+    
+    @State private var searchCity = ""
+    @State private var showCityDropdown = false
+    @FocusState private var isCityFocused: Bool
+    
+    // Use shared cities data
+    private let cities: [String] = CitiesData.cities
 
     var body: some View {
         NavigationView {
-            VStack(spacing: 20) {
+            VStack(spacing: 0) {
+                // Header section
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("what city are you \nliving in?")
+                        .foregroundStyle(Colors.primaryDark)
+                        .font(.LibreBodoniMedium(size: 40))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                    Text("connect with others in your area. (optional)")
+                        .font(.LeagueSpartan(size: 15))
+                        .foregroundColor(Colors.k0B0B0B)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .padding(.top, 40)
+
+                // City search input section
+                VStack(spacing: 8) {
+                    ZStack(alignment: .leading) {
+                        if searchCity.isEmpty {
+                            Text("search cities...")
+                                .foregroundColor(Colors.k656566)
+                                .font(.LeagueSpartan(size: 30))
+                        }
+
+                        TextField("", text: $searchCity)
+                            .font(.LeagueSpartan(size: 30))
+                            .foregroundStyle(Colors.k060505)
+                            .keyboardType(.alphabet)
+                            .focused($isCityFocused)
+                            .onChange(of: searchCity) { oldValue, newValue in
+                                let processedValue = newValue.lowercaseIfNotEmpty
+                                searchCity = processedValue
+                                // Only show dropdown if user is typing (length increased or changed but not empty)
+                                if !processedValue.isEmpty && processedValue != oldValue {
+                                    showCityDropdown = true
+                                } else if processedValue.isEmpty {
+                                    showCityDropdown = false
+                                }
+                            }
+                    }
+
+                    Divider()
+                        .frame(height: 2)
+                        .background(Colors.k060505)
+                }
+                .padding(.top, 30)
+
+                // City suggestions list
+                if searchCity.count > 0 && showCityDropdown {
+                    VStack(spacing: 0) {
+                        ScrollView(.vertical, showsIndicators: false) {
+                            VStack(spacing: 0) {
+                                ForEach(filteredCities, id: \.self) { city in
+                                    Button {
+                                        searchCity = city
+                                        DispatchQueue.main.async {
+                                            showCityDropdown = false
+                                        }
+                                    } label: {
+                                        Text(city.lowercased())
+                                            .font(.LeagueSpartanMedium(size: 18))
+                                            .foregroundColor(Colors.k0F100F)
+                                            .multilineTextAlignment(.leading)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                            .padding(.horizontal, 16)
+                                            .padding(.vertical, 12)
+                                    }
+                                    .background(Color.clear)
+
+                                    if city != filteredCities.last {
+                                        Divider()
+                                            .background(Colors.k060505.opacity(0.2))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    .background(Colors.primaryLight)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .frame(height: min(CGFloat(filteredCities.count * 44), 200))
+                    .padding(.top, 10)
+                    .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 5)
+                }
+
                 Spacer()
-                
-                Text("location selection")
-                    .font(.LibreBodoni(size: 24))
-                    .foregroundColor(Colors.primaryDark)
-                
-                Text("coming soon...")
-                    .font(.LeagueSpartan(size: 16))
-                    .foregroundColor(Colors.k6F6F73)
-                
-                Spacer()
-                
-                Button(action: {
-                    dismiss()
-                }) {
-                    Text("close")
-                        .font(.LibreBodoni(size: 16))
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 24)
-                        .padding(.vertical, 12)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(Colors.primaryDark)
-                        )
+
+                // Done button
+                HStack {
+                    Spacer()
+                    Button(action: {
+                        if !searchCity.isEmpty {
+                            // For now, we'll use a default coordinate since we don't have geocoding in the popup
+                            // In a real implementation, you'd want to geocode the city name
+                            let defaultCoordinate = CLLocationCoordinate2D(latitude: 40.7128, longitude: -74.0060) // Default to NYC
+                            onLocationSelected(searchCity, defaultCoordinate)
+                        }
+                        dismiss()
+                    }) {
+                        Text("done")
+                            .font(.LibreBodoni(size: 18))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 40)
+                            .padding(.vertical, 12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 25)
+                                    .fill(Colors.primaryDark)
+                            )
+                    }
+                    .padding(.bottom, 20)
                 }
             }
-            .padding()
+            .padding(.horizontal, 32)
             .navigationTitle("Select Location")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -508,6 +599,17 @@ struct BlankLocationPopup: View {
                 }
             }
         }
+        .onAppear {
+            // Pre-populate with current address if available
+            if !currentAddress.isEmpty {
+                searchCity = currentAddress
+            }
+            isCityFocused = true
+        }
+    }
+    
+    var filteredCities: [String] {
+        return CitiesData.filteredCities(searchQuery: searchCity)
     }
 }
 
@@ -915,7 +1017,7 @@ struct ProfileView: View {
         }
         .navigationBarBackButtonHidden()
         .sheet(isPresented: $showingLocationSheet) {
-            BlankLocationPopup(
+            LocationSelectionPopup(
                 currentAddress: editingAddress,
                 onLocationSelected: { address, coordinate in
                     editingAddress = address
