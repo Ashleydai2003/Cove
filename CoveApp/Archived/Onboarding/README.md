@@ -43,5 +43,8 @@ These files were moved here as part of onboarding flow cleanup:
 - AdminVerifyView.swift contains admin-related functionality that may be useful for admin flows
 - ContactsView.swift has friend import functionality that could be valuable for user growth features
 
+### Screens/ (Updated January 2025)
+- **LocationSelectionView.swift** - Map-based location selection view from ProfileView (archived for profile page updates)
+
 ## Last Updated
-December 2024 - During onboarding flow cleanup and simplification 
+January 2025 - Added LocationSelectionView during profile page updates 
