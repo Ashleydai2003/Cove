@@ -416,9 +416,13 @@ struct InterestsSection: View {
                 LazyVGrid(columns: columns, spacing: 12) {
                     ForEach(interests, id: \.self) { hobby in
                         ZStack {
-                            StaticHobbyPill(text: hobby, textColor: Colors.k6F6F73)
+                            StaticHobbyPill(
+                                text: hobby, 
+                                emoji: HobbiesData.getEmoji(for: hobby),
+                                textColor: Colors.k6F6F73
+                            )
 
-                                if isEditing {
+                            if isEditing {
                                 HStack {
                                     Spacer()
                                     Button(action: {
@@ -438,7 +442,7 @@ struct InterestsSection: View {
 
                     if isEditing {
                         StaticHobbyPill(
-                            text: "add interest",
+                            text: "add interests",
                             emoji: "➕",
                             textColor: Colors.primaryDark
                         )
