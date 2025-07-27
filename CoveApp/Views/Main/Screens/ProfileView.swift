@@ -1017,8 +1017,11 @@ struct ProfileView: View {
                 } else {
                     ScrollView(.vertical, showsIndicators: false) {
                         VStack(spacing: 20) {
-                            // Profile Progress Bar
-                            ProfileProgressBar(progress: appController.profileModel.calculateProfileProgress())
+                            // Profile Progress Bar - only show if not 100% complete
+                            let progress = appController.profileModel.calculateProfileProgress()
+                            if progress < 1.0 {
+                                ProfileProgressBar(progress: progress)
+                            }
                             ProfileHeader(
                                 name: isEditing ? $editingName : .constant(appController.profileModel.name),
                                 workLocation: isEditing ? $editingWorkLocation : .constant(appController.profileModel.workLocation),
