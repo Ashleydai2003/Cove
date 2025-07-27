@@ -1143,13 +1143,13 @@ struct ProfileView: View {
 
     private func initializeEditingState() {
         editingName = appController.profileModel.name
-        editingWorkLocation = appController.profileModel.workLocation
-        editingGender = appController.profileModel.gender
+        editingWorkLocation = appController.profileModel.workLocation.lowercased()
+        editingGender = appController.profileModel.gender.lowercased()
         editingRelationStatus = appController.profileModel.relationStatus
         editingJob = appController.profileModel.job
-        editingAlmaMater = appController.profileModel.almaMater ?? ""
+        editingAlmaMater = (appController.profileModel.almaMater ?? "").lowercased()
         editingGradYear = appController.profileModel.gradYear
-        editingBio = appController.profileModel.bio
+        editingBio = appController.profileModel.bio.lowercased()
         editingInterests = appController.profileModel.interests
         editingAddress = appController.profileModel.address
         editingLatitude = appController.profileModel.latitude
