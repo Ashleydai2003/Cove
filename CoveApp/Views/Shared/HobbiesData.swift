@@ -77,7 +77,7 @@ struct HobbiesData {
             ]),
             HobbyButtonOption(name: "hiking", emoji: "🥾", subOptions: []),
             HobbyButtonOption(name: "surfing", emoji: "🏄‍♀️", subOptions: []),
-            HobbyButtonOption(name: "indoor climbing", emoji: "🧗‍♀️", subOptions: [])
+            HobbyButtonOption(name: "indoor climbing", emoji: "🧗‍♀️", subOptions: []),
             HobbyButtonOption(name: "outdoor climbing", emoji: "🧗‍♀️", subOptions: []),
         ]),
         HobbySection(name: "activities", emoji: "🎨", buttons: [
