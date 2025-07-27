@@ -417,18 +417,31 @@ class ProfileModel: ObservableObject {
     private func updateLocalState(
         name: String?, birthdate: String?, interests: [String]?, bio: String?, latitude: Double?, longitude: Double?, almaMater: String?, job: String?, workLocation: String?, relationStatus: String?, sexuality: String?, gender: String?, parameters: [String: Any]
     ) {
-                        if let name = name { self.name = name }
-                        if let birthdate = birthdate { self.birthdate = birthdate }
-                        if let interests = interests { self.interests = interests }
-                        if let bio = bio { self.bio = bio }
-                        if let latitude = latitude { self.latitude = latitude }
-                        if let longitude = longitude { self.longitude = longitude }
-                        if let almaMater = almaMater { self.almaMater = almaMater }
-                        if let job = job { self.job = job }
-                        if let workLocation = workLocation { self.workLocation = workLocation }
-                        if let relationStatus = relationStatus { self.relationStatus = relationStatus }
-                        if let sexuality = sexuality { self.sexuality = sexuality }
-                        if let gender = gender { self.gender = gender }
+        Log.debug("📱 ProfileModel: updateLocalState called")
+        Log.debug("📱 ProfileModel: Updating with values:")
+        Log.debug("  - name: \(name ?? "nil")")
+        Log.debug("  - interests: \(interests?.description ?? "nil")")
+        Log.debug("  - bio: \(bio ?? "nil")")
+        Log.debug("  - job: \(job ?? "nil")")
+        Log.debug("  - workLocation: \(workLocation ?? "nil")")
+        Log.debug("  - relationStatus: \(relationStatus ?? "nil")")
+        Log.debug("  - gender: \(gender ?? "nil")")
+        
+        if let name = name { self.name = name }
+        if let birthdate = birthdate { self.birthdate = birthdate }
+        if let interests = interests { self.interests = interests }
+        if let bio = bio { self.bio = bio }
+        if let latitude = latitude { self.latitude = latitude }
+        if let longitude = longitude { self.longitude = longitude }
+        if let almaMater = almaMater { self.almaMater = almaMater }
+        if let job = job { self.job = job }
+        if let workLocation = workLocation { self.workLocation = workLocation }
+        if let relationStatus = relationStatus { self.relationStatus = relationStatus }
+        if let sexuality = sexuality { self.sexuality = sexuality }
+        if let gender = gender { self.gender = gender }
+        
+        Log.debug("📱 ProfileModel: Local state updated successfully")
+        
         if parameters["latitude"] != nil || parameters["longitude"] != nil {
             Task { await self.updateAddress() }
         }
@@ -521,13 +534,18 @@ class ProfileModel: ObservableObject {
         completion: @escaping (Result<Void, NetworkError>) -> Void
     ) {
         let parameters = buildProfileUpdateParameters(updateData: updateData)
+        Log.debug("📱 ProfileModel: handleProfileUpdateRequest - parameters: \(parameters)")
+        Log.debug("📱 ProfileModel: endpoint will be: \(updateData.isOnboarding ? "/onboard" : "/edit-profile")")
+        
         if parameters.isEmpty {
+            Log.debug("📱 ProfileModel: No parameters to update, returning success")
             completion(.success(()))
             return
         }
         let endpoint = updateData.isOnboarding ? "/onboard" : "/edit-profile"
         performProfileUpdateNetworkRequest(endpoint: endpoint, parameters: parameters) { [weak self] result in
             guard let self = self else { return }
+            Log.debug("📱 ProfileModel: Network request completed with result: \(result)")
             self.processProfileUpdateResult(
                 result: result,
                 updateData: updateData,
@@ -571,8 +589,10 @@ class ProfileModel: ObservableObject {
         parameters: [String: Any],
         completion: @escaping (Result<Void, NetworkError>) -> Void
     ) {
+        Log.debug("📱 ProfileModel: Processing profile update result")
         switch result {
         case .success(_):
+            Log.debug("📱 ProfileModel: Profile update successful, updating local state")
             self.updateLocalState(
                 name: updateData.name,
                 birthdate: updateData.birthdate,
@@ -588,8 +608,10 @@ class ProfileModel: ObservableObject {
                 gender: updateData.gender,
                 parameters: parameters
             )
+            Log.debug("📱 ProfileModel: Local state updated, calling completion with success")
             completion(.success(()))
         case .failure(let error):
+            Log.debug("📱 ProfileModel: Profile update failed with error: \(error)")
             completion(.failure(error))
         }
     }

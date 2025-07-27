@@ -11,7 +11,7 @@ import UIKit
 // MARK: - DEVELOPMENT FLAGS
 #if DEBUG
 /// Set this to true to skip onboarding flow entirely for development
-private let SKIP_ONBOARDING_FOR_DEV = true
+private let SKIP_ONBOARDING_FOR_DEV = false
 #endif
 
 // TODO: fix dark mode

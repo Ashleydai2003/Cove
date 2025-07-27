@@ -411,7 +411,7 @@ struct InterestsSection: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             if interests.isEmpty && !isEditing {
-                StaticHobbyPill(text: "whoops! add your interests!", textColor: Colors.k6F6F73)
+                StaticHobbyPill(text: "no interests :(", textColor: Colors.k6F6F73)
             } else {
                 LazyVGrid(columns: columns, spacing: 12) {
                     ForEach(interests, id: \.self) { hobby in
@@ -878,25 +878,27 @@ struct ProfileView: View {
                     HStack(spacing: 18) {
                         // Edit/Save button
                         Button(action: {
-                        if isEditing {
-                            // Show loading spinner immediately
-                            isSaving = true
+                            // TEMP - JUST FOR SAVE ERROR DEBUG
+                            print("🔍 DEBUG: Save/Edit button tapped! isEditing: \(isEditing)")
+                            if isEditing {
+                                // Show loading spinner immediately
+                                isSaving = true
 
-                            // Save changes and wait for completion before toggling
-                            saveChanges { success in
-                                DispatchQueue.main.async {
-                                    isSaving = false
-                                    if success {
-                                        isEditing = false
+                                // Save changes and wait for completion before toggling
+                                saveChanges { success in
+                                    DispatchQueue.main.async {
+                                        isSaving = false
+                                        if success {
+                                            isEditing = false
+                                        }
+                                        // If failed, stay in editing mode so user can try again
                                     }
-                                    // If failed, stay in editing mode so user can try again
                                 }
+                            } else {
+                                // Enter editing mode
+                                isEditing = true
+                                initializeEditingState()
                             }
-                        } else {
-                            // Enter editing mode
-                            isEditing = true
-                            initializeEditingState()
-                        }
                         }) {
                         if isSaving {
                             ProgressView()
@@ -1058,6 +1060,10 @@ struct ProfileView: View {
     }
 
     private func saveChanges(completion: @escaping (Bool) -> Void) {
+        // TEMP - JUST FOR SAVE ERROR DEBUG
+        print("🔍 DEBUG: saveChanges function called!")
+        Log.debug("📱 ProfileView: Starting save process")
+        
         // Check if any changes were actually made
         let hasChanges = editingName != appController.profileModel.name ||
                         editingInterests != appController.profileModel.interests ||
@@ -1071,12 +1077,30 @@ struct ProfileView: View {
                         editingProfileImage != nil ||
                         editingExtraImages.contains { $0 != nil }
 
+        // TEMP - JUST FOR SAVE ERROR DEBUG
+        print("🔍 DEBUG: Has changes: \(hasChanges)")
+        Log.debug("📱 ProfileView: Has changes: \(hasChanges)")
+        Log.debug("📱 ProfileView: Changes detected:")
+        Log.debug("  - Name: \(editingName) vs \(appController.profileModel.name)")
+        Log.debug("  - Interests: \(editingInterests) vs \(appController.profileModel.interests)")
+        Log.debug("  - Bio: \(editingBio) vs \(appController.profileModel.bio)")
+        Log.debug("  - Job: \(editingJob) vs \(appController.profileModel.job)")
+        Log.debug("  - WorkLocation: \(editingWorkLocation) vs \(appController.profileModel.workLocation)")
+        Log.debug("  - RelationStatus: \(editingRelationStatus) vs \(appController.profileModel.relationStatus)")
+        Log.debug("  - Gender: \(editingGender) vs \(appController.profileModel.gender)")
+
         if !hasChanges {
+            // TEMP - JUST FOR SAVE ERROR DEBUG
+            print("🔍 DEBUG: No changes detected, skipping save")
             Log.debug("📱 No changes detected in ProfileView, skipping save")
             completion(true) // Return success since there's nothing to save
             return
         }
 
+        // TEMP - JUST FOR SAVE ERROR DEBUG
+        print("🔍 DEBUG: Calling updateProfile with changes")
+        Log.debug("📱 ProfileView: Calling updateProfile with changes")
+        
         // Update the ProfileModel with all changes (images and text fields)
         appController.profileModel.updateProfile(
             name: editingName,
@@ -1091,14 +1115,32 @@ struct ProfileView: View {
             profileImage: editingProfileImage,
             extraImages: editingExtraImages
         ) { result in
+            // TEMP - JUST FOR SAVE ERROR DEBUG
+            print("🔍 DEBUG: updateProfile completion called with result: \(result)")
+            Log.debug("📱 ProfileView: updateProfile completion called with result: \(result)")
             switch result {
             case .success:
                 // No action needed
+                // TEMP - JUST FOR SAVE ERROR DEBUG
+                print("🔍 DEBUG: Profile updated successfully")
                 Log.debug("✅ Profile updated successfully")
                 // The ProfileModel will automatically update its properties after successful backend call
                 completion(true)
             case .failure(let error):
+                // TEMP - JUST FOR SAVE ERROR DEBUG
+                print("🔍 DEBUG: Failed to update profile: \(error)")
                 Log.debug("❌ Failed to update profile: \(error)")
+                
+                // Check if it's an auth error and handle it
+                if case .authError(let authError) = error {
+                    print("🔍 DEBUG: Auth error detected - token may be invalid")
+                    // Force sign out and clear data to handle invalid token
+                    DispatchQueue.main.async {
+                        try? Auth.auth().signOut()
+                        self.appController.clearAllData()
+                    }
+                }
+                
                 // TODO: Show error message to user
                 completion(false)
             }
