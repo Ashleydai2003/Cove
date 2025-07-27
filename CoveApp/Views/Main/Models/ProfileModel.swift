@@ -239,11 +239,11 @@ class ProfileModel: ObservableObject {
         almaMater = profileData.almaMater
         gradYear = profileData.gradYear ?? ""
         job = profileData.job ?? ""
-        workLocation = profileData.workLocation ?? ""
+        workLocation = (profileData.workLocation ?? "").lowercased()
         relationStatus = profileData.relationStatus ?? ""
         sexuality = profileData.sexuality ?? ""
-        bio = profileData.bio ?? ""
-        gender = profileData.gender ?? ""
+        bio = (profileData.bio ?? "").lowercased()
+        gender = (profileData.gender ?? "").lowercased()
         photos = profileData.photos
         stats = profileData.stats
 
