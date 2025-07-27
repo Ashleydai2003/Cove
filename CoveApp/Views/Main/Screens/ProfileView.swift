@@ -217,29 +217,29 @@ struct ProfileHeader: View {
                 .frame(maxWidth: .infinity, alignment: .center)
 
                 // Middle row: Location (centered)
-                if isEditing {
-                    Button(action: onLocationSelect) {
-                        HStack(spacing: 6) {
+                HStack(spacing: 6) {
+                    Image("locationIcon")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 16, height: 16)
+                        .foregroundColor(Colors.primaryDark)
+
+                    if isEditing {
+                        Button(action: onLocationSelect) {
                             Text(address.isEmpty ? "add your location" : address.lowercased())
                                 .font(.LibreBodoni(size: 15))
                                 .foregroundColor(address.isEmpty ? Colors.k6F6F73 : Colors.primaryDark)
                                 .multilineTextAlignment(.center)
-
-                            Image("locationIcon")
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: 12, height: 12)
-                                .foregroundColor(Colors.primaryDark)
+                                .padding(.vertical, 4)
                         }
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.vertical, 4)
+                    } else {
+                        ProfileText(
+                            text: address.isEmpty ? "add your location" : address,
+                            isPlaceholder: address.isEmpty
+                        )
                     }
-                } else {
-                    ProfileText(
-                        text: address.isEmpty ? "add your location" : address,
-                        isPlaceholder: address.isEmpty
-                    ).frame(maxWidth: .infinity, alignment: .center)
                 }
+                .frame(maxWidth: .infinity, alignment: .center)
 
                 // Bottom row: University (centered below location)
                 HStack(spacing: 6) {
