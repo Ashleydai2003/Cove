@@ -202,7 +202,9 @@ struct ProfileHeader: View {
                                     .offset(y: 12)
                             )
                             .onChange(of: gender) { _, newValue in
-                                onGenderChange(newValue)
+                                let lowercasedValue = newValue.lowercased()
+                                gender = lowercasedValue
+                                onGenderChange(lowercasedValue)
                             }
                     } else {
                         ProfileText(
@@ -243,7 +245,9 @@ struct ProfileHeader: View {
                                         .offset(y: 12)
                                 )
                                 .onChange(of: job) { _, newValue in
-                                    onJobChange(newValue)
+                                    let lowercasedValue = newValue.lowercased()
+                                    job = lowercasedValue
+                                    onJobChange(lowercasedValue)
                                 }
 
                             Text("@")
@@ -262,7 +266,9 @@ struct ProfileHeader: View {
                                         .offset(y: 12)
                                 )
                                 .onChange(of: workLocation) { _, newValue in
-                                    onWorkLocationChange(newValue)
+                                    let lowercasedValue = newValue.lowercased()
+                                    workLocation = lowercasedValue
+                                    onWorkLocationChange(lowercasedValue)
                                 }
                         }
                     } else {

@@ -94,7 +94,7 @@ struct HobbiesData {
                 HobbySubOption(name: "aspiring founder", emoji: "💡"),
                 HobbySubOption(name: "current founder", emoji: "🚀")
             ]),
-            HobbyButtonOption(name: "remote work & cafe", emoji: "☕️", subOptions: []),
+            HobbyButtonOption(name: "remote coworking", emoji: "☕️", subOptions: []),
             HobbyButtonOption(name: "interview prep", emoji: "💼", subOptions: [
                 HobbySubOption(name: "leetcode", emoji: "💻"),
                 HobbySubOption(name: "consulting", emoji: "📊"),
