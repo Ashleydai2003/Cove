@@ -164,9 +164,11 @@ struct ProfileHeader: View {
                                 .foregroundColor(address.isEmpty ? Colors.k6F6F73 : Colors.primaryDark)
                                 .multilineTextAlignment(.center)
 
-                            Image(systemName: "location.fill")
+                            Image("locationIcon")
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 12, height: 12)
                                 .foregroundColor(Colors.primaryDark)
-                                .font(.system(size: 10))
                         }
                         .frame(maxWidth: .infinity, alignment: .center)
                         .padding(.vertical, 4)
@@ -185,7 +187,10 @@ struct ProfileHeader: View {
 
                     Spacer()
 
-                    Image("more-info")
+                    Image("genderIcon")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 16, height: 16)
 
                     if isEditing {
                         // TODO: this should maybe also be a drop down select
@@ -215,7 +220,10 @@ struct ProfileHeader: View {
 
                     Spacer()
 
-                    Image("person-fill")
+                    Image("relationshipIcon")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 16, height: 16)
 
                     if isEditing {
                         RelationStatusPicker(selectedStatus: relationStatus, onStatusChange: onRelationStatusChange)
@@ -228,7 +236,10 @@ struct ProfileHeader: View {
                 }.padding(.horizontal, 5)
 
                 HStack() {
-                    Image(systemName: "briefcase")
+                    Image("workIcon")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 16, height: 16)
                         .foregroundStyle(Colors.k6B6B6B)
 
                     if isEditing {
