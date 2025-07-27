@@ -832,6 +832,81 @@ class ProfileModel: ObservableObject {
             }
         }
     }
+    
+    /**
+     * Calculates the profile completion progress based on 10 optional fields.
+     * Each field contributes 10% (100% ÷ 10) to the total progress.
+     *
+     * Tracked fields:
+     * 1. Profile picture
+     * 2. Gender
+     * 3. Relationship status
+     * 4. Interests/hobbies
+     * 5. Extra photo 1
+     * 6. Extra photo 2
+     * 7. Workplace (workLocation)
+     * 8. Role (job)
+     * 9. Bio
+     * 10. City
+     *
+     * - Returns: Progress value between 0.0 and 1.0
+     */
+    func calculateProfileProgress() -> Double {
+        var completedFields = 0
+        let totalFields = 10
+        
+        // 1. Profile picture
+        if profileUIImage != nil {
+            completedFields += 1
+        }
+        
+        // 2. Gender
+        if !gender.isEmpty {
+            completedFields += 1
+        }
+        
+        // 3. Relationship status
+        if !relationStatus.isEmpty {
+            completedFields += 1
+        }
+        
+        // 4. Interests/hobbies
+        if !interests.isEmpty {
+            completedFields += 1
+        }
+        
+        // 5. Extra photo 1
+        if extraUIImages[0] != nil {
+            completedFields += 1
+        }
+        
+        // 6. Extra photo 2
+        if extraUIImages[1] != nil {
+            completedFields += 1
+        }
+        
+        // 7. Workplace (workLocation)
+        if !workLocation.isEmpty {
+            completedFields += 1
+        }
+        
+        // 8. Role (job)
+        if !job.isEmpty {
+            completedFields += 1
+        }
+        
+        // 9. Bio
+        if !bio.isEmpty {
+            completedFields += 1
+        }
+        
+        // 10. City
+        if !address.isEmpty {
+            completedFields += 1
+        }
+        
+        return Double(completedFields) / Double(totalFields)
+    }
 }
 
 // MARK: - Supporting Types

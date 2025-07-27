@@ -458,7 +458,9 @@ struct BioSection: View {
                                 )
                         )
                         .onChange(of: bio) { _, newValue in
-                            onBioChange(newValue)
+                            let lowercasedValue = newValue.lowercased()
+                            bio = lowercasedValue
+                            onBioChange(lowercasedValue)
                         }
                 } else {
                     Text(bio.isEmpty ? "add your bio" : bio.lowercased())
@@ -1015,6 +1017,8 @@ struct ProfileView: View {
                 } else {
                     ScrollView(.vertical, showsIndicators: false) {
                         VStack(spacing: 20) {
+                            // Profile Progress Bar
+                            ProfileProgressBar(progress: appController.profileModel.calculateProfileProgress())
                             ProfileHeader(
                                 name: isEditing ? $editingName : .constant(appController.profileModel.name),
                                 workLocation: isEditing ? $editingWorkLocation : .constant(appController.profileModel.workLocation),
