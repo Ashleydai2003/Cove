@@ -14,6 +14,7 @@ class Onboarding {
     private static var userBirthdate: Date?
     private static var userHobbies: Set<String> = []
     private static var userAlmaMater: String?
+    private static var userGradYear: String?
     private static var userCity: String?
     private static var profilePic: UIImage?
     private static var pendingFriendRequests: [String] = []
@@ -37,6 +38,10 @@ class Onboarding {
 
     static func storeAlmaMater(almaMater: String) -> Void {
         userAlmaMater = almaMater
+    }
+
+    static func storeGradYear(gradYear: String) -> Void {
+        userGradYear = gradYear
     }
 
     static func storeCity(city: String) -> Void {
@@ -119,6 +124,10 @@ class Onboarding {
 
     static func getAlmaMater() -> String? {
         return userAlmaMater
+    }
+
+    static func getGradYear() -> String? {
+        return userGradYear
     }
 
     static func getCity() -> String? {
@@ -249,6 +258,10 @@ class Onboarding {
         // Add optional fields if they exist
         if let almaMater = userAlmaMater, !almaMater.isEmpty {
             parameters["almaMater"] = almaMater
+        }
+
+        if let gradYear = userGradYear, !gradYear.isEmpty {
+            parameters["gradYear"] = gradYear
         }
 
         if let city = userCity, !city.isEmpty {

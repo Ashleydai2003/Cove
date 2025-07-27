@@ -85,6 +85,7 @@ model UserProfile {
   latitude       Float?
   longitude      Float?
   almaMater      String?
+  gradYear       String?
   job            String?
   workLocation   String?
   relationStatus String?
