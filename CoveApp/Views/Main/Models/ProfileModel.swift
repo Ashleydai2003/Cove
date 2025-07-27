@@ -48,6 +48,7 @@ struct ProfileData: Decodable {
     let latitude: Double?
     let longitude: Double?
     let almaMater: String?
+    let gradYear: String?
     let job: String?
     let workLocation: String?
     let relationStatus: String?
@@ -82,6 +83,7 @@ class ProfileModel: ObservableObject {
     @Published var latitude: Double?
     @Published var longitude: Double?
     @Published var almaMater: String?
+    @Published var gradYear: String = ""
     @Published var job: String = ""
     @Published var workLocation: String = ""
     @Published var relationStatus: String = ""
@@ -235,6 +237,7 @@ class ProfileModel: ObservableObject {
         latitude = profileData.latitude
         longitude = profileData.longitude
         almaMater = profileData.almaMater
+        gradYear = profileData.gradYear ?? ""
         job = profileData.job ?? ""
         workLocation = profileData.workLocation ?? ""
         relationStatus = profileData.relationStatus ?? ""
@@ -332,6 +335,9 @@ class ProfileModel: ObservableObject {
 
                 switch result {
                 case .success(let response):
+                    // Debug: Log the profile data to see what's being returned
+                    print("🔍 DEBUG: Profile API response - gradYear: \(response.profile.gradYear ?? "nil")")
+                    print("🔍 DEBUG: Profile API response - almaMater: \(response.profile.almaMater ?? "nil")")
                     self.updateFromProfileData(response.profile)
                     completion(.success(response.profile))
                 case .failure(let error):
@@ -391,7 +397,7 @@ class ProfileModel: ObservableObject {
             }
 
     private func buildChangedParameters(
-        name: String?, birthdate: String?, interests: [String]?, bio: String?, latitude: Double?, longitude: Double?, almaMater: String?, job: String?, workLocation: String?, relationStatus: String?, sexuality: String?, gender: String?
+        name: String?, birthdate: String?, interests: [String]?, bio: String?, latitude: Double?, longitude: Double?, almaMater: String?, gradYear: String?, job: String?, workLocation: String?, relationStatus: String?, sexuality: String?, gender: String?
     ) -> [String: Any] {
             var parameters: [String: Any] = [:]
             func addIfChanged<T: Equatable>(_ key: String, newValue: T?, currentValue: T?) {
@@ -406,6 +412,7 @@ class ProfileModel: ObservableObject {
             addIfChanged("latitude", newValue: latitude, currentValue: self.latitude)
             addIfChanged("longitude", newValue: longitude, currentValue: self.longitude)
             addIfChanged("almaMater", newValue: almaMater, currentValue: self.almaMater)
+            addIfChanged("gradYear", newValue: gradYear, currentValue: self.gradYear)
             addIfChanged("job", newValue: job, currentValue: self.job)
             addIfChanged("workLocation", newValue: workLocation, currentValue: self.workLocation)
             addIfChanged("relationStatus", newValue: relationStatus, currentValue: self.relationStatus)
@@ -415,7 +422,7 @@ class ProfileModel: ObservableObject {
     }
 
     private func updateLocalState(
-        name: String?, birthdate: String?, interests: [String]?, bio: String?, latitude: Double?, longitude: Double?, almaMater: String?, job: String?, workLocation: String?, relationStatus: String?, sexuality: String?, gender: String?, parameters: [String: Any]
+        name: String?, birthdate: String?, interests: [String]?, bio: String?, latitude: Double?, longitude: Double?, almaMater: String?, gradYear: String?, job: String?, workLocation: String?, relationStatus: String?, sexuality: String?, gender: String?, parameters: [String: Any]
     ) {
         Log.debug("📱 ProfileModel: updateLocalState called")
         Log.debug("📱 ProfileModel: Updating with values:")
@@ -434,6 +441,7 @@ class ProfileModel: ObservableObject {
         if let latitude = latitude { self.latitude = latitude }
         if let longitude = longitude { self.longitude = longitude }
         if let almaMater = almaMater { self.almaMater = almaMater }
+        if let gradYear = gradYear { self.gradYear = gradYear }
         if let job = job { self.job = job }
         if let workLocation = workLocation { self.workLocation = workLocation }
         if let relationStatus = relationStatus { self.relationStatus = relationStatus }
@@ -457,6 +465,7 @@ class ProfileModel: ObservableObject {
         let latitude: Double?
         let longitude: Double?
         let almaMater: String?
+        let gradYear: String?
         let job: String?
         let workLocation: String?
         let relationStatus: String?
@@ -469,13 +478,13 @@ class ProfileModel: ObservableObject {
         init(
             name: String? = nil, birthdate: String? = nil, interests: [String]? = nil,
             bio: String? = nil, latitude: Double? = nil, longitude: Double? = nil,
-            almaMater: String? = nil, job: String? = nil, workLocation: String? = nil,
+            almaMater: String? = nil, gradYear: String? = nil, job: String? = nil, workLocation: String? = nil,
             relationStatus: String? = nil, sexuality: String? = nil, gender: String? = nil,
             profileImage: UIImage? = nil, extraImages: [UIImage?] = [nil, nil], isOnboarding: Bool = false
         ) {
             self.name = name; self.birthdate = birthdate; self.interests = interests
             self.bio = bio; self.latitude = latitude; self.longitude = longitude
-            self.almaMater = almaMater; self.job = job; self.workLocation = workLocation
+            self.almaMater = almaMater; self.gradYear = gradYear; self.job = job; self.workLocation = workLocation
             self.relationStatus = relationStatus; self.sexuality = sexuality; self.gender = gender
             self.profileImage = profileImage; self.extraImages = extraImages; self.isOnboarding = isOnboarding
         }
@@ -490,6 +499,7 @@ class ProfileModel: ObservableObject {
         latitude: Double? = nil,
         longitude: Double? = nil,
         almaMater: String? = nil,
+        gradYear: String? = nil,
         job: String? = nil,
         workLocation: String? = nil,
         relationStatus: String? = nil,
@@ -503,7 +513,7 @@ class ProfileModel: ObservableObject {
         // TODO: Refactor to reduce cyclomatic complexity - consider using a builder pattern or configuration object
         let updateData = ProfileUpdateData(
             name: name, birthdate: birthdate, interests: interests, bio: bio,
-            latitude: latitude, longitude: longitude, almaMater: almaMater,
+            latitude: latitude, longitude: longitude, almaMater: almaMater, gradYear: gradYear,
             job: job, workLocation: workLocation, relationStatus: relationStatus,
             sexuality: sexuality, gender: gender, profileImage: profileImage,
             extraImages: extraImages, isOnboarding: isOnboarding
@@ -557,7 +567,12 @@ class ProfileModel: ObservableObject {
 
     // Helper: Build parameters
     private func buildProfileUpdateParameters(updateData: ProfileUpdateData) -> [String: Any] {
-        buildChangedParameters(
+        // Debug: Log what's being sent to the backend
+        print("🔍 DEBUG: Building profile update parameters")
+        print("🔍 DEBUG: - gradYear: \(updateData.gradYear ?? "nil")")
+        print("🔍 DEBUG: - almaMater: \(updateData.almaMater ?? "nil")")
+        
+        return buildChangedParameters(
             name: updateData.name,
             birthdate: updateData.birthdate,
             interests: updateData.interests,
@@ -565,6 +580,7 @@ class ProfileModel: ObservableObject {
             latitude: updateData.latitude,
             longitude: updateData.longitude,
             almaMater: updateData.almaMater,
+            gradYear: updateData.gradYear,
             job: updateData.job,
             workLocation: updateData.workLocation,
             relationStatus: updateData.relationStatus,
@@ -601,6 +617,7 @@ class ProfileModel: ObservableObject {
                 latitude: updateData.latitude,
                 longitude: updateData.longitude,
                 almaMater: updateData.almaMater,
+                gradYear: updateData.gradYear,
                 job: updateData.job,
                 workLocation: updateData.workLocation,
                 relationStatus: updateData.relationStatus,

@@ -212,7 +212,7 @@ struct AlmaMaterView: View {
                             // MARK: - Store alma mater and grad year
                         // TODO: can consider using university IDs instead of names
                         Onboarding.storeAlmaMater(almaMater: searchUniversity)
-                            // TODO: Store grad year when backend supports it
+                        Onboarding.storeGradYear(gradYear: gradYear)
                             appController.path.append(.citySelection)
                     }
             }

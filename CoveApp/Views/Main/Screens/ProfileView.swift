@@ -34,6 +34,8 @@ struct ProfileHeader: View {
     @Binding var gender: String
     @Binding var relationStatus: String
     @Binding var job: String
+    @Binding var almaMater: String
+    @Binding var gradYear: String
     let profileImageURL: URL?
     let age: Int?
     let address: String
@@ -44,6 +46,8 @@ struct ProfileHeader: View {
     let onGenderChange: (String) -> Void
     let onRelationStatusChange: (String) -> Void
     let onJobChange: (String) -> Void
+    let onAlmaMaterChange: (String) -> Void
+    let onGradYearChange: (String) -> Void
     let onLocationSelect: () -> Void
     let onProfileImageChange: (UIImage?) -> Void
 
@@ -155,7 +159,64 @@ struct ProfileHeader: View {
                     .foregroundColor(Colors.primaryDark)
             }
 
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .center, spacing: 16) {
+                // Top row: Age, Gender, Relationship Status (centered)
+                HStack(spacing: 20) {
+                    Text(age.map(String.init) ?? "21")
+                        .font(.LibreBodoni(size: 20))
+                        .foregroundColor(Colors.primaryDark)
+
+                    HStack(spacing: 6) {
+                        Image("genderIcon")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 16, height: 16)
+
+                        if isEditing {
+                            TextField("gender", text: $gender, onCommit: { onGenderChange(gender) })
+                                .font(.LibreBodoni(size: 15))
+                                .foregroundColor(Colors.primaryDark)
+                                .multilineTextAlignment(.center)
+                                .textFieldStyle(PlainTextFieldStyle())
+                                .padding(.vertical, 4)
+                                .overlay(
+                                    Rectangle()
+                                        .frame(height: 1)
+                                        .foregroundColor(Colors.primaryDark.opacity(0.3))
+                                        .offset(y: 12)
+                                )
+                                .onChange(of: gender) { _, newValue in
+                                    let lowercasedValue = newValue.lowercased()
+                                    gender = lowercasedValue
+                                    onGenderChange(lowercasedValue)
+                                }
+                        } else {
+                            ProfileText(
+                                text: gender.isEmpty ? "add gender" : gender,
+                                isPlaceholder: gender.isEmpty
+                            )
+                        }
+                    }
+
+                    HStack(spacing: 6) {
+                        Image("relationshipIcon")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 16, height: 16)
+
+                        if isEditing {
+                            RelationStatusPicker(selectedStatus: relationStatus, onStatusChange: onRelationStatusChange)
+                        } else {
+                            ProfileText(
+                                text: relationStatus.isEmpty ? "add status" : relationStatus,
+                                isPlaceholder: relationStatus.isEmpty
+                            )
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+
+                // Middle row: Location (centered)
                 if isEditing {
                     Button(action: onLocationSelect) {
                         HStack(spacing: 6) {
@@ -180,62 +241,71 @@ struct ProfileHeader: View {
                     ).frame(maxWidth: .infinity, alignment: .center)
                 }
 
-                HStack() {
-                    Text(age.map(String.init) ?? "21")
-                        .font(.LibreBodoni(size: 20))
-                        .foregroundColor(Colors.primaryDark)
-
-                    Spacer()
-
-                    Image("genderIcon")
+                // Bottom row: University (centered below location)
+                HStack(spacing: 6) {
+                    Image("gradIcon")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 16, height: 16)
+                        .foregroundStyle(Colors.k6B6B6B)
 
                     if isEditing {
-                        // TODO: this should maybe also be a drop down select
-                        TextField("gender", text: $gender, onCommit: { onGenderChange(gender) })
-                            .font(.LibreBodoni(size: 15))
-                            .foregroundColor(Colors.primaryDark)
-                            .multilineTextAlignment(.center)
-                            .textFieldStyle(PlainTextFieldStyle())
-                            .padding(.vertical, 4)
-                            .overlay(
-                                Rectangle()
-                                    .frame(height: 1)
-                                    .foregroundColor(Colors.primaryDark.opacity(0.3))
-                                    .offset(y: 12)
-                            )
-                            .onChange(of: gender) { _, newValue in
-                                let lowercasedValue = newValue.lowercased()
-                                gender = lowercasedValue
-                                onGenderChange(lowercasedValue)
-                            }
+                        HStack {
+                            TextField("university", text: $almaMater, onCommit: { onAlmaMaterChange(almaMater) })
+                                .font(.LibreBodoni(size: 15))
+                                .foregroundColor(Colors.primaryDark)
+                                .textFieldStyle(PlainTextFieldStyle())
+                                .padding(.vertical, 4)
+                                .overlay(
+                                    Rectangle()
+                                        .frame(height: 1)
+                                        .foregroundColor(Colors.primaryDark.opacity(0.3))
+                                        .offset(y: 12)
+                                )
+                                .onChange(of: almaMater) { _, newValue in
+                                    let lowercasedValue = newValue.lowercased()
+                                    almaMater = lowercasedValue
+                                    onAlmaMaterChange(lowercasedValue)
+                                }
+
+                            Text("'")
+                                .font(.LibreBodoni(size: 15))
+                                .foregroundColor(Colors.primaryDark)
+
+                            TextField("year", text: $gradYear, onCommit: { onGradYearChange(gradYear) })
+                                .font(.LibreBodoni(size: 15))
+                                .foregroundColor(Colors.primaryDark)
+                                .textFieldStyle(PlainTextFieldStyle())
+                                .padding(.vertical, 4)
+                                .overlay(
+                                    Rectangle()
+                                        .frame(height: 1)
+                                        .foregroundColor(Colors.primaryDark.opacity(0.3))
+                                        .offset(y: 12)
+                                )
+                                .onChange(of: gradYear) { _, newValue in
+                                    // Take only the last two digits if it's a 4-digit year
+                                    let processedValue = newValue.count == 4 ? String(newValue.suffix(2)) : newValue
+                                    gradYear = processedValue
+                                    onGradYearChange(processedValue)
+                                }
+                        }
                     } else {
-                        ProfileText(
-                            text: gender.isEmpty ? "add gender" : gender,
-                            isPlaceholder: gender.isEmpty
-                        )
+                        if !almaMater.isEmpty && !gradYear.isEmpty {
+                            ProfileText(text: "\(almaMater) '\(gradYear)", isPlaceholder: false)
+                        } else if !almaMater.isEmpty {
+                            ProfileText(text: almaMater, isPlaceholder: false)
+                        } else if !gradYear.isEmpty {
+                            ProfileText(text: "'\(gradYear)", isPlaceholder: false)
+                        } else {
+                            ProfileText(text: "add your alma mater", isPlaceholder: true)
+                        }
                     }
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
 
-                    Spacer()
-
-                    Image("relationshipIcon")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 16, height: 16)
-
-                    if isEditing {
-                        RelationStatusPicker(selectedStatus: relationStatus, onStatusChange: onRelationStatusChange)
-                    } else {
-                        ProfileText(
-                            text: relationStatus.isEmpty ? "add status" : relationStatus,
-                            isPlaceholder: relationStatus.isEmpty
-                        )
-                    }
-                }.padding(.horizontal, 5)
-
-                HStack() {
+                // Bottom row: Work (centered below the top row)
+                HStack(spacing: 6) {
                     Image("workIcon")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
@@ -294,6 +364,7 @@ struct ProfileHeader: View {
                         }
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .center)
             }
         }
         .onAppear {
@@ -872,6 +943,8 @@ struct ProfileView: View {
     @State private var editingGender: String = ""
     @State private var editingRelationStatus: String = ""
     @State private var editingJob: String = ""
+    @State private var editingAlmaMater: String = ""
+    @State private var editingGradYear: String = ""
     @State private var editingBio: String = ""
     @State private var editingInterests: [String] = []
     @State private var editingAddress: String = ""
@@ -948,6 +1021,8 @@ struct ProfileView: View {
                                 gender: isEditing ? $editingGender : .constant(appController.profileModel.gender),
                                 relationStatus: isEditing ? $editingRelationStatus : .constant(appController.profileModel.relationStatus),
                                 job: isEditing ? $editingJob : .constant(appController.profileModel.job),
+                                almaMater: isEditing ? $editingAlmaMater : .constant(appController.profileModel.almaMater ?? ""),
+                                gradYear: isEditing ? $editingGradYear : .constant(appController.profileModel.gradYear),
                                 profileImageURL: isEditing ? nil : appController.profileModel.profileImageURL,
                                 age: appController.profileModel.calculatedAge,
                                 address: isEditing ? editingAddress : appController.profileModel.address,
@@ -958,6 +1033,8 @@ struct ProfileView: View {
                                 onGenderChange: { editingGender = $0 },
                                 onRelationStatusChange: { editingRelationStatus = $0 },
                                 onJobChange: { editingJob = $0 },
+                                onAlmaMaterChange: { editingAlmaMater = $0 },
+                                onGradYearChange: { editingGradYear = $0 },
                                 onLocationSelect: {
                                     showingLocationSheet = true
                                 },
@@ -1066,6 +1143,8 @@ struct ProfileView: View {
         editingGender = appController.profileModel.gender
         editingRelationStatus = appController.profileModel.relationStatus
         editingJob = appController.profileModel.job
+        editingAlmaMater = appController.profileModel.almaMater ?? ""
+        editingGradYear = appController.profileModel.gradYear
         editingBio = appController.profileModel.bio
         editingInterests = appController.profileModel.interests
         editingAddress = appController.profileModel.address
@@ -1091,6 +1170,8 @@ struct ProfileView: View {
                         editingWorkLocation != appController.profileModel.workLocation ||
                         editingRelationStatus != appController.profileModel.relationStatus ||
                         editingGender != appController.profileModel.gender ||
+                        editingAlmaMater != (appController.profileModel.almaMater ?? "") ||
+                        editingGradYear != appController.profileModel.gradYear ||
                         editingProfileImage != nil ||
                         editingExtraImages.contains { $0 != nil }
 
@@ -1125,6 +1206,8 @@ struct ProfileView: View {
             bio: editingBio,
             latitude: editingLatitude,
             longitude: editingLongitude,
+            almaMater: editingAlmaMater,
+            gradYear: editingGradYear,
             job: editingJob,
             workLocation: editingWorkLocation,
             relationStatus: editingRelationStatus,
