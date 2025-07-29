@@ -193,24 +193,25 @@ struct EventPostView: View {
                             let covePhotoUrl = coveCoverPhoto?.url ?? event.cove.coverPhoto?.url
                             if let urlString = covePhotoUrl, !urlString.isEmpty, let url = URL(string: urlString) {
                                 CachedAsyncImage(url: url) { image in
-                                image
-                                    .resizable()
-                                    .scaledToFill()
-                            } placeholder: {
-                                Rectangle()
-                                    .fill(Color.gray.opacity(0.2))
-                                    .overlay(
-                                        ProgressView()
-                                            .tint(.gray)
-                                    )
-                            }
-                            .frame(width: 100, height: 100)
-                            .clipShape(Circle())
+                                    image
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fill)
+                                        .frame(width: 100, height: 100)
+                                        .clipShape(Circle())
+                                } placeholder: {
+                                    Circle()
+                                        .fill(Color.gray.opacity(0.2))
+                                        .frame(width: 100, height: 100)
+                                        .overlay(
+                                            ProgressView()
+                                                .tint(.gray)
+                                        )
+                                }
                             } else {
                                 // Default cove image when no cover photo is available
                                 Image("default_cove_pfp")
                                     .resizable()
-                                    .scaledToFill()
+                                    .aspectRatio(contentMode: .fill)
                                     .frame(width: 100, height: 100)
                                     .clipShape(Circle())
                             }
@@ -256,8 +257,8 @@ struct EventPostView: View {
                                 .cacheOriginalImage()
                                 .loadDiskFileSynchronously()
                                 .aspectRatio(contentMode: .fill)
-                                .clipShape(RoundedRectangle(cornerRadius: 10))
                                 .frame(height: 192)
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
                                 .clipped()
                         } else {
                             // Default event image
@@ -327,7 +328,7 @@ struct EventPostView: View {
                                                 .placeholder {
                                                     Circle()
                                                         .fill(Color.gray.opacity(0.2))
-                                                        .frame(maxWidth: 62, maxHeight: 62)
+                                                        .frame(width: 62, height: 62)
                                                         .overlay(
                                                             Image(systemName: "person.fill")
                                                                 .foregroundColor(.gray)
@@ -343,7 +344,7 @@ struct EventPostView: View {
                                                 .fade(duration: 0.2)
                                                 .cacheOriginalImage()
                                                 .loadDiskFileSynchronously()
-                                                .aspectRatio(1, contentMode: .fill)
+                                                .aspectRatio(contentMode: .fill)
                                                 .frame(width: 62, height: 62)
                                                 .clipShape(Circle())
                                         } else {

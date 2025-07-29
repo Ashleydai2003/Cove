@@ -101,21 +101,14 @@ const io = new Server(server, {
     methods: ["GET", "POST"],
     credentials: true
   },
-  transports: ['websocket', 'polling'], // Explicitly define transports
-  allowEIO3: false, // Disable older Socket.IO versions for security
-  pingTimeout: 60000, // 60 seconds
-  pingInterval: 25000, // 25 seconds
-  maxHttpBufferSize: 1e6, // 1MB max message size
-  allowRequest: (req, callback) => {
-    // Additional request validation
-    const userAgent = req.headers['user-agent'];
-    if (userAgent && userAgent.includes('curl')) {
-      // Block curl requests to prevent abuse
-      return callback(null, false);
-    }
-    callback(null, true);
-  }
-});
+  allowEIO3: true,           // Enable EIO3 for iOS client compatibility
+  allowEIO4: true,           // Enable EIO4 for newer clients
+  pingTimeout: 60000,        // 60 seconds
+  pingInterval: 25000,       // 25 seconds
+  maxHttpBufferSize: 1e6,    // 1MB max message size
+  upgradeTimeout: 10000,
+  perMessageDeflate: false   // Disable compression for better compatibility
+} as any);
 
 // Initialize Firebase
 let firebaseInitialized = false;
@@ -135,6 +128,8 @@ io.use(async (socket, next) => {
   try {
     // Check if Firebase is initialized
     if (!firebaseInitialized) {
+      console.error('🔥 Socket auth failed: Firebase not initialized');
+      socket.emit("unauthorized", { message: "Server not ready", detail: "Firebase not initialized" });
       return next(new Error('Firebase not initialized yet'));
     }
 
@@ -149,6 +144,7 @@ io.use(async (socket, next) => {
     if (now - attempts.lastAttempt < rateLimitWindow) {
       if (attempts.count >= maxAttempts) {
         console.warn(`Rate limit exceeded for IP: ${clientIP}`);
+        socket.emit("unauthorized", { message: "Rate limit exceeded", detail: "Too many connection attempts" });
         return next(new Error('Too many connection attempts'));
       }
       attempts.count++;
@@ -158,13 +154,27 @@ io.use(async (socket, next) => {
     attempts.lastAttempt = now;
     connectionAttempts.set(clientIP, attempts);
 
-    const token = socket.handshake.auth.token;
+    // Check auth, query, and Authorization header for token
+    const authToken = socket.handshake.auth.token;
+    const queryToken = socket.handshake.query.token;
+    const authHeader = socket.handshake.headers.authorization;
+    
+    let token = authToken || queryToken;
+    
+    // Extract token from Authorization header if present
+    if (!token && authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7); // Remove 'Bearer ' prefix
+    }
     if (!token) {
+      console.error('🔥 Socket auth failed: No token provided');
+      socket.emit("unauthorized", { message: "Authentication token required", detail: "No token provided" });
       return next(new Error('Authentication token required'));
     }
 
     // Enhanced token validation
     if (typeof token !== 'string' || token.length < 10) {
+      console.error('🔥 Socket auth failed: Invalid token format');
+      socket.emit("unauthorized", { message: "Invalid token format", detail: "Token too short or invalid" });
       return next(new Error('Invalid token format'));
     }
 
@@ -173,6 +183,8 @@ io.use(async (socket, next) => {
     
     // Additional security checks
     if (!decodedToken.uid) {
+      console.error('🔥 Socket auth failed: Invalid token - missing UID');
+      socket.emit("unauthorized", { message: "Invalid token", detail: "Missing UID" });
       return next(new Error('Invalid token: missing UID'));
     }
     
@@ -184,7 +196,9 @@ io.use(async (socket, next) => {
     (socket as AuthenticatedSocket).user = decodedToken;
     next();
   } catch (error) {
-    console.error('Socket authentication error:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('🔥 Socket auth failed:', errorMessage);
+    socket.emit("unauthorized", { message: "Authentication failed", detail: errorMessage });
     next(new Error('Authentication failed'));
   }
 });
@@ -196,6 +210,8 @@ io.on('connection', async (socket) => {
   const authenticatedSocket = socket as AuthenticatedSocket;
   const userId = authenticatedSocket.user.uid;
   console.log(`User ${userId} connected`);
+  console.log('Socket handshake query:', socket.handshake.query);
+  console.log('Socket handshake auth:', socket.handshake.auth);
 
   // Add user to online users
   onlineUsers.set(userId, socket.id);
