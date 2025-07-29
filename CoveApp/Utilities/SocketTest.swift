@@ -5,21 +5,32 @@ import FirebaseAuth
 class SocketTest {
     private var manager: SocketManager!
     private var socket: SocketIOClient!
+    private var onConnectionStatusChange: ((Bool, String) -> Void)?
 
-    init() {
+    init(onConnectionStatusChange: ((Bool, String) -> Void)? = nil) {
+        self.onConnectionStatusChange = onConnectionStatusChange
+        
         // Get Firebase token for testing
         guard let currentUser = Auth.auth().currentUser else {
             print("❌ No authenticated user")
+            onConnectionStatusChange?(false, "No authenticated user")
             return
         }
         
+        print("🔐 Getting Firebase token for user: \(currentUser.uid)")
+        print("🔧 Firebase Auth configuration:")
+        print("  - Production mode: true")
+        
         currentUser.getIDTokenForcingRefresh(true) { token, error in
             if let token = token {
+                print("✅ Token received successfully")
+                print("🔑 Token preview: \(String(token.prefix(50)))...")
                 DispatchQueue.main.async {
                     self.setupSocket(with: token)
                 }
             } else if let error = error {
                 print("❌ Failed to get token: \(error.localizedDescription)")
+                self.onConnectionStatusChange?(false, "Token Error: \(error.localizedDescription)")
             }
         }
     }
@@ -27,7 +38,7 @@ class SocketTest {
     private func setupSocket(with token: String) {
         print("🔧 Setting up socket with token: \(String(token.prefix(20)))...")
         
-        // Use exact configuration that matches the working example
+        // Use exact configuration that matches the working Node.js tests
         let socketURL = "wss://socket.coveapp.co:3001"
         print("🔗 Connecting to: \(socketURL)")
         
@@ -37,33 +48,45 @@ class SocketTest {
                 .log(true),
                 .compress,
                 .connectParams(["token": token]),
+                .extraHeaders(["Authorization": "Bearer \(token)"]),
                 .forceWebsockets(true),
-                .version(.three),          // Engine.IO 4
                 .reconnects(true),
                 .reconnectAttempts(5),
                 .reconnectWait(1000)
-                // 🚫  leave .path OUT  🚫
             ]
         )
 
-        // right after you create `manager`
         print("👉 Swift will hit:", manager.socketURL.absoluteString + "/socket.io/")
-        
         print("Engine URL will be:", manager.socketURL.absoluteString + "/socket.io/")
+        print("🔧 Socket configuration:")
+        print("  - URL: \(socketURL)")
+        print("  - Token: \(String(token.prefix(20)))...")
+        print("  - Engine.IO version: auto-negotiate")
+        print("  - Transport: WebSocket only")
+        print("  - Query params: token=\(String(token.prefix(20)))...")
+        print("  - Auth header: Bearer \(String(token.prefix(20)))...")
 
         socket = manager.defaultSocket
 
         // Add basic event listeners
         socket.on(clientEvent: .connect) { data, _ in
             print("✅ Connected to server")
+            print("📊 Connection details:")
+            print("  - Socket ID: \(self.socket?.sid ?? "unknown")")
+            self.onConnectionStatusChange?(true, "Connected")
         }
 
         socket.on(clientEvent: .disconnect) { data, _ in
             print("🔌 Disconnected from server")
+            if let reason = data.first as? String {
+                print("  - Reason: \(reason)")
+            }
+            self.onConnectionStatusChange?(false, "Disconnected")
         }
 
         socket.on(clientEvent: .error) { data, _ in
             print("❌ Socket error:", data)
+            self.onConnectionStatusChange?(false, "Connection Error")
         }
 
         socket.on(clientEvent: .statusChange) { data, _ in
@@ -81,42 +104,15 @@ class SocketTest {
         // Listen for unauthorized events
         socket.on("unauthorized") { data, ack in
             print("🚫 Unauthorized:", data)
+            self.onConnectionStatusChange?(false, "Unauthorized")
         }
     }
 
     func connect() {
         print("🚀 Connecting to WebSocket...")
         
-        // First test basic connectivity
-        testBasicConnectivity { isReachable in
-            if isReachable {
-                print("✅ Server is reachable, attempting WebSocket connection...")
-                self.socket?.connect()
-            } else {
-                print("❌ Server is not reachable - network issue!")
-            }
-        }
-    }
-    
-    private func testBasicConnectivity(completion: @escaping (Bool) -> Void) {
-        let url = URL(string: "https://socket.coveapp.co:3001")!
-        var request = URLRequest(url: url)
-        request.timeoutInterval = 10
-        
-        URLSession.shared.dataTask(with: request) { data, response, error in
-            DispatchQueue.main.async {
-                if let error = error {
-                    print("❌ Network error: \(error.localizedDescription)")
-                    completion(false)
-                } else if let httpResponse = response as? HTTPURLResponse {
-                    print("✅ Server responded with status: \(httpResponse.statusCode)")
-                    completion(true)
-                } else {
-                    print("⚠️  Unexpected response type")
-                    completion(false)
-                }
-            }
-        }.resume()
+        // Connect directly without HTTP test - WebSocket handles its own connectivity
+        socket?.connect()
     }
     
     func disconnect() {
