@@ -65,13 +65,11 @@ class RecommendedFriends {
             endpoint: "/recommended-friends",
             parameters: params
         ) { (result: Result<RecommendedFriendsResponse, NetworkError>) in
-            DispatchQueue.main.async {
-                switch result {
-                case .success(let response):
-                    completion(.success(response))
-                case .failure(let error):
-                    completion(.failure(error))
-                }
+            switch result {
+            case .success(let response):
+                completion(.success(response))
+            case .failure(let error):
+                completion(.failure(error))
             }
         }
     }
