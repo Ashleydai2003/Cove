@@ -39,13 +39,13 @@ struct FriendProfileView: View {
                             if let url = photoURL {
                                 KFImage(url)
                                     .resizable()
-                                    .scaledToFill()
+                                    .aspectRatio(contentMode: .fill)
                                     .frame(width: 120, height: 120)
                                     .clipShape(Circle())
                             } else {
                                 Image("default_user_pfp")
                                     .resizable()
-                                    .scaledToFill()
+                                    .aspectRatio(contentMode: .fill)
                                     .frame(width: 120, height: 120)
                                     .clipShape(Circle())
                             }

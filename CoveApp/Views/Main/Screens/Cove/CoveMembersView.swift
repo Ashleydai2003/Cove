@@ -136,7 +136,7 @@ struct MemberRowView: View {
                     .placeholder {
                         Circle()
                             .fill(Color.gray.opacity(0.2))
-                            .frame(maxWidth: 62, maxHeight: 62)
+                            .frame(width: 48, height: 48)
                             .overlay(
                                 Image(systemName: "person.fill")
                                     .foregroundColor(.gray)
@@ -149,13 +149,13 @@ struct MemberRowView: View {
                     .fade(duration: 0.2)
                     .cacheOriginalImage()
                     .loadDiskFileSynchronously()
-                    .aspectRatio(1, contentMode: .fill)
+                    .aspectRatio(contentMode: .fill)
                     .frame(width: 48, height: 48)
                     .clipShape(Circle())
             } else {
                 Image("default_user_pfp")
                     .resizable()
-                    .aspectRatio(1, contentMode: .fill)
+                    .aspectRatio(contentMode: .fill)
                     .frame(width: 48, height: 48)
                     .clipShape(Circle())
             }

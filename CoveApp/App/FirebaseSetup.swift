@@ -38,7 +38,7 @@ class FirebaseSetup: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserN
         #endif
 
         // Initialize WebSocket connection after Firebase setup
-        initializeWebSocketConnection()
+        // initializeWebSocketConnection() // Temporarily removed - will reimplement
 
         return true
     }
@@ -93,30 +93,14 @@ class FirebaseSetup: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserN
     // MARK: - Helper Methods
     
     private func sendFCMTokenToBackend(_ token: String) {
-        // Send token to your backend API
-        guard let url = URL(string: "\(AppConstants.API.baseURL)/update-fcm-token") else { return }
+        // FCM token will be handled when WebSocket is reimplemented
+        Log.debug("FCM token received: \(token)")
         
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        // Store token for future WebSocket implementation
+        UserDefaults.standard.set(token, forKey: "FCM_TOKEN")
         
-        // Add your authentication header
-        Task {
-            if let idToken = try? await Auth.auth().currentUser?.getIDToken() {
-                request.setValue("Bearer \(idToken)", forHTTPHeaderField: "Authorization")
-            }
-            
-            let body = ["fcmToken": token]
-            request.httpBody = try? JSONSerialization.data(withJSONObject: body)
-            
-            URLSession.shared.dataTask(with: request) { data, response, error in
-                if let error = error {
-                    Log.error("Failed to send FCM token: \(error)")
-                } else {
-                    Log.debug("FCM token sent successfully")
-                }
-            }.resume()
-        }
+        // TODO: Implement FCM token update when WebSocket is reimplemented
+        Log.debug("FCM token available for WebSocket: \(token)")
     }
     
     private func handleNotificationTap(_ userInfo: [AnyHashable: Any]) {
@@ -130,18 +114,28 @@ class FirebaseSetup: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserN
     
     // MARK: - WebSocket Management
     
-    private func initializeWebSocketConnection() {
-        Log.debug("Initializing WebSocket connection", category: "websocket")
-        
-        // Connect to WebSocket when user is authenticated
-        Auth.auth().addStateDidChangeListener { [weak self] _, user in
-            if let user = user {
-                Log.debug("User authenticated, connecting to WebSocket", category: "websocket")
-                WebSocketManager.shared.connect()
-            } else {
-                Log.debug("User signed out, disconnecting from WebSocket", category: "websocket")
-                WebSocketManager.shared.disconnect()
-            }
-        }
-    }
+    // WebSocket will be reimplemented from scratch
+    // private func initializeWebSocketConnection() {
+    //     Log.debug("Initializing WebSocket connection", category: "websocket")
+    //     
+    //     // Connect to WebSocket when user is authenticated
+    //     _ = Auth.auth().addStateDidChangeListener { _, user in
+    //         if user != nil {
+    //             Log.debug("User authenticated, connecting to WebSocket", category: "websocket")
+    //             // Get fresh Firebase token and connect
+    //             user?.getIDTokenForcingRefresh(true) { token, error in
+    //                 if let token = token {
+    //                     DispatchQueue.main.async {
+    //                         // TODO: Implement WebSocket connection
+    //                     }
+    //                 } else if let error = error {
+    //                     Log.error("Failed to get fresh token: \(error.localizedDescription)", category: "websocket")
+    //                 }
+    //             }
+    //         } else {
+    //             Log.debug("User signed out, disconnecting from WebSocket", category: "websocket")
+    //             // TODO: Implement WebSocket disconnection
+    //         }
+    //     }
+    // }
 }

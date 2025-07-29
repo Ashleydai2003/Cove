@@ -42,7 +42,7 @@ struct CoveHeaderView: View {
                             .placeholder {
                                 Circle()
                                     .fill(Color.gray.opacity(0.2))
-                                    .frame(maxWidth: 100, maxHeight: 100)
+                                    .frame(width: 100, height: 100)
                                     .overlay(ProgressView().tint(.gray))
                             }
                             .onSuccess { result in
@@ -51,14 +51,14 @@ struct CoveHeaderView: View {
                             .fade(duration: 0.2)
                             .cacheOriginalImage()
                             .loadDiskFileSynchronously()
-                            .aspectRatio(1, contentMode: .fill)
-                            .frame(maxWidth: 100, maxHeight: 100)
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: 100, height: 100)
                             .clipShape(Circle())
                     } else {
                         Image("default_cove_pfp")
                             .resizable()
-                            .aspectRatio(1, contentMode: .fill)
-                            .frame(maxWidth: 100, maxHeight: 100)
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: 100, height: 100)
                             .clipShape(Circle())
                     }
                 }
