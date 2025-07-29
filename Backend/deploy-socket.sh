@@ -235,26 +235,13 @@ if [ -n "$SOCKET_DOMAIN" ]; then
         ]' \
         --output text
 
-    # Update environment file with all production configuration
+    # Update environment file with SSL paths
     print_status "Updating environment configuration..."
     aws ssm send-command \
         --instance-ids $INSTANCE_ID \
         --document-name "AWS-RunShellScript" \
         --parameters 'commands=[
             "echo \"NODE_ENV=production\" | sudo tee -a /opt/cove-socket/Backend/.env",
-            "echo \"SOCKET_PORT=3001\" | sudo tee -a /opt/cove-socket/Backend/.env",
-            "echo \"RDS_MASTER_SECRET_ARN=arn:aws:secretsmanager:us-west-1:019721216575:secret:rds!db-7c509add-7d20-4a07-9dda-ba0f85e5689e\" | sudo tee -a /opt/cove-socket/Backend/.env",
-            "echo \"DB_USER=mydbuser\" | sudo tee -a /opt/cove-socket/Backend/.env",
-            "echo \"DB_HOST=my-postgres-db.choe4m2kewqx.us-west-1.rds.amazonaws.com\" | sudo tee -a /opt/cove-socket/Backend/.env",
-            "echo \"DB_NAME=covedb\" | sudo tee -a /opt/cove-socket/Backend/.env",
-            "echo \"FIREBASE_PROJECT_ID=cove-40d9f\" | sudo tee -a /opt/cove-socket/Backend/.env",
-            "echo \"ALLOWED_ORIGINS=https://coveapp.co,https://www.coveapp.co,https://api.coveapp.co,capacitor://localhost,ionic://localhost\" | sudo tee -a /opt/cove-socket/Backend/.env",
-            "echo \"MAX_CONNECTION_ATTEMPTS=5\" | sudo tee -a /opt/cove-socket/Backend/.env",
-            "echo \"RATE_LIMIT_WINDOW_MS=60000\" | sudo tee -a /opt/cove-socket/Backend/.env",
-            "echo \"SECURE_HEADERS=true\" | sudo tee -a /opt/cove-socket/Backend/.env",
-            "echo \"HSTS_MAX_AGE=31536000\" | sudo tee -a /opt/cove-socket/Backend/.env",
-            "echo \"LOG_LEVEL=info\" | sudo tee -a /opt/cove-socket/Backend/.env",
-            "echo \"ENABLE_SECURITY_LOGGING=true\" | sudo tee -a /opt/cove-socket/Backend/.env",
             "echo \"SSL_PRIVATE_KEY_PATH=/etc/ssl/private/server.key\" | sudo tee -a /opt/cove-socket/Backend/.env",
             "echo \"SSL_CERTIFICATE_PATH=/etc/ssl/certs/server.crt\" | sudo tee -a /opt/cove-socket/Backend/.env"
         ]' \
@@ -304,41 +291,6 @@ if [ -n "$SOCKET_DOMAIN" ]; then
     print_success "SSL certificates configured successfully!"
 else
     print_warning "No domain provided. SSL certificates not configured."
-    
-    # Set up environment variables for non-SSL deployment
-    print_status "Setting up environment configuration for non-SSL deployment..."
-    aws ssm send-command \
-        --instance-ids $INSTANCE_ID \
-        --document-name "AWS-RunShellScript" \
-        --parameters 'commands=[
-            "echo \"NODE_ENV=production\" | sudo tee -a /opt/cove-socket/Backend/.env",
-            "echo \"SOCKET_PORT=3001\" | sudo tee -a /opt/cove-socket/Backend/.env",
-            "echo \"RDS_MASTER_SECRET_ARN=arn:aws:secretsmanager:us-west-1:019721216575:secret:rds!db-7c509add-7d20-4a07-9dda-ba0f85e5689e\" | sudo tee -a /opt/cove-socket/Backend/.env",
-            "echo \"DB_USER=mydbuser\" | sudo tee -a /opt/cove-socket/Backend/.env",
-            "echo \"DB_HOST=my-postgres-db.choe4m2kewqx.us-west-1.rds.amazonaws.com\" | sudo tee -a /opt/cove-socket/Backend/.env",
-            "echo \"DB_NAME=covedb\" | sudo tee -a /opt/cove-socket/Backend/.env",
-            "echo \"FIREBASE_PROJECT_ID=cove-40d9f\" | sudo tee -a /opt/cove-socket/Backend/.env",
-            "echo \"ALLOWED_ORIGINS=https://coveapp.co,https://www.coveapp.co,https://api.coveapp.co,capacitor://localhost,ionic://localhost\" | sudo tee -a /opt/cove-socket/Backend/.env",
-            "echo \"MAX_CONNECTION_ATTEMPTS=5\" | sudo tee -a /opt/cove-socket/Backend/.env",
-            "echo \"RATE_LIMIT_WINDOW_MS=60000\" | sudo tee -a /opt/cove-socket/Backend/.env",
-            "echo \"SECURE_HEADERS=true\" | sudo tee -a /opt/cove-socket/Backend/.env",
-            "echo \"HSTS_MAX_AGE=31536000\" | sudo tee -a /opt/cove-socket/Backend/.env",
-            "echo \"LOG_LEVEL=info\" | sudo tee -a /opt/cove-socket/Backend/.env",
-            "echo \"ENABLE_SECURITY_LOGGING=true\" | sudo tee -a /opt/cove-socket/Backend/.env"
-        ]' \
-        --output text
-    
-    # Start socket server without SSL
-    print_status "Starting socket server without SSL..."
-    aws ssm send-command \
-        --instance-ids $INSTANCE_ID \
-        --document-name "AWS-RunShellScript" \
-        --parameters 'commands=[
-            "sudo docker stop socket-server || true",
-            "sudo docker rm socket-server || true",
-            "cd /opt/cove-socket/Backend && sudo docker run -d --name socket-server -p 3001:3001 --env-file .env --restart=always socket-server"
-        ]' \
-        --output text
 fi
 
 # Check Docker container status
