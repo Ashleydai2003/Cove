@@ -89,25 +89,17 @@ struct MessagingView: View {
         
         connectionStatus = "Testing..."
         
-        // Create and test socket connection
-        socketTest = SocketTest()
+        // Create and test socket connection with status callback
+        socketTest = SocketTest { isConnected, status in
+            DispatchQueue.main.async {
+                self.isConnected = isConnected
+                self.connectionStatus = status
+            }
+        }
         
-        // Simulate connection test
+        // Start connection test after a short delay
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
             socketTest?.connect()
-            
-            // Update status after a delay
-            DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                isConnected = true
-                connectionStatus = "Connected"
-                
-                // Disconnect after showing success
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                    socketTest?.disconnect()
-                    isConnected = false
-                    connectionStatus = "Disconnected"
-                }
-            }
         }
     }
 }

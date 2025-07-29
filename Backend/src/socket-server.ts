@@ -76,8 +76,6 @@ if (isProduction) {
 
 // Enhanced Socket.io configuration with security improvements
 const io = new Server(server, {
-  transports: ['websocket'],  // 🔥 CRITICAL: Only WebSocket transport
-  allowUpgrades: false,       // 🔥 CRITICAL: Prevent fallback to polling
   cors: {
     origin: function (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
       // Allow requests with no origin (like mobile apps)
@@ -108,15 +106,6 @@ const io = new Server(server, {
   pingTimeout: 60000,        // 60 seconds
   pingInterval: 25000,       // 25 seconds
   maxHttpBufferSize: 1e6,    // 1MB max message size
-  allowRequest: (req, callback) => {
-    // Additional request validation
-    const userAgent = req.headers['user-agent'];
-    if (userAgent && userAgent.includes('curl')) {
-      // Block curl requests to prevent abuse
-      return callback(null, false);
-    }
-    callback(null, true);
-  },
   upgradeTimeout: 10000,
   perMessageDeflate: false   // Disable compression for better compatibility
 } as any);
