@@ -164,7 +164,7 @@ extension CreateEventView {
 
                 Image(uiImage: viewModel.eventImage ?? UIImage())
                     .resizable()
-                    .scaledToFill()
+                    .aspectRatio(contentMode: .fill)
                     .frame(width: AppConstants.SystemSize.width-64, height: 250)
                     .clipShape(RoundedRectangle(cornerRadius: 10))
             }

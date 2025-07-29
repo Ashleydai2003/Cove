@@ -38,33 +38,39 @@ class SocketTest {
                 .compress,
                 .connectParams(["token": token]),
                 .forceWebsockets(true),
-                .version(.three),       // 🔥 CRITICAL: Use Socket.IO v4 protocol (matches server v4.8.1)
+                .version(.three),          // Engine.IO 4
                 .reconnects(true),
                 .reconnectAttempts(5),
                 .reconnectWait(1000)
+                // 🚫  leave .path OUT  🚫
             ]
         )
+
+        // right after you create `manager`
+        print("👉 Swift will hit:", manager.socketURL.absoluteString + "/socket.io/")
+        
+        print("Engine URL will be:", manager.socketURL.absoluteString + "/socket.io/")
 
         socket = manager.defaultSocket
 
         // Add basic event listeners
-        socket.on(clientEvent: .connect) { data, ack in
+        socket.on(clientEvent: .connect) { data, _ in
             print("✅ Connected to server")
         }
 
-        socket.on(clientEvent: .disconnect) { data, ack in
+        socket.on(clientEvent: .disconnect) { data, _ in
             print("🔌 Disconnected from server")
         }
 
-        socket.on(clientEvent: .error) { data, ack in
+        socket.on(clientEvent: .error) { data, _ in
             print("❌ Socket error:", data)
         }
 
-        socket.on(clientEvent: .statusChange) { data, ack in
+        socket.on(clientEvent: .statusChange) { data, _ in
             print("📡 Status change:", data)
         }
 
-        socket.on(clientEvent: .reconnectAttempt) { data, ack in
+        socket.on(clientEvent: .reconnectAttempt) { data, _ in
             print("🔄 Reconnect attempt:", data)
         }
 

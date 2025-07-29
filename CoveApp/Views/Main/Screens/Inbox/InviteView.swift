@@ -57,14 +57,14 @@ struct InviteView: View {
                                 Log.debug("❌ InviteView: Failed to load cove cover photo from \(coverPhotoUrlString): \(error)")
                             }
                             .resizable()
-                            .aspectRatio(3/2, contentMode: .fill)
+                            .aspectRatio(contentMode: .fill)
                             .clipped()
                             .onAppear {
                             }
                     } else {
                         Image("default_cove_pfp")
                             .resizable()
-                            .aspectRatio(3/2, contentMode: .fill)
+                            .aspectRatio(contentMode: .fill)
                             .clipped()
                             .onAppear {
                                 Log.debug("🔄 InviteView: Using default cover photo placeholder (no URL) for invite \(invite.id)")
