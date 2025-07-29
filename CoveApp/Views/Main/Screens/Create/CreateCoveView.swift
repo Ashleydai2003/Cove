@@ -171,7 +171,7 @@ extension CreateCoveView {
                 if let coverPhoto = viewModel.coverPhoto {
                     Image(uiImage: coverPhoto)
                         .resizable()
-                        .scaledToFill()
+                        .aspectRatio(contentMode: .fill)
                         .frame(width: 200, height: 200)
                         .clipShape(Circle())
                 } else {

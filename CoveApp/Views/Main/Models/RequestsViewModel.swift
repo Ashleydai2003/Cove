@@ -81,6 +81,43 @@ class RequestsViewModel: ObservableObject {
         }
     }
 
+    /// Refreshes requests data (for pull-to-refresh)
+    func refreshRequests(completion: (() -> Void)? = nil) {
+        Log.debug("RequestsViewModel: Refreshing requests data")
+        
+        // Reset pagination state
+        nextCursor = nil
+        hasMore = true
+        lastFetched = nil
+        
+        FriendRequests.fetch(cursor: nil, limit: pageSize) { [weak self] result in
+            guard let self = self else { return }
+            
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let resp):
+                    Log.debug("✅ RequestsViewModel: Refresh completed: \(resp.requests.count) requests")
+                    
+                    // Replace existing data with fresh data
+                    self.requests = resp.requests
+                    self.hasMore = resp.pagination.nextCursor != nil
+                    self.nextCursor = resp.pagination.nextCursor
+                    self.lastFetched = Date()
+                    
+                    // Prefetch profile photos
+                    let urls = resp.requests.compactMap { $0.sender.profilePhotoUrl?.absoluteString }
+                    ImagePrefetcherUtil.prefetch(urlStrings: urls)
+                    
+                case .failure(let error):
+                    Log.debug("❌ RequestsViewModel: Refresh error: \(error.localizedDescription)")
+                    self.errorMessage = error.localizedDescription
+                }
+                
+                completion?()
+            }
+        }
+    }
+
     func accept(_ req: RequestDTO) {
         Log.debug("Accepting friend request from \(req.sender.name)")
 
