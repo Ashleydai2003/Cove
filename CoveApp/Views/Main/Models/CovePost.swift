@@ -15,6 +15,7 @@ struct CovePost: Decodable, Identifiable, ContentComparable {
     let coveName: String
     let authorId: String
     let authorName: String
+    let authorProfilePhotoUrl: String?
     let isLiked: Bool
     let likeCount: Int
     let createdAt: String

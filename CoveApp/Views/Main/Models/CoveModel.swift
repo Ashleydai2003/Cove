@@ -503,6 +503,54 @@ class CoveModel: ObservableObject {
             fetchPosts(coveId: coveId)
         }
     }
+
+    /// Toggles the like status for a specific post
+    func togglePostLike(postId: String, completion: @escaping (Bool) -> Void) {
+        Log.debug("🔄 CoveModel: Toggling like for post: \(postId)")
+        
+        let params: [String: Any] = [
+            "postId": postId
+        ]
+        
+        NetworkManager.shared.post(
+            endpoint: "/toggle-post-like",
+            parameters: params
+        ) { [weak self] (result: Result<TogglePostLikeResponse, NetworkError>) in
+            guard let self = self else { return }
+            
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let response):
+                    Log.debug("✅ CoveModel: Post like toggled successfully: \(response)")
+                    
+                    // Update the post's like status in the posts array
+                    if let index = self.posts.firstIndex(where: { $0.id == postId }) {
+                        // Create a new post with updated like status
+                        let oldPost = self.posts[index]
+                        let newPost = CovePost(
+                            id: oldPost.id,
+                            content: oldPost.content,
+                            coveId: oldPost.coveId,
+                            coveName: oldPost.coveName,
+                            authorId: oldPost.authorId,
+                            authorName: oldPost.authorName,
+                            authorProfilePhotoUrl: oldPost.authorProfilePhotoUrl,
+                            isLiked: response.action == "liked",
+                            likeCount: response.likeCount,
+                            createdAt: oldPost.createdAt
+                        )
+                        self.posts[index] = newPost
+                    }
+                    
+                    completion(true)
+                case .failure(let error):
+                    Log.error("❌ CoveModel: Post like toggle failed: \(error)")
+                    self.errorMessage = "Failed to toggle like: \(error.localizedDescription)"
+                    completion(false)
+                }
+            }
+        }
+    }
     /// Fetches cove details only if data is missing or stale
     func fetchCoveDetailsIfStale(coveId: String) {
         if !hasCachedData || isCacheStale || cove?.id != coveId {
@@ -584,5 +632,12 @@ struct CovePostsResponse: Decodable {
         let hasMore: Bool
         let nextCursor: String?
     }
+}
+
+/// Response for /toggle-post-like API
+struct TogglePostLikeResponse: Decodable {
+    let message: String
+    let action: String
+    let likeCount: Int
 }
 

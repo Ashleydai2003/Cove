@@ -64,7 +64,8 @@ export const handleGetFeedPosts = async (event: APIGatewayProxyEvent): Promise<A
         author: {
           select: {
             id: true,
-            name: true
+            name: true,
+            profilePhotoID: true
           }
         },
         // Include cove information (id and name)
@@ -110,6 +111,14 @@ export const handleGetFeedPosts = async (event: APIGatewayProxyEvent): Promise<A
             }
           });
           
+          // Generate profile photo URL if it exists
+          const profilePhotoUrl = post.author.profilePhotoID ? 
+            await getSignedUrl(s3Client, new GetObjectCommand({
+              Bucket: process.env.USER_IMAGE_BUCKET_NAME,
+              Key: `${post.author.id}/${post.author.profilePhotoID}.jpg`
+            }), { expiresIn: 3600 }) : 
+            null;
+
           return {
             id: post.id,
             content: post.content,
@@ -117,6 +126,7 @@ export const handleGetFeedPosts = async (event: APIGatewayProxyEvent): Promise<A
             coveName: post.cove.name,
             authorId: post.authorId,
             authorName: post.author.name,
+            authorProfilePhotoUrl: profilePhotoUrl,
             isLiked: userLike ? true : false,
             likeCount: likeCount,
             createdAt: post.createdAt

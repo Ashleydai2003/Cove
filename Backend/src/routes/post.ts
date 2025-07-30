@@ -1,6 +1,9 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { authMiddleware } from '../middleware/auth';
 import { initializeDatabase } from '../config/database';
+import { GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { s3Client } from '../config/s3';
 
 // Create a new post
 // This endpoint handles post creation with the following requirements:
@@ -234,7 +237,8 @@ export const handleGetCovePosts = async (event: APIGatewayProxyEvent): Promise<A
         author: {
           select: {
             id: true,
-            name: true
+            name: true,
+            profilePhotoID: true
           }
         },
         // Include cove information
@@ -280,6 +284,14 @@ export const handleGetCovePosts = async (event: APIGatewayProxyEvent): Promise<A
             }
           });
           
+          // Generate profile photo URL if it exists
+          const profilePhotoUrl = post.author.profilePhotoID ? 
+            await getSignedUrl(s3Client, new GetObjectCommand({
+              Bucket: process.env.USER_IMAGE_BUCKET_NAME,
+              Key: `${post.author.id}/${post.author.profilePhotoID}.jpg`
+            }), { expiresIn: 3600 }) : 
+            null;
+
           return {
             id: post.id,
             content: post.content,
@@ -287,6 +299,7 @@ export const handleGetCovePosts = async (event: APIGatewayProxyEvent): Promise<A
             coveName: post.cove.name,
             authorId: post.authorId,
             authorName: post.author.name,
+            authorProfilePhotoUrl: profilePhotoUrl,
             isLiked: userLike ? true : false,
             likeCount: likeCount,
             createdAt: post.createdAt
@@ -363,7 +376,8 @@ export const handleGetPost = async (event: APIGatewayProxyEvent): Promise<APIGat
         author: {
           select: {
             id: true,
-            name: true
+            name: true,
+            profilePhotoID: true
           }
         },
         // Include cove information

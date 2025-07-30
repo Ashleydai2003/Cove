@@ -13,76 +13,126 @@ struct PostSummaryView: View {
     let post: CovePost
     var type: PostSummaryType = .feed // Default type
     @EnvironmentObject private var appController: AppController
+    var viewModel: CoveModel?
 
     var body: some View {
-        NavigationLink(value: post.id) {
-            VStack(alignment: .leading, spacing: 0) {
-                // Time-ago label above the content
-                HStack {
-                    Spacer()
-                    Text(timeAgo(post.createdAt))
-                        .font(.LibreBodoniBold(size: 14))
-                        .foregroundColor(.black)
-                        .padding(.bottom, 2)
-                }
+        VStack(alignment: .leading, spacing: 0) {
 
-                // Post content
-                VStack(alignment: .leading, spacing: 8) {
-                    // Post text content
-                    Text(post.content)
+            // Author info above post
+            HStack(spacing: 10) {
+                // Profile photo (use API URL or default image)
+                if let profilePhotoUrl = post.authorProfilePhotoUrl, let url = URL(string: profilePhotoUrl) {
+                    AsyncImage(url: url) { image in
+                        image
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: 40, height: 40)
+                            .clipShape(Circle())
+                    } placeholder: {
+                        Image("default_user_pfp")
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: 40, height: 40)
+                            .clipShape(Circle())
+                    }
+                } else {
+                    Image("default_user_pfp")
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: 40, height: 40)
+                        .clipShape(Circle())
+                }
+                
+                // Author name and verification
+                HStack(spacing: 4) {
+                    Text(post.authorName)
                         .font(.LibreBodoniSemiBold(size: 16))
                         .foregroundColor(.black)
-                        .multilineTextAlignment(.leading)
-                        .lineLimit(nil)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 12)
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(Color.gray.opacity(0.1))
-                        )
+                    // TODO: only checkmark if author is verified
+                    // This may require backend changes
+                    Image(systemName: "checkmark.circle")
+                        .foregroundColor(Colors.primaryDark)
+                        .font(.system(size: 14))
+                }
+                
+                Spacer()
+                
+                // Time ago
+                Text(timeAgo(post.createdAt))
+                    .font(.LibreBodoniSemiBold(size: 12))
+                    .foregroundColor(.black)
+            }
+            .padding(.horizontal, 2)
+            .padding(.bottom, 8)
 
-                    // Author info
+            // Post content
+            VStack(alignment: .leading, spacing: 8) {
+                // Post text content
+                Text(post.content)
+                    .font(.LibreBodoniSemiBold(size: 16))
+                    .foregroundColor(Colors.primaryDark)
+                    .multilineTextAlignment(.leading)
+                    .lineLimit(nil)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color.white)
+                    )
+
+                // Cove info (only show if not in cove view)
+                if type != .cove {
                     HStack(spacing: 4) {
-                        Text("by")
+                        Text("@")
                             .font(.LibreBodoniSemiBold(size: 13))
                             .foregroundColor(.black)
-                        Text(post.authorName)
+                        Text(post.coveName)
                             .font(.LibreBodoniSemiBold(size: 13))
                             .foregroundColor(Colors.primaryDark)
-                        if type != .cove {
-                            Text("@")
-                                .font(.LibreBodoniSemiBold(size: 13))
-                                .foregroundColor(.black)
-                            Text(post.coveName)
-                                .font(.LibreBodoniSemiBold(size: 13))
-                                .foregroundColor(Colors.primaryDark)
-                        }
-                        // TODO: only checkmark if author is verified
-                        // This may require backend changes
-                        Image(systemName: "checkmark.circle")
-                            .foregroundColor(Colors.primaryDark)
-                            .font(.system(size: 13))
-                    }
-                    .padding(.horizontal, 2)
-
-                    // Like count and interaction
-                    HStack(spacing: 8) {
-                        HStack(spacing: 4) {
-                            Image(systemName: post.isLiked ? "heart.fill" : "heart")
-                                .foregroundColor(post.isLiked ? .red : .gray)
-                                .font(.system(size: 14))
-                            Text("\(post.likeCount)")
-                                .font(.LibreBodoniSemiBold(size: 13))
-                                .foregroundColor(.black)
-                        }
-                        Spacer()
                     }
                     .padding(.horizontal, 2)
                 }
-                .padding(.bottom, 4)
+
+                                    // Like count and interaction
+                    HStack(spacing: 8) {
+                        Button(action: {
+                            toggleLike(for: post)
+                        }) {
+                            HStack(spacing: 4) {
+                                Image(systemName: post.isLiked ? "heart.fill" : "heart")
+                                    .foregroundColor(post.isLiked ? .red : .gray)
+                                    .font(.system(size: 14))
+                                Text("\(post.likeCount)")
+                                    .font(.LibreBodoniSemiBold(size: 13))
+                                    .foregroundColor(.black)
+                            }
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        Spacer()
+                    }
+                    .padding(.horizontal, 16)
+            }
+            .padding(.bottom, 4)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 5)
+    }
+
+    /// Toggles the like status for a post
+    private func toggleLike(for post: CovePost) {
+        guard let viewModel = viewModel else {
+            Log.debug("No view model available for like toggle")
+            return
+        }
+        
+        viewModel.togglePostLike(postId: post.id) { success in
+            if success {
+                Log.debug("✅ Post like toggled successfully")
+            } else {
+                Log.debug("❌ Post like toggle failed")
             }
         }
-        .padding(.vertical, 5)
     }
 
     /// Returns a human-readable time-ago string for the post date.
