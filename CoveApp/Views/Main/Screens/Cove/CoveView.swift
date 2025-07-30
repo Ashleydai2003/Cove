@@ -1,9 +1,8 @@
 //
-//  CoveView.swift (formerly FeedView.swift)
+//  CoveView.swift
 //  Cove
 //
 //  Created by Ananya Agarwal
-//  Refactored and documented by AI for maintainability and best practices
 
 import SwiftUI
 import Kingfisher
