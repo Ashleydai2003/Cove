@@ -92,8 +92,9 @@ struct FloatingActionView: View {
                                 .font(.LibreBodoni(size: 25))
                                 .foregroundColor(.white)
                             Spacer()
-                            Image("smily")
+                            Image("post_icon")
                                 .resizable()
+                                .aspectRatio(contentMode: .fit)
                                 .frame(maxWidth: 35, maxHeight: 35)
                                 .foregroundColor(.white)
                         }
