@@ -18,9 +18,10 @@
     "dev": "dotenv -e env.development -- ts-node src/local-server.ts",
     "start:prod": "dotenv -e env.production -- ts-node src/local-server.ts",
     "dev:stop:server": "pkill -f 'ts-node src/local-server.ts' || echo 'Server not running'",
+    "dev:clean": "npm run db:stop && npm run db:start && sleep 5 && npm run prisma:reset && npm run minio:setup && npm run emulators:start & npm run dev",
     "dev:full": "npm run db:start && sleep 5 && npm run minio:setup && npm run emulators:start & npm run dev",
     "dev:stop": "npm run dev:stop:server && npm run db:stop && npm run emulators:stop",
-    "emulators:start": "firebase emulators:start --only auth",
+    "emulators:start": "firebase emulators:start --only auth --import=./firebase-data --export-on-exit=./firebase-data",
     "emulators:stop": "pkill -f 'firebase emulators:start' || echo 'Emulator not running'",
     "socket:dev": "dotenv -e env.development -- ts-node src/socket-server.ts",
     "socket:prod": "dotenv -e env.production -- ts-node src/socket-server.ts"
