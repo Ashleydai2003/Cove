@@ -1,0 +1,61 @@
+{
+  "description": "Test feed-posts endpoint",
+  "tests": [
+    {
+      "name": "Get feed posts successfully",
+      "method": "GET",
+      "path": "/feed-posts",
+      "headers": {
+        "Authorization": "Bearer test-token"
+      },
+      "expectedStatus": 200,
+      "expectedResponse": {
+        "posts": [
+          {
+            "id": "string",
+            "content": "string",
+            "coveId": "string",
+            "coveName": "string",
+            "authorId": "string",
+            "authorName": "string",
+            "isLiked": false,
+            "likeCount": 0,
+            "createdAt": "string"
+          }
+        ],
+        "pagination": {
+          "hasMore": false,
+          "nextCursor": null
+        }
+      }
+    },
+    {
+      "name": "Get feed posts with pagination",
+      "method": "GET",
+      "path": "/feed-posts?cursor=test-cursor&limit=5",
+      "headers": {
+        "Authorization": "Bearer test-token"
+      },
+      "expectedStatus": 200,
+      "expectedResponse": {
+        "posts": [],
+        "pagination": {
+          "hasMore": false,
+          "nextCursor": null
+        }
+      }
+    },
+    {
+      "name": "Get feed posts with invalid method",
+      "method": "POST",
+      "path": "/feed-posts",
+      "headers": {
+        "Authorization": "Bearer test-token"
+      },
+      "expectedStatus": 405,
+      "expectedResponse": {
+        "message": "Method not allowed. Only GET requests are accepted for retrieving feed posts."
+      }
+    }
+  ]
+} 

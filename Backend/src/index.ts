@@ -19,7 +19,6 @@ import {
   handleSendFriendRequest,
   handleResolveFriendRequest,
   handleGetCoveEvents,
-  handleGetUpcomingEvents,
   handleGetFriends,
   handleGetFriendRequests,
   handleGetCove,
@@ -42,6 +41,12 @@ import {
   handleGetThreadMessages,
   handleMarkMessageRead,
   handleUpdateFCMToken,
+  handleCreatePost,
+  handleGetCovePosts,
+  handleGetPost,
+  handleTogglePostLike,
+  handleGetFeedPosts,
+  handleGetUpcomingEvents,
 } from './routes';
 
 export const handler = async (
@@ -80,8 +85,6 @@ export const handler = async (
         return handleResolveFriendRequest(event);
       case '/cove-events':
         return handleGetCoveEvents(event);
-      case '/upcoming-events':
-        return handleGetUpcomingEvents(event);
       case '/friends':
         return handleGetFriends(event);
       case '/friend-requests':
@@ -129,6 +132,20 @@ export const handler = async (
         return handleMarkMessageRead(event);
       case '/update-fcm-token':
         return handleUpdateFCMToken(event);
+      // Post routes
+      case '/create-post':
+        return handleCreatePost(event);
+      case '/cove-posts':
+        return handleGetCovePosts(event);
+      case '/post':
+        return handleGetPost(event);
+      case '/toggle-post-like':
+        return handleTogglePostLike(event);
+      // Feed routes
+      case '/feed-posts':
+        return handleGetFeedPosts(event);
+      case '/upcoming-events':
+        return handleGetUpcomingEvents(event);
       default:
         // Handle common web standard files
         switch (event.path) {

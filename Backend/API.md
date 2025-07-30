@@ -111,6 +111,36 @@ Takes Data Parameters:
 Returns:
 * message: String
 
+### `/create-post`
+
+Creates a new post in a cove. User must be a member of the cove.
+
+Takes Data Parameters:
+* content: String (required) - Post content (max 1000 characters)
+* coveId: String (required) - ID of the cove to post in
+
+Returns:
+* message: String
+* post: {
+  * id: String
+  * content: String
+  * coveId: String
+  * authorId: String
+  * createdAt: DateTime
+}
+
+### `/toggle-post-like`
+
+Toggles a user's like status for a post. If the user has already liked the post, it will unlike it. If they haven't liked it, it will like it.
+
+Takes Data Parameters:
+* postId: String (required) - ID of the post to like/unlike
+
+Returns:
+* message: String
+* action: String - "liked" or "unliked"
+* likeCount: Number - Updated like count for the post
+
 ### `/login`
 
 Authenticates a user and returns their basic information.
@@ -740,16 +770,122 @@ Returns:
     * name: String
     * profilePhotoId: String | null
   }
-}> 
+}>
+
+### `/cove-posts`
+
+Retrieves posts for a specific cove with pagination. User must be a member of the cove.
+
+Takes Query String Parameters:
+* coveId: String (required)
+* cursor: String (optional, for pagination)
+* limit: Number (optional, defaults to 10, max 50)
+
+Returns:
+* posts: Array<{
+  * id: String
+  * content: String
+  * coveId: String
+  * coveName: String
+  * authorId: String
+  * authorName: String
+  * isLiked: Boolean
+  * likeCount: Number
+  * createdAt: DateTime
+}>
+* pagination: {
+  * hasMore: Boolean
+  * nextCursor: String | null
+}
+
+### `/post`
+
+Retrieves detailed information about a specific post. User must be a member of the post's cove.
+
+Takes Query String Parameters:
+* postId: String (required) - ID of the post to retrieve
+
+Returns:
+* post: {
+  * id: String
+  * content: String
+  * coveId: String
+  * author: {
     * id: String
     * name: String
-    * description: String | null
-    * location: String
-    * coverPhotoId: String | null
   }
-  * sentBy: {
+  * cove: {
     * id: String
     * name: String
-    * profilePhotoId: String | null
   }
-}> 
+  * isLiked: Boolean
+  * likes: Array<{
+    * id: String
+    * userId: String
+    * userName: String
+    * createdAt: DateTime
+  }> - All likes for this post
+  * createdAt: DateTime
+  * isAuthor: Boolean - Indicates whether the current user is the author of this post
+}
+
+### `/feed-posts`
+
+Retrieves all posts from coves the user is a member of, with pagination.
+
+Takes Query String Parameters:
+* cursor: String (optional, for pagination)
+* limit: Number (optional, defaults to 10, max 50)
+
+Returns:
+* posts: Array<{
+  * id: String
+  * content: String
+  * coveId: String
+  * coveName: String
+  * authorId: String
+  * authorName: String
+  * isLiked: Boolean
+  * likeCount: Number
+  * createdAt: DateTime
+}>
+* pagination: {
+  * hasMore: Boolean
+  * nextCursor: String | null
+}
+
+### `/upcoming-events`
+
+Retrieves all events from coves the user is a member of, with pagination.
+
+Takes Query String Parameters:
+* cursor: String (optional, for pagination)
+* limit: Number (optional, defaults to 10, max 50)
+
+Returns:
+* events: Array<{
+  * id: String
+  * name: String
+  * description: String | null
+  * date: String
+  * location: String
+  * coveId: String
+  * coveName: String
+  * coveCoverPhoto: {
+    * id: String
+    * url: String
+  } | null
+  * hostId: String
+  * hostName: String
+  * rsvpStatus: "GOING" | "MAYBE" | "NOT_GOING" | null
+  * goingCount: Number
+  * createdAt: DateTime
+  * coverPhoto: {
+    * id: String
+    * url: String
+  } | null
+}>
+* pagination: {
+  * hasMore: Boolean
+  * nextCursor: String | null
+}
