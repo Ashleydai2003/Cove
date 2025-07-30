@@ -235,4 +235,26 @@ class AppController: ObservableObject {
         // Also refresh the cove feed to ensure UI updates
         coveFeed.refreshUserCoves()
     }
+
+    /**
+     * Force refresh a specific cove's posts after creating a post in that cove.
+     * Call this after successfully creating a post to update the cove view immediately.
+     * Only refreshes posts, not the cove header details.
+     */
+    func refreshCoveAfterPostCreation(coveId: String) {
+        Log.critical("🔄 AppController: Refreshing cove posts after post creation for coveId: \(coveId)")
+
+        // Refresh the specific cove's posts
+        if let coveModel = coveFeed.coveModels[coveId] {
+            Log.critical("✅ AppController: Found existing CoveModel for coveId: \(coveId), refreshing posts")
+            coveModel.refreshPosts()
+        } else {
+            Log.critical("🆕 AppController: Creating new CoveModel for coveId: \(coveId), refreshing posts")
+            let newModel = coveFeed.getOrCreateCoveModel(for: coveId)
+            newModel.refreshPosts()
+        }
+
+        // Also refresh the cove feed to ensure UI updates
+        coveFeed.refreshUserCoves()
+    }
 }

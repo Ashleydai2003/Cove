@@ -5,7 +5,6 @@
 //  Created by Sheng Moua on 4/21/25.
 //
 
-// TODO: there's a bug when i change the year to be correct but the date and the month are still incorrect, it moves me onto the next screen
 
 import SwiftUI
 

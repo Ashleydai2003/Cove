@@ -19,7 +19,7 @@ struct CovePostsView: View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: 5) {
                 ForEach(viewModel.posts, id: \.id) { post in
-                    PostSummaryView(post: post, type: .cove)
+                    PostSummaryView(post: post, type: .cove, viewModel: viewModel)
                         .onAppear {
                             DispatchQueue.main.async {
                                 viewModel.loadMorePostsIfNeeded(currentPost: post)
