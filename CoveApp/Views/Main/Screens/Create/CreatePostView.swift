@@ -74,7 +74,7 @@ extension CreatePostView {
             HStack(alignment: .top) {
                 Spacer()
 
-                Image("smily")
+                Image("post_logo")
                     .resizable()
                     .scaledToFit()
                     .frame(width: 100, height: 100)
@@ -84,7 +84,7 @@ extension CreatePostView {
             }
             .padding(.horizontal, 16)
 
-            Text("share a post")
+            Text("create a post")
                 .font(.Lugrasimo(size: 35))
                 .foregroundColor(Colors.primaryDark)
         }
@@ -95,26 +95,38 @@ extension CreatePostView {
         VStack {
             ZStack(alignment: .topLeading) {
                 if viewModel.content.isEmpty {
-                    Text("what's on your mind?")
-                        .foregroundColor(.white)
-                        .font(.LibreBodoniBold(size: 18))
-                        .padding(.top, 16)
-                        .padding(.leading, 16)
+                    Text("share your thoughts...")
+                        .foregroundColor(.gray)
+                        .font(.LibreBodoniSemiBold(size: 16))
+                        .padding(.top, 8)
+                        .padding(.leading, 4)
                 }
 
                 TextEditor(text: $viewModel.content)
-                    .foregroundStyle(Color.white)
-                    .font(.LibreBodoniBold(size: 18))
+                    .foregroundColor(.black)
+                    .font(.LibreBodoniSemiBold(size: 16))
                     .scrollContentBackground(.hidden)
-                    .frame(minHeight: 120, maxHeight: 200)
-                    .padding(.top, 16)
-                    .padding(.horizontal, 16)
+                    .background(Color.clear)
+                    .frame(minHeight: 250)
                     .focused($isFocused)
             }
             .padding(16)
+            
+            // Character counter
+            HStack {
+                Spacer()
+                Text("\(viewModel.content.count)/1000")
+                    .font(.LibreBodoniSemiBold(size: 12))
+                    .foregroundColor(viewModel.content.count > 1000 ? .red : .gray)
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 4)
         }
-        .background(Colors.primaryDark)
-        .cornerRadius(10)
+        .background(Color.white)
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(Color.black, lineWidth: 1)
+        )
     }
 
     // MARK: - Create Button
@@ -140,7 +152,7 @@ extension CreatePostView {
                             .fill(Color.white)
                     )
             } else {
-                Text("share")
+                Text("post")
                     .foregroundStyle(!viewModel.isFormValid ? Color.gray : Color.black)
                     .font(.LibreBodoniBold(size: 16))
                     .frame(maxWidth: .infinity, minHeight: 60, maxHeight: 60, alignment: .center)
@@ -151,7 +163,7 @@ extension CreatePostView {
             }
         }
         .disabled(!viewModel.isFormValid || viewModel.isSubmitting)
-        .padding(.top, 24)
+        .padding(.top, 40)
     }
 
     // MARK: - Keyboard Accessory
