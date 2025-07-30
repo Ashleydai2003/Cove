@@ -1,0 +1,28 @@
+{
+  "description": "Test create-post endpoint",
+  "tests": [
+    {
+      "name": "Create post successfully",
+      "method": "POST",
+      "path": "/create-post",
+      "headers": {
+        "Authorization": "Bearer test-token"
+      },
+      "body": {
+        "content": "This is a test post content!",
+        "coveId": "test-cove-id"
+      },
+      "expectedStatus": 200,
+      "expectedResponse": {
+        "message": "Post created successfully",
+        "post": {
+          "id": "string",
+          "content": "This is a test post content!",
+          "coveId": "test-cove-id",
+          "authorId": "string",
+          "createdAt": "string"
+        }
+      }
+    }
+  ]
+} 

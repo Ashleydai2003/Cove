@@ -49,10 +49,7 @@ class SocketTest {
                 .compress,
                 .connectParams(["token": token]),
                 .extraHeaders(["Authorization": "Bearer \(token)"]),
-                .forceWebsockets(true),
-                .reconnects(true),
-                .reconnectAttempts(5),
-                .reconnectWait(1000)
+                .forceWebsockets(true)
             ]
         )
 
@@ -61,8 +58,8 @@ class SocketTest {
         print("🔧 Socket configuration:")
         print("  - URL: \(socketURL)")
         print("  - Token: \(String(token.prefix(20)))...")
-        print("  - Engine.IO version: auto-negotiate")
-        print("  - Transport: WebSocket only")
+        print("  - Engine.IO version: default (v4)")
+        print("  - Transport: WebSocket only (forced)")
         print("  - Query params: token=\(String(token.prefix(20)))...")
         print("  - Auth header: Bearer \(String(token.prefix(20)))...")
 

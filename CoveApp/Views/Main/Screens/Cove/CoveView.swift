@@ -11,10 +11,11 @@ import Kingfisher
 /// CoveView: Displays the feed for a specific cove, including cove details and events.
 struct CoveView: View {
     enum Tab: Int, CaseIterable {
-        case events, members
+        case events, posts, members
         var title: String {
             switch self {
             case .events: return "events"
+            case .posts: return "posts"
             case .members: return "members"
             }
         }
@@ -80,6 +81,16 @@ struct CoveView: View {
                                     })
                                 }
                             }
+                        case .posts:
+                            CovePostsView(viewModel: viewModel) {
+                                // Refreshes posts only - header stays fixed
+                                await withCheckedContinuation { continuation in
+                                    viewModel.refreshPosts()
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: {
+                                        continuation.resume()
+                                    })
+                                }
+                            }
                         case .members:
                             CoveMembersView(viewModel: viewModel) {
                                 // Refreshes members data
@@ -129,6 +140,9 @@ struct CoveView: View {
             if newTab == .members {
                 // Fetch members when members tab is selected
                 viewModel.fetchCoveMembers(coveId: coveId)
+            } else if newTab == .posts {
+                // Fetch posts when posts tab is selected
+                viewModel.fetchPosts(coveId: coveId)
             }
         }
         .alert("error", isPresented: Binding(

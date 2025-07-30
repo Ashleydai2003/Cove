@@ -16,20 +16,28 @@ class CoveModel: ObservableObject {
     @Published var cove: FeedCoveDetails?
     /// List of events for the current cove
     @Published var events: [CalendarEvent] = []
+    /// List of posts for the current cove
+    @Published var posts: [CovePost] = []
     /// List of members for the current cove
     @Published var members: [CoveMember] = []
     /// Cursor for event pagination
     @Published var nextCursor: String?
+    /// Cursor for post pagination
+    @Published var postsCursor: String?
     /// Cursor for member pagination
     @Published var membersCursor: String?
     /// Whether more events are available
     @Published var hasMore = true
+    /// Whether more posts are available
+    @Published var hasPostsMore = true
     /// Whether more members are available
     @Published var hasMembersMore = true
     /// Loading state for UI
     @Published var isLoading = false
     /// Loading state specifically for events refresh (separate from main loading)
     @Published var isRefreshingEvents = false
+    /// Loading state specifically for posts refresh (separate from main loading)
+    @Published var isRefreshingPosts = false
     /// Loading state specifically for cove details refresh (separate from main loading)
     @Published var isRefreshingCoveDetails = false
     /// Loading state specifically for members refresh
@@ -40,12 +48,15 @@ class CoveModel: ObservableObject {
     @Published var lastFetched: Date?
     /// Last time events were fetched (for separate caching)
     @Published var eventsLastFetched: Date?
+    /// Last time posts were fetched (for separate caching)
+    @Published var postsLastFetched: Date?
     /// Last time members were fetched (for separate caching)
     @Published var membersLastFetched: Date?
 
     // Cache timeouts
     private let coveDetailsCacheTimeout: TimeInterval = 5 * 60 * 60 // 5 hours for cove details
     private let eventsCacheTimeout: TimeInterval = 5 * 60 // 5 minutes for events
+    private let postsCacheTimeout: TimeInterval = 5 * 60 // 5 minutes for posts
     private let membersCacheTimeout: TimeInterval = 30 * 60 // 30 minutes for members
     private let pageSize = 5
 
@@ -68,6 +79,11 @@ class CoveModel: ObservableObject {
         return eventsLastFetched != nil
     }
 
+    /// Checks if we have any cached posts data
+    var hasCachedPosts: Bool {
+        return postsLastFetched != nil
+    }
+
     /// Checks if we have any cached members data
     var hasCachedMembers: Bool {
         return membersLastFetched != nil
@@ -83,6 +99,12 @@ class CoveModel: ObservableObject {
     var isEventsCacheStale: Bool {
         guard let lastFetch = eventsLastFetched else { return true }
         return Date().timeIntervalSince(lastFetch) > eventsCacheTimeout
+    }
+
+    /// Checks if posts cache is stale (older than cache timeout)
+    var isPostsCacheStale: Bool {
+        guard let lastFetch = postsLastFetched else { return true }
+        return Date().timeIntervalSince(lastFetch) > postsCacheTimeout
     }
 
     /// Checks if members cache is stale (older than cache timeout)
@@ -374,6 +396,113 @@ class CoveModel: ObservableObject {
             fetchEvents(coveId: coveId)
         }
     }
+
+    /// Fetches posts for the current cove.
+    func fetchPosts() {
+        guard let coveId = cove?.id else {
+            Log.debug("❌ CoveModel: No cove ID available")
+            errorMessage = "No cove ID available"
+            return
+        }
+        fetchPosts(coveId: coveId)
+    }
+
+    /// Fetches posts for a specific cove ID (with pagination).
+    func fetchPosts(coveId: String, forceRefresh: Bool = false) {
+        // Check if we should use cached posts data
+        if !forceRefresh && hasCachedPosts && !isPostsCacheStale && !posts.isEmpty {
+            Log.debug("📱 CoveModel: ✅ Using fresh cached posts data (\(posts.count) posts) - NO NETWORK REQUEST")
+            return
+        }
+
+        guard !isLoading && hasPostsMore else { return }
+        isLoading = true
+        Log.debug("🔍 CoveModel: Fetching posts...")
+        var parameters: [String: Any] = [
+            "coveId": coveId,
+            "limit": pageSize
+        ]
+        if let cursor = postsCursor {
+            parameters["cursor"] = cursor
+        }
+        NetworkManager.shared.get(endpoint: "/cove-posts", parameters: parameters) { [weak self] (result: Result<CovePostsResponse, NetworkError>) in
+            guard let self = self else { return }
+            DispatchQueue.main.async {
+                self.isLoading = false
+                switch result {
+                case .success(let response):
+                    Log.debug("✅ CoveModel: Posts received: \(response.posts.count) posts")
+                    self.posts.append(contentsOf: response.posts)
+                    self.hasPostsMore = response.pagination.hasMore
+                    self.postsCursor = response.pagination.nextCursor
+                    self.postsLastFetched = Date()
+                case .failure(let error):
+                    Log.debug("❌ CoveModel: Posts error: \(error.localizedDescription)")
+                    self.errorMessage = error.localizedDescription
+                }
+            }
+        }
+    }
+
+    /// Refreshes only the posts data, keeping the cached cove details.
+    func refreshPosts() {
+        guard let coveId = cove?.id else {
+            Log.debug("❌ CoveModel: No cove ID found for posts refresh")
+            return
+        }
+        guard !isRefreshingPosts else { return }
+
+        Log.critical("🔄 CoveModel: Refreshing posts data for coveId: \(coveId)")
+        isRefreshingPosts = true
+        posts = []
+        postsCursor = nil
+        hasPostsMore = true
+        postsLastFetched = nil // Clear posts cache
+
+        let parameters: [String: Any] = [
+            "coveId": coveId,
+            "limit": pageSize
+        ]
+
+        NetworkManager.shared.get(endpoint: "/cove-posts", parameters: parameters) { [weak self] (result: Result<CovePostsResponse, NetworkError>) in
+            guard let self = self else { return }
+            DispatchQueue.main.async {
+                self.isRefreshingPosts = false
+                switch result {
+                case .success(let response):
+                    Log.debug("✅ CoveModel: Posts refresh completed: \(response.posts.count) posts")
+
+                    // Use smart diffing to only update UI if posts actually changed
+                    updateIfChanged(
+                        current: self.posts,
+                        new: response.posts
+                    ) {
+                        self.posts = response.posts
+                        self.hasPostsMore = response.pagination.hasMore
+                        self.postsCursor = response.pagination.nextCursor
+                    }
+
+                    self.postsLastFetched = Date()
+                case .failure(let error):
+                    Log.debug("❌ CoveModel: Posts refresh error: \(error.localizedDescription)")
+                    self.errorMessage = error.localizedDescription
+                }
+            }
+        }
+    }
+
+    /// Loads more posts if the user scrolls to the end of the list.
+    func loadMorePostsIfNeeded(currentPost: CovePost) {
+        if let lastPost = posts.last,
+           lastPost.id == currentPost.id,
+           hasPostsMore && !isLoading {
+            guard let coveId = cove?.id else {
+                Log.debug("❌ CoveModel: No cove ID available for loading more posts")
+                return
+            }
+            fetchPosts(coveId: coveId)
+        }
+    }
     /// Fetches cove details only if data is missing or stale
     func fetchCoveDetailsIfStale(coveId: String) {
         if !hasCachedData || isCacheStale || cove?.id != coveId {
@@ -385,6 +514,12 @@ class CoveModel: ObservableObject {
                 let reason = !hasCachedEvents ? "no cached events" : "events cache is stale"
                 Log.debug("📱 CoveModel: Fetching events (\(reason))")
                 fetchEvents(coveId: coveId)
+            }
+            // Also check if posts need fetching
+            if !hasCachedPosts || isPostsCacheStale {
+                let reason = !hasCachedPosts ? "no cached posts" : "posts cache is stale"
+                Log.debug("📱 CoveModel: Fetching posts (\(reason))")
+                fetchPosts(coveId: coveId)
             }
             // Also check if members need fetching
             if !hasCachedMembers || isMembersCacheStale {
@@ -434,6 +569,16 @@ struct FeedCoveDetails: Decodable, ContentComparable {
 /// Response for /cove-events API
 struct CoveEventsResponse: Decodable {
     let events: [CalendarEvent]
+    let pagination: Pagination
+    struct Pagination: Decodable {
+        let hasMore: Bool
+        let nextCursor: String?
+    }
+}
+
+/// Response for /cove-posts API
+struct CovePostsResponse: Decodable {
+    let posts: [CovePost]
     let pagination: Pagination
     struct Pagination: Decodable {
         let hasMore: Bool
