@@ -13,4 +13,4 @@ export { handleDeleteUser, handleDeleteEvent } from './delete';
 export { handleSendInvite, handleGetInvites, handleOpenInvite, handleRejectInvite } from './invites';
 export { handleCreateThread, handleSendMessage, handleGetThreads, handleGetThreadMessages, handleMarkMessageRead, handleUpdateFCMToken } from './messaging';
 export { handleCreatePost, handleGetCovePosts, handleGetPost, handleTogglePostLike } from './post';
-export { handleGetFeedPosts, handleGetUpcomingEvents } from './feed';
+export { handleGetFeed } from './feed';

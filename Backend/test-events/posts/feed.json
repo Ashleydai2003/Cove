@@ -1,28 +1,20 @@
 {
-  "description": "Test feed-posts endpoint",
+  "description": "Test flexible /feed endpoint",
   "tests": [
     {
-      "name": "Get feed posts successfully",
+      "name": "Get feed with both events and posts (default)",
       "method": "GET",
-      "path": "/feed-posts",
+      "path": "/feed",
+      "queryStringParameters": {
+        "types": "event,post",
+        "limit": "10"
+      },
       "headers": {
         "Authorization": "Bearer test-token"
       },
       "expectedStatus": 200,
       "expectedResponse": {
-        "posts": [
-          {
-            "id": "string",
-            "content": "string",
-            "coveId": "string",
-            "coveName": "string",
-            "authorId": "string",
-            "authorName": "string",
-            "isLiked": false,
-            "likeCount": 0,
-            "createdAt": "string"
-          }
-        ],
+        "items": [],
         "pagination": {
           "hasMore": false,
           "nextCursor": null
@@ -30,15 +22,19 @@
       }
     },
     {
-      "name": "Get feed posts with pagination",
+      "name": "Get feed with events only",
       "method": "GET",
-      "path": "/feed-posts?cursor=test-cursor&limit=5",
+      "path": "/feed",
+      "queryStringParameters": {
+        "types": "event",
+        "limit": "10"
+      },
       "headers": {
         "Authorization": "Bearer test-token"
       },
       "expectedStatus": 200,
       "expectedResponse": {
-        "posts": [],
+        "items": [],
         "pagination": {
           "hasMore": false,
           "nextCursor": null
@@ -46,15 +42,50 @@
       }
     },
     {
-      "name": "Get feed posts with invalid method",
+      "name": "Get feed with posts only",
+      "method": "GET",
+      "path": "/feed",
+      "queryStringParameters": {
+        "types": "post",
+        "limit": "10"
+      },
+      "headers": {
+        "Authorization": "Bearer test-token"
+      },
+      "expectedStatus": 200,
+      "expectedResponse": {
+        "items": [],
+        "pagination": {
+          "hasMore": false,
+          "nextCursor": null
+        }
+      }
+    },
+    {
+      "name": "Get feed with invalid types parameter",
+      "method": "GET",
+      "path": "/feed",
+      "queryStringParameters": {
+        "types": "invalid"
+      },
+      "headers": {
+        "Authorization": "Bearer test-token"
+      },
+      "expectedStatus": 400,
+      "expectedResponse": {
+        "message": "Invalid types parameter. Must be one or more of: event, post"
+      }
+    },
+    {
+      "name": "Get feed with invalid method",
       "method": "POST",
-      "path": "/feed-posts",
+      "path": "/feed",
       "headers": {
         "Authorization": "Bearer test-token"
       },
       "expectedStatus": 405,
       "expectedResponse": {
-        "message": "Method not allowed. Only GET requests are accepted for retrieving feed posts."
+        "message": "Method not allowed. Only GET requests are accepted for retrieving feed items."
       }
     }
   ]
