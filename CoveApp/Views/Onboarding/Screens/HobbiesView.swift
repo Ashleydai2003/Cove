@@ -16,6 +16,9 @@ struct HobbiesView: View {
     /// Tracks which top-level buttons are expanded
     @State private var expandedButtons: Set<String> = []
 
+    /// Tracks whether to show the error alert
+    @State private var showingError = false
+
     // MARK: - Hobby Data Structs
     struct HobbySubOption: Identifiable {
         let id = UUID()
@@ -272,12 +275,28 @@ struct HobbiesView: View {
 
                 // Continue button
                 HStack {
+                    // Show selected hobbies count
+                    if !selectedHobbies.isEmpty {
+                        Text("\(selectedHobbies.count) hobby\(selectedHobbies.count == 1 ? "" : "ies") selected")
+                            .font(.LeagueSpartan(size: 12))
+                            .foregroundColor(.gray)
+                    }
+                    
                     Spacer()
                     Images.nextArrow
                         .resizable()
                         .frame(width: 52, height: 52)
                         .padding(.bottom, 20)
+                        .opacity(selectedHobbies.isEmpty ? 0.5 : 1.0)
                         .onTapGesture {
+                            // MARK: - Validate hobbies selection
+                            if selectedHobbies.isEmpty {
+                                // Show error message
+                                appController.errorMessage = "Please select at least one hobby before continuing"
+                                showingError = true
+                                return
+                            }
+                            
                             // MARK: - Store hobbies
                             Onboarding.storeHobbies(hobbies: selectedHobbies)
                             appController.path.append(.profilePics)
@@ -287,6 +306,13 @@ struct HobbiesView: View {
             .padding(.horizontal, 32)
         }
         .navigationBarBackButtonHidden()
+        .alert("Error", isPresented: $showingError) {
+            Button("OK", role: .cancel) {
+                showingError = false
+            }
+        } message: {
+            Text(appController.errorMessage)
+        }
     }
 }
 

@@ -14,6 +14,7 @@ class Onboarding {
     private static var userBirthdate: Date?
     private static var userHobbies: Set<String> = []
     private static var userAlmaMater: String?
+    private static var userGraduationYear: String?
     private static var userCity: String?
     private static var profilePic: UIImage?
     private static var pendingFriendRequests: [String] = []
@@ -37,6 +38,10 @@ class Onboarding {
 
     static func storeAlmaMater(almaMater: String) -> Void {
         userAlmaMater = almaMater
+    }
+
+    static func storeGraduationYear(year: String) -> Void {
+        userGraduationYear = year
     }
 
     static func storeCity(city: String) -> Void {
@@ -95,6 +100,21 @@ class Onboarding {
     static func clearImages() {
         profilePic = nil
     }
+    
+    // MARK: - Debug Methods
+    /// Clears all onboarding data (for debugging)
+    static func clearAllData() {
+        userName = nil
+        userBirthdate = nil
+        userHobbies = []
+        userAlmaMater = nil
+        userGraduationYear = nil
+        userCity = nil
+        profilePic = nil
+        pendingFriendRequests = []
+        adminCove = nil
+        Log.debug("Onboarding data cleared")
+    }
 
     static func getAllImages() -> [(UIImage, Bool)] {
         var images: [(UIImage, Bool)] = []
@@ -121,6 +141,10 @@ class Onboarding {
         return userAlmaMater
     }
 
+    static func getGraduationYear() -> String? {
+        return userGraduationYear
+    }
+
     static func getCity() -> String? {
         return userCity
     }
@@ -128,9 +152,33 @@ class Onboarding {
     // MARK: - Validation
     // Updated to reflect current onboarding requirements
     static func isOnboardingComplete() -> Bool {
-        // Core required fields: name, birthdate, hobbies
-        // Optional fields: almaMater, city, profilePic
-        return userName != nil && userBirthdate != nil && !userHobbies.isEmpty
+        // Core required fields: name, birthdate, university, city, hobbies
+        // Optional fields: profilePic
+        
+        let hasName = userName != nil
+        let hasBirthdate = userBirthdate != nil
+        let hasUniversity = userAlmaMater != nil && !userAlmaMater!.isEmpty
+        let hasCity = userCity != nil && !userCity!.isEmpty
+        let hasHobbies = !userHobbies.isEmpty
+        
+        // Log what's missing for debugging
+        if !hasName {
+            Log.error("Onboarding incomplete: Missing name")
+        }
+        if !hasBirthdate {
+            Log.error("Onboarding incomplete: Missing birthdate")
+        }
+        if !hasUniversity {
+            Log.error("Onboarding incomplete: Missing university")
+        }
+        if !hasCity {
+            Log.error("Onboarding incomplete: Missing city")
+        }
+        if !hasHobbies {
+            Log.error("Onboarding incomplete: Missing hobbies (count: \(userHobbies.count))")
+        }
+        
+        return hasName && hasBirthdate && hasUniversity && hasCity && hasHobbies
     }
 
     /// Completes the onboarding process by updating the user's onboarding status
@@ -246,9 +294,13 @@ class Onboarding {
             "hobbies": Array(userHobbies)  // Convert Set to Array for JSON serialization
         ]
 
-        // Add optional fields if they exist
+        // Add required fields
         if let almaMater = userAlmaMater, !almaMater.isEmpty {
             parameters["almaMater"] = almaMater
+        }
+        
+        if let graduationYear = userGraduationYear, !graduationYear.isEmpty {
+            parameters["graduationYear"] = graduationYear
         }
 
         if let city = userCity, !city.isEmpty {
