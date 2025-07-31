@@ -770,7 +770,7 @@ Returns:
     * name: String
     * profilePhotoId: String | null
   }
-}>
+}> 
 
 ### `/cove-posts`
 

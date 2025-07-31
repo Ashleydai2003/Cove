@@ -19,7 +19,7 @@ struct AlmaMaterView: View {
     @State private var showList: Bool = false
     @FocusState private var isUniversityFocused: Bool
     @State private var universities: [String] = ["Stanford University", "Stanford Graduate School of Business", "Stanford School of Medicine", "Stanford Law School", "Stanford Graduate School of Education"]
-    
+
     /// Error state
     @State private var showingError = false
 
@@ -243,12 +243,12 @@ struct AlmaMaterView: View {
                             return
                         }
                         
-                        // MARK: - Store alma mater and grad year
+                            // MARK: - Store alma mater and grad year
                         // TODO: can consider using university IDs instead of names
                         Onboarding.storeAlmaMater(almaMater: trimmedUniversity)
                         Onboarding.storeGraduationYear(year: trimmedYear)
-                        // TODO: Store grad year when backend supports it
-                        appController.path.append(.citySelection)
+                            // TODO: Store grad year when backend supports it
+                            appController.path.append(.citySelection)
                     }
             }
         }

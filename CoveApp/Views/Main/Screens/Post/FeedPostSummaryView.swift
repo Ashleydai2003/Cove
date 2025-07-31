@@ -34,6 +34,7 @@ struct FeedPostSummaryView: View {
                         RoundedRectangle(cornerRadius: 12)
                             .fill(Color.white)
                     )
+                    .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
                     .padding(.bottom, 4)
 
                 // Author info at bottom left (like EventSummaryView)

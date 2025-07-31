@@ -219,11 +219,11 @@ private struct FeedItemsListView: View {
                         createdAt: post.createdAt
                     )
                     FeedPostSummaryView(post: covePost)
-                        .padding(.horizontal, 20)
-                        .onAppear {
-                            loadMoreIfNeeded(at: idx)
+                    .padding(.horizontal, 20)
+                    .onAppear {
+                        loadMoreIfNeeded(at: idx)
                         }
-                }
+                    }
             }
 
             if upcomingFeed.isLoading && !upcomingFeed.items.isEmpty {
