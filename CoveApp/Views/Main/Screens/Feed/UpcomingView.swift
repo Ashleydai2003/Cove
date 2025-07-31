@@ -77,14 +77,14 @@ struct UpcomingView: View {
 
     @ViewBuilder
     private var contentView: some View {
-        if upcomingFeed.isLoading && upcomingFeed.events.isEmpty {
+        if upcomingFeed.isLoading && upcomingFeed.items.isEmpty {
             LoadingStateView()
         } else if let error = upcomingFeed.errorMessage {
             ErrorStateView(message: error)
-        } else if upcomingFeed.events.isEmpty {
+        } else if upcomingFeed.items.isEmpty {
             EmptyStateView()
         } else {
-            EventsListView()
+            FeedItemsListView()
         }
     }
 }
@@ -132,7 +132,7 @@ private struct EmptyStateView: View {
                 .font(.system(size: 40))
                 .foregroundColor(Colors.primaryDark)
 
-            Text("no upcoming events – create something epic!")
+            Text("no upcoming events or posts – create something epic!")
                 .font(.LibreBodoni(size: 16))
                 .foregroundColor(Colors.primaryDark)
                 .multilineTextAlignment(.center)
@@ -142,8 +142,8 @@ private struct EmptyStateView: View {
     }
 }
 
-// MARK: - Events List
-private struct EventsListView: View {
+// MARK: - Feed Items List
+private struct FeedItemsListView: View {
     @ObservedObject private var upcomingFeed: UpcomingFeed
 
     init() {
@@ -152,22 +152,61 @@ private struct EventsListView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            ForEach(Array(upcomingFeed.events.enumerated()), id: \.element.id) { idx, event in
-                EventSummaryView(event: event, type: .feed)
-                    .padding(.horizontal, 20)
-                    .onAppear {
-                        loadMoreIfNeeded(at: idx)
-                    }
+            ForEach(Array(upcomingFeed.items.enumerated()), id: \.element.id) { idx, item in
+                switch item {
+                case .event(let event):
+                    // Convert FeedEvent to CalendarEvent for EventSummaryView
+                    let calendarEvent = CalendarEvent(
+                        id: event.id,
+                        name: event.name,
+                        description: event.description,
+                        date: event.date,
+                        location: event.location,
+                        coveId: event.coveId,
+                        coveName: event.coveName,
+                        coveCoverPhoto: event.coveCoverPhoto,
+                        hostId: event.hostId,
+                        hostName: event.hostName,
+                        rsvpStatus: event.rsvpStatus,
+                        goingCount: event.goingCount,
+                        createdAt: event.createdAt,
+                        coverPhoto: event.coverPhoto
+                    )
+                    EventSummaryView(event: calendarEvent, type: .feed)
+                        .padding(.horizontal, 20)
+                        .onAppear {
+                            loadMoreIfNeeded(at: idx)
+                        }
+                case .post(let post):
+                    // Convert FeedPost to CovePost for PostSummaryView
+                    let covePost = CovePost(
+                        id: post.id,
+                        content: post.content,
+                        coveId: post.coveId,
+                        coveName: post.coveName,
+                        authorId: post.authorId,
+                        authorName: post.authorName,
+                        authorProfilePhotoUrl: post.authorProfilePhotoUrl,
+                        isLiked: post.isLiked,
+                        likeCount: post.likeCount,
+                        createdAt: post.createdAt
+                    )
+                    PostSummaryView(post: covePost)
+                        .padding(.horizontal, 20)
+                        .onAppear {
+                            loadMoreIfNeeded(at: idx)
+                        }
+                }
             }
 
-            if upcomingFeed.isLoading && !upcomingFeed.events.isEmpty {
+            if upcomingFeed.isLoading && !upcomingFeed.items.isEmpty {
                 LoadingIndicatorView()
             }
         }
     }
 
     private func loadMoreIfNeeded(at index: Int) {
-        if index == upcomingFeed.events.count - 1 {
+        if index == upcomingFeed.items.count - 1 {
             upcomingFeed.loadMoreEventsIfNeeded()
         }
     }

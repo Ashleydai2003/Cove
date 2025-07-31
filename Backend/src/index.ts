@@ -45,8 +45,7 @@ import {
   handleGetCovePosts,
   handleGetPost,
   handleTogglePostLike,
-  handleGetFeedPosts,
-  handleGetUpcomingEvents,
+  handleGetFeed,
 } from './routes';
 
 export const handler = async (
@@ -142,10 +141,8 @@ export const handler = async (
       case '/toggle-post-like':
         return handleTogglePostLike(event);
       // Feed routes
-      case '/feed-posts':
-        return handleGetFeedPosts(event);
-      case '/upcoming-events':
-        return handleGetUpcomingEvents(event);
+      case '/feed':
+        return handleGetFeed(event);
       default:
         // Handle common web standard files
         switch (event.path) {

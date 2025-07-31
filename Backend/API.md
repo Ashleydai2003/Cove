@@ -829,63 +829,61 @@ Returns:
   * isAuthor: Boolean - Indicates whether the current user is the author of this post
 }
 
-### `/feed-posts`
+### `/feed`
 
-Retrieves all posts from coves the user is a member of, with pagination.
+Retrieves a flexible feed of events and/or posts from coves the user is a member of, with pagination and ranking.
 
 Takes Query String Parameters:
+* types: String (optional, defaults to "event,post") - Comma-separated list of content types to include: "event", "post", or both
 * cursor: String (optional, for pagination)
 * limit: Number (optional, defaults to 10, max 50)
 
 Returns:
-* posts: Array<{
-  * id: String
-  * content: String
-  * coveId: String
-  * coveName: String
-  * authorId: String
-  * authorName: String
-  * isLiked: Boolean
-  * likeCount: Number
-  * createdAt: DateTime
-}>
+* items: Array<{
+  * kind: "event" | "post" - Discriminator for item type
+  * id: String - Unique identifier for the item
+  * rank: Number - Ranking score (0.0-1.0) for sorting
+  * event: { (only present when kind="event")
+    * id: String
+    * name: String
+    * description: String | null
+    * date: String
+    * location: String
+    * coveId: String
+    * coveName: String
+    * coveCoverPhoto: {
+      * id: String
+      * url: String
+    } | null
+    * hostId: String
+    * hostName: String
+    * rsvpStatus: "GOING" | "MAYBE" | "NOT_GOING" | null
+    * goingCount: Number
+    * createdAt: DateTime
+    * coverPhoto: {
+      * id: String
+      * url: String
+    } | null
+  }
+  * post: { (only present when kind="post")
+    * id: String
+    * content: String
+    * coveId: String
+    * coveName: String
+    * authorId: String
+    * authorName: String
+    * authorProfilePhotoUrl: String | null
+    * isLiked: Boolean
+    * likeCount: Number
+    * createdAt: DateTime
+  }
+}> - Discriminated union of feed items, sorted by rank
 * pagination: {
   * hasMore: Boolean
   * nextCursor: String | null
 }
 
-### `/upcoming-events`
-
-Retrieves all events from coves the user is a member of, with pagination.
-
-Takes Query String Parameters:
-* cursor: String (optional, for pagination)
-* limit: Number (optional, defaults to 10, max 50)
-
-Returns:
-* events: Array<{
-  * id: String
-  * name: String
-  * description: String | null
-  * date: String
-  * location: String
-  * coveId: String
-  * coveName: String
-  * coveCoverPhoto: {
-    * id: String
-    * url: String
-  } | null
-  * hostId: String
-  * hostName: String
-  * rsvpStatus: "GOING" | "MAYBE" | "NOT_GOING" | null
-  * goingCount: Number
-  * createdAt: DateTime
-  * coverPhoto: {
-    * id: String
-    * url: String
-  } | null
-}>
-* pagination: {
-  * hasMore: Boolean
-  * nextCursor: String | null
-}
+Examples:
+* `GET /feed?types=event` - Events only
+* `GET /feed?types=post` - Posts only  
+* `GET /feed?types=event,post` - Both events and posts (default)
