@@ -14,7 +14,7 @@ struct CoveCardView: View {
                         .placeholder {
                             Rectangle()
                                 .fill(Color.gray.opacity(0.2))
-                                .frame(width: 80, height: 80)
+                                .frame(maxWidth: 80, maxHeight: 80)
                                 .clipShape(RoundedRectangle(cornerRadius: 12))
                                 .overlay(ProgressView().tint(.gray))
                         }
@@ -24,15 +24,15 @@ struct CoveCardView: View {
                         .fade(duration: 0.2)
                         .cacheOriginalImage()
                         .loadDiskFileSynchronously()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(width: 80, height: 80)
+                        .aspectRatio(1, contentMode: .fill)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .frame(maxWidth: 80, maxHeight: 80)
                 } else {
                     Image("default_cove_pfp")
                         .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(width: 80, height: 80)
+                        .aspectRatio(1, contentMode: .fill)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .frame(maxWidth: 80, maxHeight: 80)
                 }
 
                 VStack(alignment: .leading, spacing: 4) {
