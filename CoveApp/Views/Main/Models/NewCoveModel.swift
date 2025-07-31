@@ -86,7 +86,11 @@ class NewCoveModel: ObservableObject {
 
         // Step 1: Create the cove first
         createCove { [weak self] success, coveId in
-            guard let self = self else { return }
+            guard let self = self else { 
+                Log.error("NewCoveModel: Self was deallocated during cove creation")
+                completion(false)
+                return 
+            }
 
             if success, let coveId = coveId {
                 // Step 2: Send invites if there are any
@@ -146,7 +150,13 @@ class NewCoveModel: ObservableObject {
         NetworkManager.shared.post(
             endpoint: "/create-cove",
             parameters: params
-        ) { (result: Result<CreateCoveResponse, NetworkError>) in
+        ) { [weak self] (result: Result<CreateCoveResponse, NetworkError>) in
+            guard let self = self else {
+                Log.error("NewCoveModel: Self was deallocated during network call")
+                completion(false, nil)
+                return
+            }
+            
             switch result {
             case .success(let response):
                 Log.debug("Cove created successfully")
@@ -179,7 +189,13 @@ class NewCoveModel: ObservableObject {
         NetworkManager.shared.post(
             endpoint: "/send-invite",
             parameters: requestBody
-        ) { (result: Result<SendInvitesModel.SendInviteResponse, NetworkError>) in
+        ) { [weak self] (result: Result<SendInvitesModel.SendInviteResponse, NetworkError>) in
+            guard let self = self else {
+                Log.error("NewCoveModel: Self was deallocated during invite sending")
+                completion(false)
+                return
+            }
+            
             switch result {
             case .success(_):
                 Log.debug("Invites sent successfully")

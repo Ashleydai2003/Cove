@@ -6,6 +6,7 @@ class SendInvitesModel: ObservableObject {
     let coveId: String
     @Published var phoneNumbers: [String] = [""]
     @Published var countries: [Country] = []
+    @Published var phoneNumberIds: [UUID] = [] // Add UUIDs for stable identification
     @Published var message: String = ""
     @Published var isLoading = false
     @Published var errorMessage: String?
@@ -28,6 +29,7 @@ class SendInvitesModel: ObservableObject {
         if initialPhoneNumbers.isEmpty {
             self.phoneNumbers = [""]
             self.countries = [Country(id: "0235", name: "USA", flag: "🇺🇸", code: "US", dial_code: "+1", pattern: "### ### ####", limit: 17)]
+            self.phoneNumberIds = [UUID()]
         } else {
             // Convert formatted phone numbers back to display format
             self.phoneNumbers = initialPhoneNumbers.map { formattedNumber in
@@ -43,6 +45,7 @@ class SendInvitesModel: ObservableObject {
                 }
             }
             self.countries = Array(repeating: Country(id: "0235", name: "USA", flag: "🇺🇸", code: "US", dial_code: "+1", pattern: "### ### ####", limit: 17), count: initialPhoneNumbers.count)
+            self.phoneNumberIds = Array(repeating: UUID(), count: initialPhoneNumbers.count)
         }
 
         self.message = initialMessage
@@ -75,6 +78,7 @@ class SendInvitesModel: ObservableObject {
     func addPhoneNumber() {
         phoneNumbers.append("")
         countries.append(Country(id: "0235", name: "USA", flag: "🇺🇸", code: "US", dial_code: "+1", pattern: "### ### ####", limit: 17))
+        phoneNumberIds.append(UUID())
     }
 
     /// Removes a phone number at the specified index
@@ -82,6 +86,7 @@ class SendInvitesModel: ObservableObject {
         guard phoneNumbers.count > 1 && index >= 0 && index < phoneNumbers.count else { return }
         phoneNumbers.remove(at: index)
         countries.remove(at: index)
+        phoneNumberIds.remove(at: index)
     }
 
     /// Updates phone number at specific index (value is already formatted from view)
@@ -299,6 +304,7 @@ class SendInvitesModel: ObservableObject {
     func resetForm() {
         phoneNumbers = [""]
         countries = [Country(id: "0235", name: "USA", flag: "🇺🇸", code: "US", dial_code: "+1", pattern: "### ### ####", limit: 17)]
+        phoneNumberIds = [UUID()]
         message = ""
         errorMessage = nil
         successMessage = nil
