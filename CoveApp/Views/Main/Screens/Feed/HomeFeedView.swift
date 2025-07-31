@@ -49,8 +49,25 @@ struct HomeFeedView: View {
             }
             .navigationDestination(for: String.self) { eventId in
                 // Find the event in our feed data to get the cover photo
-                let upcomingEvent = appController.upcomingFeed.events.first { $0.id == eventId }
-                EventPostView(eventId: eventId, coveCoverPhoto: upcomingEvent?.coveCoverPhoto)
+                let upcomingEvent = appController.upcomingFeed.items.first { item in
+                    switch item {
+                    case .event(let event):
+                        return event.id == eventId
+                    case .post:
+                        return false
+                    }
+                }
+                
+                // Extract the cover photo if it's an event
+                let coverPhoto: CoverPhoto?
+                switch upcomingEvent {
+                case .event(let event):
+                    coverPhoto = event.coveCoverPhoto
+                case .post, .none:
+                    coverPhoto = nil
+                }
+                
+                return EventPostView(eventId: eventId, coveCoverPhoto: coverPhoto)
             }
         }
         .ignoresSafeArea(edges: .bottom)

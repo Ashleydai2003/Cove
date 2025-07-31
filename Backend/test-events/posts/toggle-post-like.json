@@ -1,0 +1,94 @@
+{
+  "description": "Test toggle-post-like endpoint",
+  "tests": [
+    {
+      "name": "Like post successfully",
+      "method": "POST",
+      "path": "/toggle-post-like",
+      "headers": {
+        "Authorization": "Bearer test-token"
+      },
+      "body": {
+        "postId": "test-post-id"
+      },
+      "expectedStatus": 200,
+      "expectedResponse": {
+        "message": "Post liked successfully",
+        "action": "liked",
+        "likeCount": 1
+      }
+    },
+    {
+      "name": "Unlike post successfully",
+      "method": "POST",
+      "path": "/toggle-post-like",
+      "headers": {
+        "Authorization": "Bearer test-token"
+      },
+      "body": {
+        "postId": "test-post-id-already-liked"
+      },
+      "expectedStatus": 200,
+      "expectedResponse": {
+        "message": "Post unliked successfully",
+        "action": "unliked",
+        "likeCount": 0
+      }
+    },
+    {
+      "name": "Toggle like without postId",
+      "method": "POST",
+      "path": "/toggle-post-like",
+      "headers": {
+        "Authorization": "Bearer test-token"
+      },
+      "body": {},
+      "expectedStatus": 400,
+      "expectedResponse": {
+        "message": "Post ID is required"
+      }
+    },
+    {
+      "name": "Toggle like for non-existent post",
+      "method": "POST",
+      "path": "/toggle-post-like",
+      "headers": {
+        "Authorization": "Bearer test-token"
+      },
+      "body": {
+        "postId": "non-existent-post"
+      },
+      "expectedStatus": 404,
+      "expectedResponse": {
+        "message": "Post not found"
+      }
+    },
+    {
+      "name": "Toggle like when not a member of cove",
+      "method": "POST",
+      "path": "/toggle-post-like",
+      "headers": {
+        "Authorization": "Bearer test-token"
+      },
+      "body": {
+        "postId": "post-in-cove-user-not-member-of"
+      },
+      "expectedStatus": 403,
+      "expectedResponse": {
+        "message": "You must be a member of this cove to like its posts"
+      }
+    },
+    {
+      "name": "Toggle like with invalid method",
+      "method": "GET",
+      "path": "/toggle-post-like",
+      "headers": {
+        "Authorization": "Bearer test-token"
+      },
+      "expectedStatus": 405,
+      "expectedResponse": {
+        "message": "Method not allowed. Only POST requests are accepted for toggling post likes."
+      }
+    }
+  ]
+} 

@@ -2,6 +2,9 @@
 import SwiftUI
 
 /// Main login screen view that serves as the entry point to the app
+// Contains the logo and tagline, and the main call-to-action button
+// Also contains the terms and privacy notice with interactive links
+// TODO: add links to Terms and Privacy Policy
 struct LoginView: View {
 
     /// AppController environment object used for navigation and app state management
@@ -85,6 +88,9 @@ struct SignOnButton: View {
     }
 }
 
+// MARK: - OnboardingBackgroundView
+/// Reusable background view for onboarding screens
+/// Features a consistent background color for all onboarding screens
 struct OnboardingBackgroundView: View {
     var body: some View {
         Color(Colors.primaryLight).ignoresSafeArea()

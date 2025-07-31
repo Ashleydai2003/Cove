@@ -7,13 +7,13 @@
 
 import SwiftUI
 
-/// UpcomingFeed: Manages the user's upcoming events with caching and lazy loading.
-/// - Handles caching, preloading, and pagination for upcoming events from all user's coves.
+/// UpcomingFeed: Manages the user's upcoming events and posts with caching and lazy loading.
+/// - Handles caching, preloading, and pagination for upcoming events and posts from all user's coves.
 /// - Use a single shared instance (see AppController).
 @MainActor
 class UpcomingFeed: ObservableObject {
-    /// List of upcoming events for the user
-    @Published var events: [CalendarEvent] = []
+    /// List of upcoming events and posts for the user (extracted from feed items)
+    @Published var items: [FeedItem] = []
     /// Cursor for event pagination
     @Published var nextCursor: String?
     /// Whether more events are available
@@ -50,7 +50,7 @@ class UpcomingFeed: ObservableObject {
     func fetchUpcomingEvents(forceRefresh: Bool = false, completion: (() -> Void)? = nil) {
         // Check if we have recent cached data and not forcing refresh
         if !forceRefresh && hasCachedData && !isCacheStale {
-            Log.debug("UpcomingFeed: using cached events count=\(events.count)")
+            Log.debug("UpcomingFeed: using cached items count=\(items.count)")
             completion?()
             return
         }
@@ -61,7 +61,8 @@ class UpcomingFeed: ObservableObject {
         Log.debug("UpcomingFeed: fetching events from backend…")
 
         var parameters: [String: Any] = [
-            "limit": pageSize
+            "limit": pageSize,
+            "types": "event,post"
         ]
 
         // Only include cursor if we're not refreshing and have one
@@ -69,7 +70,7 @@ class UpcomingFeed: ObservableObject {
             parameters["cursor"] = cursor
         }
 
-        NetworkManager.shared.get(endpoint: "/upcoming-events", parameters: parameters) { [weak self] (result: Result<CalendarEventsResponse, NetworkError>) in
+        NetworkManager.shared.get(endpoint: "/feed", parameters: parameters) { [weak self] (result: Result<FeedResponse, NetworkError>) in
             guard let self = self else { return }
 
             DispatchQueue.main.async {
@@ -77,20 +78,31 @@ class UpcomingFeed: ObservableObject {
 
                 switch result {
                 case .success(let response):
-                    Log.debug("UpcomingFeed: events fetched count=\(response.events?.count ?? 0)")
+                    // Use all feed items (both events and posts)
+                    let feedItems = response.items
+                    
+                    Log.debug("UpcomingFeed: items fetched count=\(feedItems.count)")
 
                     if forceRefresh || self.nextCursor == nil {
                         // First page or refresh, replace existing data
-                        self.events = response.events ?? []
+                        self.items = feedItems
                     } else {
-                        // Append new events to existing data
-                        self.events.append(contentsOf: response.events ?? [])
+                        // Append new items to existing data
+                        self.items.append(contentsOf: feedItems)
                     }
 
-                    self.hasMore = response.pagination?.hasMore ?? false
-                    self.nextCursor = response.pagination?.nextCursor
+                    self.hasMore = response.pagination.hasMore
+                    self.nextCursor = response.pagination.nextCursor
 
-                    let urls = (response.events ?? []).compactMap { $0.coverPhoto?.url ?? $0.coveCoverPhoto?.url }
+                    // Prefetch images for both events and posts
+                    let urls = feedItems.compactMap { item -> String? in
+                        switch item {
+                        case .event(let event):
+                            return event.coverPhoto?.url ?? event.coveCoverPhoto?.url
+                        case .post(let post):
+                            return post.authorProfilePhotoUrl
+                        }
+                    }
                     ImagePrefetcherUtil.prefetch(urlStrings: urls)
 
                     self.lastFetched = Date()
@@ -129,13 +141,36 @@ class UpcomingFeed: ObservableObject {
             Log.debug("UpcomingFeed: fetching events (\(reason))")
             fetchUpcomingEvents(forceRefresh: false, completion: completion)
         } else {
-            Log.debug("UpcomingFeed: using cached fresh data count=\(events.count)")
+            Log.debug("UpcomingFeed: using cached fresh data count=\(items.count)")
             completion?()
         }
     }
 
-    /// Gets events grouped by date for UI display
+    /// Gets events grouped by date for UI display (for backward compatibility)
     var groupedEvents: [Date: [CalendarEvent]] {
+        let events = items.compactMap { item -> CalendarEvent? in
+            switch item {
+            case .event(let event):
+                return CalendarEvent(
+                    id: event.id,
+                    name: event.name,
+                    description: event.description,
+                    date: event.date,
+                    location: event.location,
+                    coveId: event.coveId,
+                    coveName: event.coveName,
+                    coveCoverPhoto: event.coveCoverPhoto,
+                    hostId: event.hostId,
+                    hostName: event.hostName,
+                    rsvpStatus: event.rsvpStatus,
+                    goingCount: event.goingCount,
+                    createdAt: event.createdAt,
+                    coverPhoto: event.coverPhoto
+                )
+            case .post:
+                return nil
+            }
+        }
         return Dictionary(grouping: events) { event in
             event.eventDate
         }

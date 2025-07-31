@@ -1,0 +1,92 @@
+{
+  "description": "Test flexible /feed endpoint",
+  "tests": [
+    {
+      "name": "Get feed with both events and posts (default)",
+      "method": "GET",
+      "path": "/feed",
+      "queryStringParameters": {
+        "types": "event,post",
+        "limit": "10"
+      },
+      "headers": {
+        "Authorization": "Bearer test-token"
+      },
+      "expectedStatus": 200,
+      "expectedResponse": {
+        "items": [],
+        "pagination": {
+          "hasMore": false,
+          "nextCursor": null
+        }
+      }
+    },
+    {
+      "name": "Get feed with events only",
+      "method": "GET",
+      "path": "/feed",
+      "queryStringParameters": {
+        "types": "event",
+        "limit": "10"
+      },
+      "headers": {
+        "Authorization": "Bearer test-token"
+      },
+      "expectedStatus": 200,
+      "expectedResponse": {
+        "items": [],
+        "pagination": {
+          "hasMore": false,
+          "nextCursor": null
+        }
+      }
+    },
+    {
+      "name": "Get feed with posts only",
+      "method": "GET",
+      "path": "/feed",
+      "queryStringParameters": {
+        "types": "post",
+        "limit": "10"
+      },
+      "headers": {
+        "Authorization": "Bearer test-token"
+      },
+      "expectedStatus": 200,
+      "expectedResponse": {
+        "items": [],
+        "pagination": {
+          "hasMore": false,
+          "nextCursor": null
+        }
+      }
+    },
+    {
+      "name": "Get feed with invalid types parameter",
+      "method": "GET",
+      "path": "/feed",
+      "queryStringParameters": {
+        "types": "invalid"
+      },
+      "headers": {
+        "Authorization": "Bearer test-token"
+      },
+      "expectedStatus": 400,
+      "expectedResponse": {
+        "message": "Invalid types parameter. Must be one or more of: event, post"
+      }
+    },
+    {
+      "name": "Get feed with invalid method",
+      "method": "POST",
+      "path": "/feed",
+      "headers": {
+        "Authorization": "Bearer test-token"
+      },
+      "expectedStatus": 405,
+      "expectedResponse": {
+        "message": "Method not allowed. Only GET requests are accepted for retrieving feed items."
+      }
+    }
+  ]
+} 

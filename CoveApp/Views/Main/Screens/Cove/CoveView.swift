@@ -1,9 +1,8 @@
 //
-//  CoveView.swift (formerly FeedView.swift)
+//  CoveView.swift
 //  Cove
 //
 //  Created by Ananya Agarwal
-//  Refactored and documented by AI for maintainability and best practices
 
 import SwiftUI
 import Kingfisher
@@ -11,11 +10,12 @@ import Kingfisher
 /// CoveView: Displays the feed for a specific cove, including cove details and events.
 struct CoveView: View {
     enum Tab: Int, CaseIterable {
-        case events, members
+        case events, members, posts
         var title: String {
             switch self {
             case .events: return "events"
             case .members: return "members"
+            case .posts: return "posts"
             }
         }
     }
@@ -90,6 +90,16 @@ struct CoveView: View {
                                     })
                                 }
                             }
+                        case .posts:
+                            CovePostsView(viewModel: viewModel) {
+                                // Refreshes posts only - header stays fixed
+                                await withCheckedContinuation { continuation in
+                                    viewModel.refreshPosts()
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: {
+                                        continuation.resume()
+                                    })
+                                }
+                            }
                         }
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -114,7 +124,9 @@ struct CoveView: View {
                 HStack {
                     Spacer()
                     FloatingActionView(coveId: coveId, onEventCreated: {
+                        // Refresh both events and posts when something is created
                         viewModel.refreshEvents()
+                        viewModel.refreshPosts()
                     })
                         .padding(.trailing, 24)
                         .padding(.bottom, 30)
@@ -129,6 +141,9 @@ struct CoveView: View {
             if newTab == .members {
                 // Fetch members when members tab is selected
                 viewModel.fetchCoveMembers(coveId: coveId)
+            } else if newTab == .posts {
+                // Fetch posts when posts tab is selected
+                viewModel.fetchPosts(coveId: coveId)
             }
         }
         .alert("error", isPresented: Binding(
