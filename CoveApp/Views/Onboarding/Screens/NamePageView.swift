@@ -15,6 +15,9 @@ struct NamePageView: View {
     @State private var firstName: String = ""
     @State private var lastName: String = ""
     @FocusState private var isFirstNameFocused: Bool
+    
+    /// Error state
+    @State private var showingError = false
 
     // MARK: - View Body
 
@@ -77,10 +80,21 @@ struct NamePageView: View {
                         .resizable()
                         .frame(width: 52, height: 52)
                         .padding(.init(top: 0, leading: 0, bottom: 60, trailing: 20))
+                        .opacity((firstName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || lastName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) ? 0.5 : 1.0)
                         .onTapGesture {
+                            // MARK: - Validate names
+                            let trimmedFirstName = firstName.trimmingCharacters(in: .whitespacesAndNewlines)
+                            let trimmedLastName = lastName.trimmingCharacters(in: .whitespacesAndNewlines)
+                            
+                            if trimmedFirstName.isEmpty || trimmedLastName.isEmpty {
+                                appController.errorMessage = "Please enter both your first and last name"
+                                showingError = true
+                                return
+                            }
+                            
                             // TODO: Strip whitespace from first and last name
                             // TODO: Maybe make a dedicated struct for onboarding functions
-                            Onboarding.storeName(firstName: firstName, lastName: lastName)
+                            Onboarding.storeName(firstName: trimmedFirstName, lastName: trimmedLastName)
                             appController.path.append(.birthdate)
                         }
                 }
@@ -91,6 +105,13 @@ struct NamePageView: View {
         .navigationBarBackButtonHidden()
         .onAppear {
             isFirstNameFocused = true
+        }
+        .alert("Error", isPresented: $showingError) {
+            Button("OK", role: .cancel) {
+                showingError = false
+            }
+        } message: {
+            Text(appController.errorMessage)
         }
     }
 }

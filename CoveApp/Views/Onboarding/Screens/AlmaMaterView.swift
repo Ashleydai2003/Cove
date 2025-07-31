@@ -19,6 +19,9 @@ struct AlmaMaterView: View {
     @State private var showList: Bool = false
     @FocusState private var isUniversityFocused: Bool
     @State private var universities: [String] = ["Stanford University", "Stanford Graduate School of Business", "Stanford School of Medicine", "Stanford Law School", "Stanford Graduate School of Education"]
+    
+    /// Error state
+    @State private var showingError = false
 
     // Generate years from 2000 to current year + 4
     private var availableYears: [String] {
@@ -208,12 +211,44 @@ struct AlmaMaterView: View {
                     .resizable()
                     .frame(width: 52, height: 52)
                     .padding(.bottom, 20)
+                    .opacity((searchUniversity.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || gradYear.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) ? 0.5 : 1.0)
                     .onTapGesture {
-                            // MARK: - Store alma mater and grad year
+                        // MARK: - Validate university and graduation year
+                        let trimmedUniversity = searchUniversity.trimmingCharacters(in: .whitespacesAndNewlines)
+                        let trimmedYear = gradYear.trimmingCharacters(in: .whitespacesAndNewlines)
+                        
+                        if trimmedUniversity.isEmpty {
+                            appController.errorMessage = "Please enter your university"
+                            showingError = true
+                            return
+                        }
+                        
+                        if trimmedYear.isEmpty {
+                            appController.errorMessage = "Please enter your graduation year"
+                            showingError = true
+                            return
+                        }
+                        
+                        // Validate graduation year is a reasonable year
+                        if let yearInt = Int(trimmedYear) {
+                            let currentYear = Calendar.current.component(.year, from: Date())
+                            if yearInt < 1950 || yearInt > currentYear + 4 {
+                                appController.errorMessage = "Please enter a valid graduation year"
+                                showingError = true
+                                return
+                            }
+                        } else {
+                            appController.errorMessage = "Please enter a valid graduation year"
+                            showingError = true
+                            return
+                        }
+                        
+                        // MARK: - Store alma mater and grad year
                         // TODO: can consider using university IDs instead of names
-                        Onboarding.storeAlmaMater(almaMater: searchUniversity)
-                            // TODO: Store grad year when backend supports it
-                            appController.path.append(.citySelection)
+                        Onboarding.storeAlmaMater(almaMater: trimmedUniversity)
+                        Onboarding.storeGraduationYear(year: trimmedYear)
+                        // TODO: Store grad year when backend supports it
+                        appController.path.append(.citySelection)
                     }
             }
         }
@@ -222,6 +257,13 @@ struct AlmaMaterView: View {
         .navigationBarBackButtonHidden()
         .onAppear {
             isUniversityFocused = true
+        }
+        .alert("Error", isPresented: $showingError) {
+            Button("OK", role: .cancel) {
+                showingError = false
+            }
+        } message: {
+            Text(appController.errorMessage)
         }
     }
 
