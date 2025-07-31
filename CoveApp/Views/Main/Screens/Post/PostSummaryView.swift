@@ -44,22 +44,36 @@ struct PostSummaryView: View {
                 }
                 
                 // Author name and verification
-                HStack(spacing: 4) {
-                    Text(post.authorName)
-                        .font(.LibreBodoniSemiBold(size: 16))
-                        .foregroundColor(.black)
-                    // TODO: only checkmark if author is verified
-                    // This may require backend changes
-                    Image(systemName: "checkmark.circle")
-                        .foregroundColor(Colors.primaryDark)
-                        .font(.system(size: 14))
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 4) {
+                        Text(post.authorName)
+                            .font(.LibreBodoniSemiBold(size: 16))
+                            .foregroundColor(.black)
+                        // TODO: only checkmark if author is verified
+                        // This may require backend changes
+                        Image(systemName: "checkmark.circle")
+                            .foregroundColor(Colors.primaryDark)
+                            .font(.system(size: 14))
+                    }
+                    
+                    // Show cove name under author name when in feed
+                    if type == .feed {
+                        HStack(spacing: 4) {
+                            Text("@")
+                                .font(.LibreBodoniSemiBold(size: 13))
+                                .foregroundColor(.black)
+                            Text(post.coveName)
+                                .font(.LibreBodoniSemiBold(size: 13))
+                                .foregroundColor(Colors.primaryDark)
+                        }
+                    }
                 }
                 
                 Spacer()
                 
                 // Time ago
                 Text(timeAgo(post.createdAt))
-                    .font(.LibreBodoniSemiBold(size: 12))
+                    .font(.LibreBodoniBold(size: 14))
                     .foregroundColor(.black)
             }
             .padding(.horizontal, 2)
@@ -80,19 +94,6 @@ struct PostSummaryView: View {
                         RoundedRectangle(cornerRadius: 12)
                             .fill(Color.white)
                     )
-
-                // Cove info (only show if not in cove view)
-                if type != .cove {
-                    HStack(spacing: 4) {
-                        Text("@")
-                            .font(.LibreBodoniSemiBold(size: 13))
-                            .foregroundColor(.black)
-                        Text(post.coveName)
-                            .font(.LibreBodoniSemiBold(size: 13))
-                            .foregroundColor(Colors.primaryDark)
-                    }
-                    .padding(.horizontal, 2)
-                }
 
                                     // Like count and interaction
                     HStack(spacing: 8) {
@@ -116,7 +117,7 @@ struct PostSummaryView: View {
             .padding(.bottom, 4)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 5)
+        .padding(.vertical, 12)
     }
 
     /// Toggles the like status for a post

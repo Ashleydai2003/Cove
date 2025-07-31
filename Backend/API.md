@@ -833,6 +833,19 @@ Returns:
 
 Retrieves a flexible feed of events and/or posts from coves the user is a member of, with pagination and ranking.
 
+**Ranking Algorithm:**
+The feed uses a sophisticated server-side ranking algorithm that considers:
+- **Freshness**: Newer content gets higher scores using exponential decay
+- **Engagement**: Items with more likes/RSVPs rank higher (future enhancement)
+- **Relevance**: Personalized based on user preferences (future enhancement)
+- **Time Sensitivity**: Events are weighted by proximity to event date
+
+**Architecture Benefits:**
+- Consistent ranking across iOS, Android, and web
+- Server-side ranking enables future ML integration
+- Supports A/B testing of different ranking strategies
+- Cursor pagination ensures stable ordering across requests
+
 Takes Query String Parameters:
 * types: String (optional, defaults to "event,post") - Comma-separated list of content types to include: "event", "post", or both
 * cursor: String (optional, for pagination)

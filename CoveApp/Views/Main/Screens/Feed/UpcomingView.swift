@@ -191,7 +191,7 @@ private struct FeedItemsListView: View {
                         likeCount: post.likeCount,
                         createdAt: post.createdAt
                     )
-                    PostSummaryView(post: covePost)
+                    FeedPostSummaryView(post: covePost)
                         .padding(.horizontal, 20)
                         .onAppear {
                             loadMoreIfNeeded(at: idx)
