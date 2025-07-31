@@ -75,13 +75,6 @@ struct FriendsView: View {
                         }
                         .padding(.top, 30)
                     }
-                    .refreshable {
-                        await withCheckedContinuation { continuation in
-                            vm.refreshFriends {
-                                continuation.resume()
-                            }
-                        }
-                    }
 
                     Spacer(minLength: 0)
                 }
@@ -117,13 +110,13 @@ struct FriendRowView: View {
                     .placeholder {
                         Images.smily.resizable()
                     }
-                    .aspectRatio(contentMode: .fill)
+                    .scaledToFill()
                     .frame(width: 60, height: 60)
                     .clipShape(Circle())
             } else {
                 Image("default_user_pfp")
                     .resizable()
-                    .aspectRatio(contentMode: .fill)
+                    .scaledToFill()
                     .frame(width: 60, height: 60)
                     .clipShape(Circle())
             }

@@ -1,5 +1,6 @@
 import SwiftUI
 
+// Uses AlertBannerView for messaging placeholder
 struct CoveBannerView: View {
     var onInbox: (() -> Void)? = nil
     var onPaperPlane: (() -> Void)? = nil
@@ -26,7 +27,7 @@ struct CoveBannerView: View {
 
                 Button(action: {
                     onPaperPlane?()
-                    showMessageBanner = true
+                    withAnimation { showMessageBanner = true }
                 }) {
                     Image(systemName: "paperplane")
                         .resizable()
