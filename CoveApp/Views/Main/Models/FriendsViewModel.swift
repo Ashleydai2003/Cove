@@ -82,41 +82,4 @@ class FriendsViewModel: ObservableObject {
             Log.debug("FriendsViewModel: using cached friends count=\(friends.count)")
         }
     }
-
-    /// Refreshes friends data (for pull-to-refresh)
-    func refreshFriends(completion: (() -> Void)? = nil) {
-        Log.debug("FriendsViewModel: Refreshing friends data")
-        
-        // Reset pagination state
-        nextCursor = nil
-        hasMore = true
-        lastFetched = nil
-        
-        Friends.fetchFriends(cursor: nil, limit: pageSize) { [weak self] result in
-            guard let self = self else { return }
-            
-            DispatchQueue.main.async {
-                switch result {
-                case .success(let resp):
-                    Log.debug("✅ FriendsViewModel: Refresh completed: \(resp.friends.count) friends")
-                    
-                    // Replace existing data with fresh data
-                    self.friends = resp.friends
-                    self.hasMore = resp.pagination.nextCursor != nil
-                    self.nextCursor = resp.pagination.nextCursor
-                    self.lastFetched = Date()
-                    
-                    // Prefetch profile photos
-                    let photoUrls = resp.friends.compactMap { $0.profilePhotoUrl?.absoluteString }
-                    ImagePrefetcherUtil.prefetch(urlStrings: photoUrls)
-                    
-                case .failure(let error):
-                    Log.debug("❌ FriendsViewModel: Refresh error: \(error.localizedDescription)")
-                    self.errorMessage = error.localizedDescription
-                }
-                
-                completion?()
-            }
-        }
-    }
 }

@@ -52,7 +52,7 @@ struct RequestsView: View {
                                             .font(.system(size: 40))
                                             .foregroundColor(Colors.primaryDark)
 
-                                        Text("no friend requests – you're all caught up!")
+                                        Text("no friend requests – you’re all caught up!")
                                             .font(.LibreBodoni(size: 16))
                                             .foregroundColor(Colors.primaryDark)
                                             .multilineTextAlignment(.center)
@@ -96,13 +96,6 @@ struct RequestsView: View {
                             }
 
                             Spacer(minLength: 24)
-                        }
-                    }
-                    .refreshable {
-                        await withCheckedContinuation { continuation in
-                            vm.refreshRequests {
-                                continuation.resume()
-                            }
                         }
                     }
 
@@ -156,13 +149,13 @@ struct RequestRowView: View {
                                     .font(.system(size: 20))
                             )
                     }
-                    .aspectRatio(contentMode: .fill)
+                    .aspectRatio(1, contentMode: .fill)
                     .frame(width: 48, height: 48)
                     .clipShape(Circle())
             } else {
                 Image("default_user_pfp")
                     .resizable()
-                    .aspectRatio(contentMode: .fill)
+                    .aspectRatio(1, contentMode: .fill)
                     .frame(width: 48, height: 48)
                     .clipShape(Circle())
             }
