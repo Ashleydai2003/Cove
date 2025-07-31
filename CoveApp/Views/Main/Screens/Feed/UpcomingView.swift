@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import FirebaseAuth
 
 // MARK: - UpcomingView
 struct UpcomingView: View {
@@ -51,7 +52,8 @@ struct UpcomingView: View {
         }
         .navigationBarBackButtonHidden(true)
         .onAppear {
-            upcomingFeed.fetchUpcomingEventsIfStale()
+            // Wait for Firebase Auth token to be ready before fetching data
+            waitForAuthTokenAndFetch()
         }
         .alert("error", isPresented: errorBinding) {
             Button("ok") { upcomingFeed.errorMessage = nil }
@@ -73,6 +75,31 @@ struct UpcomingView: View {
     private var isUserVerified: Bool {
         let verified = appController.profileModel.verified
         return verified
+    }
+    
+    /// Waits for Firebase Auth token to be ready before fetching data
+    private func waitForAuthTokenAndFetch() {
+        guard let user = Auth.auth().currentUser else {
+            Log.debug("UpcomingView: No authenticated user, skipping fetch")
+            return
+        }
+        
+        // Get the token to ensure it's valid
+        user.getIDToken { token, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    Log.debug("UpcomingView: Auth token error: \(error.localizedDescription)")
+                    return
+                }
+                
+                if token != nil {
+                    Log.debug("UpcomingView: Auth token ready, fetching data")
+                    upcomingFeed.fetchUpcomingEventsIfStale()
+                } else {
+                    Log.debug("UpcomingView: No auth token available")
+                }
+            }
+        }
     }
 
     @ViewBuilder
