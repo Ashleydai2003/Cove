@@ -84,43 +84,6 @@ class MutualsViewModel: ObservableObject {
         }
     }
 
-    /// Refreshes mutuals data (for pull-to-refresh)
-    func refreshMutuals(completion: (() -> Void)? = nil) {
-        Log.debug("🔗 MutualsViewModel: Refreshing mutuals data")
-        
-        // Reset pagination state
-        nextCursor = nil
-        hasMore = true
-        lastFetched = nil
-        
-        RecommendedFriends.fetchRecommendedFriends(cursor: nil, limit: pageSize) { [weak self] result in
-            guard let self = self else { return }
-            
-            DispatchQueue.main.async {
-                switch result {
-                case .success(let response):
-                    Log.debug("✅ MutualsViewModel: Refresh completed: \(response.users.count) mutuals")
-                    
-                    // Replace existing data with fresh data
-                    self.mutuals = response.users
-                    self.hasMore = response.pagination.hasMore
-                    self.nextCursor = response.pagination.nextCursor
-                    self.lastFetched = Date()
-                    
-                    // Prefetch profile photos
-                    let urls = response.users.compactMap { $0.profilePhotoUrl?.absoluteString }
-                    ImagePrefetcherUtil.prefetch(urlStrings: urls)
-                    
-                case .failure(let error):
-                    Log.debug("❌ MutualsViewModel: Refresh error: \(error.localizedDescription)")
-                    self.errorMessage = error.localizedDescription
-                }
-                
-                completion?()
-            }
-        }
-    }
-
     func sendFriendRequest(to userId: String) {
         Log.debug("🔗 MUTUALS: Sending friend request to \(userId)")
 

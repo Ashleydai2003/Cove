@@ -69,14 +69,14 @@ struct ProfileHeader: View {
                     if let profileImage = editingProfileImage ?? fallbackImage {
                         Image(uiImage: profileImage)
                             .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: 200, height: 200)
+                            .scaledToFill()
+                            .frame(maxWidth: 200, maxHeight: 200)
                             .clipShape(Circle())
                     } else if isProfileImageLoading { // <--- use the captured value
                         // Show loading state with proper circular shape
                         Circle()
                             .fill(Color.gray.opacity(0.3))
-                            .frame(width: 200, height: 200)
+                            .frame(maxWidth: 200, maxHeight: 200)
                             .overlay(
                                 ProgressView()
                                     .scaleEffect(1.5)
@@ -86,8 +86,8 @@ struct ProfileHeader: View {
                         // default profile photo only if not loading
                         Image("default_user_pfp")
                             .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: 200, height: 200)
+                            .scaledToFill()
+                            .frame(maxWidth: 200, maxHeight: 200)
                             .clipShape(Circle())
                             .onAppear {
                             }
@@ -769,9 +769,8 @@ struct ExtraPhotoView: View {
                 if let extraImage = displayImage {
                     Image(uiImage: extraImage)
                         .resizable()
-                        .aspectRatio(contentMode: .fit)
+                        .scaledToFill()
                         .frame(maxWidth: AppConstants.SystemSize.width*0.8)
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
                 } else if isEditing {
                     // Show empty space with border when editing and no image
                     Rectangle()

@@ -13,7 +13,6 @@
 		3CFAEF7B2DBDCA4700148161 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 3CFAEF7A2DBDCA4700148161 /* FirebaseAuth */; };
 		C405CFAC2E2BE6AF0011CEFD /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = C405CFAB2E2BE6AF0011CEFD /* FirebaseMessaging */; };
 		C47F61512E1127DB00060EB0 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = C47F61502E1127DB00060EB0 /* Kingfisher */; };
-		C4EA5F3F2E2D1D7300F87F6F /* SocketIO in Frameworks */ = {isa = PBXBuildFile; productRef = C4EA5F3E2E2D1D7300F87F6F /* SocketIO */; };
 		EC736BC02DCEEC5C003F3FFA /* IQKeyboardManagerSwift in Frameworks */ = {isa = PBXBuildFile; productRef = EC736BBF2DCEEC5C003F3FFA /* IQKeyboardManagerSwift */; };
 /* End PBXBuildFile section */
 
@@ -87,7 +86,6 @@
 			files = (
 				C405CFAC2E2BE6AF0011CEFD /* FirebaseMessaging in Frameworks */,
 				3CFAEF792DBDCA4700148161 /* FirebaseAnalytics in Frameworks */,
-				C4EA5F3F2E2D1D7300F87F6F /* SocketIO in Frameworks */,
 				EC736BC02DCEEC5C003F3FFA /* IQKeyboardManagerSwift in Frameworks */,
 				3CFAEF7B2DBDCA4700148161 /* FirebaseAuth in Frameworks */,
 				3C29BAAE2DBC90B700C73EC3 /* Inject in Frameworks */,
@@ -159,7 +157,6 @@
 				EC736BBF2DCEEC5C003F3FFA /* IQKeyboardManagerSwift */,
 				C47F61502E1127DB00060EB0 /* Kingfisher */,
 				C405CFAB2E2BE6AF0011CEFD /* FirebaseMessaging */,
-				C4EA5F3E2E2D1D7300F87F6F /* SocketIO */,
 			);
 			productName = Cove;
 			productReference = C44B02E62DADAFAF00AFF42B /* Cove.app */;
@@ -221,7 +218,6 @@
 				3CFAEF772DBDCA4700148161 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				EC736BBE2DCEEC5C003F3FFA /* XCRemoteSwiftPackageReference "IQKeyboardManager" */,
 				C47F614F2E1127DB00060EB0 /* XCRemoteSwiftPackageReference "Kingfisher" */,
-				C4EA5F3D2E2D1D7300F87F6F /* XCRemoteSwiftPackageReference "socket" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = C44B02E72DADAFAF00AFF42B /* Products */;
@@ -582,14 +578,6 @@
 				minimumVersion = 8.3.3;
 			};
 		};
-		C4EA5F3D2E2D1D7300F87F6F /* XCRemoteSwiftPackageReference "socket" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/socketio/socket.io-client-swift";
-			requirement = {
-				branch = master;
-				kind = branch;
-			};
-		};
 		EC736BBE2DCEEC5C003F3FFA /* XCRemoteSwiftPackageReference "IQKeyboardManager" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/hackiftekhar/IQKeyboardManager.git";
@@ -625,11 +613,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = C47F614F2E1127DB00060EB0 /* XCRemoteSwiftPackageReference "Kingfisher" */;
 			productName = Kingfisher;
-		};
-		C4EA5F3E2E2D1D7300F87F6F /* SocketIO */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = C4EA5F3D2E2D1D7300F87F6F /* XCRemoteSwiftPackageReference "socket" */;
-			productName = SocketIO;
 		};
 		EC736BBF2DCEEC5C003F3FFA /* IQKeyboardManagerSwift */ = {
 			isa = XCSwiftPackageProductDependency;
