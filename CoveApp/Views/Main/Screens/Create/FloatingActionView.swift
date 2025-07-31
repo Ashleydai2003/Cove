@@ -12,6 +12,7 @@ struct FloatingActionView: View {
     var onEventCreated: (() -> Void)? = nil
     @State private var showMenu = false
     @State private var showCreateEventSheet = false
+    @State private var showCreatePostSheet = false
     @State private var showCreateCoveSheet = false
     @EnvironmentObject private var appController: AppController
 
@@ -79,6 +80,34 @@ struct FloatingActionView: View {
                         )
                         }
                     }
+
+                    // Post option - only show when there's a cove context
+                    if coveId != nil {
+                    Button(action: {
+                        showMenu = false
+                        showCreatePostSheet = true
+                    }) {
+                        HStack() {
+                            Text("post")
+                                .font(.LibreBodoni(size: 25))
+                                .foregroundColor(.white)
+                            Spacer()
+                            Image("post_icon")
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(maxWidth: 35, maxHeight: 35)
+                                .foregroundColor(.white)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 28)
+                                .fill(Colors.primaryDark)
+                                .shadow(color: .black.opacity(0.15), radius: 4, x: 0, y: 2)
+                        )
+                        }
+                    }
                 }
                 .frame(maxWidth: 170) // Increase width to prevent text wrapping
                 .transition(.opacity.combined(with: .scale))
@@ -105,6 +134,9 @@ struct FloatingActionView: View {
         .animation(.easeInOut(duration: 0.2), value: showMenu)
         .sheet(isPresented: $showCreateEventSheet) {
             CreateEventView(coveId: coveId, onEventCreated: onEventCreated)
+        }
+        .sheet(isPresented: $showCreatePostSheet) {
+            CreatePostView(coveId: coveId, onPostCreated: onEventCreated)
         }
         .sheet(isPresented: $showCreateCoveSheet) {
             CreateCoveView()

@@ -1,0 +1,85 @@
+{
+  "description": "Test cove-posts endpoint",
+  "tests": [
+    {
+      "name": "Get cove posts successfully",
+      "method": "GET",
+      "path": "/cove-posts?coveId=test-cove-id",
+      "headers": {
+        "Authorization": "Bearer test-token"
+      },
+      "expectedStatus": 200,
+      "expectedResponse": {
+        "posts": [
+          {
+            "id": "string",
+            "content": "string",
+            "coveId": "test-cove-id",
+            "coveName": "string",
+            "authorId": "string",
+            "authorName": "string",
+            "isLiked": false,
+            "likeCount": 0,
+            "createdAt": "string"
+          }
+        ],
+        "pagination": {
+          "hasMore": false,
+          "nextCursor": null
+        }
+      }
+    },
+    {
+      "name": "Get cove posts with pagination",
+      "method": "GET",
+      "path": "/cove-posts?coveId=test-cove-id&cursor=test-cursor&limit=5",
+      "headers": {
+        "Authorization": "Bearer test-token"
+      },
+      "expectedStatus": 200,
+      "expectedResponse": {
+        "posts": [],
+        "pagination": {
+          "hasMore": false,
+          "nextCursor": null
+        }
+      }
+    },
+    {
+      "name": "Get cove posts without coveId",
+      "method": "GET",
+      "path": "/cove-posts",
+      "headers": {
+        "Authorization": "Bearer test-token"
+      },
+      "expectedStatus": 400,
+      "expectedResponse": {
+        "message": "Cove ID is required"
+      }
+    },
+    {
+      "name": "Get cove posts for non-existent cove",
+      "method": "GET",
+      "path": "/cove-posts?coveId=non-existent-cove",
+      "headers": {
+        "Authorization": "Bearer test-token"
+      },
+      "expectedStatus": 404,
+      "expectedResponse": {
+        "message": "Cove not found"
+      }
+    },
+    {
+      "name": "Get cove posts when not a member",
+      "method": "GET",
+      "path": "/cove-posts?coveId=cove-user-not-member-of",
+      "headers": {
+        "Authorization": "Bearer test-token"
+      },
+      "expectedStatus": 403,
+      "expectedResponse": {
+        "message": "You must be a member of this cove to view its posts"
+      }
+    }
+  ]
+} 

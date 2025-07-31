@@ -55,6 +55,8 @@ model User {
   coveMemberships CoveMember[]
   createdEvents   Event[]     @relation("CreatedEvents")
   eventRSVPs      EventRSVP[]
+  createdPosts    Post[]      @relation("CreatedPosts")
+  postLikes       PostLike[]
 
   // Friendship relations
   friendships1   Friendship[] @relation("FriendshipUser1")
@@ -143,6 +145,7 @@ model Cove {
   invites     Invite[]
   coverPhotoID String?    @unique
   coverPhoto  CoveImage?  @relation("CoveCoverPhoto", fields: [coverPhotoID], references: [id])
+  posts       Post[]
 }
 
 // Cove Member model for managing member permissions
@@ -174,6 +177,33 @@ model Event {
   rsvps       EventRSVP[]
   coverPhotoID String?    @unique
   coverPhoto  EventImage? @relation("EventCoverPhoto", fields: [coverPhotoID], references: [id])
+}
+
+// Post model for text-only posts within coves
+model Post {
+  id          String      @id @default(cuid())
+  content     String      // The text content of the post Max length enforced at API layer
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  coveId      String
+  cove        Cove        @relation(fields: [coveId], references: [id])
+  authorId    String      // ID of the user who created the post
+  author      User        @relation("CreatedPosts", fields: [authorId], references: [id])
+  likes       PostLike[]
+}
+
+// Post Like model for tracking post likes
+model PostLike {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@index([postId])
+  @@index([userId])
 }
 
 // TODO: Change RSVP model to only have GOING and MAYBE 

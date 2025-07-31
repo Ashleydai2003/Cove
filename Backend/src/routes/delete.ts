@@ -260,7 +260,52 @@ export const handleDeleteUser = async (event: APIGatewayProxyEvent): Promise<API
         });
       }
 
-       // Delete user's created coves
+       // Delete user's post likes
+      await tx.postLike.deleteMany({
+        where: { userId }
+      });
+
+      // Delete post likes for posts created by the user
+      const userPosts = await tx.post.findMany({
+        where: { authorId: userId },
+        select: { id: true }
+      });
+
+      if (userPosts.length > 0) {
+        await tx.postLike.deleteMany({
+          where: {
+            postId: {
+              in: userPosts.map(post => post.id)
+            }
+          }
+        });
+      }
+
+      // Delete user's created posts
+      await tx.post.deleteMany({
+        where: { authorId: userId }
+      });
+
+      // Delete post likes for posts in coves created by the user
+      if (userCoves.length > 0) {
+        const covePostIds = (await tx.post.findMany({
+          where: { coveId: { in: userCoves.map(cove => cove.id) } },
+          select: { id: true }
+        })).map(post => post.id);
+        
+        if (covePostIds.length > 0) {
+          await tx.postLike.deleteMany({
+            where: { postId: { in: covePostIds } }
+          });
+        }
+        
+        // Delete posts in coves created by the user
+        await tx.post.deleteMany({
+          where: { coveId: { in: userCoves.map(cove => cove.id) } }
+        });
+      }
+
+      // Delete user's created coves
        await tx.cove.deleteMany({
         where: { creatorId: userId }
       });

@@ -338,7 +338,14 @@ struct PluggingYouIn: View {
 
     /// Prefetch upcoming event cover photos for the home feed
     private func prefetchUpcomingEventImages() {
-        let urls = appController.upcomingFeed.events.prefix(5).compactMap { $0.coveCoverPhoto?.url }
+        let urls = appController.upcomingFeed.items.prefix(5).compactMap { item -> String? in
+            switch item {
+            case .event(let event):
+                return event.coveCoverPhoto?.url
+            case .post:
+                return nil
+            }
+        }
 
         if !urls.isEmpty {
             Log.debug("🖼️ Prefetching \(urls.count) upcoming event cover images")

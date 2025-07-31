@@ -14,6 +14,9 @@ struct CitySelectionView: View {
     @State private var searchCity = ""
     @State private var showCityDropdown = false
     @FocusState private var isCityFocused: Bool
+    
+    /// Error state
+    @State private var showingError = false
 
     @State private var cities: [String] = [
         "New York", "San Francisco", "Los Angeles", "Boston", "Chicago", "Seattle", "Austin",
@@ -135,11 +138,27 @@ struct CitySelectionView: View {
                         .resizable()
                         .frame(width: 52, height: 52)
                         .padding(.bottom, 20)
+                        .opacity(searchCity.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0.5 : 1.0)
                         .onTapGesture {
-                            // MARK: - Store city
-                            if !searchCity.isEmpty {
-                                Onboarding.storeCity(city: searchCity)
+                            // MARK: - Validate city selection
+                            let trimmedCity = searchCity.trimmingCharacters(in: .whitespacesAndNewlines)
+                            
+                            if trimmedCity.isEmpty {
+                                appController.errorMessage = "Please select a city"
+                                showingError = true
+                                return
                             }
+                            
+                            // Validate that the city is in our list
+                            let isValidCity = cities.contains { $0.localizedCaseInsensitiveContains(trimmedCity) }
+                            if !isValidCity {
+                                appController.errorMessage = "Please select a valid city from the list"
+                                showingError = true
+                                return
+                            }
+                            
+                            // MARK: - Store city
+                            Onboarding.storeCity(city: trimmedCity)
                             appController.path.append(.hobbies)
                         }
                 }
@@ -149,6 +168,13 @@ struct CitySelectionView: View {
         .navigationBarBackButtonHidden()
         .onAppear {
             isCityFocused = true
+        }
+        .alert("Error", isPresented: $showingError) {
+            Button("OK", role: .cancel) {
+                showingError = false
+            }
+        } message: {
+            Text(appController.errorMessage)
         }
     }
 
