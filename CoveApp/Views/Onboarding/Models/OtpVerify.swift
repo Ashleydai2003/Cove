@@ -120,9 +120,10 @@ struct OtpVerify {
                         AppController.shared.profileModel.verified = loginResponse.user.verified
 
                         if loginResponse.user.onboarding {
-                            // Skip adminVerify - send all users needing onboarding to userDetails
-                            Log.debug("User needs onboarding, proceeding to userDetails")
-                            AppController.shared.path.append(.userDetails)
+                            // DEV MODE: Skip all onboarding steps and go directly to plugging in
+                            Log.debug("DEV MODE: Skipping onboarding, proceeding directly to plugging in")
+                            AppController.shared.path = [.pluggingIn]
+                            AppController.shared.hasCompletedOnboarding = true
                         } else {
                             // User has completed onboarding - go to data loading screen
                             AppController.shared.path = [.pluggingIn]
