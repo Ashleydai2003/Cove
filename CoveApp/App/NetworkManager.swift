@@ -28,19 +28,21 @@ class NetworkManager {
         parameters: [String: Any]? = nil,
         completion: @escaping (Result<T, NetworkError>) -> Void
     ) {
-        // Minimal request logging
-        Log.critical("GET \(endpoint)", category: "network")
+        // Log request with context
+        Log.network("GET request started", endpoint: endpoint, method: "GET")
 
         // Get current Firebase token
         Auth.auth().currentUser?.getIDToken { token, error in
             if let error = error {
                 Log.error("Auth error: \(error.localizedDescription) | Error: \(error)", category: "network")
+                CrashlyticsHandler.recordNetworkError(error, endpoint: endpoint, method: "GET")
                 completion(.failure(.authError(error)))
                 return
             }
 
             guard let token = token else {
                 Log.error("Missing auth token", category: "network")
+                CrashlyticsHandler.recordCustomError(domain: "CoveApp.Network", code: 1, message: "Missing auth token", context: "GET \(endpoint)")
                 completion(.failure(.missingToken))
                 return
             }
@@ -58,6 +60,7 @@ class NetworkManager {
             // Create URL
             guard let url = urlComponents?.url else {
                 Log.error("Invalid URL: \(self.apiBaseURL)\(endpoint)", category: "network")
+                CrashlyticsHandler.recordCustomError(domain: "CoveApp.Network", code: 2, message: "Invalid URL", context: "GET \(endpoint)")
                 completion(.failure(.invalidURL))
                 return
             }
@@ -72,33 +75,39 @@ class NetworkManager {
                 DispatchQueue.main.async {
                     if let error = error {
                         Log.error("Network error: \(error.localizedDescription)", category: "network")
+                        CrashlyticsHandler.recordNetworkError(error, endpoint: endpoint, method: "GET")
                         completion(.failure(.networkError(error)))
                         return
                     }
 
                     guard let httpResponse = response as? HTTPURLResponse else {
                         Log.error("Invalid response (no HTTP)", category: "network")
+                        CrashlyticsHandler.recordCustomError(domain: "CoveApp.Network", code: 3, message: "Invalid response (no HTTP)", context: "GET \(endpoint)")
                         completion(.failure(.invalidResponse))
                         return
                     }
 
                     guard (200...299).contains(httpResponse.statusCode) else {
                         Log.error("Server error \(httpResponse.statusCode)", category: "network")
+                        CrashlyticsHandler.recordCustomError(domain: "CoveApp.Network", code: httpResponse.statusCode, message: "Server error \(httpResponse.statusCode)", context: "GET \(endpoint)")
                         completion(.failure(.serverError(httpResponse.statusCode)))
                         return
                     }
 
                     guard let data = data else {
                         Log.error("No data received", category: "network")
+                        CrashlyticsHandler.recordCustomError(domain: "CoveApp.Network", code: 4, message: "No data received", context: "GET \(endpoint)")
                         completion(.failure(.noData))
                         return
                     }
 
                     do {
                         let decodedResponse = try JSONDecoder().decode(T.self, from: data)
+                        Log.network("GET request successful", endpoint: endpoint, method: "GET")
                         completion(.success(decodedResponse))
                     } catch {
                         Log.error("Decoding error: \(error.localizedDescription)", category: "network")
+                        CrashlyticsHandler.recordNetworkError(error, endpoint: endpoint, method: "GET")
                         completion(.failure(.decodingError(error)))
                     }
                 }
@@ -118,18 +127,20 @@ class NetworkManager {
         parameters: [String: Any],
         completion: @escaping (Result<T, NetworkError>) -> Void
     ) {
-        Log.critical("POST \(endpoint)", category: "network")
+        Log.network("POST request started", endpoint: endpoint, method: "POST")
 
         // Get current Firebase token
         Auth.auth().currentUser?.getIDToken { token, error in
             if let error = error {
                 Log.error("Auth error: \(error.localizedDescription) | Error: \(error)", category: "network")
+                CrashlyticsHandler.recordNetworkError(error, endpoint: endpoint, method: "POST")
                 completion(.failure(.authError(error)))
                 return
             }
 
             guard let token = token else {
                 Log.error("Missing auth token", category: "network")
+                CrashlyticsHandler.recordCustomError(domain: "CoveApp.Network", code: 1, message: "Missing auth token", context: "POST \(endpoint)")
                 completion(.failure(.missingToken))
                 return
             }
@@ -137,6 +148,7 @@ class NetworkManager {
             // Create URL
             guard let url = URL(string: "\(self.apiBaseURL)\(endpoint)") else {
                 Log.error("Invalid URL: \(self.apiBaseURL)\(endpoint)", category: "network")
+                CrashlyticsHandler.recordCustomError(domain: "CoveApp.Network", code: 2, message: "Invalid URL", context: "POST \(endpoint)")
                 completion(.failure(.invalidURL))
                 return
             }
@@ -152,6 +164,7 @@ class NetworkManager {
                 request.httpBody = try JSONSerialization.data(withJSONObject: parameters)
             } catch {
                 Log.error("Encoding error: \(error.localizedDescription)", category: "network")
+                CrashlyticsHandler.recordNetworkError(error, endpoint: endpoint, method: "POST")
                 completion(.failure(.encodingError(error)))
                 return
             }
@@ -161,33 +174,39 @@ class NetworkManager {
                 DispatchQueue.main.async {
                     if let error = error {
                         Log.error("Network error: \(error.localizedDescription)", category: "network")
+                        CrashlyticsHandler.recordNetworkError(error, endpoint: endpoint, method: "POST")
                         completion(.failure(.networkError(error)))
                         return
                     }
 
                     guard let httpResponse = response as? HTTPURLResponse else {
                         Log.error("Invalid response (no HTTP)", category: "network")
+                        CrashlyticsHandler.recordCustomError(domain: "CoveApp.Network", code: 3, message: "Invalid response (no HTTP)", context: "POST \(endpoint)")
                         completion(.failure(.invalidResponse))
                         return
                     }
 
                     guard (200...299).contains(httpResponse.statusCode) else {
                         Log.error("Server error \(httpResponse.statusCode)", category: "network")
+                        CrashlyticsHandler.recordCustomError(domain: "CoveApp.Network", code: httpResponse.statusCode, message: "Server error \(httpResponse.statusCode)", context: "POST \(endpoint)")
                         completion(.failure(.serverError(httpResponse.statusCode)))
                         return
                     }
 
                     guard let data = data else {
                         Log.error("No data received", category: "network")
+                        CrashlyticsHandler.recordCustomError(domain: "CoveApp.Network", code: 4, message: "No data received", context: "POST \(endpoint)")
                         completion(.failure(.noData))
                         return
                     }
 
                     do {
                         let decodedResponse = try JSONDecoder().decode(T.self, from: data)
+                        Log.network("POST request successful", endpoint: endpoint, method: "POST")
                         completion(.success(decodedResponse))
                     } catch {
                         Log.error("Decoding error: \(error.localizedDescription)", category: "network")
+                        CrashlyticsHandler.recordNetworkError(error, endpoint: endpoint, method: "POST")
                         completion(.failure(.decodingError(error)))
                     }
                 }

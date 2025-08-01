@@ -189,13 +189,7 @@ class NewCoveModel: ObservableObject {
         NetworkManager.shared.post(
             endpoint: "/send-invite",
             parameters: requestBody
-        ) { [weak self] (result: Result<SendInvitesModel.SendInviteResponse, NetworkError>) in
-            guard let self = self else {
-                Log.error("NewCoveModel: Self was deallocated during invite sending")
-                completion(false)
-                return
-            }
-            
+        ) { (result: Result<SendInvitesModel.SendInviteResponse, NetworkError>) in
             switch result {
             case .success(_):
                 Log.debug("Invites sent successfully")

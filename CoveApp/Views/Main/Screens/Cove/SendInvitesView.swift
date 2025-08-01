@@ -385,16 +385,19 @@ struct PhoneNumberInputView: View {
                 .font(.LibreCaslon(size: Constants.phoneInputFontSize))
                 .foregroundStyle(Color.black)
                 .keyboardType(.numberPad)
-            .textContentType(.telephoneNumber)
+                .textContentType(.telephoneNumber)
                 .toolbar {
                     ToolbarItem(placement: .keyboard) {
                         keyboardAccessoryView
                     }
                 }
-                .onChange(of: phoneNumber) { _, newValue in
-                    // Format the phone number exactly like UserPhoneNumberView
+                .onChange(of: phoneNumber) { oldValue, newValue in
+                    // Only format if the value actually changed and is different from the formatted version
                     let formattedNumber = formatPhoneNumber(newValue, pattern: selectedCountry.pattern)
-                    phoneNumber = formattedNumber
+                    if formattedNumber != newValue {
+                        phoneNumber = formattedNumber
+                        return // Exit early to avoid infinite loop
+                    }
                 }
 
             // Remove button (if applicable)

@@ -271,13 +271,13 @@ extension CreateCoveView {
         Button {
             viewModel.submitCove { success in
                 DispatchQueue.main.async {
-                    if success {
-                        // Refresh the cove feed to show the new cove
-                        appController.refreshCoveFeedAfterCreation()
+                if success {
+                    // Refresh the cove feed to show the new cove
+                    appController.refreshCoveFeedAfterCreation()
                         
                         // Add a small delay to ensure UI updates are complete
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                            dismiss()
+                    dismiss()
                         }
                     }
                     // If failed, error message is already set in viewModel
