@@ -4,7 +4,10 @@
 //
 
 import SwiftUI
-
+///  Screen that functions as a page to add friends
+// Ability to add/unadd friend requests & invite to Cove if user trying to be added isn't found
+// Displays error message when onboarding fails
+// Final screen before onboarding is complete!
 // MARK: - Row for each existing user
 private struct MatchedUserRow: View {
     let user: ContactMatcher.MatchedUser
@@ -14,20 +17,22 @@ private struct MatchedUserRow: View {
 
     var body: some View {
         HStack {
+            // load user profile picture & place grey placeholder while loading pfp
             AsyncImage(url: user.profilePhotoUrl) { img in
                 img.resizable().clipShape(Circle())
             } placeholder: {
                 Circle().fill(Color.gray.opacity(0.3))
             }
+            // resize user profile picture
             .frame(maxWidth: 80, maxHeight: 80)
-
+            // display username
             Text(user.name)
                 .frame(maxWidth: 150, alignment: .leading)
                 .font(.LibreBodoni(size: 16))
                 .padding(.leading, 15)
 
             Spacer()
-
+            // button with function to add/remove friend request
             Button(action: {
                 if requestSent {
                     Onboarding.removeFriendRequest(userId: user.id)
