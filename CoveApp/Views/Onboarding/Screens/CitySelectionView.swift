@@ -5,7 +5,7 @@
 //  Created by Nina Boord
 
 import SwiftUI
-
+/// Page for users to select what city they are currently residing in to connect with others in the area
 struct CitySelectionView: View {
 
     /// App controller for managing navigation and shared state
@@ -17,7 +17,7 @@ struct CitySelectionView: View {
     
     /// Error state
     @State private var showingError = false
-
+    // predefined list of cities for suggestions
     @State private var cities: [String] = [
         "New York", "San Francisco", "Los Angeles", "Boston", "Chicago", "Seattle", "Austin",
         "Washington D.C.", "Denver", "Atlanta", "Philadelphia", "San Diego", "Miami", "Portland",
@@ -31,6 +31,7 @@ struct CitySelectionView: View {
 
     var body: some View {
         ZStack {
+            // Background view for onboarding screen
             OnboardingBackgroundView()
 
             VStack {
@@ -62,12 +63,13 @@ struct CitySelectionView: View {
                 // City search input section
                 VStack(spacing: 8) {
                     ZStack(alignment: .leading) {
+                        // placeholder text if user hasn't input any cities
                         if searchCity.isEmpty {
                             Text("search cities...")
                                 .foregroundColor(Colors.k656566)
                                 .font(.LeagueSpartan(size: 30))
                         }
-
+                        // city search input
                         TextField("", text: $searchCity)
                             .font(.LeagueSpartan(size: 30))
                             .foregroundStyle(Colors.k060505)
@@ -177,7 +179,7 @@ struct CitySelectionView: View {
             Text(appController.errorMessage)
         }
     }
-
+    // filter cities based off userinput
     var filteredCities: [String] {
         if searchCity.isEmpty {
             return cities
