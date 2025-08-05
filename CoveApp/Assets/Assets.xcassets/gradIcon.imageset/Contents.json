@@ -1,7 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "gradIcon.png",
+      "filename" : "gradIcon.svg",
       "idiom" : "universal",
       "scale" : "1x"
     },

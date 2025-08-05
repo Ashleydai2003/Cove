@@ -1,7 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "locationIcon.png",
+      "filename" : "locationIcon.svg",
       "idiom" : "universal",
       "scale" : "1x"
     },

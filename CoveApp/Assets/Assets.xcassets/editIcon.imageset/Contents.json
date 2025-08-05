@@ -1,16 +1,16 @@
 {
   "images" : [
     {
+      "filename" : "editIcon.svg",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
-      "filename" : "group-fill@2x.png",
+      "filename" : "editIconUnselected.svg",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
-      "filename" : "group-fill@3x.png",
       "idiom" : "universal",
       "scale" : "3x"
     }
