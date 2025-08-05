@@ -281,7 +281,9 @@ struct EventPostView: View {
                             }
 
                             HStack {
-                                Image("location-pin")
+                                Image("locationIcon")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
                                     .frame(width: 15, height: 20)
 
                                 Text(event.location.isEmpty ? "TBD" : event.location)
