@@ -63,6 +63,7 @@ struct AlmaMaterView: View {
                 // Search input section
                 VStack(spacing: 8) {
                     ZStack(alignment: .leading) {
+                        // placeholder text
                         if searchUniversity.isEmpty {
                             Text("search universities...")
                                 .foregroundColor(Colors.k656566)
@@ -266,7 +267,7 @@ struct AlmaMaterView: View {
             Text(appController.errorMessage)
         }
     }
-
+    // filter universities if userinput matches with any stored
     var filteredUniversities: [String] {
         if searchUniversity.isEmpty {
             return universities
@@ -274,7 +275,7 @@ struct AlmaMaterView: View {
             return universities.filter { $0.localizedCaseInsensitiveContains(searchUniversity) }
         }
     }
-
+    // filter years if userinput matches with any stored
     var filteredYears: [String] {
         if gradYear.isEmpty {
             return availableYears
