@@ -1,7 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "editIcon.svg",
+      "filename" : "editIconUnselected.svg",
       "idiom" : "universal",
       "scale" : "1x"
     },
