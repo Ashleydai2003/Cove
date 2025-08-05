@@ -5,7 +5,7 @@
 //  Created by Nesib Muhedin
 
 import SwiftUI
-
+/// A page that collects user info on school & year
 struct AlmaMaterView: View {
 
     /// App controller for managing navigation and shared state
