@@ -48,6 +48,7 @@ struct NamePageView: View {
                         .focused($isFirstNameFocused)
                         .autocorrectionDisabled()
                         .onChange(of: firstName) { oldValue, newValue in
+                            // Filter to only allow letters and hyphens
                             firstName = newValue.lettersAndHyphensOnly
                         }
 
@@ -62,6 +63,7 @@ struct NamePageView: View {
                         .padding(.horizontal, 10)
                         .autocorrectionDisabled()
                         .onChange(of: lastName) { oldValue, newValue in
+                            // Filter to only allow letters and hyphens
                             lastName = newValue.lettersAndHyphensOnly
                         }
 
@@ -94,7 +96,9 @@ struct NamePageView: View {
                             
                             // TODO: Strip whitespace from first and last name
                             // TODO: Maybe make a dedicated struct for onboarding functions
+                            // Store user's first & last name
                             Onboarding.storeName(firstName: trimmedFirstName, lastName: trimmedLastName)
+                            // Onto the birthdate screen
                             appController.path.append(.birthdate)
                         }
                 }

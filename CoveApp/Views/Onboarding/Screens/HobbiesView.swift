@@ -305,6 +305,7 @@ struct HobbiesView: View {
             }
             .padding(.horizontal, 32)
         }
+        // Error display
         .navigationBarBackButtonHidden()
         .alert("Error", isPresented: $showingError) {
             Button("OK", role: .cancel) {
