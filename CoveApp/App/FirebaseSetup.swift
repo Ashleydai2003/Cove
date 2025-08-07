@@ -8,6 +8,7 @@ import SwiftUI
 import FirebaseCore
 import FirebaseAuth
 import FirebaseMessaging
+import FirebaseCrashlytics
 import UserNotifications
 import IQKeyboardManagerSwift
 
@@ -15,6 +16,9 @@ class FirebaseSetup: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserN
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Configure Firebase
         FirebaseApp.configure()
+        
+        // Configure Crashlytics
+        configureCrashlytics()
         
         // Set messaging delegate
         Messaging.messaging().delegate = self
@@ -68,7 +72,7 @@ class FirebaseSetup: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserN
     // MARK: - MessagingDelegate
     
     func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
-        Log.debug("Firebase registration token: \(String(describing: fcmToken))")
+        Log.debug("Firebase registration token received")
         
         // Send FCM token to your backend
         if let token = fcmToken {
@@ -91,6 +95,31 @@ class FirebaseSetup: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserN
     }
     
     // MARK: - Helper Methods
+    
+    /// Configures Crashlytics with user identification and custom keys
+    private func configureCrashlytics() {
+        // Set custom keys for better crash analysis
+        Crashlytics.crashlytics().setCustomValue(AppConstants.API.environment, forKey: "environment")
+        Crashlytics.crashlytics().setCustomValue(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown", forKey: "app_version")
+        
+        // Listen for auth state changes to set user ID
+        _ = Auth.auth().addStateDidChangeListener { _, user in
+            if let user = user {
+                Crashlytics.crashlytics().setUserID(user.uid)
+                Log.debug("[Crashlytics] Set user ID: \(user.uid)")
+            } else {
+                Crashlytics.crashlytics().setUserID("anonymous")
+                Log.debug("[Crashlytics] Set anonymous user")
+            }
+        }
+        
+        Log.debug("[Crashlytics] Initialized successfully")
+        
+        #if DEBUG
+        // Test Crashlytics integration in DEBUG builds
+        CrashlyticsHandler.testIntegration()
+        #endif
+    }
     
     private func sendFCMTokenToBackend(_ token: String) {
         // Send token to your backend API
@@ -134,8 +163,8 @@ class FirebaseSetup: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserN
         Log.debug("Initializing WebSocket connection", category: "websocket")
         
         // Connect to WebSocket when user is authenticated
-        Auth.auth().addStateDidChangeListener { [weak self] _, user in
-            if let user = user {
+        _ = Auth.auth().addStateDidChangeListener { _, user in
+            if user != nil {
                 Log.debug("User authenticated, connecting to WebSocket", category: "websocket")
                 WebSocketManager.shared.connect()
             } else {

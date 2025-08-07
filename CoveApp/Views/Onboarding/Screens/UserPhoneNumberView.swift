@@ -237,9 +237,13 @@ struct UserPhoneNumberView: View {
                 .focused($isFocused)
                 .textContentType(.telephoneNumber)
                 .tint(.clear) // Hide cursor
-                .onChange(of: userPhone.number) { _, newValue in
+                .onChange(of: userPhone.number) { oldValue, newValue in
+                    // Only format if the value actually changed and is different from the formatted version
                     let formattedNumber = userPhone.formatPhoneNumber(newValue, pattern: userPhone.country.pattern)
-                    userPhone.number = formattedNumber
+                    if formattedNumber != newValue {
+                        userPhone.number = formattedNumber
+                        return // Exit early to avoid infinite loop
+                    }
 
                     // Only clear messages if we're not in the middle of sending
                     if !isCodeSending {

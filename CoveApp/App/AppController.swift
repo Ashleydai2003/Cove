@@ -193,7 +193,12 @@ class AppController: ObservableObject {
      * Call this after successfully creating a cove to update the UI immediately.
      */
     func refreshCoveFeedAfterCreation() {
-        coveFeed.refreshUserCoves()
+        Log.debug("AppController: Refreshing cove feed after creation")
+        
+        // Ensure we're on the main thread for UI updates
+        DispatchQueue.main.async {
+            self.coveFeed.refreshUserCoves()
+        }
     }
 
     /**
