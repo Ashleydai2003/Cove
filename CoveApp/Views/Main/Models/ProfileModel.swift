@@ -335,9 +335,7 @@ class ProfileModel: ObservableObject {
 
                 switch result {
                 case .success(let response):
-                    // Debug: Log the profile data to see what's being returned
-                    print("🔍 DEBUG: Profile API response - gradYear: \(response.profile.gradYear ?? "nil")")
-                    print("🔍 DEBUG: Profile API response - almaMater: \(response.profile.almaMater ?? "nil")")
+                    Log.debug("Profile API response received successfully")
                     self.updateFromProfileData(response.profile)
                     completion(.success(response.profile))
                 case .failure(let error):
@@ -567,10 +565,7 @@ class ProfileModel: ObservableObject {
 
     // Helper: Build parameters
     private func buildProfileUpdateParameters(updateData: ProfileUpdateData) -> [String: Any] {
-        // Debug: Log what's being sent to the backend
-        print("🔍 DEBUG: Building profile update parameters")
-        print("🔍 DEBUG: - gradYear: \(updateData.gradYear ?? "nil")")
-        print("🔍 DEBUG: - almaMater: \(updateData.almaMater ?? "nil")")
+        Log.debug("Building profile update parameters")
         
         return buildChangedParameters(
             name: updateData.name,
