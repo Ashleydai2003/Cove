@@ -14,7 +14,7 @@ struct CitySelectionView: View {
     @State private var searchCity = ""
     @State private var showCityDropdown = false
     @FocusState private var isCityFocused: Bool
-    
+
     /// Error state
     @State private var showingError = false
 

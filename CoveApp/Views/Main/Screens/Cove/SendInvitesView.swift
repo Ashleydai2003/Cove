@@ -79,11 +79,17 @@ struct SendInvitesView: View {
                                 .padding(.horizontal, 24)
 
                                 // Phone number inputs (exactly like UserPhoneNumberView structure)
-                                ForEach(Array(viewModel.phoneNumbers.enumerated()), id: \.offset) { index, phoneNumber in
+                                ForEach(Array(zip(viewModel.phoneNumbers, viewModel.phoneNumberIds).enumerated()), id: \.element.1) { index, phoneData in
                                     PhoneNumberInputView(
                                         phoneNumber: Binding(
-                                            get: { viewModel.phoneNumbers[index] },
-                                            set: { viewModel.phoneNumbers[index] = $0 }
+                                            get: { 
+                                                guard index < viewModel.phoneNumbers.count else { return "" }
+                                                return viewModel.phoneNumbers[index] 
+                                            },
+                                            set: { 
+                                                guard index < viewModel.phoneNumbers.count else { return }
+                                                viewModel.phoneNumbers[index] = $0 
+                                            }
                                         ),
                                         selectedCountry: index < viewModel.countries.count
                                             ? viewModel.countries[index]
@@ -103,7 +109,10 @@ struct SendInvitesView: View {
                                             presentCountrySheet = true
                                         },
                                         onRemove: {
-                                            viewModel.removePhoneNumber(at: index)
+                                            // Use DispatchQueue.main.async to ensure UI updates complete before data changes
+                                            DispatchQueue.main.async {
+                                                viewModel.removePhoneNumber(at: index)
+                                            }
                                         },
                                         keyboardAccessoryView: keyboardAccessoryView
                                     )
@@ -376,16 +385,19 @@ struct PhoneNumberInputView: View {
                 .font(.LibreCaslon(size: Constants.phoneInputFontSize))
                 .foregroundStyle(Color.black)
                 .keyboardType(.numberPad)
-            .textContentType(.telephoneNumber)
+                .textContentType(.telephoneNumber)
                 .toolbar {
                     ToolbarItem(placement: .keyboard) {
                         keyboardAccessoryView
                     }
                 }
-                .onChange(of: phoneNumber) { _, newValue in
-                    // Format the phone number exactly like UserPhoneNumberView
+                .onChange(of: phoneNumber) { oldValue, newValue in
+                    // Only format if the value actually changed and is different from the formatted version
                     let formattedNumber = formatPhoneNumber(newValue, pattern: selectedCountry.pattern)
-                    phoneNumber = formattedNumber
+                    if formattedNumber != newValue {
+                        phoneNumber = formattedNumber
+                        return // Exit early to avoid infinite loop
+                    }
                 }
 
             // Remove button (if applicable)

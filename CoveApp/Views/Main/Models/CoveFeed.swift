@@ -107,7 +107,18 @@ class CoveFeed: ObservableObject {
 
     /// Forces a refresh of user coves data, bypassing cache.
     func refreshUserCoves(completion: (() -> Void)? = nil) {
+        Log.debug("CoveFeed: Force refreshing user coves")
+        
+        // Reset cache to force fresh fetch
         lastFetched = nil
+        
+        // Ensure we're not already loading
+        guard !isLoading else {
+            Log.debug("CoveFeed: Already loading, skipping refresh")
+            completion?()
+            return
+        }
+        
         fetchUserCoves(completion: completion)
     }
 
