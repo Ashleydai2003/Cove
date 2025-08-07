@@ -91,12 +91,16 @@ struct FriendProfileView: View {
                         // MARK: Hobbies / Interests
                         if !profile.interests.isEmpty {
                             VStack(alignment: .leading, spacing: 12) {
-                                Text("past times")
+                                Text("interests")
                                     .font(.LibreBodoni(size: 18))
                                     .foregroundColor(Colors.primaryDark)
                                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 90), spacing: 8)], alignment: .leading, spacing: 8) {
                                     ForEach(profile.interests, id: \.self) { hobby in
-                                        StaticHobbyPill(text: hobby, textColor: Colors.k6F6F73)
+                                        StaticHobbyPill(
+                                            text: hobby, 
+                                            emoji: HobbiesData.getEmoji(for: hobby),
+                                            textColor: Colors.k6F6F73
+                                        )
                                     }
                                 }
                             }
