@@ -14,7 +14,7 @@ class Onboarding {
     private static var userBirthdate: Date?
     private static var userHobbies: Set<String> = []
     private static var userAlmaMater: String?
-    private static var userGraduationYear: String?
+    private static var userGradYear: String?
     private static var userCity: String?
     private static var profilePic: UIImage?
     private static var pendingFriendRequests: [String] = []
@@ -40,8 +40,8 @@ class Onboarding {
         userAlmaMater = almaMater
     }
 
-    static func storeGraduationYear(year: String) -> Void {
-        userGraduationYear = year
+    static func storeGradYear(gradYear: String) -> Void {
+        userGradYear = gradYear
     }
 
     static func storeCity(city: String) -> Void {
@@ -108,7 +108,7 @@ class Onboarding {
         userBirthdate = nil
         userHobbies = []
         userAlmaMater = nil
-        userGraduationYear = nil
+        userGradYear = nil
         userCity = nil
         profilePic = nil
         pendingFriendRequests = []
@@ -141,8 +141,8 @@ class Onboarding {
         return userAlmaMater
     }
 
-    static func getGraduationYear() -> String? {
-        return userGraduationYear
+    static func getGradYear() -> String? {
+        return userGradYear
     }
 
     static func getCity() -> String? {
@@ -299,8 +299,12 @@ class Onboarding {
             parameters["almaMater"] = almaMater
         }
         
-        if let graduationYear = userGraduationYear, !graduationYear.isEmpty {
+        if let graduationYear = userGradYear, !graduationYear.isEmpty {
             parameters["graduationYear"] = graduationYear
+        }
+
+        if let gradYear = userGradYear, !gradYear.isEmpty {
+            parameters["gradYear"] = gradYear
         }
 
         if let city = userCity, !city.isEmpty {
