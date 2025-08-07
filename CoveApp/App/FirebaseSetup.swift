@@ -72,7 +72,7 @@ class FirebaseSetup: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserN
     // MARK: - MessagingDelegate
     
     func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
-        Log.debug("Firebase registration token: \(String(describing: fcmToken))")
+        Log.debug("Firebase registration token received")
         
         // Send FCM token to your backend
         if let token = fcmToken {

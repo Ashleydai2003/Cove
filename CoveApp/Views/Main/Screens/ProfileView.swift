@@ -970,8 +970,7 @@ struct ProfileView: View {
                     HStack(spacing: 18) {
                         // Edit/Save button
                         Button(action: {
-                            // TEMP - JUST FOR SAVE ERROR DEBUG
-                            print("🔍 DEBUG: Save/Edit button tapped! isEditing: \(isEditing)")
+                                    Log.debug("Save/Edit button tapped! isEditing: \(isEditing)")
                             if isEditing {
                                 // Show loading spinner immediately
                                 isSaving = true
@@ -1163,8 +1162,7 @@ struct ProfileView: View {
     }
 
     private func saveChanges(completion: @escaping (Bool) -> Void) {
-        // TEMP - JUST FOR SAVE ERROR DEBUG
-        print("🔍 DEBUG: saveChanges function called!")
+        Log.debug("saveChanges function called!")
         Log.debug("📱 ProfileView: Starting save process")
         
         // Check if any changes were actually made
@@ -1195,15 +1193,11 @@ struct ProfileView: View {
         Log.debug("  - Gender: \(editingGender) vs \(appController.profileModel.gender)")
 
         if !hasChanges {
-            // TEMP - JUST FOR SAVE ERROR DEBUG
-            print("🔍 DEBUG: No changes detected, skipping save")
             Log.debug("📱 No changes detected in ProfileView, skipping save")
             completion(true) // Return success since there's nothing to save
             return
         }
 
-        // TEMP - JUST FOR SAVE ERROR DEBUG
-        print("🔍 DEBUG: Calling updateProfile with changes")
         Log.debug("📱 ProfileView: Calling updateProfile with changes")
         
         // Update the ProfileModel with all changes (images and text fields)
@@ -1222,25 +1216,19 @@ struct ProfileView: View {
             profileImage: editingProfileImage,
             extraImages: editingExtraImages
         ) { result in
-            // TEMP - JUST FOR SAVE ERROR DEBUG
-            print("🔍 DEBUG: updateProfile completion called with result: \(result)")
             Log.debug("📱 ProfileView: updateProfile completion called with result: \(result)")
             switch result {
             case .success:
                 // No action needed
-                // TEMP - JUST FOR SAVE ERROR DEBUG
-                print("🔍 DEBUG: Profile updated successfully")
                 Log.debug("✅ Profile updated successfully")
                 // The ProfileModel will automatically update its properties after successful backend call
                 completion(true)
             case .failure(let error):
-                // TEMP - JUST FOR SAVE ERROR DEBUG
-                print("🔍 DEBUG: Failed to update profile: \(error)")
                 Log.debug("❌ Failed to update profile: \(error)")
                 
                 // Check if it's an auth error and handle it
                 if case .authError(let authError) = error {
-                    print("🔍 DEBUG: Auth error detected - token may be invalid")
+                    Log.debug("Auth error detected - token may be invalid")
                     // Force sign out and clear data to handle invalid token
                     DispatchQueue.main.async {
                         try? Auth.auth().signOut()
