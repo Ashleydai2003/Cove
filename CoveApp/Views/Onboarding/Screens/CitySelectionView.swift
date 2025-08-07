@@ -18,16 +18,8 @@ struct CitySelectionView: View {
     /// Error state
     @State private var showingError = false
 
-    @State private var cities: [String] = [
-        "New York", "San Francisco", "Los Angeles", "Boston", "Chicago", "Seattle", "Austin",
-        "Washington D.C.", "Denver", "Atlanta", "Philadelphia", "San Diego", "Miami", "Portland",
-        "Nashville", "Dallas", "Houston", "Phoenix", "Minneapolis", "Charlotte", "Raleigh",
-        "Tampa", "Orlando", "San Jose", "Oakland", "Sacramento", "Boulder", "Madison",
-        "Ann Arbor", "Pittsburgh", "Baltimore", "Richmond", "Columbus", "Cincinnati",
-        "Cleveland", "Detroit", "Milwaukee", "Kansas City", "St. Louis", "New Orleans",
-        "Salt Lake City", "Boise", "Las Vegas", "Tucson", "Albuquerque", "Oklahoma City",
-        "Omaha", "Des Moines", "Buffalo", "Hartford"
-    ]
+    // Use shared cities data
+    private let cities: [String] = CitiesData.cities
 
     var body: some View {
         ZStack {
@@ -179,11 +171,7 @@ struct CitySelectionView: View {
     }
 
     var filteredCities: [String] {
-        if searchCity.isEmpty {
-            return cities
-        } else {
-            return cities.filter { $0.localizedCaseInsensitiveContains(searchCity) }
-        }
+        return CitiesData.filteredCities(searchQuery: searchCity)
     }
 }
 
