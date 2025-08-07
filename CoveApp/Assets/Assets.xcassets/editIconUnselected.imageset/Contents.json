@@ -1,16 +1,15 @@
 {
   "images" : [
     {
+      "filename" : "editIconUnselected.svg",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
-      "filename" : "location-pin@2x.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
-      "filename" : "location-pin@3x.png",
       "idiom" : "universal",
       "scale" : "3x"
     }

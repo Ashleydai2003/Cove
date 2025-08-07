@@ -7,7 +7,6 @@
 import SwiftUI
 import UIKit
 import CoreLocation
-import MapKit
 import PhotosUI
 import Kingfisher
 import FirebaseAuth
@@ -35,6 +34,8 @@ struct ProfileHeader: View {
     @Binding var gender: String
     @Binding var relationStatus: String
     @Binding var job: String
+    @Binding var almaMater: String
+    @Binding var gradYear: String
     let profileImageURL: URL?
     let age: Int?
     let address: String
@@ -45,6 +46,8 @@ struct ProfileHeader: View {
     let onGenderChange: (String) -> Void
     let onRelationStatusChange: (String) -> Void
     let onJobChange: (String) -> Void
+    let onAlmaMaterChange: (String) -> Void
+    let onGradYearChange: (String) -> Void
     let onLocationSelect: () -> Void
     let onProfileImageChange: (UIImage?) -> Void
 
@@ -134,7 +137,7 @@ struct ProfileHeader: View {
 
             // MARK: - Profile header
             if isEditing {
-                TextField("Name", text: $name, onCommit: { onNameChange(name) })
+                TextField("name", text: $name, onCommit: { onNameChange(name) })
                     .font(.LibreBodoniMedium(size: 35))
                     .foregroundColor(Colors.primaryDark)
                     .multilineTextAlignment(.center)
@@ -156,83 +159,162 @@ struct ProfileHeader: View {
                     .foregroundColor(Colors.primaryDark)
             }
 
-            VStack(alignment: .leading, spacing: 10) {
-                if isEditing {
-                    Button(action: onLocationSelect) {
-                        HStack(spacing: 6) {
-                            Text(address.isEmpty ? "add your location" : address.lowercased())
-                                .font(.LibreBodoni(size: 15))
-                                .foregroundColor(address.isEmpty ? Colors.k6F6F73 : Colors.primaryDark)
-                                .multilineTextAlignment(.center)
-
-                            Image(systemName: "location.fill")
-                                .foregroundColor(Colors.primaryDark)
-                                .font(.system(size: 10))
-                        }
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.vertical, 4)
-                    }
-                } else {
-                    ProfileText(
-                        text: address.isEmpty ? "add your location" : address,
-                        isPlaceholder: address.isEmpty
-                    ).frame(maxWidth: .infinity, alignment: .center)
-                }
-
-                HStack() {
+            VStack(alignment: .center, spacing: 16) {
+                // Top row: Age, Gender, Relationship Status (centered)
+                HStack(spacing: 20) {
                     Text(age.map(String.init) ?? "21")
                         .font(.LibreBodoni(size: 20))
                         .foregroundColor(Colors.primaryDark)
 
-                    Spacer()
+                    HStack(spacing: 6) {
+                        Image("genderIcon")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 16, height: 16)
 
-                    Image("more-info")
-
-                    if isEditing {
-                        // TODO: this should maybe also be a drop down select
-                        TextField("Gender", text: $gender, onCommit: { onGenderChange(gender) })
-                            .font(.LibreBodoni(size: 15))
-                            .foregroundColor(Colors.primaryDark)
-                            .multilineTextAlignment(.center)
-                            .textFieldStyle(PlainTextFieldStyle())
-                            .padding(.vertical, 4)
-                            .overlay(
-                                Rectangle()
-                                    .frame(height: 1)
-                                    .foregroundColor(Colors.primaryDark.opacity(0.3))
-                                    .offset(y: 12)
+                        if isEditing {
+                            TextField("gender", text: $gender, onCommit: { onGenderChange(gender) })
+                                .font(.LibreBodoni(size: 15))
+                                .foregroundColor(Colors.primaryDark)
+                                .multilineTextAlignment(.center)
+                                .textFieldStyle(PlainTextFieldStyle())
+                                .padding(.vertical, 4)
+                                .overlay(
+                                    Rectangle()
+                                        .frame(height: 1)
+                                        .foregroundColor(Colors.primaryDark.opacity(0.3))
+                                        .offset(y: 12)
+                                )
+                                .onChange(of: gender) { _, newValue in
+                                    let lowercasedValue = newValue.lowercased()
+                                    gender = lowercasedValue
+                                    onGenderChange(lowercasedValue)
+                                }
+                        } else {
+                            ProfileText(
+                                text: gender.isEmpty ? "add gender" : gender,
+                                isPlaceholder: gender.isEmpty
                             )
-                            .onChange(of: gender) { _, newValue in
-                                onGenderChange(newValue)
-                            }
-                    } else {
-                        ProfileText(
-                            text: gender.isEmpty ? "add gender" : gender,
-                            isPlaceholder: gender.isEmpty
-                        )
+                        }
                     }
 
-                    Spacer()
+                    HStack(spacing: 6) {
+                        Image("relationshipIcon")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 16, height: 16)
 
-                    Image("person-fill")
+                        if isEditing {
+                            RelationStatusPicker(selectedStatus: relationStatus, onStatusChange: onRelationStatusChange)
+                        } else {
+                            ProfileText(
+                                text: relationStatus.isEmpty ? "add status" : relationStatus,
+                                isPlaceholder: relationStatus.isEmpty
+                            )
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+
+                // Middle row: Location (centered)
+                HStack(spacing: 6) {
+                    Image("locationIcon")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 16, height: 16)
+                        .foregroundColor(Colors.primaryDark)
 
                     if isEditing {
-                        RelationStatusPicker(selectedStatus: relationStatus, onStatusChange: onRelationStatusChange)
+                        Button(action: onLocationSelect) {
+                            Text(address.isEmpty ? "add your location" : address.lowercased())
+                                .font(.LibreBodoni(size: 15))
+                                .foregroundColor(address.isEmpty ? Colors.k6F6F73 : Colors.primaryDark)
+                                .multilineTextAlignment(.center)
+                                .padding(.vertical, 4)
+                        }
                     } else {
                         ProfileText(
-                            text: relationStatus.isEmpty ? "add status" : relationStatus,
-                            isPlaceholder: relationStatus.isEmpty
+                            text: address.isEmpty ? "add your location" : address,
+                            isPlaceholder: address.isEmpty
                         )
                     }
-                }.padding(.horizontal, 5)
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
 
-                HStack() {
-                    Image(systemName: "briefcase")
+                // Bottom row: University (centered below location)
+                HStack(spacing: 6) {
+                    Image("gradIcon")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 16, height: 16)
                         .foregroundStyle(Colors.k6B6B6B)
 
                     if isEditing {
                         HStack {
-                            TextField("Job", text: $job, onCommit: { onJobChange(job) })
+                            TextField("university", text: $almaMater, onCommit: { onAlmaMaterChange(almaMater) })
+                                .font(.LibreBodoni(size: 15))
+                                .foregroundColor(Colors.primaryDark)
+                                .textFieldStyle(PlainTextFieldStyle())
+                                .padding(.vertical, 4)
+                                .overlay(
+                                    Rectangle()
+                                        .frame(height: 1)
+                                        .foregroundColor(Colors.primaryDark.opacity(0.3))
+                                        .offset(y: 12)
+                                )
+                                .onChange(of: almaMater) { _, newValue in
+                                    let lowercasedValue = newValue.lowercased()
+                                    almaMater = lowercasedValue
+                                    onAlmaMaterChange(lowercasedValue)
+                                }
+
+                            Text("'")
+                                .font(.LibreBodoni(size: 15))
+                                .foregroundColor(Colors.primaryDark)
+
+                            TextField("year", text: $gradYear, onCommit: { onGradYearChange(gradYear) })
+                                .font(.LibreBodoni(size: 15))
+                                .foregroundColor(Colors.primaryDark)
+                                .textFieldStyle(PlainTextFieldStyle())
+                                .padding(.vertical, 4)
+                                .overlay(
+                                    Rectangle()
+                                        .frame(height: 1)
+                                        .foregroundColor(Colors.primaryDark.opacity(0.3))
+                                        .offset(y: 12)
+                                )
+                                .onChange(of: gradYear) { _, newValue in
+                                    // Take only the last two digits if it's a 4-digit year
+                                    let processedValue = newValue.count == 4 ? String(newValue.suffix(2)) : newValue
+                                    gradYear = processedValue
+                                    onGradYearChange(processedValue)
+                                }
+                        }
+                    } else {
+                        if !almaMater.isEmpty && !gradYear.isEmpty {
+                            ProfileText(text: "\(almaMater) '\(gradYear)", isPlaceholder: false)
+                        } else if !almaMater.isEmpty {
+                            ProfileText(text: almaMater, isPlaceholder: false)
+                        } else if !gradYear.isEmpty {
+                            ProfileText(text: "'\(gradYear)", isPlaceholder: false)
+                        } else {
+                            ProfileText(text: "add your alma mater", isPlaceholder: true)
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+
+                // Bottom row: Work (centered below the top row)
+                HStack(spacing: 6) {
+                    Image("workIcon")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 16, height: 16)
+                        .foregroundStyle(Colors.k6B6B6B)
+
+                    if isEditing {
+                        HStack {
+                            TextField("job", text: $job, onCommit: { onJobChange(job) })
                                 .font(.LibreBodoni(size: 15))
                                 .foregroundColor(Colors.primaryDark)
                                 .textFieldStyle(PlainTextFieldStyle())
@@ -244,14 +326,16 @@ struct ProfileHeader: View {
                                         .offset(y: 12)
                                 )
                                 .onChange(of: job) { _, newValue in
-                                    onJobChange(newValue)
+                                    let lowercasedValue = newValue.lowercased()
+                                    job = lowercasedValue
+                                    onJobChange(lowercasedValue)
                                 }
 
                             Text("@")
                                 .font(.LibreBodoni(size: 15))
                                 .foregroundColor(Colors.primaryDark)
 
-                            TextField("Work Location", text: $workLocation, onCommit: { onWorkLocationChange(workLocation) })
+                            TextField("work location", text: $workLocation, onCommit: { onWorkLocationChange(workLocation) })
                                 .font(.LibreBodoni(size: 15))
                                 .foregroundColor(Colors.primaryDark)
                                 .textFieldStyle(PlainTextFieldStyle())
@@ -263,7 +347,9 @@ struct ProfileHeader: View {
                                         .offset(y: 12)
                                 )
                                 .onChange(of: workLocation) { _, newValue in
-                                    onWorkLocationChange(newValue)
+                                    let lowercasedValue = newValue.lowercased()
+                                    workLocation = lowercasedValue
+                                    onWorkLocationChange(lowercasedValue)
                                 }
                         }
                     } else {
@@ -278,6 +364,7 @@ struct ProfileHeader: View {
                         }
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .center)
             }
         }
         .onAppear {
@@ -293,7 +380,7 @@ struct RelationStatusPicker: View {
     let onStatusChange: (String) -> Void
     @State private var showingPicker = false
 
-    private let statusOptions = ["Single", "Taken", "It's Complicated"]
+    private let statusOptions = ["single", "taken", "it's complicated"]
 
     var body: some View {
         Button(action: {
@@ -371,7 +458,9 @@ struct BioSection: View {
                                 )
                         )
                         .onChange(of: bio) { _, newValue in
-                            onBioChange(newValue)
+                            let lowercasedValue = newValue.lowercased()
+                            bio = lowercasedValue
+                            onBioChange(lowercasedValue)
                         }
                 } else {
                     Text(bio.isEmpty ? "add your bio" : bio.lowercased())
@@ -406,20 +495,24 @@ struct InterestsSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("past times")
+            Text("interests")
                 .font(.LibreBodoni(size: 18))
                 .foregroundColor(Colors.primaryDark)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             if interests.isEmpty && !isEditing {
-                StaticHobbyPill(text: "whoops! add your passtimes!", textColor: Colors.k6F6F73)
+                StaticHobbyPill(text: "no interests :(", textColor: Colors.k6F6F73)
             } else {
                 LazyVGrid(columns: columns, spacing: 12) {
                     ForEach(interests, id: \.self) { hobby in
                         ZStack {
-                            StaticHobbyPill(text: hobby, textColor: Colors.k6F6F73)
+                            StaticHobbyPill(
+                                text: hobby, 
+                                emoji: HobbiesData.getEmoji(for: hobby),
+                                textColor: Colors.k6F6F73
+                            )
 
-                                if isEditing {
+                            if isEditing {
                                 HStack {
                                     Spacer()
                                     Button(action: {
@@ -439,7 +532,7 @@ struct InterestsSection: View {
 
                     if isEditing {
                         StaticHobbyPill(
-                            text: "add hobby",
+                            text: "add interests",
                             emoji: "➕",
                             textColor: Colors.primaryDark
                         )
@@ -463,59 +556,133 @@ struct InterestsSection: View {
     }
 }
 
-// MARK: - Location Selection View
-struct LocationSelectionView: View {
+// MARK: - Location Selection Popup (Identical to Onboarding)
+struct LocationSelectionPopup: View {
     let currentAddress: String
     let onLocationSelected: (String, CLLocationCoordinate2D) -> Void
-    @State private var userLocation: CLLocation?
-    @State private var coordinate: CLLocationCoordinate2D?
-    @State private var selectedAddress: String = ""
     @Environment(\.dismiss) private var dismiss
+    
+    @State private var searchCity = ""
+    @State private var showCityDropdown = false
+    @FocusState private var isCityFocused: Bool
+    
+    // Use shared cities data
+    private let cities: [String] = CitiesData.cities
 
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-                MapView(userLocation: $userLocation, coordinate: $coordinate)
-                    .onChange(of: coordinate) { _, newCoordinate in
-                        if let coord = newCoordinate {
-                            Task {
-                                selectedAddress = await getLocationName(latitude: coord.latitude, longitude: coord.longitude)
+                // Header section
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("what city are you \nliving in?")
+                        .foregroundStyle(Colors.primaryDark)
+                        .font(.LibreBodoniMedium(size: 40))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                    Text("connect with others in your area. (optional)")
+                        .font(.LeagueSpartan(size: 15))
+                        .foregroundColor(Colors.k0B0B0B)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .padding(.top, 40)
+
+                // City search input section
+                VStack(spacing: 8) {
+                    ZStack(alignment: .leading) {
+                        if searchCity.isEmpty {
+                            Text("search cities...")
+                                .foregroundColor(Colors.k656566)
+                                .font(.LeagueSpartan(size: 30))
+                        }
+
+                        TextField("", text: $searchCity)
+                            .font(.LeagueSpartan(size: 30))
+                            .foregroundStyle(Colors.k060505)
+                            .keyboardType(.alphabet)
+                            .focused($isCityFocused)
+                            .onChange(of: searchCity) { oldValue, newValue in
+                                let processedValue = newValue.lowercaseIfNotEmpty
+                                searchCity = processedValue
+                                // Only show dropdown if user is typing (length increased or changed but not empty)
+                                if !processedValue.isEmpty && processedValue != oldValue {
+                                    showCityDropdown = true
+                                } else if processedValue.isEmpty {
+                                    showCityDropdown = false
+                                }
+                            }
+                    }
+
+                    Divider()
+                        .frame(height: 2)
+                        .background(Colors.k060505)
+                }
+                .padding(.top, 30)
+
+                // City suggestions list
+                if searchCity.count > 0 && showCityDropdown {
+                    VStack(spacing: 0) {
+                        ScrollView(.vertical, showsIndicators: false) {
+                            VStack(spacing: 0) {
+                                ForEach(filteredCities, id: \.self) { city in
+                                    Button {
+                                        searchCity = city
+                                        DispatchQueue.main.async {
+                                            showCityDropdown = false
+                                        }
+                                    } label: {
+                                        Text(city.lowercased())
+                                            .font(.LeagueSpartanMedium(size: 18))
+                                            .foregroundColor(Colors.k0F100F)
+                                            .multilineTextAlignment(.leading)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                            .padding(.horizontal, 16)
+                                            .padding(.vertical, 12)
+                                    }
+                                    .background(Color.clear)
+
+                                    if city != filteredCities.last {
+                                        Divider()
+                                            .background(Colors.k060505.opacity(0.2))
+                                    }
+                                }
                             }
                         }
                     }
+                    .background(Colors.primaryLight)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .frame(height: min(CGFloat(filteredCities.count * 44), 200))
+                    .padding(.top, 10)
+                    .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 5)
+                }
 
-                VStack(spacing: 16) {
-                    Text("selected location")
-                        .font(.LibreBodoni(size: 18))
-                        .foregroundColor(Colors.primaryDark)
+                Spacer()
 
-                    Text(selectedAddress.isEmpty ? "Tap on the map to select a location" : selectedAddress.lowercased())
-                        .font(.LeagueSpartan(size: 14))
-                        .foregroundColor(Colors.k6F6F73)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal)
-
+                // Done button
+                HStack {
+                    Spacer()
                     Button(action: {
-                        if let coord = coordinate, !selectedAddress.isEmpty {
-                            onLocationSelected(selectedAddress, coord)
-                            dismiss()
+                        if !searchCity.isEmpty {
+                            // For now, we'll use a default coordinate since we don't have geocoding in the popup
+                            // In a real implementation, you'd want to geocode the city name
+                            let defaultCoordinate = CLLocationCoordinate2D(latitude: 40.7128, longitude: -74.0060) // Default to NYC
+                            onLocationSelected(searchCity, defaultCoordinate)
                         }
+                        dismiss()
                     }) {
-                        Text("confirm location")
-                            .font(.LibreBodoni(size: 16))
+                        Text("done")
+                            .font(.LibreBodoni(size: 18))
                             .foregroundColor(.white)
-                            .padding(.horizontal, 24)
+                            .padding(.horizontal, 40)
                             .padding(.vertical, 12)
                             .background(
-                                RoundedRectangle(cornerRadius: 8)
+                                RoundedRectangle(cornerRadius: 25)
                                     .fill(Colors.primaryDark)
                             )
                     }
-                    .disabled(selectedAddress.isEmpty)
-                    .opacity(selectedAddress.isEmpty ? 0.5 : 1.0)
+                    .padding(.bottom, 20)
                 }
-                .padding()
             }
+            .padding(.horizontal, 32)
             .navigationTitle("Select Location")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -526,32 +693,26 @@ struct LocationSelectionView: View {
                 }
             }
         }
-    }
-
-    private func getLocationName(latitude: Double, longitude: Double) async -> String {
-        let geocoder = CLGeocoder()
-        let location = CLLocation(latitude: latitude, longitude: longitude)
-
-        do {
-            let placemarks = try await geocoder.reverseGeocodeLocation(location)
-            if let placemark = placemarks.first {
-                let city = placemark.locality ?? ""
-                let state = placemark.administrativeArea ?? ""
-                return "\(city), \(state)"
+        .onAppear {
+            // Pre-populate with current address if available
+            if !currentAddress.isEmpty {
+                searchCity = currentAddress
             }
-        } catch {
-            Log.debug("Geocoding error: \(error.localizedDescription)")
+            isCityFocused = true
         }
-        return ""
+    }
+    
+    var filteredCities: [String] {
+        return CitiesData.filteredCities(searchQuery: searchCity)
     }
 }
 
-// MARK: - Hobbies Selection View
+// MARK: - Hobbies Selection View (Updated to use shared data)
 struct HobbiesSelectionView: View {
     let selectedHobbies: Set<String>
     let onHobbiesSelected: (Set<String>) -> Void
     @State private var currentSelection: Set<String>
-    @State private var searchText: String = ""
+    @State private var expandedButtons: Set<String> = []
     @Environment(\.dismiss) private var dismiss
 
     init(selectedHobbies: Set<String>, onHobbiesSelected: @escaping (Set<String>) -> Void) {
@@ -560,173 +721,92 @@ struct HobbiesSelectionView: View {
         self._currentSelection = State(initialValue: selectedHobbies)
     }
 
-    private let hobbyCategories: [(String, [(String, String)])] = [
-        ("Sports & Fitness 🏃‍♀️", [
-            ("Soccer Teams", "⚽️"),
-            ("Basketball Leagues", "🏀"),
-            ("Tennis Groups", "🎾"),
-            ("Hiking Groups", "🥾"),
-            ("Yoga Classes", "🧘‍♀️"),
-            ("Surfing Meetups", "🏄‍♀️"),
-            ("Rock Climbing", "🧗‍♀️"),
-            ("Swimming Clubs", "🏊‍♀️"),
-            ("Running Groups", "🏃‍♀️"),
-            ("Volleyball Teams", "🏐"),
-            ("Spin Classes", "🚴‍♀️"),
-            ("Boxing Clubs", "🥊"),
-            ("CrossFit Groups", "💪"),
-            ("Dance Fitness", "💃"),
-            ("Beach Volleyball", "🏖️"),
-            ("Ultimate Frisbee", "🥏"),
-            ("Pickleball Clubs", "🏓"),
-            ("Golf Leagues", "⛳️")
-        ]),
-        ("Creative Pursuits 🎨", [
-            ("Art Museums", "🖼️"),
-            ("Pottery Classes", "🏺"),
-            ("Dance Studios", "💃"),
-            ("Music Festivals", "🎵"),
-            ("Theater Groups", "🎭"),
-            ("Cooking Classes", "👨‍🍳"),
-            ("Craft Workshops", "✂️"),
-            ("Writing Circles", "✍️"),
-            ("Film Clubs", "🎬"),
-            ("Photography Walks", "📸"),
-            ("Painting Classes", "🎨"),
-            ("Sculpture Workshops", "🗿"),
-            ("Jewelry Making", "💍"),
-            ("Glass Blowing", "🔥"),
-            ("Digital Art Clubs", "🖥️"),
-            ("Street Art Tours", "🎯"),
-            ("Fashion Design", "👗"),
-            ("Woodworking", "🪚")
-        ]),
-        ("Entertainment 🎉", [
-            ("Cocktail Bars", "🍸"),
-            ("Clubs", "🍷"),
-            ("Wine Tastings", "🍷"),
-            ("Comedy Clubs", "😄"),
-            ("Karaoke Nights", "🎤"),
-            ("Escape Rooms", "🔐"),
-            ("Bowling Leagues", "🎳"),
-            ("Live Music Venues", "🎸"),
-            ("Jazz Clubs", "🎺"),
-            ("Rooftop Bars", "🌆"),
-            ("Beer Gardens", "🍺"),
-            ("Game Nights", "🎲"),
-            ("Dance Clubs", "💃"),
-            ("Piano Bars", "🎹"),
-            ("Magic Shows", "🎩"),
-            ("Burlesque Shows", "✨"),
-            ("Improv Classes", "🎭"),
-            ("Casino Nights", "🎰")
-        ]),
-        ("Social Activities 🌟", [
-            ("Book Clubs", "📚"),
-            ("Travel Groups", "✈️"),
-            ("Founders Groups", "💻"),
-            ("Chess Clubs", "♟️"),
-            ("Volunteer Groups", "🤝"),
-            ("Language Exchange", "🗣️"),
-            ("Food Tours", "🍽️"),
-            ("Coffee Meetups", "☕️"),
-            ("Tech Meetups", "💻"),
-            ("Gardening Clubs", "🌱"),
-            ("Cultural Events", "🎪"),
-            ("Philosophy Clubs", "🤔"),
-            ("Astronomy Groups", "🔭"),
-            ("Hiking Meetups", "🥾"),
-            ("Wine & Paint", "🎨"),
-            ("Cooking Classes", "👨‍🍳"),
-            ("Board Game Nights", "🎲"),
-            ("Trivia Teams", "🧠")
-        ])
-    ]
-
-    private var filteredCategories: [(String, [(String, String)])] {
-        if searchText.isEmpty {
-            return hobbyCategories
-        }
-
-        return hobbyCategories.compactMap { category in
-            let filteredHobbies = category.1.filter { hobby in
-                hobby.0.lowercased().contains(searchText.lowercased())
-            }
-
-            if filteredHobbies.isEmpty {
-                return nil
-            }
-
-            return (category.0, filteredHobbies)
-        }
-    }
-
-    private let columns = [
-        GridItem(.flexible(), spacing: 12),
-        GridItem(.flexible(), spacing: 12)
-    ]
+    private let hobbyDataSections: [HobbySection] = HobbiesData.hobbyDataSections
 
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-                // Search bar
-                HStack {
-                    Image(systemName: "magnifyingglass")
-                        .foregroundColor(.gray)
-                    TextField("Search hobbies...", text: $searchText)
-                        .font(.LeagueSpartan(size: 14))
-                    if !searchText.isEmpty {
-                        Button(action: {
-                            searchText = ""
-                        }) {
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundColor(.gray)
-                        }
-                    }
+                // Header
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("select your interests")
+                        .foregroundStyle(Colors.primaryDark)
+                        .font(.LibreBodoniMedium(size: 28))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                    Text("select whatever stands out to you")
+                        .font(.LeagueSpartan(size: 15))
+                        .foregroundColor(Colors.k0B0B0B)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .padding(8)
-                .background(Color.gray.opacity(0.1))
-                .cornerRadius(10)
-                .padding()
+                .padding(.horizontal, 32)
+                .padding(.top, 20)
 
-                // Hobbies grid
+                // Dynamic expandable hobby buttons organized by sections
                 ScrollView(showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: 24) {
-                        ForEach(filteredCategories, id: \.0) { category in
-                            VStack(alignment: .leading, spacing: 12) {
-                                Text(category.0)
-                                    .font(.LeagueSpartan(size: 16))
-                                    .foregroundStyle(Colors.primaryLight)
-                                    .padding(.horizontal)
+                    VStack(spacing: 0) {
+                        ForEach(Array(hobbyDataSections.enumerated()), id: \.offset) { sectionIndex, section in
+                            let sectionName = section.name
+                            let sectionEmoji = section.emoji
+                            let sectionButtons = section.buttons
 
-                                LazyVGrid(columns: columns, spacing: 12) {
-                                    ForEach(category.1, id: \.0) { hobby in
-                                        Button(action: {
-                                            if currentSelection.contains(hobby.0) {
-                                                currentSelection.remove(hobby.0)
-                                            } else {
-                                                currentSelection.insert(hobby.0)
-                                            }
-                                        }) {
-                                            HobbyPill(
-                                                text: hobby.0,
-                                                emoji: hobby.1,
-                                                isSelected: currentSelection.contains(hobby.0)
-                                            ) {
-                                                if currentSelection.contains(hobby.0) {
-                                                    currentSelection.remove(hobby.0)
-                                                } else {
-                                                    currentSelection.insert(hobby.0)
-                                            }
-                                            }
-                                        }
+                            // Section header on its own line
+                            HStack {
+                                Text("\(sectionEmoji) \(sectionName)")
+                                    .font(.LeagueSpartan(size: 18))
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(Colors.primaryDark)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                Spacer()
+                            }
+                            .padding(.top, sectionIndex == 0 ? 0 : 20)
+                            .padding(.bottom, 8)
+                            .padding(.horizontal, 32)
+
+                            // Buttons for this section in a grid
+                            let sectionButtonData = HobbiesData.getSectionButtonsToShow(for: sectionName, buttons: sectionButtons, expandedButtons: expandedButtons)
+                            
+                            LazyVGrid(columns: [
+                                GridItem(.flexible(), spacing: 12),
+                                GridItem(.flexible(), spacing: 12)
+                            ], spacing: 12) {
+                                ForEach(sectionButtonData, id: \.id) { buttonData in
+                                    HobbyButton(
+                                        text: buttonData.text,
+                                        emoji: buttonData.emoji,
+                                        isSelected: currentSelection.contains(buttonData.text),
+                                        borderWidth: buttonData.isTopLevel ? 2 : 1
+                                    ) {
+                                        handleHobbyButtonTap(buttonData: buttonData)
                                     }
                                 }
-                                .padding(.horizontal)
                             }
+                            .padding(.horizontal, 32)
                         }
                     }
+                    .padding(.top, 20)
                 }
+
+                Spacer()
+
+                // Done button
+                HStack {
+                    Spacer()
+                    Button(action: {
+                        onHobbiesSelected(currentSelection)
+                    }) {
+                        Text("done")
+                            .font(.LibreBodoni(size: 18))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 40)
+                            .padding(.vertical, 12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 25)
+                                    .fill(Colors.primaryDark)
+                            )
+                    }
+                    .padding(.bottom, 20)
+                }
+                .padding(.horizontal, 32)
             }
             .navigationTitle("Select Hobbies")
             .navigationBarTitleDisplayMode(.inline)
@@ -736,11 +816,35 @@ struct HobbiesSelectionView: View {
                         dismiss()
                     }
                 }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
-                        onHobbiesSelected(currentSelection)
-                    }
+            }
+        }
+    }
+    
+    // MARK: - Helper Functions
+    
+    private func handleHobbyButtonTap(buttonData: HobbiesData.ButtonData) {
+        if buttonData.isTopLevel {
+            // Top-level button: toggle expansion and selection
+            withAnimation(.easeInOut(duration: 0.3)) {
+                if expandedButtons.contains(buttonData.text) {
+                    expandedButtons.remove(buttonData.text)
+                } else {
+                    expandedButtons.insert(buttonData.text)
                 }
+            }
+
+            // Also toggle selection
+            if currentSelection.contains(buttonData.text) {
+                currentSelection.remove(buttonData.text)
+            } else {
+                currentSelection.insert(buttonData.text)
+            }
+        } else {
+            // Sub-level button: only toggle selection
+            if currentSelection.contains(buttonData.text) {
+                currentSelection.remove(buttonData.text)
+            } else {
+                currentSelection.insert(buttonData.text)
             }
         }
     }
@@ -841,6 +945,8 @@ struct ProfileView: View {
     @State private var editingGender: String = ""
     @State private var editingRelationStatus: String = ""
     @State private var editingJob: String = ""
+    @State private var editingAlmaMater: String = ""
+    @State private var editingGradYear: String = ""
     @State private var editingBio: String = ""
     @State private var editingInterests: [String] = []
     @State private var editingAddress: String = ""
@@ -864,25 +970,27 @@ struct ProfileView: View {
                     HStack(spacing: 18) {
                         // Edit/Save button
                         Button(action: {
-                        if isEditing {
-                            // Show loading spinner immediately
-                            isSaving = true
+                            // TEMP - JUST FOR SAVE ERROR DEBUG
+                            print("🔍 DEBUG: Save/Edit button tapped! isEditing: \(isEditing)")
+                            if isEditing {
+                                // Show loading spinner immediately
+                                isSaving = true
 
-                            // Save changes and wait for completion before toggling
-                            saveChanges { success in
-                                DispatchQueue.main.async {
-                                    isSaving = false
-                                    if success {
-                                        isEditing = false
+                                // Save changes and wait for completion before toggling
+                                saveChanges { success in
+                                    DispatchQueue.main.async {
+                                        isSaving = false
+                                        if success {
+                                            isEditing = false
+                                        }
+                                        // If failed, stay in editing mode so user can try again
                                     }
-                                    // If failed, stay in editing mode so user can try again
                                 }
+                            } else {
+                                // Enter editing mode
+                                isEditing = true
+                                initializeEditingState()
                             }
-                        } else {
-                            // Enter editing mode
-                            isEditing = true
-                            initializeEditingState()
-                        }
                         }) {
                         if isSaving {
                             ProgressView()
@@ -909,12 +1017,19 @@ struct ProfileView: View {
                 } else {
                     ScrollView(.vertical, showsIndicators: false) {
                         VStack(spacing: 20) {
+                            // Profile Progress Bar - only show if not 100% complete
+                            let progress = appController.profileModel.calculateProfileProgress()
+                            if progress < 1.0 {
+                                ProfileProgressBar(progress: progress)
+                            }
                             ProfileHeader(
                                 name: isEditing ? $editingName : .constant(appController.profileModel.name),
                                 workLocation: isEditing ? $editingWorkLocation : .constant(appController.profileModel.workLocation),
                                 gender: isEditing ? $editingGender : .constant(appController.profileModel.gender),
                                 relationStatus: isEditing ? $editingRelationStatus : .constant(appController.profileModel.relationStatus),
                                 job: isEditing ? $editingJob : .constant(appController.profileModel.job),
+                                almaMater: isEditing ? $editingAlmaMater : .constant(appController.profileModel.almaMater ?? ""),
+                                gradYear: isEditing ? $editingGradYear : .constant(appController.profileModel.gradYear),
                                 profileImageURL: isEditing ? nil : appController.profileModel.profileImageURL,
                                 age: appController.profileModel.calculatedAge,
                                 address: isEditing ? editingAddress : appController.profileModel.address,
@@ -925,6 +1040,8 @@ struct ProfileView: View {
                                 onGenderChange: { editingGender = $0 },
                                 onRelationStatusChange: { editingRelationStatus = $0 },
                                 onJobChange: { editingJob = $0 },
+                                onAlmaMaterChange: { editingAlmaMater = $0 },
+                                onGradYearChange: { editingGradYear = $0 },
                                 onLocationSelect: {
                                     showingLocationSheet = true
                                 },
@@ -1007,7 +1124,7 @@ struct ProfileView: View {
         }
         .navigationBarBackButtonHidden()
         .sheet(isPresented: $showingLocationSheet) {
-            LocationSelectionView(
+            LocationSelectionPopup(
                 currentAddress: editingAddress,
                 onLocationSelected: { address, coordinate in
                     editingAddress = address
@@ -1029,11 +1146,13 @@ struct ProfileView: View {
 
     private func initializeEditingState() {
         editingName = appController.profileModel.name
-        editingWorkLocation = appController.profileModel.workLocation
-        editingGender = appController.profileModel.gender
+        editingWorkLocation = appController.profileModel.workLocation.lowercased()
+        editingGender = appController.profileModel.gender.lowercased()
         editingRelationStatus = appController.profileModel.relationStatus
         editingJob = appController.profileModel.job
-        editingBio = appController.profileModel.bio
+        editingAlmaMater = (appController.profileModel.almaMater ?? "").lowercased()
+        editingGradYear = appController.profileModel.gradYear
+        editingBio = appController.profileModel.bio.lowercased()
         editingInterests = appController.profileModel.interests
         editingAddress = appController.profileModel.address
         editingLatitude = appController.profileModel.latitude
@@ -1044,6 +1163,10 @@ struct ProfileView: View {
     }
 
     private func saveChanges(completion: @escaping (Bool) -> Void) {
+        // TEMP - JUST FOR SAVE ERROR DEBUG
+        print("🔍 DEBUG: saveChanges function called!")
+        Log.debug("📱 ProfileView: Starting save process")
+        
         // Check if any changes were actually made
         let hasChanges = editingName != appController.profileModel.name ||
                         editingInterests != appController.profileModel.interests ||
@@ -1054,15 +1177,35 @@ struct ProfileView: View {
                         editingWorkLocation != appController.profileModel.workLocation ||
                         editingRelationStatus != appController.profileModel.relationStatus ||
                         editingGender != appController.profileModel.gender ||
+                        editingAlmaMater != (appController.profileModel.almaMater ?? "") ||
+                        editingGradYear != appController.profileModel.gradYear ||
                         editingProfileImage != nil ||
                         editingExtraImages.contains { $0 != nil }
 
+        // TEMP - JUST FOR SAVE ERROR DEBUG
+        print("🔍 DEBUG: Has changes: \(hasChanges)")
+        Log.debug("📱 ProfileView: Has changes: \(hasChanges)")
+        Log.debug("📱 ProfileView: Changes detected:")
+        Log.debug("  - Name: \(editingName) vs \(appController.profileModel.name)")
+        Log.debug("  - Interests: \(editingInterests) vs \(appController.profileModel.interests)")
+        Log.debug("  - Bio: \(editingBio) vs \(appController.profileModel.bio)")
+        Log.debug("  - Job: \(editingJob) vs \(appController.profileModel.job)")
+        Log.debug("  - WorkLocation: \(editingWorkLocation) vs \(appController.profileModel.workLocation)")
+        Log.debug("  - RelationStatus: \(editingRelationStatus) vs \(appController.profileModel.relationStatus)")
+        Log.debug("  - Gender: \(editingGender) vs \(appController.profileModel.gender)")
+
         if !hasChanges {
+            // TEMP - JUST FOR SAVE ERROR DEBUG
+            print("🔍 DEBUG: No changes detected, skipping save")
             Log.debug("📱 No changes detected in ProfileView, skipping save")
             completion(true) // Return success since there's nothing to save
             return
         }
 
+        // TEMP - JUST FOR SAVE ERROR DEBUG
+        print("🔍 DEBUG: Calling updateProfile with changes")
+        Log.debug("📱 ProfileView: Calling updateProfile with changes")
+        
         // Update the ProfileModel with all changes (images and text fields)
         appController.profileModel.updateProfile(
             name: editingName,
@@ -1070,6 +1213,8 @@ struct ProfileView: View {
             bio: editingBio,
             latitude: editingLatitude,
             longitude: editingLongitude,
+            almaMater: editingAlmaMater,
+            gradYear: editingGradYear,
             job: editingJob,
             workLocation: editingWorkLocation,
             relationStatus: editingRelationStatus,
@@ -1077,14 +1222,32 @@ struct ProfileView: View {
             profileImage: editingProfileImage,
             extraImages: editingExtraImages
         ) { result in
+            // TEMP - JUST FOR SAVE ERROR DEBUG
+            print("🔍 DEBUG: updateProfile completion called with result: \(result)")
+            Log.debug("📱 ProfileView: updateProfile completion called with result: \(result)")
             switch result {
             case .success:
                 // No action needed
+                // TEMP - JUST FOR SAVE ERROR DEBUG
+                print("🔍 DEBUG: Profile updated successfully")
                 Log.debug("✅ Profile updated successfully")
                 // The ProfileModel will automatically update its properties after successful backend call
                 completion(true)
             case .failure(let error):
+                // TEMP - JUST FOR SAVE ERROR DEBUG
+                print("🔍 DEBUG: Failed to update profile: \(error)")
                 Log.debug("❌ Failed to update profile: \(error)")
+                
+                // Check if it's an auth error and handle it
+                if case .authError(let authError) = error {
+                    print("🔍 DEBUG: Auth error detected - token may be invalid")
+                    // Force sign out and clear data to handle invalid token
+                    DispatchQueue.main.async {
+                        try? Auth.auth().signOut()
+                        self.appController.clearAllData()
+                    }
+                }
+                
                 // TODO: Show error message to user
                 completion(false)
             }

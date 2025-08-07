@@ -157,7 +157,10 @@ struct EventSummaryView: View {
                 if type == .calendar {
                     HStack(spacing: 24) {
                         HStack(spacing: 6) {
-                            Image("location-pin")
+                            Image("locationIcon")
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 16, height: 16)
                                 .foregroundColor(Colors.primaryDark)
                             Text(firstLocationPart(event.location))
                                 .font(.LibreBodoniSemiBold(size: 13))

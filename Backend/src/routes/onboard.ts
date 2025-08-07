@@ -134,6 +134,7 @@ export const handleOnboard = async (event: APIGatewayProxyEvent): Promise<APIGat
       longitude,
       city,  // Add city field
       almaMater,
+      gradYear,
       job,
       workLocation,
       relationStatus,
@@ -214,6 +215,7 @@ export const handleOnboard = async (event: APIGatewayProxyEvent): Promise<APIGat
       latitude: finalLatitude,
       longitude: finalLongitude,
       almaMater,
+      gradYear,
       job,
       workLocation,
       relationStatus,
@@ -265,6 +267,7 @@ export const handleOnboard = async (event: APIGatewayProxyEvent): Promise<APIGat
             latitude: finalLatitude || null,
             longitude: finalLongitude || null,
             almaMater: almaMater || null,
+            gradYear: gradYear || null,
             job: job || null,
             workLocation: workLocation || null,
             relationStatus: relationStatus || null,

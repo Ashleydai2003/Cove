@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		3C2025352DBCC2BE00D78C65 /* TmpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C2025342DBCC2BE00D78C65 /* TmpView.swift */; };
 		3C29BAAE2DBC90B700C73EC3 /* Inject in Frameworks */ = {isa = PBXBuildFile; productRef = 3C29BAAD2DBC90B700C73EC3 /* Inject */; };
 		3CFAEF792DBDCA4700148161 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 3CFAEF782DBDCA4700148161 /* FirebaseAnalytics */; };
 		3CFAEF7B2DBDCA4700148161 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 3CFAEF7A2DBDCA4700148161 /* FirebaseAuth */; };
@@ -27,7 +26,6 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		3C2025342DBCC2BE00D78C65 /* TmpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TmpView.swift; sourceTree = "<group>"; };
 		C44B02E62DADAFAF00AFF42B /* Cove.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Cove.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C4BB599E2E2A452B009F61E0 /* CoveUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CoveUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		C4D6AE182DC47CDB00A39472 /* Cove.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Cove.entitlements; sourceTree = "<group>"; };
@@ -108,7 +106,6 @@
 			children = (
 				C4D6AE182DC47CDB00A39472 /* Cove.entitlements */,
 				3CFAEF742DBDC7CA00148161 /* SupportingFiles */,
-				3C2025342DBCC2BE00D78C65 /* TmpView.swift */,
 				3C2024B02DBCA92B00D78C65 /* Utilities */,
 				3C2024AC2DBCA92500D78C65 /* App */,
 				3C2024772DBCA74500D78C65 /* Views */,
@@ -252,7 +249,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				3C2025352DBCC2BE00D78C65 /* TmpView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
