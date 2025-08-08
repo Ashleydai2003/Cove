@@ -136,6 +136,7 @@
 				C44B02E22DADAFAF00AFF42B /* Sources */,
 				C44B02E32DADAFAF00AFF42B /* Frameworks */,
 				C44B02E42DADAFAF00AFF42B /* Resources */,
+				C44F90642E45781E00EED5DB /* Fix Firebase dYSMs */,
 			);
 			buildRules = (
 			);
@@ -246,6 +247,29 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		C44F90642E45781E00EED5DB /* Fix Firebase dYSMs */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/scripts/fix_firebase_dsyms.sh",
+			);
+			name = "Fix Firebase dYSMs";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/fix_firebase_dsyms.done",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\nif [ \"${CONFIGURATION}\" = \"Release\" ]; then\n    \"${SRCROOT}/scripts/fix_firebase_dsyms.sh\"\n    touch \"${DERIVED_FILE_DIR}/fix_firebase_dsyms.done\"\nfi\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		C44B02E22DADAFAF00AFF42B /* Sources */ = {
