@@ -13,44 +13,49 @@ import UserNotifications
 import IQKeyboardManagerSwift
 
 class FirebaseSetup: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserNotificationCenterDelegate {
-    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Configure Firebase
-        FirebaseApp.configure()
-        
-        // Configure Crashlytics
-        configureCrashlytics()
-        
-        // Set messaging delegate
-        Messaging.messaging().delegate = self
-        
-        // Set notification delegate
-        UNUserNotificationCenter.current().delegate = self
-        
-        // Request notification permissions
-        UNUserNotificationCenter.current().requestAuthorization(
-            options: [.alert, .badge, .sound],
-            completionHandler: { _, _ in }
-        )
-        
-        // Register for remote notifications
-        application.registerForRemoteNotifications()
+         func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+         // Configure Firebase
+         FirebaseApp.configure()
+         
+         // Configure Crashlytics
+         configureCrashlytics()
+         
+         // Set messaging delegate
+         Messaging.messaging().delegate = self
+         
+         // Set notification delegate
+         UNUserNotificationCenter.current().delegate = self
+         
+         // Request notification permissions
+         UNUserNotificationCenter.current().requestAuthorization(
+             options: [.alert, .badge, .sound],
+             completionHandler: { granted, error in
+                 if let error = error { Log.error("Notification authorization error: \(error.localizedDescription)") }
+                 Log.debug("Notification permission granted: \(granted)")
+             }
+         )
+         
+         // Register for remote notifications
+         application.registerForRemoteNotifications()
+ 
+         #if DEBUG
+         // Use Firebase Auth emulator for local development
+         Auth.auth().useEmulator(withHost: "localhost", port: 9099)
+         Log.debug("[Firebase] Using Auth emulator at localhost:9099")
+         #endif
+ 
+         // Initialize WebSocket connection after Firebase setup
+         initializeWebSocketConnection()
+ 
+         return true
+     }
 
-        #if DEBUG
-        // Use Firebase Auth emulator for local development
-        Auth.auth().useEmulator(withHost: "localhost", port: 9099)
-        Log.debug("[Firebase] Using Auth emulator at localhost:9099")
-        #endif
-
-        // Initialize WebSocket connection after Firebase setup
-        initializeWebSocketConnection()
-
-        return true
-    }
-
-    // Handle remote notification registration
-    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
-        Auth.auth().setAPNSToken(deviceToken, type: .prod)
-    }
+         // Handle remote notification registration
+     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+         // Provide APNs token to Firebase services
+         Auth.auth().setAPNSToken(deviceToken, type: .prod)
+         Messaging.messaging().apnsToken = deviceToken
+     }
 
     func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
         Log.error("Failed to register for remote notifications: \(error.localizedDescription)")
@@ -82,17 +87,36 @@ class FirebaseSetup: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserN
     
     // MARK: - UNUserNotificationCenterDelegate
     
-    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
-        // Show notification even when app is in foreground
-        completionHandler([[.banner, .sound]])
-    }
+         func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+         // Prefer in-app banner for richer control; fall back to system if requested
+         if let payload = NotificationPayload(content: notification.request.content) {
+             NotificationManager.shared.show(payload)
+             // Suppress system banner when we have a valid in-app payload unless explicitly asked otherwise
+             if payload.inAppOnly {
+                 completionHandler([])
+                 return
+             }
+         }
+         completionHandler([.banner, .sound])
+     }
     
-    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
-        // Handle notification tap
-        let userInfo = response.notification.request.content.userInfo
-        handleNotificationTap(userInfo)
-        completionHandler()
-    }
+         func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
+         // Handle notification tap with validated payload and optional deep-link handling
+         let content = response.notification.request.content
+         if let payload = NotificationPayload(content: content) {
+             if let url = payload.deepLink {
+                 // Route via app-level router if available, otherwise openURL
+                 Log.debug("Handling deep link from notification: \(url.absoluteString)")
+                 DispatchQueue.main.async {
+                     UIApplication.shared.open(url, options: [:], completionHandler: nil)
+                 }
+             }
+         } else {
+             // Fallback if payload cannot be parsed; pass raw userInfo for future handling
+             handleNotificationTap(content.userInfo)
+         }
+         completionHandler()
+     }
     
     // MARK: - Helper Methods
     

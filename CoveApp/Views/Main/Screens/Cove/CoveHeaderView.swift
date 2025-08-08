@@ -42,23 +42,23 @@ struct CoveHeaderView: View {
                             .placeholder {
                                 Circle()
                                     .fill(Color.gray.opacity(0.2))
-                                    .frame(maxWidth: 100, maxHeight: 100)
-                                    .overlay(ProgressView().tint(.gray))
+                                    .frame(width: 100, height: 100)
                             }
-                            .onSuccess { result in
-                            }
+                            .onSuccess { result in }
                             .resizable()
+                            .scaleFactor(UIScreen.main.scale)
+                            .setProcessor(DownsamplingImageProcessor(size: CGSize(width: 100 * UIScreen.main.scale, height: 100 * UIScreen.main.scale)))
                             .fade(duration: 0.2)
                             .cacheOriginalImage()
-                            .loadDiskFileSynchronously()
-                            .aspectRatio(1, contentMode: .fill)
-                            .frame(maxWidth: 100, maxHeight: 100)
+                            .cancelOnDisappear(true)
+                            .scaledToFill()
+                            .frame(width: 100, height: 100)
                             .clipShape(Circle())
                     } else {
                         Image("default_cove_pfp")
                             .resizable()
-                            .aspectRatio(1, contentMode: .fill)
-                            .frame(maxWidth: 100, maxHeight: 100)
+                            .scaledToFill()
+                            .frame(width: 100, height: 100)
                             .clipShape(Circle())
                     }
                 }
