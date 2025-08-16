@@ -45,6 +45,7 @@ import {
   handleGetPost,
   handleTogglePostLike,
   handleGetFeed,
+  handleGetOutgoingFriendRequests,
 } from './routes';
 
 export const handler = async (
@@ -85,8 +86,10 @@ export const handler = async (
         return handleGetCoveEvents(event);
       case '/friends':
         return handleGetFriends(event);
-      case '/friend-requests':
-        return handleGetFriendRequests(event);
+             case '/friend-requests':
+         return handleGetFriendRequests(event);
+       case '/outgoing-friend-requests':
+         return handleGetOutgoingFriendRequests(event);
       case '/cove':
         return handleGetCove(event);
       case '/cove-members':
