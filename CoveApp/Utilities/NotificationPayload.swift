@@ -21,14 +21,24 @@ struct NotificationPayload: Equatable {
     let category: String?
     /// Whether we should only show an in-app banner (and suppress system banner) when foreground
     let inAppOnly: Bool
+    /// Strongly-typed app notification kind, when provided by backend
+    let type: NotificationType?
+    /// IDs to support navigation
+    let actorUserId: String?
+    let coveId: String?
+    let eventId: String?
 
     /// Designated initializer used internally after validation
-    private init(title: String, body: String, deepLink: URL?, category: String?, inAppOnly: Bool) {
+    private init(title: String, body: String, deepLink: URL?, category: String?, inAppOnly: Bool, type: NotificationType?, actorUserId: String?, coveId: String?, eventId: String?) {
         self.title = title
         self.body = body
         self.deepLink = deepLink
         self.category = category
         self.inAppOnly = inAppOnly
+        self.type = type
+        self.actorUserId = actorUserId
+        self.coveId = coveId
+        self.eventId = eventId
     }
 
     /// Maximum lengths to defend against overly large payloads
@@ -52,6 +62,10 @@ struct NotificationPayload: Equatable {
         self.deepLink = nil
         self.category = content.categoryIdentifier.isEmpty ? nil : content.categoryIdentifier
         self.inAppOnly = false
+        self.type = nil
+        self.actorUserId = nil
+        self.coveId = nil
+        self.eventId = nil
     }
 
     /// Create a payload by validating and sanitizing a `userInfo` dictionary (APNS/FCM)
@@ -111,12 +125,23 @@ extension NotificationPayload {
             ?? Bool((userInfo["in_app_only"] as? String) ?? "false")
             ?? false
 
+        let type = NotificationType.from(userInfo["type"]) ?? NotificationType.from(userInfo["notification_type"]) 
+        let actorUserId = (userInfo["actor_user_id"] as? String).flatMap { sanitize($0, maxLen: 64) }
+        let coveId = (userInfo["cove_id"] as? String).flatMap { sanitize($0, maxLen: 64) }
+        let eventId = (userInfo["event_id"] as? String).flatMap { sanitize($0, maxLen: 64) }
+        // RSVP count or attendee name can be optionally provided for richer UI later
+        let _ = userInfo["rsvp_user_id"] as? String
+
         return NotificationPayload(
             title: title,
             body: body,
             deepLink: deepLink,
             category: category,
-            inAppOnly: inAppOnlyFlag
+            inAppOnly: inAppOnlyFlag,
+            type: type,
+            actorUserId: actorUserId,
+            coveId: coveId,
+            eventId: eventId
         )
     }
 

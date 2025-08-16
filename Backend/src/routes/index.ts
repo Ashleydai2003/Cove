@@ -8,7 +8,7 @@ export { handleUserImage, handleUserImageUpdate } from './userImage';
 export { handleContacts } from './contacts';
 export { handleCreateEvent, handleGetCoveEvents, handleGetCalendarEvents, handleGetEvent, handleUpdateEventRSVP } from './event';
 export { handleCreateCove, handleGetCove, handleGetCoveMembers, handleGetUserCoves, handleJoinCove } from './cove';
-export { handleSendFriendRequest, handleResolveFriendRequest, handleGetFriends, handleGetFriendRequests, handleGetRecommendedFriends } from './friend';
+export { handleSendFriendRequest, handleResolveFriendRequest, handleGetFriends, handleGetFriendRequests, handleGetRecommendedFriends, handleGetOutgoingFriendRequests } from './friend';
 export { handleDeleteUser, handleDeleteEvent } from './delete';
 export { handleSendInvite, handleGetInvites, handleOpenInvite, handleRejectInvite } from './invites';
 export { handleCreateThread, handleSendMessage, handleGetThreads, handleGetThreadMessages, handleMarkMessageRead, handleUpdateFCMToken } from './messaging';
