@@ -14,25 +14,27 @@ struct CoveCardView: View {
                         .placeholder {
                             Rectangle()
                                 .fill(Color.gray.opacity(0.2))
-                                .frame(maxWidth: 80, maxHeight: 80)
+                                .frame(width: 80, height: 80)
                                 .clipShape(RoundedRectangle(cornerRadius: 12))
-                                .overlay(ProgressView().tint(.gray))
                         }
                         .onSuccess { result in
                         }
                         .resizable()
+                        .scaleFactor(UIScreen.main.scale)
+                        .setProcessor(DownsamplingImageProcessor(size: CGSize(width: 80 * UIScreen.main.scale, height: 80 * UIScreen.main.scale)))
                         .fade(duration: 0.2)
                         .cacheOriginalImage()
                         .loadDiskFileSynchronously()
-                        .aspectRatio(1, contentMode: .fill)
+                        .cancelOnDisappear(true)
+                        .scaledToFill()
+                        .frame(width: 80, height: 80)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
-                        .frame(maxWidth: 80, maxHeight: 80)
                 } else {
                     Image("default_cove_pfp")
                         .resizable()
-                        .aspectRatio(1, contentMode: .fill)
+                        .scaledToFill()
+                        .frame(width: 80, height: 80)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
-                        .frame(maxWidth: 80, maxHeight: 80)
                 }
 
                 VStack(alignment: .leading, spacing: 4) {

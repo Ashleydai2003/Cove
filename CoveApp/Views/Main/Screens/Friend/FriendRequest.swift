@@ -139,23 +139,29 @@ struct RequestRowView: View {
             // Profile photo
             if let url = imageUrl {
                 KFImage(url)
-                    .resizable()
                     .placeholder {
                         Circle()
                             .fill(Color.gray.opacity(0.2))
+                            .frame(width: 48, height: 48)
                             .overlay(
                                 Image(systemName: "person.fill")
                                     .foregroundColor(.gray)
                                     .font(.system(size: 20))
                             )
                     }
-                    .aspectRatio(1, contentMode: .fill)
+                    .resizable()
+                    .scaleFactor(UIScreen.main.scale)
+                    .setProcessor(DownsamplingImageProcessor(size: CGSize(width: 48 * UIScreen.main.scale, height: 48 * UIScreen.main.scale)))
+                    .fade(duration: 0.2)
+                    .cacheOriginalImage()
+                    .cancelOnDisappear(true)
+                    .scaledToFill()
                     .frame(width: 48, height: 48)
                     .clipShape(Circle())
             } else {
                 Image("default_user_pfp")
                     .resizable()
-                    .aspectRatio(1, contentMode: .fill)
+                    .scaledToFill()
                     .frame(width: 48, height: 48)
                     .clipShape(Circle())
             }

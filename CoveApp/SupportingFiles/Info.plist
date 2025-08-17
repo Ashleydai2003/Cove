@@ -33,10 +33,10 @@
 	<string>1</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
-	<key>NSContactsUsageDescription</key>
-	<string>We need access to your contacts to see who's already on Cove.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>We need access to your camera so you can take and upload photos to your profile and events.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>We need access to your contacts to see who's already on Cove.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>We use your location to show relevant events and features near you.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
@@ -62,8 +62,8 @@
 	<true/>
 	<key>UIBackgroundModes</key>
 	<array>
-		<string>fetch</string>
 		<string>remote-notification</string>
+		<string>fetch</string>
 	</array>
 	<key>UILaunchScreen</key>
 	<dict/>

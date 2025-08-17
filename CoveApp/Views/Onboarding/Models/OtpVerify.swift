@@ -33,8 +33,8 @@ struct OtpVerify {
                     Log.debug("Successfully verified OTP and signed in")
                     
                     // Get Firebase ID token for backend authentication
-                    authResult?.user.getIDToken { token, error in
-                        if let token = token {
+                    authResult?.user.getIDToken { _, error in
+                        if error == nil {
                             Log.debug("Firebase ID token obtained successfully")
                         } else if let error = error {
                             Log.error("Error getting Firebase token: \(error.localizedDescription)")
@@ -118,12 +118,13 @@ struct OtpVerify {
                         AppController.shared.profileModel.verified = loginResponse.user.verified
 
                         if loginResponse.user.onboarding {
-                            // DEV MODE: Skip all onboarding steps and go directly to plugging in
-                            Log.debug("DEV MODE: Skipping onboarding, proceeding directly to plugging in")
-                            AppController.shared.path = [.pluggingIn]
-                            AppController.shared.hasCompletedOnboarding = true
+                            // User needs to complete onboarding - start onboarding flow
+                            Log.debug("User needs onboarding, starting onboarding flow")
+                            AppController.shared.path = [.userDetails]
+                            AppController.shared.hasCompletedOnboarding = false
                         } else {
                             // User has completed onboarding - go to data loading screen
+                            Log.debug("User has completed onboarding, proceeding to main app")
                             AppController.shared.path = [.pluggingIn]
                             AppController.shared.hasCompletedOnboarding = true
                         }

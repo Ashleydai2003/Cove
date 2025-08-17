@@ -40,15 +40,8 @@ struct InviteView: View {
                             .placeholder {
                                 Rectangle()
                                     .fill(Color.white.opacity(0.9))
-                                    .overlay(
-                                        VStack(spacing: 6) {
-                                            ProgressView()
-                                                .foregroundColor(.gray)
-                                            Text("Loading...")
-                                                .font(.LibreBodoni(size: 12))
-                                                .foregroundColor(.gray)
-                                        }
-                                    )
+                                    .frame(height: 192)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
                             }
                             .onSuccess { result in
                                 Log.debug("✅ InviteView: Successfully loaded cove cover photo from \(coverPhotoUrlString)")
@@ -57,21 +50,24 @@ struct InviteView: View {
                                 Log.debug("❌ InviteView: Failed to load cove cover photo from \(coverPhotoUrlString): \(error)")
                             }
                             .resizable()
-                            .aspectRatio(3/2, contentMode: .fill)
-                            .clipped()
-                            .onAppear {
-                            }
+                            .scaleFactor(UIScreen.main.scale)
+                            .fade(duration: 0.2)
+                            .cacheOriginalImage()
+                            .cancelOnDisappear(true)
+                            .scaledToFill()
+                            .frame(height: 192)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
                     } else {
                         Image("default_cove_pfp")
                             .resizable()
-                            .aspectRatio(3/2, contentMode: .fill)
-                            .clipped()
+                            .scaledToFill()
+                            .frame(height: 192)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
                             .onAppear {
                                 Log.debug("🔄 InviteView: Using default cover photo placeholder (no URL) for invite \(invite.id)")
                             }
                     }
                 }
-                .frame(maxHeight: .infinity)
                 .id("photo-\(invite.id)-\(invite.cove.coverPhotoUrl ?? "none")")  // Force refresh when photo URL changes
 
                 // Bottom section
