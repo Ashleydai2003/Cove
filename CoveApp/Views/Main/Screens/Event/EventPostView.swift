@@ -192,20 +192,21 @@ struct EventPostView: View {
                             // Use provided cover photo first, fallback to fetched event data
                             let covePhotoUrl = coveCoverPhoto?.url ?? event.cove.coverPhoto?.url
                             if let urlString = covePhotoUrl, !urlString.isEmpty, let url = URL(string: urlString) {
-                                CachedAsyncImage(url: url) { image in
-                                image
+                                KFImage(url)
+                                    .placeholder {
+                                        Circle()
+                                            .fill(Color.gray.opacity(0.2))
+                                            .frame(width: 100, height: 100)
+                                    }
                                     .resizable()
+                                    .scaleFactor(UIScreen.main.scale)
+                                    .setProcessor(DownsamplingImageProcessor(size: CGSize(width: 100 * UIScreen.main.scale, height: 100 * UIScreen.main.scale)))
+                                    .fade(duration: 0.2)
+                                    .cacheOriginalImage()
+                                    .cancelOnDisappear(true)
                                     .scaledToFill()
-                            } placeholder: {
-                                Rectangle()
-                                    .fill(Color.gray.opacity(0.2))
-                                    .overlay(
-                                        ProgressView()
-                                            .tint(.gray)
-                                    )
-                            }
-                            .frame(width: 100, height: 100)
-                            .clipShape(Circle())
+                                    .frame(width: 100, height: 100)
+                                    .clipShape(Circle())
                             } else {
                                 // Default cove image when no cover photo is available
                                 Image("default_cove_pfp")
@@ -244,17 +245,13 @@ struct EventPostView: View {
                                         .fill(Color.gray.opacity(0.2))
                                         .frame(height: 192)
                                         .clipShape(RoundedRectangle(cornerRadius: 10))
-                                        .overlay(
-                                            ProgressView()
-                                                .tint(Colors.primaryDark)
-                                        )
                                 }
                                 .onSuccess { result in
                                 }
                                 .resizable()
                                 .fade(duration: 0.2)
                                 .cacheOriginalImage()
-                                .loadDiskFileSynchronously()
+                                .cancelOnDisappear(true)
                                 .aspectRatio(contentMode: .fill)
                                 .clipShape(RoundedRectangle(cornerRadius: 10))
                                 .frame(height: 192)
@@ -329,23 +326,18 @@ struct EventPostView: View {
                                                 .placeholder {
                                                     Circle()
                                                         .fill(Color.gray.opacity(0.2))
-                                                        .frame(maxWidth: 62, maxHeight: 62)
-                                                        .overlay(
-                                                            Image(systemName: "person.fill")
-                                                                .foregroundColor(.gray)
-                                                                .font(.system(size: 25))
-                                                        )
-                                                }
-                                                .onSuccess { result in
+                                                        .frame(width: 62, height: 62)
                                                 }
                                                 .onFailure { error in
                                                     Log.debug("❌ Failed to load profile photo: \(error)")
                                                 }
                                                 .resizable()
+                                                .scaleFactor(UIScreen.main.scale)
+                                                .setProcessor(DownsamplingImageProcessor(size: CGSize(width: 62 * UIScreen.main.scale, height: 62 * UIScreen.main.scale)))
                                                 .fade(duration: 0.2)
                                                 .cacheOriginalImage()
-                                                .loadDiskFileSynchronously()
-                                                .aspectRatio(1, contentMode: .fill)
+                                                .cancelOnDisappear(true)
+                                                .scaledToFill()
                                                 .frame(width: 62, height: 62)
                                                 .clipShape(Circle())
                                         } else {

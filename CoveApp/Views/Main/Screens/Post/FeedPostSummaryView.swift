@@ -8,6 +8,11 @@ struct FeedPostSummaryView: View {
     @EnvironmentObject private var appController: AppController
     var viewModel: CoveModel?
 
+    // Optimistic local like state
+    @State private var localIsLiked: Bool = false
+    @State private var localLikeCount: Int = 0
+    @State private var initialized = false
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Time-ago label at top right (like EventSummaryView)
@@ -61,13 +66,13 @@ struct FeedPostSummaryView: View {
                     
                     // Like count and interaction at bottom right
                     Button(action: {
-                        toggleLike(for: post)
+                        toggleLike()
                     }) {
                         HStack(spacing: 4) {
-                            Image(systemName: post.isLiked ? "heart.fill" : "heart")
-                                .foregroundColor(post.isLiked ? .red : .gray)
+                            Image(systemName: localIsLiked ? "heart.fill" : "heart")
+                                .foregroundColor(localIsLiked ? .red : .gray)
                                 .font(.system(size: 14))
-                            Text("\(post.likeCount)")
+                            Text("\(localLikeCount)")
                                 .font(.LibreBodoniSemiBold(size: 13))
                                 .foregroundColor(.black)
                         }
@@ -81,20 +86,26 @@ struct FeedPostSummaryView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 12)
+        .onAppear {
+            if !initialized {
+                localIsLiked = post.isLiked
+                localLikeCount = post.likeCount
+                initialized = true
+            }
+        }
     }
 
-    /// Toggles the like status for a post
-    private func toggleLike(for post: CovePost) {
-        guard let viewModel = viewModel else {
-            Log.debug("No view model available for like toggle")
-            return
-        }
-        
-        viewModel.togglePostLike(postId: post.id) { success in
-            if success {
-                Log.debug("✅ Post like toggled successfully")
-            } else {
-                Log.debug("❌ Post like toggle failed")
+    private func toggleLike() {
+        // Optimistic update
+        localIsLiked.toggle()
+        localLikeCount += localIsLiked ? 1 : -1
+
+        let model = viewModel ?? appController.coveFeed.getOrCreateCoveModel(for: post.coveId)
+        model.togglePostLike(postId: post.id) { success in
+            if !success {
+                // Revert on failure
+                localIsLiked.toggle()
+                localLikeCount += localIsLiked ? 1 : -1
             }
         }
     }

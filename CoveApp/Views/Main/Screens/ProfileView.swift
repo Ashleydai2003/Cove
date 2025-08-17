@@ -1227,7 +1227,7 @@ struct ProfileView: View {
                 Log.debug("❌ Failed to update profile: \(error)")
                 
                 // Check if it's an auth error and handle it
-                if case .authError(let authError) = error {
+                if case .authError(_) = error {
                     Log.debug("Auth error detected - token may be invalid")
                     // Force sign out and clear data to handle invalid token
                     DispatchQueue.main.async {

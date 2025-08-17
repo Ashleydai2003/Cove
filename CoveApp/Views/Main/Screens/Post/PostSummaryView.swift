@@ -15,6 +15,11 @@ struct PostSummaryView: View {
     @EnvironmentObject private var appController: AppController
     var viewModel: CoveModel?
 
+    // Optimistic local state for like toggling
+    @State private var localIsLiked: Bool = false
+    @State private var localLikeCount: Int = 0
+    @State private var initialized = false
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
 
@@ -96,43 +101,49 @@ struct PostSummaryView: View {
                     )
                     .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
 
-                                    // Like count and interaction
-                    HStack(spacing: 8) {
-                        Button(action: {
-                            toggleLike(for: post)
-                        }) {
-                            HStack(spacing: 4) {
-                                Image(systemName: post.isLiked ? "heart.fill" : "heart")
-                                    .foregroundColor(post.isLiked ? .red : .gray)
-                                    .font(.system(size: 14))
-                                Text("\(post.likeCount)")
-                                    .font(.LibreBodoniSemiBold(size: 13))
-                                    .foregroundColor(.black)
-                            }
+                // Like count and interaction
+                HStack(spacing: 8) {
+                    Button(action: {
+                        toggleLike()
+                    }) {
+                        HStack(spacing: 4) {
+                            Image(systemName: localIsLiked ? "heart.fill" : "heart")
+                                .foregroundColor(localIsLiked ? .red : .gray)
+                                .font(.system(size: 14))
+                            Text("\(localLikeCount)")
+                                .font(.LibreBodoniSemiBold(size: 13))
+                                .foregroundColor(.black)
                         }
-                        .buttonStyle(PlainButtonStyle())
-                        Spacer()
                     }
-                    .padding(.horizontal, 16)
+                    .buttonStyle(PlainButtonStyle())
+                    Spacer()
+                }
+                .padding(.horizontal, 16)
             }
             .padding(.bottom, 4)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 12)
+        .onAppear {
+            if !initialized {
+                localIsLiked = post.isLiked
+                localLikeCount = post.likeCount
+                initialized = true
+            }
+        }
     }
 
-    /// Toggles the like status for a post
-    private func toggleLike(for post: CovePost) {
-        guard let viewModel = viewModel else {
-            Log.debug("No view model available for like toggle")
-            return
-        }
-        
+    private func toggleLike() {
+        // Optimistic update
+        localIsLiked.toggle()
+        localLikeCount += localIsLiked ? 1 : -1
+
+        guard let viewModel else { return }
         viewModel.togglePostLike(postId: post.id) { success in
-            if success {
-                Log.debug("✅ Post like toggled successfully")
-            } else {
-                Log.debug("❌ Post like toggle failed")
+            if !success {
+                // Revert on failure
+                localIsLiked.toggle()
+                localLikeCount += localIsLiked ? 1 : -1
             }
         }
     }
