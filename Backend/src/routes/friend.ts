@@ -4,7 +4,6 @@ import { initializeDatabase } from '../config/database';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { s3Client } from '../config/s3';
-import { sendToUserIds } from '../services/notify';
 
 /**
  * Handles sending friend requests
@@ -77,8 +76,7 @@ export const handleSendFriendRequest = async (event: APIGatewayProxyEvent): Prom
 
     // Check if all target users exist
     const targetUsers = await prisma.user.findMany({
-      where: { id: { in: toUserIds } },
-      select: { id: true, name: true }
+      where: { id: { in: toUserIds } }
     });
 
     if (targetUsers.length !== toUserIds.length) {
@@ -120,19 +118,12 @@ export const handleSendFriendRequest = async (event: APIGatewayProxyEvent): Prom
     const friendRequests = await Promise.all(
       toUserIds.map(toUserId =>
         prisma.friendRequest.create({
-          data: { fromUserId, toUserId }
+          data: {
+            fromUserId,
+            toUserId
+          }
         })
       )
-    );
-
-    // Notify recipients
-    const requester = await prisma.user.findUnique({ where: { id: fromUserId }, select: { name: true } });
-    await sendToUserIds(
-      prisma,
-      toUserIds,
-      'New friend request',
-      `${requester?.name || 'Someone'} sent you a friend request`,
-      { type: 'friend_request_received', actor_user_id: fromUserId, in_app_only: 'true' }
     );
 
     // Return success response
@@ -246,16 +237,6 @@ export const handleResolveFriendRequest = async (event: APIGatewayProxyEvent): P
           user2Id: friendRequest.toUserId
         }
       });
-
-      // Notify original requester that their request was accepted
-      const accepter = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
-      await sendToUserIds(
-        prisma,
-        [friendRequest.fromUserId],
-        'Friend request accepted',
-        `${accepter?.name || 'Someone'} accepted your friend request`,
-        { type: 'friend_request_accepted', actor_user_id: userId, in_app_only: 'true' }
-      );
     }
 
     // Delete the friend request (whether accepted or rejected)
@@ -608,28 +589,6 @@ export const handleGetFriendRequests = async (event: APIGatewayProxyEvent): Prom
     };
   }
 }; 
-
-/**
- * Returns IDs of users that the current user has sent pending friend requests to
- */
-export const handleGetOutgoingFriendRequests = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-  try {
-    if (event.httpMethod !== 'GET') {
-      return { statusCode: 405, body: JSON.stringify({ message: 'Method not allowed. Only GET requests are accepted.' }) };
-    }
-    const authResult = await authMiddleware(event);
-    if ('statusCode' in authResult) { return authResult; }
-    const userId = authResult.user.uid;
-
-    const prisma = await initializeDatabase();
-    const requests = await prisma.friendRequest.findMany({ where: { fromUserId: userId }, select: { toUserId: true } });
-    const ids = requests.map(r => r.toUserId);
-    return { statusCode: 200, body: JSON.stringify({ toUserIds: ids }) };
-  } catch (error) {
-    console.error('Get outgoing friend requests error:', error);
-    return { statusCode: 500, body: JSON.stringify({ message: 'Error retrieving outgoing friend requests', error: error instanceof Error ? error.message : 'Unknown error' }) };
-  }
-};
 
 
 // TODO: there's a lot of database queries here, we should try to optimize this 

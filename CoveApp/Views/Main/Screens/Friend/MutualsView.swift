@@ -58,9 +58,7 @@ struct MutualsView: View {
                 } else {
                     ScrollView {
                         VStack(spacing: 30) {
-                            // Exclude users who have already sent me a request (they appear in RequestsView)
-                            let incomingRequesterIds = Set(appController.requestsViewModel.requests.map { $0.sender.id })
-                            ForEach(viewModel.mutuals.filter { !incomingRequesterIds.contains($0.id) }) { mutual in
+                            ForEach(viewModel.mutuals) { mutual in
                                 NavigationLink(destination: FriendProfileView(userId: mutual.id, initialPhotoUrl: mutual.profilePhotoUrl)) {
                                     HStack(spacing: 16) {
                                         // Profile image (if URL exists, load with KFImage; otherwise placeholder)
@@ -150,8 +148,6 @@ struct MutualsView: View {
         .onAppear {
             // Load mutuals if not already cached (will use cached data if available)
             viewModel.loadNextPageIfStale()
-            // Ensure incoming requests are loaded so we can filter mutuals accordingly
-            appController.requestsViewModel.loadNextPageIfStale()
         }
     }
 }
