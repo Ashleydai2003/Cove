@@ -4,7 +4,6 @@ import { initializeDatabase } from '../config/database';
 import { PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { s3Client } from '../config/s3';
-import { sendToUserIds } from '../services/notify';
 
 // Create a new event
 // This endpoint handles event creation with the following requirements:
@@ -73,19 +72,33 @@ export const handleCreateEvent = async (request: APIGatewayProxyEvent): Promise<
     const cove = await prisma.cove.findUnique({
       where: { id: coveId },
       include: {
-        members: true
+        members: {
+          where: { userId: user.uid }
+        }
       }
     });
 
     // Check if the cove exists in the database
+    // This prevents creating events for non-existent coves and provides a clear 404 error
+    // Example: if someone tries to create an event with coveId: "non-existent-id"
     if (!cove) {
-      return { statusCode: 404, body: JSON.stringify({ message: 'Cove not found' }) };
+      return {
+        statusCode: 404,
+        body: JSON.stringify({
+          message: 'Cove not found'
+        })
+      };
     }
 
     // Check if user is a member of the cove
-    const isMember = cove.members.some(m => m.userId === user.uid);
-    if (!isMember) {
-      return { statusCode: 403, body: JSON.stringify({ message: 'You must be a member of this cove to create events' }) };
+    // Any member of a cove can create events for that cove
+    if (cove.members.length === 0) {
+      return {
+        statusCode: 403,
+        body: JSON.stringify({
+          message: 'You must be a member of this cove to create events'
+        })
+      };
     }
 
     // Create the event in the database
@@ -101,30 +114,48 @@ export const handleCreateEvent = async (request: APIGatewayProxyEvent): Promise<
     });
 
     // Automatically create a "GOING" RSVP for the event host
-    await prisma.eventRSVP.create({ data: { eventId: newEvent.id, userId: user.uid, status: 'GOING' } });
-
-    // Notify cove members (excluding host)
-    const recipientUserIds = cove.members.map(m => m.userId).filter(uid => uid !== user.uid);
-    if (recipientUserIds.length > 0) {
-      await sendToUserIds(
-        prisma,
-        recipientUserIds,
-        'New event in your cove',
-        `${name} at ${location}`,
-        { type: 'cove_event_created', cove_id: coveId, event_id: newEvent.id }
-      );
-    }
+    // This ensures the host automatically appears in their own calendar
+    await prisma.eventRSVP.create({
+      data: {
+        eventId: newEvent.id,
+        userId: user.uid,
+        status: 'GOING'
+      }
+    });
 
     // Handle cover photo upload if provided
     if (coverPhoto) {
-      const eventImage = await prisma.eventImage.create({ data: { eventId: newEvent.id } });
+      // Create a record for the cover photo in the database
+      const eventImage = await prisma.eventImage.create({
+        data: {
+          eventId: newEvent.id
+        }
+      });
+
+      // Get S3 bucket name from environment variables
       const bucketName = process.env.EVENT_IMAGE_BUCKET_NAME;
-      if (!bucketName) throw new Error('EVENT_IMAGE_BUCKET_NAME environment variable is not set');
+      if (!bucketName) {
+        throw new Error('EVENT_IMAGE_BUCKET_NAME environment variable is not set');
+      }
+
+      // Prepare image for S3 upload
       const s3Key = `${newEvent.id}/${eventImage.id}.jpg`;
       const imageBuffer = Buffer.from(coverPhoto, 'base64');
-      const command = new PutObjectCommand({ Bucket: bucketName, Key: s3Key, Body: imageBuffer, ContentType: 'image/jpeg' });
+
+      // Upload image to S3
+      const command = new PutObjectCommand({
+        Bucket: bucketName,
+        Key: s3Key,
+        Body: imageBuffer,
+        ContentType: 'image/jpeg'
+      });
       await s3Client.send(command);
-      await prisma.event.update({ where: { id: newEvent.id }, data: { coverPhotoID: eventImage.id } });
+
+      // Update event with the cover photo reference
+      await prisma.event.update({
+        where: { id: newEvent.id },
+        data: { coverPhotoID: eventImage.id }
+      });
     }
 
     // Return success response with event details
@@ -146,8 +177,15 @@ export const handleCreateEvent = async (request: APIGatewayProxyEvent): Promise<
     console.log('Create event response:', response);
     return response;
   } catch (error) {
+    // Handle any errors that occur during event creation
     console.error('Create event route error:', error);
-    const errorResponse = { statusCode: 500, body: JSON.stringify({ message: 'Error processing create event request', error: error instanceof Error ? error.message : 'Unknown error' }) };
+    const errorResponse = {
+      statusCode: 500,
+      body: JSON.stringify({
+        message: 'Error processing create event request',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      })
+    };
     console.log('Create event error response:', errorResponse);
     return errorResponse;
   }
@@ -550,53 +588,146 @@ export const handleGetEvent = async (event: APIGatewayProxyEvent): Promise<APIGa
   }
 };
 
-// Update RSVP (notify host when someone RSVPs GOING)
+// Update a user's RSVP status for an event
+// This endpoint handles updating RSVP status with the following requirements:
+// 1. User must be authenticated
+// 2. User must be a member of the event's cove
+// 3. Status must be one of: "GOING", "MAYBE", "NOT_GOING"
 export const handleUpdateEventRSVP = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
+    // Validate request method - only POST is allowed
     if (event.httpMethod !== 'POST') {
-      return { statusCode: 405, body: JSON.stringify({ message: 'Method not allowed. Only POST requests are accepted for updating RSVP status.' }) };
+      return {
+        statusCode: 405,
+        body: JSON.stringify({
+          message: 'Method not allowed. Only POST requests are accepted for updating RSVP status.'
+        })
+      };
     }
+
+    // Authenticate the request using Firebase
     const authResult = await authMiddleware(event);
-    if ('statusCode' in authResult) { return authResult; }
-    const user = authResult.user;
-
-    if (!event.body) {
-      return { statusCode: 400, body: JSON.stringify({ message: 'Request body is required' }) };
+    
+    // If auth failed, return the error response
+    if ('statusCode' in authResult) {
+      return authResult;
     }
+
+    // Get the authenticated user's info from Firebase
+    const user = authResult.user;
+    console.log('Authenticated user:', user.uid);
+
+    // Parse and validate request body
+    if (!event.body) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          message: 'Request body is required'
+        })
+      };
+    }
+
+    // Extract required fields from request body
     const { eventId, status } = JSON.parse(event.body);
-    if (!eventId || !status) { return { statusCode: 400, body: JSON.stringify({ message: 'Event ID and RSVP status are required' }) }; }
-    if (!['GOING', 'MAYBE', 'NOT_GOING'].includes(status)) { return { statusCode: 400, body: JSON.stringify({ message: 'Invalid RSVP status. Must be one of: GOING, MAYBE, NOT_GOING' }) }; }
 
+    // Validate required fields
+    if (!eventId || !status) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          message: 'Event ID and RSVP status are required'
+        })
+      };
+    }
+
+    // Validate RSVP status
+    if (!['GOING', 'MAYBE', 'NOT_GOING'].includes(status)) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          message: 'Invalid RSVP status. Must be one of: GOING, MAYBE, NOT_GOING'
+        })
+      };
+    }
+
+    // Initialize database connection
     const prisma = await initializeDatabase();
-    const eventData = await prisma.event.findUnique({ where: { id: eventId }, select: { id: true, coveId: true, hostId: true, name: true, location: true } });
-    if (!eventData) { return { statusCode: 404, body: JSON.stringify({ message: 'Event not found' }) }; }
 
-    // Ensure user is a member of the cove
-    const membership = await prisma.coveMember.findFirst({ where: { coveId: eventData.coveId, userId: user.uid } });
-    if (!membership) { return { statusCode: 403, body: JSON.stringify({ message: 'You must be a member of this cove to RSVP to its events' }) }; }
-
-    const rsvp = await prisma.eventRSVP.upsert({
-      where: { eventId_userId: { eventId, userId: user.uid } },
-      update: { status },
-      create: { eventId, userId: user.uid, status }
+    // Check if user is a member of the event's cove
+    const eventData = await prisma.event.findUnique({
+      where: { id: eventId },
+      include: {
+        cove: {
+          include: {
+            members: {
+              where: { userId: user.uid }
+            }
+          }
+        }
+      }
     });
 
-    // Notify host when someone RSVPs GOING
-    if (status === 'GOING' && eventData.hostId !== user.uid) {
-      const rsvpUser = await prisma.user.findUnique({ where: { id: user.uid }, select: { name: true } });
-      await sendToUserIds(
-        prisma,
-        [eventData.hostId],
-        'New RSVP to your event',
-        `${rsvpUser?.name || 'Someone'} is going to ${eventData.name}`,
-        { type: 'cove_event_rsvp', cove_id: eventData.coveId, event_id: eventData.id }
-      );
+    // Check if event exists
+    if (!eventData) {
+      return {
+        statusCode: 404,
+        body: JSON.stringify({
+          message: 'Event not found'
+        })
+      };
     }
 
-    return { statusCode: 200, body: JSON.stringify({ message: 'RSVP status updated successfully', rsvp: { id: rsvp.id, status: rsvp.status, eventId: rsvp.eventId, userId: rsvp.userId, createdAt: rsvp.createdAt } }) };
+    // Check if user is a member of the cove
+    if (eventData.cove.members.length === 0) {
+      return {
+        statusCode: 403,
+        body: JSON.stringify({
+          message: 'You must be a member of this cove to RSVP to its events'
+        })
+      };
+    }
+
+    // Update or create RSVP using upsert
+    const rsvp = await prisma.eventRSVP.upsert({
+      where: {
+        eventId_userId: {
+          eventId: eventId,
+          userId: user.uid
+        }
+      },
+      update: {
+        status: status
+      },
+      create: {
+        eventId: eventId,
+        userId: user.uid,
+        status: status
+      }
+    });
+
+    // Return success response
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        message: 'RSVP status updated successfully',
+        rsvp: {
+          id: rsvp.id,
+          status: rsvp.status,
+          eventId: rsvp.eventId,
+          userId: rsvp.userId,
+          createdAt: rsvp.createdAt
+        }
+      })
+    };
   } catch (error) {
     console.error('Update RSVP route error:', error);
-    return { statusCode: 500, body: JSON.stringify({ message: 'Error processing RSVP update request', error: error instanceof Error ? error.message : 'Unknown error' }) };
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        message: 'Error processing RSVP update request',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      })
+    };
   }
 };
 

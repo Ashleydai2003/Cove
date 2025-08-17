@@ -145,8 +145,6 @@ class AppController: ObservableObject {
     func initializeAfterLogin() {
         // Initialize inbox - it will call checkForAutoShowInbox when data loads
         inboxViewModel.initialize()
-        // Sync outgoing friend requests so UI shows pending correctly after restart
-        mutualsViewModel.syncPendingOutgoing()
     }
 
     /// Called by InboxViewModel when invites are loaded to check if inbox should auto-show

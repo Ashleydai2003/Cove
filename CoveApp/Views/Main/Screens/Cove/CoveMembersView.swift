@@ -133,29 +133,17 @@ struct MemberRowView: View {
             // Profile photo
             if let profilePhotoUrl = member.profilePhotoUrl {
                 KFImage(profilePhotoUrl)
-                    .placeholder {
-                        Circle()
-                            .fill(Color.gray.opacity(0.2))
-                            .frame(maxWidth: 62, maxHeight: 62)
-                            .overlay(
-                                Image(systemName: "person.fill")
-                                    .foregroundColor(.gray)
-                                    .font(.system(size: 20))
-                            )
-                    }
-                    .onSuccess { result in
-                    }
                     .resizable()
-                    .fade(duration: 0.2)
-                    .cacheOriginalImage()
-                    .loadDiskFileSynchronously()
-                    .aspectRatio(1, contentMode: .fill)
+                    .placeholder {
+                        Images.smily.resizable()
+                    }
+                    .scaledToFill()
                     .frame(width: 48, height: 48)
                     .clipShape(Circle())
             } else {
                 Image("default_user_pfp")
                     .resizable()
-                    .aspectRatio(1, contentMode: .fill)
+                    .scaledToFill()
                     .frame(width: 48, height: 48)
                     .clipShape(Circle())
             }

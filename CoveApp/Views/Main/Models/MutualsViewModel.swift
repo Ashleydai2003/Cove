@@ -84,21 +84,6 @@ class MutualsViewModel: ObservableObject {
         }
     }
 
-    /// Syncs outgoing pending friend requests from backend so UI shows "pending" after app restarts
-    func syncPendingOutgoing() {
-        NetworkManager.shared.get(endpoint: "/outgoing-friend-requests") { [weak self] (result: Result<OutgoingRequestsResponse, NetworkError>) in
-            guard let self = self else { return }
-            DispatchQueue.main.async {
-                switch result {
-                case .success(let response):
-                    self.pendingRequests = Set(response.toUserIds)
-                case .failure(let error):
-                    Log.error("Failed to sync outgoing requests: \(error)")
-                }
-            }
-        }
-    }
-
     func sendFriendRequest(to userId: String) {
         Log.debug("🔗 MUTUALS: Sending friend request to \(userId)")
 
@@ -126,6 +111,3 @@ class MutualsViewModel: ObservableObject {
         }
     }
 }
-
-// MARK: - DTOs
-struct OutgoingRequestsResponse: Codable { let toUserIds: [String] }

@@ -4,7 +4,6 @@ import { authMiddleware } from '../middleware/auth';
 import { initializeDatabase } from '../config/database';
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { sendToUserIds } from '../services/notify';
 
 // Initialize S3 client for generating presigned URLs
 const s3Client = new S3Client({ region: process.env.AWS_REGION || 'us-east-1' });
@@ -189,7 +188,9 @@ export const handleSendInvite = async (event: APIGatewayProxyEvent): Promise<API
     if (!event.body) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ message: 'Request body is required' })
+        body: JSON.stringify({
+          message: 'Request body is required'
+        })
       };
     }
 
@@ -197,16 +198,48 @@ export const handleSendInvite = async (event: APIGatewayProxyEvent): Promise<API
 
     // Validate required fields
     if (!coveId || !phoneNumbers || !Array.isArray(phoneNumbers) || phoneNumbers.length === 0) {
-      return { statusCode: 400, body: JSON.stringify({ message: 'Cove ID and phone numbers array are required' }) };
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          message: 'Cove ID and phone numbers array are required'
+        })
+      };
     }
 
     // Initialize database connection
     const prisma = await initializeDatabase();
 
     // Check if user is an admin of the cove
-    const cove = await prisma.cove.findUnique({ where: { id: coveId }, include: { members: { where: { userId: user.uid, role: 'ADMIN' } } } });
-    if (!cove || cove.members.length === 0) {
-      return { statusCode: 403, body: JSON.stringify({ message: 'Not an admin of the cove' }) };
+    const cove = await prisma.cove.findUnique({
+      where: { id: coveId },
+      include: {
+        members: {
+          where: { 
+            userId: user.uid,
+            role: 'ADMIN'
+          }
+        }
+      }
+    });
+
+    // Check if the cove exists
+    if (!cove) {
+      return {
+        statusCode: 404,
+        body: JSON.stringify({
+          message: 'Cove not found'
+        })
+      };
+    }
+
+    // Check if user is an admin of the cove
+    if (cove.members.length === 0) {
+      return {
+        statusCode: 403,
+        body: JSON.stringify({
+          message: 'You must be an admin of this cove to send invites'
+        })
+      };
     }
 
     // Create invites for each phone number
@@ -276,19 +309,6 @@ export const handleSendInvite = async (event: APIGatewayProxyEvent): Promise<API
       }
     }
 
-    // Notify users who already have accounts (by phone number lookup)
-    const existingUsers = await prisma.user.findMany({ where: { phone: { in: phoneNumbers } }, select: { id: true } });
-    const recipientIds = existingUsers.map(u => u.id);
-    if (recipientIds.length > 0) {
-      await sendToUserIds(
-        prisma,
-        recipientIds,
-        'You have a new cove invite',
-        message ? String(message) : 'Open the app to view your invite',
-        { type: 'cove_invite', cove_id: coveId }
-      );
-    }
-
     // Return success response with results and any errors
     return {
       statusCode: 200,
@@ -300,7 +320,13 @@ export const handleSendInvite = async (event: APIGatewayProxyEvent): Promise<API
     };
   } catch (error) {
     console.error('Send invite route error:', error);
-    return { statusCode: 500, body: JSON.stringify({ message: 'Error processing send invites request', error: error instanceof Error ? error.message : 'Unknown error' }) };
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        message: 'Error processing send invite request',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      })
+    };
   }
 };
 

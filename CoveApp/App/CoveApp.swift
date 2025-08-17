@@ -51,67 +51,62 @@ struct CoveApp: App {
     }
 
     var body: some Scene {
-                 WindowGroup {
-             // Use Group & transitions for smoother authentication switches
-             ZStack {
-                 Group {
-                     #if DEBUG
-                     if SKIP_ONBOARDING_FOR_DEV {
-                         // DEV: Skip onboarding entirely
-                         HomeView()
-                             .environmentObject(appController)
-                             .preferredColorScheme(.light)
-                     } else {
-                         // Normal DEBUG logic
-                         if appController.isLoggedIn {
-                             // Main app flow - tab-based navigation
-                             HomeView()
-                                 .environmentObject(appController)
-                                 .preferredColorScheme(.light)
-                                 .transition(.asymmetric(
-                                     insertion: .move(edge: .trailing).combined(with: .opacity),
-                                     removal: .move(edge: .leading).combined(with: .opacity)
-                                 ))
-                         } else {
-                             // Onboarding flow - linear navigation
-                             OnboardingFlow()
-                                 .environmentObject(appController)
-                                 .preferredColorScheme(.light)
-                                 .transition(.asymmetric(
-                                     insertion: .move(edge: .leading).combined(with: .opacity),
-                                     removal: .move(edge: .trailing).combined(with: .opacity)
-                                 ))
-                         }
-                     }
-                     #else
-                     // RELEASE logic
-                     if appController.isLoggedIn {
-                         // Main app flow - tab-based navigation
-                         HomeView()
-                             .environmentObject(appController)
-                             .preferredColorScheme(.light)
-                             .transition(.asymmetric(
-                                 insertion: .move(edge: .trailing).combined(with: .opacity),
-                                 removal: .move(edge: .leading).combined(with: .opacity)
-                             ))
-                     } else {
-                         // Onboarding flow - linear navigation
-                         OnboardingFlow()
-                             .environmentObject(appController)
-                             .preferredColorScheme(.light)
-                             .transition(.asymmetric(
-                                 insertion: .move(edge: .leading).combined(with: .opacity),
-                                 removal: .move(edge: .trailing).combined(with: .opacity)
-                             ))
-                     }
-                     #endif
-                 }
-
-                 // Overlay in-app notification banner
-                 NotificationOverlay()
-             }
-             .animation(.easeInOut(duration: 0.45), value: appController.isLoggedIn)
-         }
+        WindowGroup {
+            // Use Group & transitions for smoother authentication switches
+            Group {
+                #if DEBUG
+                if SKIP_ONBOARDING_FOR_DEV {
+                    // DEV: Skip onboarding entirely
+                    HomeView()
+                        .environmentObject(appController)
+                        .preferredColorScheme(.light)
+                } else {
+                    // Normal DEBUG logic
+                    if appController.isLoggedIn {
+                        // Main app flow - tab-based navigation
+                        HomeView()
+                            .environmentObject(appController)
+                            .preferredColorScheme(.light)
+                            .transition(.asymmetric(
+                                insertion: .move(edge: .trailing).combined(with: .opacity),
+                                removal: .move(edge: .leading).combined(with: .opacity)
+                            ))
+                    } else {
+                        // Onboarding flow - linear navigation
+                        OnboardingFlow()
+                            .environmentObject(appController)
+                            .preferredColorScheme(.light)
+                            .transition(.asymmetric(
+                                insertion: .move(edge: .leading).combined(with: .opacity),
+                                removal: .move(edge: .trailing).combined(with: .opacity)
+                            ))
+                    }
+                }
+                #else
+                // RELEASE logic
+                if appController.isLoggedIn {
+                    // Main app flow - tab-based navigation
+                    HomeView()
+                        .environmentObject(appController)
+                        .preferredColorScheme(.light)
+                        .transition(.asymmetric(
+                            insertion: .move(edge: .trailing).combined(with: .opacity),
+                            removal: .move(edge: .leading).combined(with: .opacity)
+                        ))
+                } else {
+                    // Onboarding flow - linear navigation
+                    OnboardingFlow()
+                        .environmentObject(appController)
+                        .preferredColorScheme(.light)
+                        .transition(.asymmetric(
+                            insertion: .move(edge: .leading).combined(with: .opacity),
+                            removal: .move(edge: .trailing).combined(with: .opacity)
+                        ))
+                }
+                #endif
+            }
+            .animation(.easeInOut(duration: 0.45), value: appController.isLoggedIn)
+        }
     }
 }
 
