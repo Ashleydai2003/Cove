@@ -151,7 +151,7 @@ struct CitySelectionView: View {
                             
                             // MARK: - Store city
                             Onboarding.storeCity(city: trimmedCity)
-                            appController.path.append(.hobbies)
+                            appController.path.append(.profilePics)
                         }
                 }
             }
