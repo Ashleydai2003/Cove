@@ -4,6 +4,7 @@ import { initializeDatabase } from '../config/database';
 import { PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { s3Client } from '../config/s3';
+import * as admin from 'firebase-admin';
 
 // Create a new event
 // This endpoint handles event creation with the following requirements:
@@ -175,6 +176,46 @@ export const handleCreateEvent = async (request: APIGatewayProxyEvent): Promise<
       })
     };
     console.log('Create event response:', response);
+
+    // Notify cove members (except creator)
+    try {
+      const [members, host] = await Promise.all([
+        prisma.coveMember.findMany({ where: { coveId }, select: { userId: true, user: { select: { fcmToken: true } } } }),
+        prisma.user.findUnique({ where: { id: user.uid }, select: { name: true } })
+      ]);
+      const hostName = host?.name || 'Someone';
+      const coveName = (typeof cove?.name === 'string' && cove?.name) ? cove!.name : 'your cove';
+      for (const m of members) {
+        if (m.userId === user.uid) continue;
+        const token = m.user.fcmToken;
+        if (!token) continue;
+        try {
+          await admin.messaging().send({
+            token,
+            notification: {
+              title: `🎉 ${coveName} just got plans`,
+              body: `${hostName} is hosting "${name}"`
+            },
+            data: {
+              type: 'event_created',
+              eventId: newEvent.id,
+              coveId: coveId
+            },
+            apns: {
+              payload: {
+                aps: {
+                  category: 'EVENT_CATEGORY'
+                }
+              }
+            }
+          });
+        } catch (err) {
+          console.error('Event created notify error:', err);
+        }
+      }
+    } catch (notifyErr) {
+      console.error('Event creation notify error:', notifyErr);
+    }
     return response;
   } catch (error) {
     // Handle any errors that occur during event creation
@@ -704,6 +745,36 @@ export const handleUpdateEventRSVP = async (event: APIGatewayProxyEvent): Promis
         status: status
       }
     });
+
+    // Best-effort notify event host about RSVP update
+    try {
+      const [eventDataFull, rsvper] = await Promise.all([
+        prisma.event.findUnique({ where: { id: eventId }, select: { hostId: true, name: true, coveId: true, hostedBy: { select: { fcmToken: true } } } }),
+        prisma.user.findUnique({ where: { id: user.uid }, select: { name: true } })
+      ]);
+      if (eventDataFull && eventDataFull.hostId !== user.uid) {
+        const hostToken = eventDataFull.hostedBy?.fcmToken;
+        if (hostToken) {
+          const rsvperName = rsvper?.name || 'Someone';
+          const eventName = eventDataFull.name;
+          const statusText = status === 'GOING' ? 'going' : status === 'MAYBE' ? 'maybe' : 'not going';
+          await admin.messaging().send({
+            token: hostToken,
+            notification: {
+              title: `📅 Attendance update for "${eventName}"`,
+              body: `${rsvperName} changed their status to ${statusText}`
+            },
+            data: {
+              type: 'event_rsvp',
+              eventId: eventId,
+              coveId: eventDataFull.coveId
+            }
+          });
+        }
+      }
+    } catch (notifyErr) {
+      console.error('RSVP notify error:', notifyErr);
+    }
 
     // Return success response
     return {

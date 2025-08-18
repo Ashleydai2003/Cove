@@ -4,6 +4,7 @@ import { initializeDatabase } from '../config/database';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { s3Client } from '../config/s3';
+import * as admin from 'firebase-admin';
 
 // Create a new post
 // This endpoint handles post creation with the following requirements:
@@ -128,6 +129,38 @@ export const handleCreatePost = async (request: APIGatewayProxyEvent): Promise<A
       })
     };
     console.log('Create post response:', response);
+
+    // Best-effort notify cove members (except author)
+    try {
+      const [members, author] = await Promise.all([
+        prisma.coveMember.findMany({ where: { coveId }, select: { userId: true, user: { select: { fcmToken: true } } } }),
+        prisma.user.findUnique({ where: { id: user.uid }, select: { name: true } })
+      ]);
+      const authorName = author?.name || 'Someone';
+      for (const m of members) {
+        if (m.userId === user.uid) continue;
+        const token = m.user.fcmToken;
+        if (!token) continue;
+        try {
+          await admin.messaging().send({
+            token,
+            notification: {
+              title: '🗣️ New post in your cove',
+              body: content.length > 80 ? content.slice(0, 77) + '…' : content
+            },
+            data: {
+              type: 'post_created',
+              coveId,
+              postId: newPost.id
+            }
+          });
+        } catch (err) {
+          console.error('Post created notify error:', err);
+        }
+      }
+    } catch (notifyErr) {
+      console.error('Post creation notify error:', notifyErr);
+    }
     return response;
   } catch (error) {
     // Handle any errors that occur during post creation

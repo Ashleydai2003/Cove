@@ -4,6 +4,7 @@ import { authMiddleware } from '../middleware/auth';
 import { initializeDatabase } from '../config/database';
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import * as admin from 'firebase-admin';
 
 // Initialize S3 client for generating presigned URLs
 const s3Client = new S3Client({ region: process.env.AWS_REGION || 'us-east-1' });
@@ -301,6 +302,31 @@ export const handleSendInvite = async (event: APIGatewayProxyEvent): Promise<API
           phoneNumber: invite.phoneNumber,
           createdAt: invite.createdAt
         });
+
+        // If this phone number belongs to an existing user, notify them
+        try {
+          const [recipient, senderUser, coveInfo] = await Promise.all([
+            prisma.user.findUnique({ where: { phone: phoneNumber }, select: { id: true, fcmToken: true } }),
+            prisma.user.findUnique({ where: { id: user.uid }, select: { name: true } }),
+            prisma.cove.findUnique({ where: { id: coveId }, select: { name: true } })
+          ]);
+          if (recipient?.fcmToken) {
+            await admin.messaging().send({
+              token: recipient.fcmToken,
+              notification: {
+                title: '🔓 New cove unlocked',
+                body: `${senderUser?.name || 'Someone'} invited you to join ${coveInfo?.name || 'a cove'}`
+              },
+              data: {
+                type: 'cove_invite',
+                coveId,
+                inviteId: invite.id
+              }
+            });
+          }
+        } catch (notifyErr) {
+          console.error('Invite notify error:', notifyErr);
+        }
       } catch (error) {
         errors.push({
           phoneNumber,

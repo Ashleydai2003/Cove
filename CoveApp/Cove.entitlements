@@ -4,6 +4,5 @@
 <dict>
 	<key>aps-environment</key>
 	<string>production</string>
-	</array>
 </dict>
 </plist>

@@ -2,7 +2,6 @@
 //  WebSocketManager.swift
 //  Cove
 //
-//  Created by AI Assistant on 7/19/25.
 //
 
 import Foundation

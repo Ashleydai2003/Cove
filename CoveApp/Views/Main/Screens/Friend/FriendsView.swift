@@ -75,6 +75,13 @@ struct FriendsView: View {
                         }
                         .padding(.top, 30)
                     }
+                    .refreshable {
+                        await withCheckedContinuation { continuation in
+                            vm.refreshFriends {
+                                continuation.resume()
+                            }
+                        }
+                    }
 
                     Spacer(minLength: 0)
                 }

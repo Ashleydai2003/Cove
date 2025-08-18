@@ -105,7 +105,7 @@ struct UpcomingView: View {
     @ViewBuilder
     private var contentView: some View {
         VStack(spacing: 16) {
-            ForEach(Array(upcomingFeed.items.enumerated()), id: \.element.id) { idx, item in
+            ForEach(Array(sortedItems.enumerated()), id: \.element.id) { idx, item in
                 switch item {
                 case .event(let event):
                     let calendarEvent = CalendarEvent(
@@ -157,6 +157,35 @@ struct UpcomingView: View {
                 LoadingIndicatorView()
             }
         }
+    }
+
+    // Sort items so that:
+    // - Upcoming events (date >= now) appear first, ascending by date
+    // - Posts appear next, descending by createdAt
+    // - Past events (date < now) appear last, descending by date
+    private var sortedItems: [FeedItem] {
+        let now = Date()
+        var upcomingEvents: [(Date, FeedEvent)] = []
+        var posts: [(Date, FeedPost)] = []
+        var pastEvents: [(Date, FeedEvent)] = []
+        for item in upcomingFeed.items {
+            switch item {
+            case .event(let ev):
+                let date = ISO8601DateFormatter().date(from: ev.date) ?? Date.distantPast
+                if date >= now {
+                    upcomingEvents.append((date, ev))
+                } else {
+                    pastEvents.append((date, ev))
+                }
+            case .post(let p):
+                let created = ISO8601DateFormatter().date(from: p.createdAt) ?? Date.distantPast
+                posts.append((created, p))
+            }
+        }
+        upcomingEvents.sort { $0.0 < $1.0 }
+        posts.sort { $0.0 > $1.0 }
+        pastEvents.sort { $0.0 > $1.0 }
+        return upcomingEvents.map { .event($0.1) } + posts.map { .post($0.1) } + pastEvents.map { .event($0.1) }
     }
 
     private func loadMoreIfNeeded(at index: Int) {

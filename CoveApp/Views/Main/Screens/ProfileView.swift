@@ -1259,6 +1259,8 @@ struct ProfileView: View {
         // Add a small delay to make the logout feel more intentional
         // and allow the user to see the loading state
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+            // Clear push token before sign out
+            PushNotifications.clearTokenOnLogout()
             // Attempt Firebase sign-out (safe to ignore error for now)
             try? Auth.auth().signOut()
 

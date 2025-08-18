@@ -18,7 +18,7 @@ struct CoveEventsView: View {
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: 5) {
-                ForEach(viewModel.events, id: \.id) { event in
+                ForEach(sortedEvents, id: \.id) { event in
                     EventSummaryView(event: event, type: .cove)
                         .onAppear {
                             DispatchQueue.main.async {
@@ -61,6 +61,20 @@ struct CoveEventsView: View {
         .refreshable {
             await onRefresh()
         }
+    }
+
+    // Upcoming first (ascending), past last (descending)
+    private var sortedEvents: [CalendarEvent] {
+        let now = Date()
+        var upcoming: [(Date, CalendarEvent)] = []
+        var past: [(Date, CalendarEvent)] = []
+        for ev in viewModel.events {
+            let d = ev.eventDate
+            if d >= now { upcoming.append((d, ev)) } else { past.append((d, ev)) }
+        }
+        upcoming.sort { $0.0 < $1.0 }
+        past.sort { $0.0 > $1.0 }
+        return upcoming.map { $0.1 } + past.map { $0.1 }
     }
 }
 

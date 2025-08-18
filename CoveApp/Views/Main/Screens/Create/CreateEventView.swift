@@ -84,6 +84,11 @@ struct CreateEventView: View {
             ToolbarItem(placement: .keyboard) {
                 keyboardAccessoryView
             }
+            ToolbarItem(placement: .topBarLeading) {
+                Button("cancel") { dismiss() }
+                    .font(.LibreBodoni(size: 16))
+                    .foregroundColor(Colors.primaryDark)
+            }
         }
         .navigationBarBackButtonHidden()
         .onAppear {
