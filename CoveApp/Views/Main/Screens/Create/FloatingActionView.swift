@@ -14,6 +14,9 @@ struct FloatingActionView: View {
     @State private var showCreateEventSheet = false
     @State private var showCreatePostSheet = false
     @State private var showCreateCoveSheet = false
+    @State private var navigateToCreateEvent = false
+    @State private var navigateToCreatePost = false
+    @State private var navigateToCreateCove = false
     @EnvironmentObject private var appController: AppController
 
     // MARK: - Initializer
@@ -31,7 +34,7 @@ struct FloatingActionView: View {
                     if appController.profileModel.verified {
                         Button(action: {
                             showMenu = false
-                            showCreateCoveSheet = true
+                            navigateToCreateCove = true
                         }) {
                             HStack(spacing: 12) {
                                 Text("cove")
@@ -58,7 +61,7 @@ struct FloatingActionView: View {
                     if coveId != nil {
                     Button(action: {
                         showMenu = false
-                        showCreateEventSheet = true
+                        navigateToCreateEvent = true
                     }) {
                         HStack() {
                             Text("event")
@@ -85,7 +88,7 @@ struct FloatingActionView: View {
                     if coveId != nil {
                     Button(action: {
                         showMenu = false
-                        showCreatePostSheet = true
+                        navigateToCreatePost = true
                     }) {
                         HStack() {
                             Text("post")
@@ -132,13 +135,13 @@ struct FloatingActionView: View {
             }
         }
         .animation(.easeInOut(duration: 0.2), value: showMenu)
-        .sheet(isPresented: $showCreateEventSheet) {
+        .navigationDestination(isPresented: $navigateToCreateEvent) {
             CreateEventView(coveId: coveId, onEventCreated: onEventCreated)
         }
-        .sheet(isPresented: $showCreatePostSheet) {
+        .navigationDestination(isPresented: $navigateToCreatePost) {
             CreatePostView(coveId: coveId, onPostCreated: onEventCreated)
         }
-        .sheet(isPresented: $showCreateCoveSheet) {
+        .navigationDestination(isPresented: $navigateToCreateCove) {
             CreateCoveView()
         }
     }

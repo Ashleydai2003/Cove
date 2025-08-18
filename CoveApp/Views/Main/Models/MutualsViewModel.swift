@@ -12,6 +12,7 @@ class MutualsViewModel: ObservableObject {
     @Published var nextCursor: String?
     @Published var hasMore = true
     @Published var isLoading = false
+    @Published var isRefreshing = false
     @Published var errorMessage: String?
     @Published var pendingRequests: Set<String> = []
     @Published var lastFetched: Date?
@@ -107,6 +108,31 @@ class MutualsViewModel: ObservableObject {
                     withAnimation { self.pendingRequests = reverted }
                     self.errorMessage = error.localizedDescription
                 }
+            }
+        }
+    }
+
+    /// Smooth refresh that preserves the current list while fetching fresh data
+    func refresh(completion: (() -> Void)? = nil) {
+        guard !isRefreshing else { completion?(); return }
+        isRefreshing = true
+        nextCursor = nil
+        hasMore = true
+        // Do NOT clear `mutuals` to avoid jank/flicker
+        RecommendedFriends.fetchRecommendedFriends(cursor: nil, limit: pageSize) { [weak self] result in
+            guard let self = self else { completion?(); return }
+            DispatchQueue.main.async {
+                self.isRefreshing = false
+                switch result {
+                case .success(let response):
+                    self.mutuals = response.users
+                    self.hasMore = response.pagination.hasMore
+                    self.nextCursor = response.pagination.nextCursor
+                    self.lastFetched = Date()
+                case .failure(let error):
+                    self.errorMessage = error.localizedDescription
+                }
+                completion?()
             }
         }
     }

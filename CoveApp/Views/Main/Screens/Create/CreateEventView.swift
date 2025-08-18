@@ -43,6 +43,16 @@ struct CreateEventView: View {
             Colors.faf8f4.ignoresSafeArea()
 
             VStack {
+                // In-content Cancel aligned with other sections
+                HStack {
+                    Button("cancel") { dismiss() }
+                        .font(.LibreBodoni(size: 16))
+                        .foregroundColor(Colors.primaryDark)
+                    Spacer()
+                }
+                .padding(.horizontal, 32)
+                .padding(.top, 8)
+
                 headerView
 
                 ScrollView(.vertical, showsIndicators: false) {

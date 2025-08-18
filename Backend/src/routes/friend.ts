@@ -4,6 +4,7 @@ import { initializeDatabase } from '../config/database';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { s3Client } from '../config/s3';
+import * as admin from 'firebase-admin';
 
 /**
  * Handles sending friend requests
@@ -126,6 +127,36 @@ export const handleSendFriendRequest = async (event: APIGatewayProxyEvent): Prom
       )
     );
 
+    // Send push notifications to recipients who have FCM tokens
+    try {
+      const [sender, recipients] = await Promise.all([
+        prisma.user.findUnique({ where: { id: fromUserId }, select: { name: true } }),
+        prisma.user.findMany({ where: { id: { in: toUserIds } }, select: { id: true, fcmToken: true } })
+      ]);
+      const senderName = sender?.name || 'Someone';
+      for (const r of recipients) {
+        if (r.fcmToken) {
+          try {
+            await admin.messaging().send({
+              token: r.fcmToken,
+              notification: {
+                title: '💌 New friend request',
+                body: `${senderName} wants to connect on Cove`
+              },
+              data: {
+                type: 'friend_request',
+                senderId: fromUserId
+              }
+            });
+          } catch (err) {
+            console.error('Error sending friend request notification:', err);
+          }
+        }
+      }
+    } catch (notifyErr) {
+      console.error('Friend request notify error:', notifyErr);
+    }
+
     // Return success response
     return {
       statusCode: 200,
@@ -237,6 +268,31 @@ export const handleResolveFriendRequest = async (event: APIGatewayProxyEvent): P
           user2Id: friendRequest.toUserId
         }
       });
+
+      // Notify original sender that their request was accepted
+      try {
+        const [sender, recipient, senderToken] = await Promise.all([
+          prisma.user.findUnique({ where: { id: friendRequest.fromUserId }, select: { id: true } }),
+          prisma.user.findUnique({ where: { id: friendRequest.toUserId }, select: { name: true } }),
+          prisma.user.findUnique({ where: { id: friendRequest.fromUserId }, select: { fcmToken: true } })
+        ]);
+        const recipientName = recipient?.name || 'Someone';
+        if (sender && senderToken?.fcmToken) {
+          await admin.messaging().send({
+            token: senderToken.fcmToken,
+            notification: {
+              title: '💫 It\'s mutual',
+              body: `${recipientName} accepted your friend request`
+            },
+            data: {
+              type: 'friend_request_accepted',
+              userId: friendRequest.toUserId
+            }
+          });
+        }
+      } catch (notifyErr) {
+        console.error('Friend accept notify error:', notifyErr);
+      }
     }
 
     // Delete the friend request (whether accepted or rejected)

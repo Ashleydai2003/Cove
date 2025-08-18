@@ -14,6 +14,8 @@ import SwiftUI
 class CoveFeed: ObservableObject {
     /// List of coves the user is a member of (summary info)
     @Published var userCoves: [Cove] = []
+    /// When set, CoveFeedView should navigate to this cove and then clear it
+    @Published var deepLinkToCoveId: String?
     /// The currently selected cove ID (for UI state)
     @Published var selectedCoveId: String?
     /// Last time user coves were fetched (for caching)

@@ -82,4 +82,29 @@ class FriendsViewModel: ObservableObject {
             Log.debug("FriendsViewModel: using cached friends count=\(friends.count)")
         }
     }
+
+    /// Force refresh friends list (used for pull-to-refresh)
+    func refreshFriends(completion: (() -> Void)? = nil) {
+        nextCursor = nil
+        hasMore = true
+        lastFetched = nil
+        friends = []
+        isLoading = false
+        errorMessage = nil
+        Friends.fetchFriends(cursor: nil, limit: pageSize) { [weak self] result in
+            guard let self = self else { completion?(); return }
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let resp):
+                    self.friends = resp.friends
+                    self.hasMore = resp.pagination.nextCursor != nil
+                    self.nextCursor = resp.pagination.nextCursor
+                    self.lastFetched = Date()
+                case .failure(let error):
+                    self.errorMessage = error.localizedDescription
+                }
+                completion?()
+            }
+        }
+    }
 }

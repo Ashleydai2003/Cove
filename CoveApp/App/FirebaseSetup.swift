@@ -22,18 +22,30 @@ class FirebaseSetup: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserN
         
         // Set messaging delegate
         Messaging.messaging().delegate = self
+        // Enable automatic FCM registration
+        Messaging.messaging().isAutoInitEnabled = true
         
         // Set notification delegate
         UNUserNotificationCenter.current().delegate = self
+        // Register categories/actions and request authorization centrally
+        NotificationManager.registerCategories()
+        NotificationManager.requestAuthorization()
         
         // Request notification permissions
-        UNUserNotificationCenter.current().requestAuthorization(
-            options: [.alert, .badge, .sound],
-            completionHandler: { _, _ in }
-        )
+        // (Handled by NotificationManager)
         
         // Register for remote notifications
         application.registerForRemoteNotifications()
+
+        // Proactively fetch FCM token (in case delegate callback timing varies)
+        Messaging.messaging().token { token, error in
+            if let error = error {
+                Log.error("Error fetching FCM registration token: \(error)")
+            } else if let token = token {
+                Log.debug("Fetched FCM token")
+                TokenUploader.upload(token: token)
+            }
+        }
 
         #if DEBUG
         // Use Firebase Auth emulator for local development
@@ -49,7 +61,16 @@ class FirebaseSetup: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserN
 
     // Handle remote notification registration
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
-        Auth.auth().setAPNSToken(deviceToken, type: .prod)
+        // Inform Firebase Auth of the APNs token for auth flows
+        #if DEBUG
+        let apnsType: AuthAPNSTokenType = .sandbox
+        #else
+        let apnsType: AuthAPNSTokenType = .prod
+        #endif
+        Auth.auth().setAPNSToken(deviceToken, type: apnsType)
+
+        // Inform Firebase Messaging so it can map APNs token to FCM token
+        Messaging.messaging().apnsToken = deviceToken
     }
 
     func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
@@ -76,7 +97,7 @@ class FirebaseSetup: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserN
         
         // Send FCM token to your backend
         if let token = fcmToken {
-            sendFCMTokenToBackend(token)
+            TokenUploader.upload(token: token)
         }
     }
     
@@ -84,13 +105,13 @@ class FirebaseSetup: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserN
     
     func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
         // Show notification even when app is in foreground
-        completionHandler([[.banner, .sound]])
+        completionHandler([[.banner, .list, .sound]])
     }
     
     func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
         // Handle notification tap
         let userInfo = response.notification.request.content.userInfo
-        handleNotificationTap(userInfo)
+        PushRouter.route(from: userInfo, actionIdentifier: response.actionIdentifier)
         completionHandler()
     }
     

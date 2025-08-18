@@ -10,13 +10,14 @@ struct CalendarView: View {
 
     @EnvironmentObject var appController: AppController
     @ObservedObject private var calendarFeed: CalendarFeed
+    @State private var navigationPath = NavigationPath()
 
     init() {
         self._calendarFeed = ObservedObject(wrappedValue: AppController.shared.calendarFeed)
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigationPath) {
         ZStack {
             Colors.faf8f4
                 .ignoresSafeArea()
@@ -52,6 +53,13 @@ struct CalendarView: View {
         .navigationBarBackButtonHidden(true)
         .onAppear {
             calendarFeed.fetchCalendarEventsIfStale()
+        }
+        .onChange(of: calendarFeed.navigateToEventId) { _, newValue in
+            guard let eventId = newValue else { return }
+            DispatchQueue.main.async {
+                navigationPath.append(eventId)
+                calendarFeed.navigateToEventId = nil
+            }
         }
         .alert("error", isPresented: errorBinding) {
             Button("ok") { calendarFeed.errorMessage = nil }
@@ -162,7 +170,7 @@ private struct EventsListView: View {
                     }
                     .padding(.vertical, 15)
 
-                    ForEach(calendarFeed.groupedEvents[date] ?? [], id: \ .id) { event in
+                    ForEach(sortedEvents(for: date), id: \ .id) { event in
                         EventSummaryView(event: event, type: .calendar)
                             .padding(.horizontal, 20)
                             .onAppear {
@@ -181,6 +189,21 @@ private struct EventsListView: View {
     // Sorted array of unique event dates
     private var sortedGroupedDates: [Date] {
         calendarFeed.groupedEvents.keys.sorted()
+    }
+
+    // For a given day, show upcoming events first (ascending), then past (descending)
+    private func sortedEvents(for date: Date) -> [CalendarEvent] {
+        let dayEvents = calendarFeed.groupedEvents[date] ?? []
+        let now = Date()
+        var upcoming: [(Date, CalendarEvent)] = []
+        var past: [(Date, CalendarEvent)] = []
+        for ev in dayEvents {
+            let d = ev.eventDate
+            if d >= now { upcoming.append((d, ev)) } else { past.append((d, ev)) }
+        }
+        upcoming.sort { $0.0 < $1.0 }
+        past.sort { $0.0 > $1.0 }
+        return upcoming.map { $0.1 } + past.map { $0.1 }
     }
 
     // Returns the appropriate label for a date

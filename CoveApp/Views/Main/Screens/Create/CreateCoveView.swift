@@ -22,6 +22,15 @@ struct CreateCoveView: View {
             Colors.faf8f4.ignoresSafeArea()
 
             VStack {
+                HStack {
+                    Button("cancel") { dismiss() }
+                        .font(.LibreBodoni(size: 16))
+                        .foregroundColor(Colors.primaryDark)
+                    Spacer()
+                }
+                .padding(.horizontal, 32)
+                .padding(.top, 8)
+
                 headerView
 
                 ScrollView(.vertical, showsIndicators: false) {
