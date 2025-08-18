@@ -14,6 +14,8 @@ import SwiftUI
 class CalendarFeed: ObservableObject {
     /// List of calendar events for the user (events they've committed to)
     @Published var events: [CalendarEvent] = []
+    /// When set, CalendarView should navigate to this eventId and then clear it
+    @Published var navigateToEventId: String?
     /// Cursor for event pagination
     @Published var nextCursor: String?
     /// Whether more events are available

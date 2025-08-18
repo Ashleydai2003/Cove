@@ -98,6 +98,18 @@ struct RequestsView: View {
                             Spacer(minLength: 24)
                         }
                     }
+                    .refreshable {
+                        await withCheckedContinuation { continuation in
+                            vm.lastFetched = nil
+                            vm.requests = []
+                            vm.nextCursor = nil
+                            vm.hasMore = true
+                            vm.loadNextPage()
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                continuation.resume()
+                            }
+                        }
+                    }
 
                     Spacer(minLength: 0)
                 }

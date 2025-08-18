@@ -66,7 +66,7 @@ struct EventSummaryView: View {
                             }
                     }
                     // RSVP overlay if not calendar and user is going or hosting
-                    if type != .calendar && imageLoaded {
+                    if type != .calendar && imageLoaded && !(event.eventDate < Date()) {
                         // Use Firebase Auth current user ID for comparison
                         let currentUserId = Auth.auth().currentUser?.uid ?? ""
 
@@ -115,6 +115,21 @@ struct EventSummaryView: View {
                                     .clipShape(RoundedRectangle(cornerRadius: 12))
                                     .padding(.top, 10)
                                     .padding(.leading, 8)
+                            }
+                            Spacer()
+                        }
+                    }
+                    // Past event banner (center) if the event date is in the past
+                    if event.eventDate < Date() {
+                        VStack {
+                            Spacer()
+                            ZStack {
+                                Rectangle()
+                                    .fill(Color.white.opacity(0.7))
+                                    .frame(maxWidth: .infinity, maxHeight: 40)
+                                Text("past event")
+                                    .font(.LibreBodoniBold(size: 18))
+                                    .foregroundColor(Colors.primaryDark)
                             }
                             Spacer()
                         }
@@ -224,10 +239,10 @@ struct EventSummaryView: View {
         // and is not empty. If none found, fallback to the first segment.
         for part in parts {
             if part.rangeOfCharacter(from: CharacterSet.decimalDigits) == nil && !part.isEmpty {
-                return part
+                return String(part)
             }
         }
-        return parts.first ?? ""
+        return parts.first.map { String($0) } ?? ""
     }
     /// Returns the formatted time for display
     private func formattedTime(_ dateString: String) -> String {

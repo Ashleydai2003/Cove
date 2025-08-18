@@ -10,6 +10,7 @@ import SwiftUI
 struct CoveFeedView: View {
     @EnvironmentObject var appController: AppController
     @ObservedObject private var coveFeed: CoveFeed
+    @State private var navigationPath = NavigationPath()
 
     init() {
         // Initialize with the shared instance
@@ -18,7 +19,7 @@ struct CoveFeedView: View {
 
     // MARK: - Main Body
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigationPath) {
         ZStack {
             Colors.faf8f4
                 .ignoresSafeArea()
@@ -107,6 +108,13 @@ struct CoveFeedView: View {
         .onAppear {
             // Only fetch if we don't have any coves or data is stale
             coveFeed.fetchUserCovesIfStale()
+        }
+        .onChange(of: coveFeed.deepLinkToCoveId) { _, newValue in
+            guard let coveId = newValue else { return }
+            DispatchQueue.main.async {
+                navigationPath.append(coveId)
+                coveFeed.deepLinkToCoveId = nil
+            }
         }
         .alert("error", isPresented: Binding(
             get: { coveFeed.errorMessage != nil },
