@@ -225,6 +225,9 @@ struct HomeView: View {
             tabSelection = 1
             AppController.shared.shouldAutoShowInbox = true
         }
+        .onReceive(NotificationCenter.default.publisher(for: .navigateToCalendar)) { _ in
+            tabSelection = 2
+        }
     }
 }
 
