@@ -154,7 +154,7 @@ struct HomeView: View {
             ZStack {
                 // Main content area - switch instead of TabView to prevent rebuilding
                 switch tabSelection {
-                case 1: HomeFeedView()
+                case 1: UpcomingView()
                 case 2: CalendarView()
                 case 3: CoveFeedView()
                 case 4: FriendsTabView()
