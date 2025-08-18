@@ -22,6 +22,15 @@ struct CreateCoveView: View {
             Colors.faf8f4.ignoresSafeArea()
 
             VStack {
+                HStack {
+                    Button("cancel") { dismiss() }
+                        .font(.LibreBodoni(size: 16))
+                        .foregroundColor(Colors.primaryDark)
+                    Spacer()
+                }
+                .padding(.horizontal, 32)
+                .padding(.top, 8)
+
                 headerView
 
                 ScrollView(.vertical, showsIndicators: false) {
@@ -62,13 +71,6 @@ struct CreateCoveView: View {
                 initialPhoneNumbers: viewModel.invitePhoneNumbers,
                 initialMessage: viewModel.inviteMessage
             )
-        }
-        .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                Button("cancel") { dismiss() }
-                    .font(.LibreBodoni(size: 16))
-                    .foregroundColor(Colors.primaryDark)
-            }
         }
         .navigationBarBackButtonHidden()
         .onTapGesture {
