@@ -1180,9 +1180,7 @@ struct ProfileView: View {
                         editingProfileImage != nil ||
                         editingExtraImages.contains { $0 != nil }
 
-        // TEMP - JUST FOR SAVE ERROR DEBUG
-        print("🔍 DEBUG: Has changes: \(hasChanges)")
-        Log.debug("📱 ProfileView: Has changes: \(hasChanges)")
+        Log.debug("ProfileView: Has changes: \(hasChanges)")
         Log.debug("📱 ProfileView: Changes detected:")
         Log.debug("  - Name: \(editingName) vs \(appController.profileModel.name)")
         Log.debug("  - Interests: \(editingInterests) vs \(appController.profileModel.interests)")
