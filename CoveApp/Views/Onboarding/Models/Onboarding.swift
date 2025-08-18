@@ -152,14 +152,13 @@ class Onboarding {
     // MARK: - Validation
     // Updated to reflect current onboarding requirements
     static func isOnboardingComplete() -> Bool {
-        // Core required fields: name, birthdate, university, city, hobbies
-        // Optional fields: profilePic
+        // Core required fields: name, birthdate, university, city
+        // Optional fields: profilePic, hobbies (archived)
         
         let hasName = userName != nil
         let hasBirthdate = userBirthdate != nil
         let hasUniversity = userAlmaMater != nil && !userAlmaMater!.isEmpty
         let hasCity = userCity != nil && !userCity!.isEmpty
-        let hasHobbies = !userHobbies.isEmpty
         
         // Log what's missing for debugging
         if !hasName {
@@ -174,11 +173,8 @@ class Onboarding {
         if !hasCity {
             Log.error("Onboarding incomplete: Missing city")
         }
-        if !hasHobbies {
-            Log.error("Onboarding incomplete: Missing hobbies (count: \(userHobbies.count))")
-        }
         
-        return hasName && hasBirthdate && hasUniversity && hasCity && hasHobbies
+        return hasName && hasBirthdate && hasUniversity && hasCity
     }
 
     /// Completes the onboarding process by updating the user's onboarding status
@@ -290,8 +286,8 @@ class Onboarding {
         // Create request parameters with current onboarding data
         var parameters: [String: Any] = [
             "name": userName ?? "",
-            "birthdate": formattedDate,
-            "hobbies": Array(userHobbies)  // Convert Set to Array for JSON serialization
+            "birthdate": formattedDate
+            // Note: hobbies removed from onboarding flow
         ]
 
         // Add required fields
