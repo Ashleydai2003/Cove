@@ -17,39 +17,70 @@ struct UpcomingView: View {
     }
 
     var body: some View {
-        ZStack {
-            Colors.faf8f4
-                .ignoresSafeArea()
+        NavigationStack {
+            VStack(spacing: 0) {
+                // Header
+                CoveBannerView()
+                
+                ZStack {
+                    Colors.faf8f4
+                        .ignoresSafeArea()
 
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 5) {
-                    contentView
-                    Spacer(minLength: 20)
-                }
-            }
-            .refreshable {
-                await withCheckedContinuation { continuation in
-                    upcomingFeed.refreshUpcomingEvents {
-                        continuation.resume()
+                    ScrollView(showsIndicators: false) {
+                        VStack(spacing: 5) {
+                            contentView
+                            Spacer(minLength: 20)
+                        }
+                    }
+                    .refreshable {
+                        await withCheckedContinuation { continuation in
+                            upcomingFeed.refreshUpcomingEvents {
+                                continuation.resume()
+                            }
+                        }
+                    }
+
+                    // FloatingActionView - only show for verified/admin users
+                    if isUserVerified {
+                        VStack {
+                            Spacer()
+                            HStack {
+                                Spacer()
+                                FloatingActionView(onEventCreated: {
+                                    upcomingFeed.refreshUpcomingEvents()
+                                })
+                                    .padding(.trailing, 20)
+                                    .padding(.bottom, 20)
+                            }
+                        }
                     }
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-
-            // FloatingActionView - only show for verified/admin users
-            if isUserVerified {
-                VStack {
-                    Spacer()
-                    HStack {
-                        Spacer()
-                        FloatingActionView(onEventCreated: {
-                            upcomingFeed.refreshUpcomingEvents()
-                        })
-                            .padding(.trailing, 20)
-                            .padding(.bottom, 20)
+            .navigationDestination(for: String.self) { eventId in
+                // Find the event in our feed data to get the cover photo
+                let upcomingEvent = appController.upcomingFeed.items.first { item in
+                    switch item {
+                    case .event(let event):
+                        return event.id == eventId
+                    case .post:
+                        return false
                     }
                 }
+                
+                // Extract the cover photo if it's an event
+                let coverPhoto: CoverPhoto?
+                switch upcomingEvent {
+                case .event(let event):
+                    coverPhoto = event.coveCoverPhoto
+                case .post, .none:
+                    coverPhoto = nil
+                }
+                
+                return EventPostView(eventId: eventId, coveCoverPhoto: coverPhoto)
             }
         }
+        .ignoresSafeArea(edges: .bottom)
         .navigationBarBackButtonHidden(true)
         .onAppear {
             // Wait for Firebase Auth token to be ready before fetching data
