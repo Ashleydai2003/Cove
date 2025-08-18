@@ -55,6 +55,14 @@ struct ProfileHeader: View {
     @State private var isPressed = false
     @EnvironmentObject var appController: AppController
 
+    // Computed property to format grad year as last two digits
+    private var formattedGradYear: String {
+        if gradYear.count >= 2 {
+            return String(gradYear.suffix(2))
+        }
+        return gradYear
+    }
+
     var body: some View {
         // Capture the @State flag once in a main-actor context; use it everywhere below to avoid
         // referencing 'isPressed' inside non-isolated view-builder closures.
@@ -292,11 +300,11 @@ struct ProfileHeader: View {
                         }
                     } else {
                         if !almaMater.isEmpty && !gradYear.isEmpty {
-                            ProfileText(text: "\(almaMater) '\(gradYear)", isPlaceholder: false)
+                            ProfileText(text: "\(almaMater) '\(formattedGradYear)", isPlaceholder: false)
                         } else if !almaMater.isEmpty {
                             ProfileText(text: almaMater, isPlaceholder: false)
                         } else if !gradYear.isEmpty {
-                            ProfileText(text: "'\(gradYear)", isPlaceholder: false)
+                            ProfileText(text: "'\(formattedGradYear)", isPlaceholder: false)
                         } else {
                             ProfileText(text: "add your alma mater", isPlaceholder: true)
                         }
