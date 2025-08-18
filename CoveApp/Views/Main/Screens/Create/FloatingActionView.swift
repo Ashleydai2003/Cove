@@ -135,18 +135,15 @@ struct FloatingActionView: View {
             }
         }
         .animation(.easeInOut(duration: 0.2), value: showMenu)
-        .background(
-            NavigationLink("", destination: CreateEventView(coveId: coveId, onEventCreated: onEventCreated), isActive: $navigateToCreateEvent)
-                .opacity(0)
-        )
-        .background(
-            NavigationLink("", destination: CreatePostView(coveId: coveId, onPostCreated: onEventCreated), isActive: $navigateToCreatePost)
-                .opacity(0)
-        )
-        .background(
-            NavigationLink("", destination: CreateCoveView(), isActive: $navigateToCreateCove)
-                .opacity(0)
-        )
+        .navigationDestination(isPresented: $navigateToCreateEvent) {
+            CreateEventView(coveId: coveId, onEventCreated: onEventCreated)
+        }
+        .navigationDestination(isPresented: $navigateToCreatePost) {
+            CreatePostView(coveId: coveId, onPostCreated: onEventCreated)
+        }
+        .navigationDestination(isPresented: $navigateToCreateCove) {
+            CreateCoveView()
+        }
     }
 }
 
