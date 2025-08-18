@@ -63,6 +63,13 @@ struct CreateCoveView: View {
                 initialMessage: viewModel.inviteMessage
             )
         }
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button("cancel") { dismiss() }
+                    .font(.LibreBodoni(size: 16))
+                    .foregroundColor(Colors.primaryDark)
+            }
+        }
         .navigationBarBackButtonHidden()
         .onTapGesture {
             isFocused = false

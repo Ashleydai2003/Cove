@@ -55,9 +55,17 @@ struct TabBarView: View {
 
             // Cove Tab
             Button(action: { selectedTab = 3 }) {
-                Image(selectedTab == 3 ? "cove_selected" : "cove_unselected")
-                    .tabBarIcon(isSelected: selectedTab == 3, isMiddleButton: true)
-                    .animation(.none, value: selectedTab)
+                ZStack(alignment: .topTrailing) {
+                    Image(selectedTab == 3 ? "cove_selected" : "cove_unselected")
+                        .tabBarIcon(isSelected: selectedTab == 3, isMiddleButton: true)
+                        .animation(.none, value: selectedTab)
+                    if appController.inboxViewModel.hasUnopenedInvites {
+                        Circle()
+                            .fill(Color.red)
+                            .frame(width: 10, height: 10)
+                            .offset(x: 6, y: -6)
+                    }
+                }
             }
             .frame(maxWidth: 56, maxHeight: 56)
 
@@ -65,9 +73,17 @@ struct TabBarView: View {
 
             // Friends Tab
             Button(action: { selectedTab = 4 }) {
-                Image(selectedTab == 4 ? "friends_selected" : "friends_unselected")
-                    .tabBarIcon(isSelected: selectedTab == 4, isMiddleButton: true)
-                    .animation(.none, value: selectedTab)
+                ZStack(alignment: .topTrailing) {
+                    Image(selectedTab == 4 ? "friends_selected" : "friends_unselected")
+                        .tabBarIcon(isSelected: selectedTab == 4, isMiddleButton: true)
+                        .animation(.none, value: selectedTab)
+                    if !appController.requestsViewModel.requests.isEmpty {
+                        Circle()
+                            .fill(Color.red)
+                            .frame(width: 10, height: 10)
+                            .offset(x: 6, y: -6)
+                    }
+                }
             }
             .frame(maxWidth: 56, maxHeight: 56)
 
@@ -187,6 +203,28 @@ struct HomeView: View {
             InboxView()
         }
         .navigationBarBackButtonHidden()
+        .onReceive(NotificationCenter.default.publisher(for: .navigateToEvent)) { note in
+            if let eventId = note.userInfo?["eventId"] as? String {
+                // Route to an event: pick Calendar tab (2) which knows how to navigate to eventId
+                tabSelection = 2
+                // Push by setting NavigationStack value via Notification; here we rely on NavigationLink(value:)
+                // A minimal approach: store a deep-link on AppController and let the CalendarView pick it up.
+                AppController.shared.calendarFeed.navigateToEventId = eventId
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .navigateToCove)) { note in
+            if let coveId = note.userInfo?["coveId"] as? String {
+                tabSelection = 3
+                AppController.shared.coveFeed.deepLinkToCoveId = coveId
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .navigateToFriends)) { _ in
+            tabSelection = 4
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .navigateToInbox)) { _ in
+            tabSelection = 1
+            AppController.shared.shouldAutoShowInbox = true
+        }
     }
 }
 
