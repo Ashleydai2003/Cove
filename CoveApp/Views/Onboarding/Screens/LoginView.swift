@@ -39,11 +39,11 @@ struct LoginView: View {
                 .padding(.bottom)
 
                 // Terms and privacy notice with interactive links
-                Text(attributedString)
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(Color.black)
-                    .padding([.horizontal, .vertical])
-                    .font(.LeagueSpartan(size: 15))
+                // Text(attributedString)
+                //     .multilineTextAlignment(.center)
+                //     .foregroundStyle(Color.black)
+                //     .padding([.horizontal, .vertical])
+                //     .font(.LeagueSpartan(size: 15))
             }
         }
     }
@@ -51,21 +51,21 @@ struct LoginView: View {
     /// Creates an attributed string for the terms and privacy notice
     /// Includes interactive links for Terms & Conditions and Privacy Policy
     // TODO: Add links to Terms and Privacy Policy
-//     var attributedString: AttributedString {
-//         var string = AttributedString("By tapping 'Get Started' you agree to our Terms and Conditions. Learn how we process your data in our Privacy Policy.")
-//         string.foregroundColor = .black
+    var attributedString: AttributedString {
+        var string = AttributedString("By tapping 'Get Started' you agree to our Terms and Conditions. Learn how we process your data in our Privacy Policy.")
+        string.foregroundColor = .black
 
-//         // Add underline and link styling to both interactive text elements
-//         ["Terms and Conditions", "Privacy Policy"].forEach { text in
-//             if let range = string.range(of: text) {
-//                 string[range].underlineStyle = .single
-//                 string[range].link = URL(string: "")
-//             }
-//         }
+        // Add underline and link styling to both interactive text elements
+        ["Terms and Conditions", "Privacy Policy"].forEach { text in
+            if let range = string.range(of: text) {
+                string[range].underlineStyle = .single
+                string[range].link = URL(string: "")
+            }
+        }
 
-//         return string
-//     }
-// }
+        return string
+    }
+}
 
 // MARK: - SignOnButton
 /// Reusable button component for sign-on actions

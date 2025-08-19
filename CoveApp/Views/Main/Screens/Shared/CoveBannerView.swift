@@ -5,6 +5,7 @@ struct CoveBannerView: View {
     var onInbox: (() -> Void)? = nil
     var onCalendar: (() -> Void)? = nil
     @State private var showInvites = false
+    @State private var showCalendar = false
 
     var body: some View {
         HStack(alignment: .center) {
@@ -14,7 +15,7 @@ struct CoveBannerView: View {
             Spacer()
             HStack(spacing: 18) {
                 Button(action: {
-                    NotificationCenter.default.post(name: .navigateToCalendar, object: nil)
+                    showCalendar = true
                     onCalendar?()
                 }) {
                     Image(systemName: "calendar")
@@ -40,6 +41,9 @@ struct CoveBannerView: View {
         .padding(.bottom, 8)
         .sheet(isPresented: $showInvites) {
             InboxView()
+        }
+        .sheet(isPresented: $showCalendar) {
+            CalendarPopupView()
         }
     }
 }
