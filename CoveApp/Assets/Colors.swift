@@ -11,12 +11,15 @@ enum Colors {
     // TODO: make this just the opposite
     static let primaryLight = Color("CovePrimaryLightColor")
     static let primaryDark = Color("CovePrimaryDarkColor")
+    // Global light background used across the app
+    static let background = Color(hex: "F5F0E6")
     // tmp for now
     static let k292929 = Color(hex: "292929")
     static let k6F6F73 = Color(hex: "6F6F73")
     static let k171719 = Color(hex: "171719")
     static let k262627 = Color(hex: "262627")
-    static let faf8f4 = Color(hex: "FAF8F4")
+    // Legacy cream tone alias (map to background for consistency)
+    static let faf8f4 = Color(hex: "F5F0E6")
     static let f3f3f3 = Color(hex: "F3F3F3")
 
     static let k0B0B0B = Color(hex: "0B0B0B")

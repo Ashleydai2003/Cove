@@ -12,7 +12,7 @@ struct MutualsView: View {
 
 	var body: some View {
 		ZStack {
-			Colors.faf8f4.ignoresSafeArea()
+			Colors.background.ignoresSafeArea()
 
 			VStack(spacing: 0) {
 				ScrollView(showsIndicators: false) {

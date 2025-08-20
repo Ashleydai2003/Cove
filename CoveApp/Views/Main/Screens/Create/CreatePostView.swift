@@ -27,7 +27,7 @@ struct CreatePostView: View {
     // MARK: - Body
     var body: some View {
         ZStack {
-            Colors.faf8f4.ignoresSafeArea()
+            Colors.background.ignoresSafeArea()
 
             VStack {
                 HStack {
@@ -131,7 +131,7 @@ extension CreatePostView {
             .padding(.horizontal, 16)
             .padding(.top, 4)
         }
-        .background(Color.white)
+        .background(Colors.background)
         .overlay(
             RoundedRectangle(cornerRadius: 10)
                 .stroke(Color.black, lineWidth: 1)
@@ -158,7 +158,7 @@ extension CreatePostView {
                     .frame(maxWidth: .infinity, minHeight: 60, maxHeight: 60, alignment: .center)
                     .background(
                         RoundedRectangle(cornerRadius: 14)
-                            .fill(Color.white)
+                            .fill(Colors.background)
                     )
             } else {
                 Text("post")
@@ -167,7 +167,7 @@ extension CreatePostView {
                     .frame(maxWidth: .infinity, minHeight: 60, maxHeight: 60, alignment: .center)
                     .background(
                         RoundedRectangle(cornerRadius: 14)
-                            .fill(!viewModel.isFormValid ? Color.gray.opacity(0.3) : Color.white)
+                            .fill(!viewModel.isFormValid ? Color.gray.opacity(0.3) : Colors.background)
                     )
             }
         }

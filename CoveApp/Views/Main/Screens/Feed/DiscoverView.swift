@@ -15,7 +15,7 @@ struct DiscoverView: View {
 				}, onCalendar: nil, showCalendarButton: false, showBookmarkButton: true)
 
 				ZStack {
-					Colors.faf8f4
+					Colors.background
 						.ignoresSafeArea()
 
 					VStack(spacing: 12) {
