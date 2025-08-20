@@ -16,7 +16,7 @@ struct FriendsView: View {
     var body: some View {
         GeometryReader { _ in
             ZStack {
-                Colors.faf8f4.ignoresSafeArea()
+                Colors.background.ignoresSafeArea()
 
                 VStack(spacing: 0) {
                     // Error banner

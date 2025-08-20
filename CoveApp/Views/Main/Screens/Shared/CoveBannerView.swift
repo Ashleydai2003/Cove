@@ -51,6 +51,7 @@ struct CoveBannerView: View {
                 .buttonStyle(PlainButtonStyle())
             }
         }
+        .background(Colors.background)
         .padding(.horizontal, 30)
         .padding(.top, 24)
         .padding(.bottom, 8)

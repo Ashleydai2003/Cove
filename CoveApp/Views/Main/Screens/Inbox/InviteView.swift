@@ -39,7 +39,7 @@ struct InviteView: View {
                         KFImage(coverPhotoUrl)
                             .placeholder {
                                 Rectangle()
-                                    .fill(Color.white.opacity(0.9))
+                                    .fill(Colors.background.opacity(0.9))
                                     .frame(height: 192)
                                     .clipShape(RoundedRectangle(cornerRadius: 12))
                             }
@@ -113,7 +113,7 @@ struct InviteView: View {
                                 .foregroundColor(Colors.primaryDark)
                                 .frame(maxWidth: .infinity)
                                 .frame(minHeight: 44)
-                                .background(Color.white)
+                                .background(Colors.background)
                                 .cornerRadius(22)
                         }
                         .buttonStyle(.plain)

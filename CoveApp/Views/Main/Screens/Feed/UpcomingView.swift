@@ -23,7 +23,7 @@ struct UpcomingView: View {
                 CoveBannerView()
                 
                 ZStack {
-                    Colors.faf8f4
+                    Colors.background
                         .ignoresSafeArea()
 
                     ScrollView(showsIndicators: false) {

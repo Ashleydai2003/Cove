@@ -21,7 +21,7 @@ struct CoveFeedView: View {
     var body: some View {
         NavigationStack(path: $navigationPath) {
         ZStack {
-            Colors.faf8f4
+            Colors.background
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
