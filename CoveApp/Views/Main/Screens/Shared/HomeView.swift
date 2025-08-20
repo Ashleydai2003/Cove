@@ -45,7 +45,7 @@ struct TabBarView: View {
 
             // Calendar Tab
             Button(action: { selectedTab = 2 }) {
-                Image(selectedTab == 2 ? "calendar_selected" : "calendar_unselected")
+                Image(selectedTab == 2 ? "discover_selected" : "discover_unselected")
                     .tabBarIcon(isSelected: selectedTab == 2, isMiddleButton: false)
                     .animation(.none, value: selectedTab)
             }
