@@ -8,15 +8,14 @@ import SwiftUI
 struct DiscoverView: View {
 	var body: some View {
 		NavigationStack {
-			VStack(spacing: 0) {
-				// Header consistent with other tabs
-				CoveBannerView(onInbox: {
-					AppController.shared.shouldAutoShowInbox = true
-				}, onCalendar: nil, showCalendarButton: false, showBookmarkButton: true)
+			ZStack {
+				Colors.background.ignoresSafeArea()
 
-				ZStack {
-					Colors.background
-						.ignoresSafeArea()
+				VStack(spacing: 0) {
+					// Header consistent with other tabs
+					CoveBannerView(onInbox: {
+						AppController.shared.shouldAutoShowInbox = true
+					}, onCalendar: nil, showCalendarButton: false, showBookmarkButton: true)
 
 					VStack(spacing: 12) {
 						Text("Discover is coming soon!")
@@ -27,7 +26,6 @@ struct DiscoverView: View {
 				}
 			}
 		}
-		.background(Colors.background.ignoresSafeArea())
 		.navigationBarBackButtonHidden()
 	}
 }

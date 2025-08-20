@@ -18,44 +18,45 @@ struct UpcomingView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                // Header
-                CoveBannerView()
-                
-                ZStack {
-                    Colors.background
-                        .ignoresSafeArea()
+            ZStack {
+                Colors.background.ignoresSafeArea()
 
-                    ScrollView(showsIndicators: false) {
+                VStack(spacing: 0) {
+                    // Header
+                    CoveBannerView()
+
+                    ZStack {
+                        ScrollView(showsIndicators: false) {
                         VStack(spacing: 5) {
                             contentView
                             Spacer(minLength: 20)
                         }
-                    }
-                    .refreshable {
-                        await withCheckedContinuation { continuation in
-                            upcomingFeed.refreshUpcomingEvents {
-                                continuation.resume()
+                        }
+                        .refreshable {
+                            await withCheckedContinuation { continuation in
+                                upcomingFeed.refreshUpcomingEvents {
+                                    continuation.resume()
+                                }
                             }
                         }
-                    }
-
-                    // FloatingActionView - only show for verified/admin users
-                    if isUserVerified {
-                        VStack {
-                            Spacer()
-                            HStack {
+                        
+                        // FloatingActionView - only show for verified/admin users
+                        if isUserVerified {
+                            VStack {
                                 Spacer()
-                                FloatingActionView(onEventCreated: {
-                                    upcomingFeed.refreshUpcomingEvents()
-                                })
-                                    .padding(.trailing, 20)
-                                    .padding(.bottom, 20)
+                                HStack {
+                                    Spacer()
+                                    FloatingActionView(onEventCreated: {
+                                        upcomingFeed.refreshUpcomingEvents()
+                                    })
+                                        .padding(.trailing, 20)
+                                        .padding(.bottom, 20)
+                                }
                             }
                         }
                     }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .navigationDestination(for: String.self) { eventId in
                 // Find the event in our feed data to get the cover photo
@@ -80,7 +81,6 @@ struct UpcomingView: View {
                 return EventPostView(eventId: eventId, coveCoverPhoto: coverPhoto)
             }
         }
-        .ignoresSafeArea(edges: .bottom)
         .navigationBarBackButtonHidden(true)
         .onAppear {
             // Wait for Firebase Auth token to be ready before fetching data
