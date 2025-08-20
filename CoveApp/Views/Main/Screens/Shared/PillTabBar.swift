@@ -9,6 +9,7 @@ struct PillTabBar: View {
     var textColor: Color = Colors.primaryDark
     var selectedTextColor: Color = .white
     var font: Font = .LibreBodoni(size: 16)
+    var badges: [Bool] = [] // Array of boolean values indicating if each tab should show a red dot
 
     var body: some View {
         GeometryReader { geometry in
@@ -30,6 +31,15 @@ struct PillTabBar: View {
                                 .font(font)
                                 .foregroundColor(selectedIndex == idx ? selectedTextColor : textColor)
                                 .frame(width: tabWidth, height: height)
+                                .overlay(alignment: .topTrailing) {
+                                    if idx < badges.count && badges[idx] {
+                                        Circle()
+                                            .fill(Color.red)
+                                            .frame(width: 10, height: 10)
+                                            .padding(.top, 2)
+                                            .padding(.trailing, 6)
+                                    }
+                                }
                         }
                         .buttonStyle(PlainButtonStyle())
                     }
@@ -47,7 +57,16 @@ struct PillTabBar: View {
 private struct PillTabBarPreview: View {
     @State private var selected = 1
     var body: some View {
-        PillTabBar(titles: ["one", "two", "three"], selectedIndex: $selected)
+        VStack(spacing: 20) {
+            PillTabBar(titles: ["one", "two", "three"], selectedIndex: $selected)
+                .padding()
+            
+            PillTabBar(
+                titles: ["friends", "mutuals", "requests"], 
+                selectedIndex: $selected,
+                badges: [false, false, true] // Show red dot on requests tab
+            )
             .padding()
+        }
     }
 }
