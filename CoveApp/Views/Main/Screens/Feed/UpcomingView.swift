@@ -241,36 +241,53 @@ struct UpcomingView: View {
 // MARK: - Home Top Tabs
 private struct HomeTopTabs: View {
     @Binding var selected: Tab
+    @Namespace private var underlineNamespace
 
     enum Tab { case updates, calendar }
 
     var body: some View {
         HStack {
             // Updates tab (default)
-            Button(action: { selected = .updates }) {
+            Button(action: {
+                withAnimation(.easeInOut(duration: 0.22)) { selected = .updates }
+            }) {
                 VStack(spacing: 4) {
                     Text("updates")
                         .font(.LibreBodoni(size: 18))
                         .foregroundStyle(Colors.primaryDark)
-                    Rectangle()
-                        .fill(selected == .updates ? Colors.primaryDark : Color.clear)
-                        .frame(height: 2)
-                        .animation(.easeInOut(duration: 0.15), value: selected)
+                    Group {
+                        if selected == .updates {
+                            Capsule()
+                                .fill(Colors.primaryDark)
+                                .matchedGeometryEffect(id: "tabUnderline", in: underlineNamespace)
+                        } else {
+                            Color.clear
+                        }
+                    }
+                    .frame(height: 2)
                 }
             }
 
             Spacer()
 
             // Calendar tab
-            Button(action: { selected = .calendar }) {
+            Button(action: {
+                withAnimation(.easeInOut(duration: 0.22)) { selected = .calendar }
+            }) {
                 VStack(spacing: 4) {
                     Text("calendar")
                         .font(.LibreBodoni(size: 18))
                         .foregroundStyle(Colors.primaryDark)
-                    Rectangle()
-                        .fill(selected == .calendar ? Colors.primaryDark : Color.clear)
-                        .frame(height: 2)
-                        .animation(.easeInOut(duration: 0.15), value: selected)
+                    Group {
+                        if selected == .calendar {
+                            Capsule()
+                                .fill(Colors.primaryDark)
+                                .matchedGeometryEffect(id: "tabUnderline", in: underlineNamespace)
+                        } else {
+                            Color.clear
+                        }
+                    }
+                    .frame(height: 2)
                 }
             }
         }
