@@ -3,11 +3,6 @@
 //  Cove
 //
 //  Created by Ananya Agarwal
-//
-//  HomeView.swift
-//  Cove
-//
-//  Created by Ananya Agarwal
 
 import SwiftUI
 import Kingfisher
@@ -155,23 +150,26 @@ struct HomeView: View {
     @EnvironmentObject var appController: AppController
 
     var body: some View {
-        VStack(spacing: 0) {
-            ZStack {
-                // Main content area - switch instead of TabView to prevent rebuilding
-                switch tabSelection {
-                case 1: UpcomingView()
-                case 2: DiscoverView()
-                case 3: CoveFeedView()
-                case 4: FriendsTabView()
-                case 5: ProfileView()
-                default: DiscoverView()
-                }
-            }
+        ZStack {
+            Colors.background.ignoresSafeArea()
 
-            // Tab bar - now won't be recreated on tab switches
-            TabBarView(selectedTab: $tabSelection)
+            VStack(spacing: 0) {
+                ZStack {
+                    // Main content area - switch instead of TabView to prevent rebuilding
+                    switch tabSelection {
+                    case 1: UpcomingView()
+                    case 2: DiscoverView()
+                    case 3: CoveFeedView()
+                    case 4: FriendsTabView()
+                    case 5: ProfileView()
+                    default: DiscoverView()
+                    }
+                }
+
+                // Tab bar - now won't be recreated on tab switches
+                TabBarView(selectedTab: $tabSelection)
+            }
         }
-        .background(Colors.background.ignoresSafeArea())
         .onAppear(perform: {
             // Set default tab selection
             tabSelection = 1
