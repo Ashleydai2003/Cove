@@ -5,25 +5,35 @@
 
 import SwiftUI
 
-// MARK: - DiscoverView
 struct DiscoverView: View {
+	var body: some View {
+		NavigationStack {
+			VStack(spacing: 0) {
+				// Header consistent with other tabs
+				CoveBannerView(onInbox: {
+					AppController.shared.shouldAutoShowInbox = true
+				}, onCalendar: nil, showCalendarButton: false, showBookmarkButton: true)
 
-    var body: some View {
-        VStack {
-            Spacer()
-            Text("coming soon!")
-                .font(.LibreBodoni(size: 18))
-                .foregroundColor(.gray)
-            Spacer()
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Colors.faf8f4)
-    }
+				ZStack {
+					Colors.faf8f4
+						.ignoresSafeArea()
+
+					VStack(spacing: 12) {
+						Text("Discover is coming soon!")
+							.font(.LibreBodoniSemiBold(size: 24))
+							.foregroundColor(Colors.primaryDark)
+					}
+					.frame(maxWidth: .infinity, maxHeight: .infinity)
+				}
+			}
+		}
+		.navigationBarBackButtonHidden()
+	}
 }
 
-// MARK: - Preview
-struct DiscoverView_Previews: PreviewProvider {
-    static var previews: some View {
-        DiscoverView()
-    }
+#Preview {
+	DiscoverView()
+		.environmentObject(AppController.shared)
 }
+
+
