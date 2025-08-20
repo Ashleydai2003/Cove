@@ -27,6 +27,7 @@ struct DiscoverView: View {
 				}
 			}
 		}
+		.background(Colors.background.ignoresSafeArea())
 		.navigationBarBackButtonHidden()
 	}
 }

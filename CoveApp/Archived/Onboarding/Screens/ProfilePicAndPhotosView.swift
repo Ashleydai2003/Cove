@@ -90,7 +90,7 @@ struct ProfilePicAndPhotosView: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                Colors.faf8f4.ignoresSafeArea()
+                Colors.background.ignoresSafeArea()
 
                 VStack(spacing: 20) {
                     // Back + Title block (leading)

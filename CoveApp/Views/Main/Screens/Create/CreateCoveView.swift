@@ -19,7 +19,7 @@ struct CreateCoveView: View {
     // MARK: - Body
     var body: some View {
         ZStack {
-            Colors.faf8f4.ignoresSafeArea()
+            Colors.background.ignoresSafeArea()
 
             VStack {
                 HStack {
