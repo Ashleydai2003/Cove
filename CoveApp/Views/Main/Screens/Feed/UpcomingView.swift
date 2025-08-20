@@ -11,6 +11,7 @@ struct UpcomingView: View {
 
     @EnvironmentObject var appController: AppController
     @ObservedObject private var upcomingFeed: UpcomingFeed
+    @State private var topTabSelection: HomeTopTabs.Tab = .updates
 
     init() {
         self._upcomingFeed = ObservedObject(wrappedValue: AppController.shared.upcomingFeed)
@@ -23,36 +24,47 @@ struct UpcomingView: View {
 
                 VStack(spacing: 0) {
                     // Header
-                    CoveBannerView()
+                    CoveBannerView(showCalendarButton: false)
 
-                    ZStack {
-                        ScrollView(showsIndicators: false) {
-                        VStack(spacing: 5) {
-                            contentView
-                            Spacer(minLength: 20)
-                        }
-                        }
-                        .refreshable {
-                            await withCheckedContinuation { continuation in
-                                upcomingFeed.refreshUpcomingEvents {
-                                    continuation.resume()
+                    // Top tabs under header
+                    HomeTopTabs(selected: $topTabSelection)
+
+                    // Content switcher under tabs
+                    Group {
+                        switch topTabSelection {
+                        case .updates:
+                            ZStack {
+                                ScrollView(showsIndicators: false) {
+                                    VStack(spacing: 5) {
+                                        contentView
+                                        Spacer(minLength: 20)
+                                    }
+                                }
+                                .refreshable {
+                                    await withCheckedContinuation { continuation in
+                                        upcomingFeed.refreshUpcomingEvents {
+                                            continuation.resume()
+                                        }
+                                    }
+                                }
+
+                                // FloatingActionView - only show for verified/admin users
+                                if isUserVerified {
+                                    VStack {
+                                        Spacer()
+                                        HStack {
+                                            Spacer()
+                                            FloatingActionView(onEventCreated: {
+                                                upcomingFeed.refreshUpcomingEvents()
+                                            })
+                                            .padding(.trailing, 20)
+                                            .padding(.bottom, 20)
+                                        }
+                                    }
                                 }
                             }
-                        }
-                        
-                        // FloatingActionView - only show for verified/admin users
-                        if isUserVerified {
-                            VStack {
-                                Spacer()
-                                HStack {
-                                    Spacer()
-                                    FloatingActionView(onEventCreated: {
-                                        upcomingFeed.refreshUpcomingEvents()
-                                    })
-                                        .padding(.trailing, 20)
-                                        .padding(.bottom, 20)
-                                }
-                            }
+                        case .calendar:
+                            HomeCalendarView()
                         }
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -223,6 +235,48 @@ struct UpcomingView: View {
         if index == upcomingFeed.items.count - 1 {
             upcomingFeed.loadMoreEventsIfNeeded()
         }
+    }
+}
+
+// MARK: - Home Top Tabs
+private struct HomeTopTabs: View {
+    @Binding var selected: Tab
+
+    enum Tab { case updates, calendar }
+
+    var body: some View {
+        HStack {
+            // Updates tab (default)
+            Button(action: { selected = .updates }) {
+                VStack(spacing: 4) {
+                    Text("updates")
+                        .font(.LibreBodoni(size: 18))
+                        .foregroundStyle(Colors.primaryDark)
+                    Rectangle()
+                        .fill(selected == .updates ? Colors.primaryDark : Color.clear)
+                        .frame(height: 2)
+                        .animation(.easeInOut(duration: 0.15), value: selected)
+                }
+            }
+
+            Spacer()
+
+            // Calendar tab
+            Button(action: { selected = .calendar }) {
+                VStack(spacing: 4) {
+                    Text("calendar")
+                        .font(.LibreBodoni(size: 18))
+                        .foregroundStyle(Colors.primaryDark)
+                    Rectangle()
+                        .fill(selected == .calendar ? Colors.primaryDark : Color.clear)
+                        .frame(height: 2)
+                        .animation(.easeInOut(duration: 0.15), value: selected)
+                }
+            }
+        }
+        .padding(.horizontal, 30)
+        .padding(.top, 10)
+        .padding(.bottom, 8)
     }
 }
 
