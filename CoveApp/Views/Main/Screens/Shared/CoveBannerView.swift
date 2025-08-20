@@ -4,6 +4,8 @@ import SwiftUI
 struct CoveBannerView: View {
     var onInbox: (() -> Void)? = nil
     var onCalendar: (() -> Void)? = nil
+    var showCalendarButton: Bool = true
+    var showBookmarkButton: Bool = false
     @State private var showInvites = false
     @State private var showCalendar = false
 
@@ -14,14 +16,27 @@ struct CoveBannerView: View {
                 .foregroundColor(Colors.primaryDark)
             Spacer()
             HStack(spacing: 18) {
-                Button(action: {
-                    showCalendar = true
-                    onCalendar?()
-                }) {
-                    Image(systemName: "calendar")
-                        .resizable()
-                        .frame(width: 26, height: 26)
-                        .foregroundColor(Colors.primaryDark)
+                if showCalendarButton {
+                    Button(action: {
+                        showCalendar = true
+                        onCalendar?()
+                    }) {
+                        Image(systemName: "calendar")
+                            .resizable()
+                            .frame(width: 26, height: 26)
+                            .foregroundColor(Colors.primaryDark)
+                    }
+                }
+
+                if showBookmarkButton {
+                    Button(action: {
+                        // placeholder for future bookmark action
+                    }) {
+                        Image(systemName: "bookmark")
+                            .resizable()
+                            .frame(width: 20, height: 26)
+                            .foregroundColor(Colors.primaryDark)
+                    }
                 }
 
                 Button(action: {

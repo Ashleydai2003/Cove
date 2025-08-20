@@ -3,6 +3,11 @@
 //  Cove
 //
 //  Created by Ananya Agarwal
+//
+//  HomeView.swift
+//  Cove
+//
+//  Created by Ananya Agarwal
 
 import SwiftUI
 import Kingfisher
@@ -155,11 +160,11 @@ struct HomeView: View {
                 // Main content area - switch instead of TabView to prevent rebuilding
                 switch tabSelection {
                 case 1: UpcomingView()
-                case 2: CalendarView()
+                case 2: DiscoverView()
                 case 3: CoveFeedView()
                 case 4: FriendsTabView()
                 case 5: ProfileView()
-                default: CalendarView()
+                default: DiscoverView()
                 }
             }
 
