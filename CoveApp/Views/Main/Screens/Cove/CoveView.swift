@@ -30,7 +30,7 @@ struct CoveView: View {
 
     var body: some View {
         ZStack {
-            Colors.faf8f4.ignoresSafeArea()
+            Colors.background.ignoresSafeArea()
 
             if viewModel.isLoading && viewModel.events.isEmpty {
                 VStack(spacing: 16) {
@@ -55,7 +55,7 @@ struct CoveView: View {
                             })
                         }
                     })
-                    .background(Colors.faf8f4)
+                    .background(Colors.background)
 
                     // Top Tabs
                     PillTabBar(

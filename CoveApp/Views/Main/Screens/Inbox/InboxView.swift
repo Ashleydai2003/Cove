@@ -8,7 +8,7 @@ struct InboxView: View {
 
     var body: some View {
         ZStack {
-            Colors.faf8f4
+            Colors.background
                 .ignoresSafeArea()
 
             VStack {

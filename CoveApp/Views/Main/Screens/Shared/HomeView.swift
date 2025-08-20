@@ -171,6 +171,7 @@ struct HomeView: View {
             // Tab bar - now won't be recreated on tab switches
             TabBarView(selectedTab: $tabSelection)
         }
+        .background(Colors.background.ignoresSafeArea())
         .onAppear(perform: {
             // Set default tab selection
             tabSelection = 1

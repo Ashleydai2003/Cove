@@ -40,7 +40,7 @@ struct CreateEventView: View {
     // MARK: - Body
     var body: some View {
         ZStack {
-            Colors.faf8f4.ignoresSafeArea()
+            Colors.background.ignoresSafeArea()
 
             VStack {
                 // In-content Cancel aligned with other sections
