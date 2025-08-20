@@ -66,6 +66,7 @@ struct CoveHeaderView: View {
                 Spacer()
             }
             .padding(.horizontal, 16)
+            .padding(.top, -8)
 
             Text(cove.name.isEmpty ? "untitled" : cove.name)
                 .foregroundStyle(Colors.primaryDark)
