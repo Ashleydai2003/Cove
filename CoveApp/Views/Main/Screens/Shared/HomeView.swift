@@ -12,8 +12,8 @@ let tabIconSize: CGFloat = 10
 // MARK: - Image Extension for Tab Bar Icons
 extension Image {
     func tabBarIcon(isSelected: Bool = false, isMiddleButton: Bool = false) -> some View {
-        let baseSize: CGFloat = isMiddleButton ? 45 : 40
-        let selectedSize: CGFloat = isMiddleButton ? 48 : 43
+        let baseSize: CGFloat = isMiddleButton ? 32 : 28
+        let selectedSize: CGFloat = isMiddleButton ? 34 : 30
 
         return self
             .resizable()
@@ -38,8 +38,9 @@ struct TabBarView: View {
                 Image(selectedTab == 1 ? "home_selected" : "home_unselected")
                     .tabBarIcon(isSelected: selectedTab == 1, isMiddleButton: false)
                     .animation(.none, value: selectedTab)
+                    .padding(.top, 2)
             }
-            .frame(maxWidth: 50, maxHeight: 50)
+            .frame(maxWidth: 36, maxHeight: 36)
 
             Spacer()
 
@@ -48,8 +49,9 @@ struct TabBarView: View {
                 Image(selectedTab == 2 ? "discover_selected" : "discover_unselected")
                     .tabBarIcon(isSelected: selectedTab == 2, isMiddleButton: false)
                     .animation(.none, value: selectedTab)
+                    .padding(.top, 2)
             }
-            .frame(maxWidth: 50, maxHeight: 50)
+            .frame(maxWidth: 36, maxHeight: 36)
 
             Spacer()
 
@@ -59,6 +61,7 @@ struct TabBarView: View {
                     Image(selectedTab == 3 ? "cove_selected" : "cove_unselected")
                         .tabBarIcon(isSelected: selectedTab == 3, isMiddleButton: true)
                         .animation(.none, value: selectedTab)
+                        .padding(.top, 2)
                     if appController.inboxViewModel.hasUnopenedInvites {
                         Circle()
                             .fill(Color.red)
@@ -67,7 +70,7 @@ struct TabBarView: View {
                     }
                 }
             }
-            .frame(maxWidth: 56, maxHeight: 56)
+            .frame(maxWidth: 40, maxHeight: 40)
 
             Spacer()
 
@@ -77,6 +80,7 @@ struct TabBarView: View {
                     Image(selectedTab == 4 ? "friends_selected" : "friends_unselected")
                         .tabBarIcon(isSelected: selectedTab == 4, isMiddleButton: true)
                         .animation(.none, value: selectedTab)
+                        .padding(.top, 2)
                     if !appController.requestsViewModel.requests.isEmpty {
                         Circle()
                             .fill(Color.red)
@@ -85,7 +89,7 @@ struct TabBarView: View {
                     }
                 }
             }
-            .frame(maxWidth: 56, maxHeight: 56)
+            .frame(maxWidth: 40, maxHeight: 40)
 
             Spacer()
 
@@ -95,18 +99,19 @@ struct TabBarView: View {
                     Image(uiImage: profileImage)
                         .resizable()
                         .aspectRatio(contentMode: .fill)
-                        .frame(maxWidth: 40, maxHeight: 40)
+                        .frame(maxWidth: 28, maxHeight: 28)
                         .clipShape(Circle())
                         .overlay(
                             Circle()
                                 .stroke(Color(hex: "F5F0E6"), lineWidth: selectedTab == 5 ? 3 : 0)
                         )
                         .animation(nil, value: selectedTab)
+                        .padding(.top, 2)
                 } else if appController.profileModel.isProfileImageLoading {
                     // Show loading state with proper circular shape
                     Circle()
                         .fill(Color.gray.opacity(0.3))
-                        .frame(maxWidth: 40, maxHeight: 40)
+                        .frame(maxWidth: 28, maxHeight: 28)
                         .overlay(
                             ProgressView()
                                 .scaleEffect(0.7)
@@ -117,6 +122,7 @@ struct TabBarView: View {
                                 .stroke(Color(hex: "F5F0E6"), lineWidth: selectedTab == 5 ? 3 : 0)
                         )
                         .animation(.none, value: selectedTab)
+                        .padding(.top, 2)
                 } else {
                     // Show default placeholder only if not loading
                     Image("default_user_pfp")
@@ -127,13 +133,14 @@ struct TabBarView: View {
                                 .stroke(Color(hex: "F5F0E6"), lineWidth: selectedTab == 5 ? 3 : 0)
                         )
                         .animation(.none, value: selectedTab)
+                        .padding(.top, 2)
                 }
             }
-            .frame(maxWidth: 50, maxHeight: 50)
+            .frame(maxWidth: 36, maxHeight: 36)
 
             Spacer()
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, 6)
         .background(Color(hex: "5E1C1D"))
         .overlay(
             Rectangle()
@@ -141,6 +148,7 @@ struct TabBarView: View {
                 .foregroundColor(Color.gray.opacity(0.3)),
             alignment: .top
         )
+        .offset(y: 10)
     }
 }
 
