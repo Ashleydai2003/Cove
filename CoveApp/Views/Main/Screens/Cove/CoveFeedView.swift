@@ -92,8 +92,7 @@ struct CoveFeedView: View {
                             }
                         }
                     case .people:
-                        VStack { Spacer() }
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        PeopleInNetworkView()
                     }
                 }
             }
