@@ -11,6 +11,7 @@ struct CoveFeedView: View {
     @EnvironmentObject var appController: AppController
     @ObservedObject private var coveFeed: CoveFeed
     @State private var navigationPath = NavigationPath()
+    @State private var topTabSelection: CoveTopTabs.Tab = .coves
 
     init() {
         // Initialize with the shared instance
@@ -25,65 +26,77 @@ struct CoveFeedView: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
-                    // Only show loading if we have no coves AND we're actively loading
-                    // (coves should already be fetched during onboarding)
-                    if coveFeed.userCoves.isEmpty && coveFeed.isLoading {
-                    VStack(spacing: 16) {
-                        ProgressView()
-                            .tint(Colors.primaryDark)
-                        Text("loading your coves...")
-                            .font(.LibreBodoni(size: 16))
-                            .foregroundColor(Colors.primaryDark)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    } else if let error = coveFeed.errorMessage {
-                    VStack(spacing: 16) {
-                        Image(systemName: "exclamationmark.circle")
-                            .font(.system(size: 40))
-                            .foregroundColor(.gray)
+                // Top tabs under safe area
+                CoveTopTabs(selected: $topTabSelection)
 
-                        Text(error)
-                            .font(.LibreBodoni(size: 16))
-                            .foregroundColor(.gray)
-                            .multilineTextAlignment(.center)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    } else if coveFeed.userCoves.isEmpty {
-                    VStack(spacing: 16) {
-                        Image(systemName: "house")
-                            .font(.system(size: 40))
-                            .foregroundColor(Colors.primaryDark)
+                // Content switcher
+                Group {
+                    switch topTabSelection {
+                    case .coves:
+                        // Only show loading if we have no coves AND we're actively loading
+                        // (coves should already be fetched during onboarding)
+                        if coveFeed.userCoves.isEmpty && coveFeed.isLoading {
+                            VStack(spacing: 16) {
+                                ProgressView()
+                                    .tint(Colors.primaryDark)
+                                Text("loading your coves...")
+                                    .font(.LibreBodoni(size: 16))
+                                    .foregroundColor(Colors.primaryDark)
+                            }
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        } else if let error = coveFeed.errorMessage {
+                            VStack(spacing: 16) {
+                                Image(systemName: "exclamationmark.circle")
+                                    .font(.system(size: 40))
+                                    .foregroundColor(.gray)
 
-                        Text("no coves found")
-                            .font(.LibreBodoni(size: 16))
-                            .foregroundColor(Colors.primaryDark)
-                            .multilineTextAlignment(.center)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    ScrollView {
-                        VStack(spacing: 0) {
-                                ForEach(Array(coveFeed.userCoves.enumerated()), id: \.element.id) { idx, cove in
-                                CoveCardView(cove: cove)
-                                    if idx < coveFeed.userCoves.count - 1 {
-                                    Divider()
-                                        .padding(.leading, 100)
-                                        .padding(.trailing, 20)
+                                Text(error)
+                                    .font(.LibreBodoni(size: 16))
+                                    .foregroundColor(.gray)
+                                    .multilineTextAlignment(.center)
+                            }
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        } else if coveFeed.userCoves.isEmpty {
+                            VStack(spacing: 16) {
+                                Image(systemName: "house")
+                                    .font(.system(size: 40))
+                                    .foregroundColor(Colors.primaryDark)
+
+                                Text("no coves found")
+                                    .font(.LibreBodoni(size: 16))
+                                    .foregroundColor(Colors.primaryDark)
+                                    .multilineTextAlignment(.center)
+                            }
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        } else {
+                            ScrollView {
+                                VStack(spacing: 0) {
+                                    ForEach(Array(coveFeed.userCoves.enumerated()), id: \.element.id) { idx, cove in
+                                        CoveCardView(cove: cove)
+                                        if idx < coveFeed.userCoves.count - 1 {
+                                            Divider()
+                                                .padding(.leading, 100)
+                                                .padding(.trailing, 20)
+                                        }
+                                    }
+                                }
+                                .padding(.horizontal, 0)
+                                .padding(.top, 8)
+                            }
+                            .refreshable {
+                                await withCheckedContinuation { continuation in
+                                    coveFeed.refreshUserCoves {
+                                        continuation.resume()
+                                    }
                                 }
                             }
                         }
-                        .padding(.horizontal, 0)
-                        .padding(.top, 8)
-                    }
-                    .refreshable {
-                        await withCheckedContinuation { continuation in
-                            coveFeed.refreshUserCoves {
-                                continuation.resume()
-                            }
-                        }
-                    }
+                    case .people:
+                        VStack { Spacer() }
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
                 }
+            }
             }
             .navigationDestination(for: String.self) { value in
                 // This handles both cove IDs and event IDs
@@ -132,6 +145,65 @@ struct CoveFeedView: View {
             }
         }
         return nil
+    }
+}
+
+// MARK: - Cove Top Tabs
+private struct CoveTopTabs: View {
+    @Binding var selected: Tab
+    @Namespace private var underlineNamespace
+
+    enum Tab { case coves, people }
+
+    var body: some View {
+        HStack {
+            // Coves tab (left, default)
+            Button(action: {
+                withAnimation(.easeInOut(duration: 0.22)) { selected = .coves }
+            }) {
+                VStack(spacing: 6) {
+                    Text("coves")
+                        .font(.LibreBodoni(size: 16))
+                        .foregroundStyle(Colors.primaryDark)
+                    Group {
+                        if selected == .coves {
+                            Capsule()
+                                .fill(Colors.primaryDark)
+                                .matchedGeometryEffect(id: "coveTabUnderline", in: underlineNamespace)
+                        } else {
+                            Color.clear
+                        }
+                    }
+                    .frame(height: 1)
+                }
+            }
+
+            Spacer()
+
+            // People tab (right)
+            Button(action: {
+                withAnimation(.easeInOut(duration: 0.22)) { selected = .people }
+            }) {
+                VStack(spacing: 6) {
+                    Text("people")
+                        .font(.LibreBodoni(size: 16))
+                        .foregroundStyle(Colors.primaryDark)
+                    Group {
+                        if selected == .people {
+                            Capsule()
+                                .fill(Colors.primaryDark)
+                                .matchedGeometryEffect(id: "coveTabUnderline", in: underlineNamespace)
+                        } else {
+                            Color.clear
+                        }
+                    }
+                    .frame(height: 1)
+                }
+            }
+        }
+        .padding(.horizontal, 30)
+        .padding(.top, 6)
+        .padding(.bottom, 8)
     }
 }
 
