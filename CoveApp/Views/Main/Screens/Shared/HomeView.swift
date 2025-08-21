@@ -77,7 +77,7 @@ struct TabBarView: View {
             // Friends Tab
             Button(action: { selectedTab = 4 }) {
                 ZStack(alignment: .topTrailing) {
-                    Image(selectedTab == 4 ? "friends_selected" : "friends_unselected")
+                    Image(selectedTab == 4 ? "calendar_selected" : "calendar_unselected")
                         .tabBarIcon(isSelected: selectedTab == 4, isMiddleButton: true)
                         .animation(.none, value: selectedTab)
                         .padding(.top, 2)
@@ -168,7 +168,7 @@ struct HomeView: View {
                     case 1: UpcomingView()
                     case 2: DiscoverView()
                     case 3: CoveFeedView()
-                    case 4: FriendsTabView()
+                    case 4: CalendarView()
                     case 5: ProfileView()
                     default: DiscoverView()
                     }
