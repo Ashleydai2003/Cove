@@ -163,8 +163,6 @@ struct CoveFeedView: View {
 // MARK: - Cove Top Tabs
 private struct CoveTopTabs: View {
     @Binding var selected: Tab
-    @Binding var sharedIsDragging: Bool
-    @Binding var sharedDragTranslation: CGFloat
     @Namespace private var underlineNamespace
     @State private var dragTranslation: CGFloat = 0
     @State private var isDragging: Bool = false
@@ -191,7 +189,7 @@ private struct CoveTopTabs: View {
                         }
                     }
                     .frame(height: 1)
-                    .opacity((isDragging || sharedIsDragging) ? 0 : 1)
+                    .opacity(isDragging ? 0 : 1)
                 }
             }
             .anchorPreference(key: CoveTabBoundsKey.self, value: .bounds) { ["coves": $0] }
@@ -216,7 +214,7 @@ private struct CoveTopTabs: View {
                         }
                     }
                     .frame(height: 1)
-                    .opacity((isDragging || sharedIsDragging) ? 0 : 1)
+                    .opacity(isDragging ? 0 : 1)
                 }
             }
             .anchorPreference(key: CoveTabBoundsKey.self, value: .bounds) { ["people": $0] }
@@ -251,8 +249,7 @@ private struct CoveTopTabs: View {
                     let rightCenterX = rightFrame.midX
                     let distance = rightCenterX - leftCenterX
                     let base: CGFloat = (selected == .coves) ? 0 : 1
-                    let effectiveDrag = isDragging ? dragTranslation : (sharedIsDragging ? sharedDragTranslation : 0)
-                    let dragProgress: CGFloat = (isDragging || sharedIsDragging) && distance != 0 ? (-effectiveDrag / distance) : 0
+                    let dragProgress: CGFloat = (isDragging && distance != 0) ? (-dragTranslation / distance) : 0
                     let t = min(max(base + dragProgress, 0), 1)
                     let width = leftFrame.width + (rightFrame.width - leftFrame.width) * t
                     let centerX = leftCenterX + distance * t
@@ -263,7 +260,7 @@ private struct CoveTopTabs: View {
                         .frame(width: width, height: 1)
                         .position(x: centerX, y: underlineY)
                         .animation(.easeInOut(duration: 0.12), value: selected)
-                        .opacity((isDragging || sharedIsDragging) ? 1 : 0)
+                        .opacity(isDragging ? 1 : 0)
                 }
             }
         }
