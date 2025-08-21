@@ -26,48 +26,60 @@ struct UpcomingView: View {
                     // Header
                     CoveBannerView()
 
-                    // Top tabs under header
-                    HomeTopTabs(selected: $topTabSelection)
+                    // Top tabs under header + full-area swipe content
+                    VStack(spacing: 0) {
+                        HomeTopTabs(selected: $topTabSelection)
 
-                    // Content switcher under tabs
-                    Group {
-                        switch topTabSelection {
-                        case .updates:
-                            ZStack {
-                                ScrollView(showsIndicators: false) {
-                                    VStack(spacing: 5) {
-                                        contentView
-                                        Spacer(minLength: 20)
-                                    }
-                                }
-                                .refreshable {
-                                    await withCheckedContinuation { continuation in
-                                        upcomingFeed.refreshUpcomingEvents {
-                                            continuation.resume()
+                        Group {
+                            switch topTabSelection {
+                            case .updates:
+                                ZStack {
+                                    ScrollView(showsIndicators: false) {
+                                        VStack(spacing: 5) {
+                                            contentView
+                                            Spacer(minLength: 20)
                                         }
                                     }
-                                }
+                                    .refreshable {
+                                        await withCheckedContinuation { continuation in
+                                            upcomingFeed.refreshUpcomingEvents {
+                                                continuation.resume()
+                                            }
+                                        }
+                                    }
 
-                                // FloatingActionView - only show for verified/admin users
-                                if isUserVerified {
-                                    VStack {
-                                        Spacer()
-                                        HStack {
+                                    // FloatingActionView - only show for verified/admin users
+                                    if isUserVerified {
+                                        VStack {
                                             Spacer()
-                                            FloatingActionView(onEventCreated: {
-                                                upcomingFeed.refreshUpcomingEvents()
-                                            })
-                                            .padding(.trailing, 20)
-                                            .padding(.bottom, 20)
+                                            HStack {
+                                                Spacer()
+                                                FloatingActionView(onEventCreated: {
+                                                    upcomingFeed.refreshUpcomingEvents()
+                                                })
+                                                .padding(.trailing, 20)
+                                                .padding(.bottom, 20)
+                                            }
                                         }
                                     }
+                                }
+                            case .calendar:
+                                HomeCalendarView()
+                            }
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    }
+                    .contentShape(Rectangle())
+                    .gesture(
+                        DragGesture(minimumDistance: 8)
+                            .onEnded { value in
+                                let dx = value.translation.width
+                                if abs(dx) > abs(value.translation.height) {
+                                    if dx < -30 { withAnimation(.easeInOut(duration: 0.22)) { topTabSelection = .calendar } }
+                                    else if dx > 30 { withAnimation(.easeInOut(duration: 0.22)) { topTabSelection = .updates } }
                                 }
                             }
-                        case .calendar:
-                            HomeCalendarView()
-                        }
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    )
                 }
             }
             .navigationDestination(for: String.self) { eventId in
@@ -242,6 +254,8 @@ struct UpcomingView: View {
 private struct HomeTopTabs: View {
     @Binding var selected: Tab
     @Namespace private var underlineNamespace
+    @State private var dragTranslation: CGFloat = 0
+    @State private var isDragging: Bool = false
 
     enum Tab { case updates, calendar }
 
@@ -265,8 +279,10 @@ private struct HomeTopTabs: View {
                         }
                     }
                     .frame(height: 1)
+                    .opacity(isDragging ? 0 : 1)
                 }
             }
+            .anchorPreference(key: HomeTabBoundsKey.self, value: .bounds) { ["updates": $0] }
 
             Spacer()
 
@@ -288,12 +304,64 @@ private struct HomeTopTabs: View {
                         }
                     }
                     .frame(height: 1)
+                    .opacity(isDragging ? 0 : 1)
                 }
             }
+            .anchorPreference(key: HomeTabBoundsKey.self, value: .bounds) { ["calendar": $0] }
         }
         .padding(.horizontal, 30)
         .padding(.top, 6)
         .padding(.bottom, 8)
+        .contentShape(Rectangle())
+        .gesture(
+            DragGesture(minimumDistance: 8)
+                .onChanged { value in
+                    isDragging = true
+                    dragTranslation = value.translation.width
+                }
+                .onEnded { value in
+                    isDragging = false
+                    let endTranslation = value.translation.width
+                    if endTranslation < -30 {
+                        withAnimation(.easeInOut(duration: 0.22)) { selected = .calendar }
+                    } else if endTranslation > 30 {
+                        withAnimation(.easeInOut(duration: 0.22)) { selected = .updates }
+                    }
+                    dragTranslation = 0
+                }
+        )
+        .overlayPreferenceValue(HomeTabBoundsKey.self) { prefs in
+            GeometryReader { proxy in
+                if let leftAnchor = prefs["updates"], let rightAnchor = prefs["calendar"] {
+                    let leftFrame = proxy[leftAnchor]
+                    let rightFrame = proxy[rightAnchor]
+                    let leftCenterX = leftFrame.midX
+                    let rightCenterX = rightFrame.midX
+                    let distance = rightCenterX - leftCenterX
+                    let base: CGFloat = (selected == .updates) ? 0 : 1
+                    let dragProgress: CGFloat = isDragging && distance != 0 ? (-dragTranslation / distance) : 0
+                    let t = min(max(base + dragProgress, 0), 1)
+                    let width = leftFrame.width + (rightFrame.width - leftFrame.width) * t
+                    let centerX = leftCenterX + distance * t
+                    let underlineY = max(leftFrame.maxY, rightFrame.maxY) + 1
+
+                    Capsule()
+                        .fill(Colors.primaryDark)
+                        .frame(width: width, height: 1)
+                        .position(x: centerX, y: underlineY)
+                        .animation(.easeInOut(duration: 0.12), value: selected)
+                        .opacity(isDragging ? 1 : 0)
+                }
+            }
+        }
+    }
+}
+
+// Preference key for capturing tab bounds in Home tabs
+private struct HomeTabBoundsKey: PreferenceKey {
+    static var defaultValue: [String: Anchor<CGRect>] = [:]
+    static func reduce(value: inout [String: Anchor<CGRect>], nextValue: () -> [String: Anchor<CGRect>]) {
+        value.merge(nextValue(), uniquingKeysWith: { $1 })
     }
 }
 

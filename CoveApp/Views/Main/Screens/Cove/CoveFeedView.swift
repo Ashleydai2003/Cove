@@ -151,6 +151,8 @@ struct CoveFeedView: View {
 private struct CoveTopTabs: View {
     @Binding var selected: Tab
     @Namespace private var underlineNamespace
+    @State private var dragTranslation: CGFloat = 0
+    @State private var isDragging: Bool = false
 
     enum Tab { case coves, people }
 
@@ -174,8 +176,10 @@ private struct CoveTopTabs: View {
                         }
                     }
                     .frame(height: 1)
+                    .opacity(isDragging ? 0 : 1)
                 }
             }
+            .anchorPreference(key: CoveTabBoundsKey.self, value: .bounds) { ["coves": $0] }
 
             Spacer()
 
@@ -197,15 +201,66 @@ private struct CoveTopTabs: View {
                         }
                     }
                     .frame(height: 1)
+                    .opacity(isDragging ? 0 : 1)
                 }
             }
+            .anchorPreference(key: CoveTabBoundsKey.self, value: .bounds) { ["people": $0] }
         }
         .padding(.horizontal, 30)
         .padding(.top, 6)
         .padding(.bottom, 8)
+        .contentShape(Rectangle())
+        .gesture(
+            DragGesture(minimumDistance: 8)
+                .onChanged { value in
+                    isDragging = true
+                    dragTranslation = value.translation.width
+                }
+                .onEnded { value in
+                    isDragging = false
+                    let endTranslation = value.translation.width
+                    if endTranslation < -30 {
+                        withAnimation(.easeInOut(duration: 0.22)) { selected = .people }
+                    } else if endTranslation > 30 {
+                        withAnimation(.easeInOut(duration: 0.22)) { selected = .coves }
+                    }
+                    dragTranslation = 0
+                }
+        )
+        .overlayPreferenceValue(CoveTabBoundsKey.self) { prefs in
+            GeometryReader { proxy in
+                if let leftAnchor = prefs["coves"], let rightAnchor = prefs["people"] {
+                    let leftFrame = proxy[leftAnchor]
+                    let rightFrame = proxy[rightAnchor]
+                    let leftCenterX = leftFrame.midX
+                    let rightCenterX = rightFrame.midX
+                    let distance = rightCenterX - leftCenterX
+                    let base: CGFloat = (selected == .coves) ? 0 : 1
+                    let dragProgress: CGFloat = isDragging && distance != 0 ? (-dragTranslation / distance) : 0
+                    let t = min(max(base + dragProgress, 0), 1)
+                    let width = leftFrame.width + (rightFrame.width - leftFrame.width) * t
+                    let centerX = leftCenterX + distance * t
+                    let underlineY = max(leftFrame.maxY, rightFrame.maxY) + 1
+
+                    Capsule()
+                        .fill(Colors.primaryDark)
+                        .frame(width: width, height: 1)
+                        .position(x: centerX, y: underlineY)
+                        .animation(.easeInOut(duration: 0.12), value: selected)
+                        .opacity(isDragging ? 1 : 0)
+                }
+            }
+        }
     }
 }
 
+// Preference key for capturing tab bounds in Cove tabs
+private struct CoveTabBoundsKey: PreferenceKey {
+    static var defaultValue: [String: Anchor<CGRect>] = [:]
+    static func reduce(value: inout [String: Anchor<CGRect>], nextValue: () -> [String: Anchor<CGRect>]) {
+        value.merge(nextValue(), uniquingKeysWith: { $1 })
+    }
+}
 #Preview {
     CoveFeedView()
         .environmentObject(AppController.shared)
