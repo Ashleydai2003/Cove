@@ -251,7 +251,7 @@ private struct HomeTopTabs: View {
             Button(action: {
                 withAnimation(.easeInOut(duration: 0.22)) { selected = .updates }
             }) {
-                VStack(spacing: 4) {
+                VStack(spacing: 6) {
                     Text("updates")
                         .font(.LibreBodoni(size: 16))
                         .foregroundStyle(Colors.primaryDark)
@@ -264,7 +264,7 @@ private struct HomeTopTabs: View {
                             Color.clear
                         }
                     }
-                    .frame(height: 2)
+                    .frame(height: 1)
                 }
             }
 
@@ -274,7 +274,7 @@ private struct HomeTopTabs: View {
             Button(action: {
                 withAnimation(.easeInOut(duration: 0.22)) { selected = .calendar }
             }) {
-                VStack(spacing: 4) {
+                VStack(spacing: 6) {
                     Text("calendar")
                         .font(.LibreBodoni(size: 16))
                         .foregroundStyle(Colors.primaryDark)
@@ -287,12 +287,12 @@ private struct HomeTopTabs: View {
                             Color.clear
                         }
                     }
-                    .frame(height: 2)
+                    .frame(height: 1)
                 }
             }
         }
         .padding(.horizontal, 30)
-        .padding(.top, 10)
+        .padding(.top, 6)
         .padding(.bottom, 8)
     }
 }
