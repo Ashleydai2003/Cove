@@ -12,6 +12,7 @@ struct CoveFeedView: View {
     @ObservedObject private var coveFeed: CoveFeed
     @State private var navigationPath = NavigationPath()
     @State private var topTabSelection: CoveTopTabs.Tab = .coves
+    
 
     init() {
         // Initialize with the shared instance
@@ -29,8 +30,8 @@ struct CoveFeedView: View {
                 // Top tabs under safe area
                 CoveTopTabs(selected: $topTabSelection)
 
-                // Content switcher
-                Group {
+                // Content switcher with full-area swipe
+                VStack(spacing: 0) {
                     switch topTabSelection {
                     case .coves:
                         // Only show loading if we have no coves AND we're actively loading
@@ -95,6 +96,18 @@ struct CoveFeedView: View {
                         PeopleInNetworkView()
                     }
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .contentShape(Rectangle())
+                .gesture(
+                    DragGesture(minimumDistance: 8)
+                        .onEnded { value in
+                            let dx = value.translation.width
+                            if abs(dx) > abs(value.translation.height) {
+                                if dx < -30 { withAnimation(.easeInOut(duration: 0.22)) { topTabSelection = .people } }
+                                else if dx > 30 { withAnimation(.easeInOut(duration: 0.22)) { topTabSelection = .coves } }
+                            }
+                        }
+                )
             }
             }
             .navigationDestination(for: String.self) { value in
@@ -150,6 +163,8 @@ struct CoveFeedView: View {
 // MARK: - Cove Top Tabs
 private struct CoveTopTabs: View {
     @Binding var selected: Tab
+    @Binding var sharedIsDragging: Bool
+    @Binding var sharedDragTranslation: CGFloat
     @Namespace private var underlineNamespace
     @State private var dragTranslation: CGFloat = 0
     @State private var isDragging: Bool = false
@@ -176,7 +191,7 @@ private struct CoveTopTabs: View {
                         }
                     }
                     .frame(height: 1)
-                    .opacity(isDragging ? 0 : 1)
+                    .opacity((isDragging || sharedIsDragging) ? 0 : 1)
                 }
             }
             .anchorPreference(key: CoveTabBoundsKey.self, value: .bounds) { ["coves": $0] }
@@ -201,7 +216,7 @@ private struct CoveTopTabs: View {
                         }
                     }
                     .frame(height: 1)
-                    .opacity(isDragging ? 0 : 1)
+                    .opacity((isDragging || sharedIsDragging) ? 0 : 1)
                 }
             }
             .anchorPreference(key: CoveTabBoundsKey.self, value: .bounds) { ["people": $0] }
@@ -236,7 +251,8 @@ private struct CoveTopTabs: View {
                     let rightCenterX = rightFrame.midX
                     let distance = rightCenterX - leftCenterX
                     let base: CGFloat = (selected == .coves) ? 0 : 1
-                    let dragProgress: CGFloat = isDragging && distance != 0 ? (-dragTranslation / distance) : 0
+                    let effectiveDrag = isDragging ? dragTranslation : (sharedIsDragging ? sharedDragTranslation : 0)
+                    let dragProgress: CGFloat = (isDragging || sharedIsDragging) && distance != 0 ? (-effectiveDrag / distance) : 0
                     let t = min(max(base + dragProgress, 0), 1)
                     let width = leftFrame.width + (rightFrame.width - leftFrame.width) * t
                     let centerX = leftCenterX + distance * t
@@ -247,7 +263,7 @@ private struct CoveTopTabs: View {
                         .frame(width: width, height: 1)
                         .position(x: centerX, y: underlineY)
                         .animation(.easeInOut(duration: 0.12), value: selected)
-                        .opacity(isDragging ? 1 : 0)
+                        .opacity((isDragging || sharedIsDragging) ? 1 : 0)
                 }
             }
         }
