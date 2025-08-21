@@ -24,7 +24,7 @@ struct UpcomingView: View {
 
                 VStack(spacing: 0) {
                     // Header
-                    CoveBannerView(showCalendarButton: false)
+                    CoveBannerView()
 
                     // Top tabs under header
                     HomeTopTabs(selected: $topTabSelection)
@@ -253,7 +253,7 @@ private struct HomeTopTabs: View {
             }) {
                 VStack(spacing: 4) {
                     Text("updates")
-                        .font(.LibreBodoni(size: 18))
+                        .font(.LibreBodoni(size: 14))
                         .foregroundStyle(Colors.primaryDark)
                     Group {
                         if selected == .updates {
@@ -276,7 +276,7 @@ private struct HomeTopTabs: View {
             }) {
                 VStack(spacing: 4) {
                     Text("calendar")
-                        .font(.LibreBodoni(size: 18))
+                        .font(.LibreBodoni(size: 14))
                         .foregroundStyle(Colors.primaryDark)
                     Group {
                         if selected == .calendar {
@@ -292,7 +292,7 @@ private struct HomeTopTabs: View {
             }
         }
         .padding(.horizontal, 30)
-        .padding(.top, 10)
+        .padding(.top, 8)
         .padding(.bottom, 8)
     }
 }
