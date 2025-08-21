@@ -25,21 +25,6 @@ struct CoveFeedView: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
-                // Minimal header with only people icon at top-right
-                HStack {
-                    Spacer()
-                    Button(action: {}) {
-                        Image(systemName: "person.2.circle")
-                            .resizable()
-                            .frame(width: 26, height: 26)
-                            .foregroundColor(Colors.primaryDark)
-                    }
-                    .buttonStyle(IconHighlightButtonStyle())
-                }
-                .padding(.horizontal, 30)
-                .padding(.top, 12)
-                .padding(.bottom, 8)
-
                     // Only show loading if we have no coves AND we're actively loading
                     // (coves should already be fetched during onboarding)
                     if coveFeed.userCoves.isEmpty && coveFeed.isLoading {
@@ -147,15 +132,6 @@ struct CoveFeedView: View {
             }
         }
         return nil
-    }
-}
-
-// Subtle highlight effect to mimic existing header icons behavior
-private struct IconHighlightButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .opacity(configuration.isPressed ? 0.7 : 1.0)
-            .animation(.easeInOut(duration: 0.12), value: configuration.isPressed)
     }
 }
 
