@@ -12,6 +12,7 @@ struct UpcomingView: View {
     @EnvironmentObject var appController: AppController
     @ObservedObject private var upcomingFeed: UpcomingFeed
     @State private var topTabSelection: HomeTopTabs.Tab = .updates
+    @State private var headerOpacity: CGFloat = 1.0
 
     init() {
         self._upcomingFeed = ObservedObject(wrappedValue: AppController.shared.upcomingFeed)
@@ -22,52 +23,75 @@ struct UpcomingView: View {
             ZStack {
                 Colors.background.ignoresSafeArea()
 
-                VStack(spacing: 0) {
-                    // Header
-                    CoveBannerView()
-
-                    // Top tabs under header + full-area swipe content
-                    VStack(spacing: 0) {
-                        HomeTopTabs(selected: $topTabSelection)
-
-                        Group {
-                            switch topTabSelection {
-                            case .updates:
-                                ZStack {
-                                    ScrollView(showsIndicators: false) {
-                                        VStack(spacing: 5) {
-                                            contentView
-                                            Spacer(minLength: 20)
-                                        }
-                                    }
-                                    .refreshable {
-                                        await withCheckedContinuation { continuation in
-                                            upcomingFeed.refreshUpcomingEvents {
-                                                continuation.resume()
-                                            }
-                                        }
-                                    }
-
-                                    
+                // Scrollable content with pinned tabs and fading header
+                ScrollView(showsIndicators: false) {
+                    LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
+                        // Fading header that scrolls away
+                        CoveBannerView()
+                            .background(Colors.background)
+                            .opacity(headerOpacity)
+                            .animation(.easeInOut(duration: 0.18), value: headerOpacity)
+                            .background(
+                                GeometryReader { geo in
+                                    Color.clear
+                                        .preference(
+                                            key: HeaderOffsetPreferenceKey.self,
+                                            value: HeaderOffset(
+                                                height: geo.size.height,
+                                                minY: geo.frame(in: .named("upcomingScroll")).minY
+                                            )
+                                        )
                                 }
-                            case .discover:
-                                DiscoverTabView()
+                            )
+
+                        // Pinned tabs
+                        Section(
+                            header:
+                                ZStack(alignment: .bottom) {
+                                    Colors.background.ignoresSafeArea(edges: .top)
+                                    HomeTopTabs(selected: $topTabSelection)
+                                }
+                                .zIndex(1000)
+                        ) {
+                            Group {
+                                if topTabSelection == .updates {
+                                    VStack(spacing: 5) {
+                                        contentView
+                                        Spacer(minLength: 20)
+                                    }
+                                    .zIndex(0)
+                                } else {
+                                    DiscoverTabView()
+                                }
                             }
                         }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
-                    .contentShape(Rectangle())
-                    .gesture(
-                        DragGesture(minimumDistance: 8)
-                            .onEnded { value in
-                                let dx = value.translation.width
-                                if abs(dx) > abs(value.translation.height) {
-                                    if dx < -30 { withAnimation(.easeInOut(duration: 0.22)) { topTabSelection = .discover } }
-                                    else if dx > 30 { withAnimation(.easeInOut(duration: 0.22)) { topTabSelection = .updates } }
-                                }
-                            }
-                    )
                 }
+                .coordinateSpace(name: "upcomingScroll")
+                .onPreferenceChange(HeaderOffsetPreferenceKey.self) { data in
+                    let progress = min(max(-data.minY / max(data.height, 1), 0), 1)
+                    headerOpacity = 1 - progress
+                }
+                .refreshable {
+                    await withCheckedContinuation { continuation in
+                        if topTabSelection == .updates {
+                            upcomingFeed.refreshUpcomingEvents {
+                                continuation.resume()
+                            }
+                        } else {
+                            continuation.resume()
+                        }
+                    }
+                }
+
+                // Opaque top-safe-area overlay to prevent content peeking during bounce
+                GeometryReader { proxy in
+                    Colors.background
+                        .frame(height: proxy.safeAreaInsets.top)
+                        .ignoresSafeArea(edges: .top)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                }
+                .allowsHitTesting(false)
             }
             .navigationDestination(for: String.self) { eventId in
                 // Find the event in our feed data to get the cover photo
@@ -349,6 +373,19 @@ private struct HomeTabBoundsKey: PreferenceKey {
     static var defaultValue: [String: Anchor<CGRect>] = [:]
     static func reduce(value: inout [String: Anchor<CGRect>], nextValue: () -> [String: Anchor<CGRect>]) {
         value.merge(nextValue(), uniquingKeysWith: { $1 })
+    }
+}
+
+// Preference for tracking header offset to compute fade
+private struct HeaderOffset: Equatable {
+    let height: CGFloat
+    let minY: CGFloat
+}
+
+private struct HeaderOffsetPreferenceKey: PreferenceKey {
+    static var defaultValue: HeaderOffset = HeaderOffset(height: 1, minY: 0)
+    static func reduce(value: inout HeaderOffset, nextValue: () -> HeaderOffset) {
+        value = nextValue()
     }
 }
 
