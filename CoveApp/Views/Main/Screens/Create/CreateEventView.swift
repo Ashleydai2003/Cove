@@ -28,6 +28,11 @@ struct CreateEventView: View {
     @StateObject private var viewModel = NewEventModel()
 
     @FocusState private var isFocused: Bool
+    @FocusState private var isAddressFocused: Bool
+    @StateObject private var addressVM = LocationSearchViewModel()
+    @State private var showAddressInput = false
+    @State private var showAddressDropdown = false
+    @State private var searchAddress: String = ""
 
     var onEventCreated: (() -> Void)? = nil
 
@@ -45,17 +50,38 @@ struct CreateEventView: View {
             VStack {
                 headerView
 
-                ScrollView(.vertical, showsIndicators: false) {
-                    VStack(spacing: 8) {
-                        eventNameSection
-                        imagePickerSection
-                        dateTimeSection
-                        locationSection
-                        spotsSection
-                        // TODO: in the future we also want to have a privacy section
-                        createButtonView
+                ScrollViewReader { proxy in
+                    ScrollView(.vertical, showsIndicators: false) {
+                        VStack(spacing: 8) {
+                            eventNameSection
+                            imagePickerSection
+                            dateTimeSection
+                            locationSection
+                                .id("locationSection")
+                            spotsSection
+                            // TODO: in the future we also want to have a privacy section
+                            createButtonView
+                        }
+                        .padding(.horizontal, 32)
                     }
-                    .padding(.horizontal, 32)
+                    .onChange(of: showAddressInput) { _, newValue in
+                        if newValue {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    proxy.scrollTo("locationSection", anchor: .center)
+                                }
+                            }
+                        }
+                    }
+                    .onChange(of: isAddressFocused) { _, focused in
+                        if focused {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    proxy.scrollTo("locationSection", anchor: .center)
+                                }
+                            }
+                        }
+                    }
                 }
 
                 Spacer(minLength: 24)
@@ -80,12 +106,8 @@ struct CreateEventView: View {
                 .datePickerStyle(.wheel)
                 .presentationDetents([.height(200)])
         }
-        .toolbar {
-            ToolbarItem(placement: .keyboard) {
-                keyboardAccessoryView
-            }
-        }
         .navigationBarBackButtonHidden()
+        .toolbar(.hidden, for: .navigationBar)
         .onAppear {
             if let coveId = coveId {
                 viewModel.coveId = coveId
@@ -204,33 +226,107 @@ extension CreateEventView {
 
     // MARK: - Location Section
     private var locationSection: some View {
-        Button {
-            viewModel.showLocationPicker = true
-        } label: {
-            HStack {
-                Image(systemName: "location")
-                    .font(.system(size: 20))
-                    .foregroundStyle(Color.white)
-                    .padding(.leading, 24)
-
-                Text("location")
-                    .foregroundStyle(Color.white)
-                    .font(.LibreBodoniBold(size: 16))
-                    .padding(.leading, 16)
-
-                Spacer()
-
-                Text(viewModel.location ?? "")
-                    .foregroundStyle(Color.white)
-                    .font(.LibreBodoniBold(size: 16))
-                    .lineLimit(2)
-                    .padding(.trailing, 24)
-            }
-            .frame(maxWidth: .infinity, minHeight: 46, maxHeight: 46, alignment: .leading)
-            .background(
+        VStack(spacing: 8) {
+            ZStack(alignment: .leading) {
                 RoundedRectangle(cornerRadius: 10)
                     .fill(Colors.primaryDark)
-            )
+                    .frame(maxWidth: .infinity, minHeight: 46, maxHeight: .infinity, alignment: .leading)
+
+                HStack(spacing: 0) {
+                    Image(systemName: "location")
+                        .font(.system(size: 20))
+                        .foregroundStyle(Color.white)
+                        .padding(.leading, 24)
+
+                    if showAddressInput {
+                        ZStack(alignment: .leading) {
+                            if searchAddress.isEmpty {
+                                Text("address")
+                                    .foregroundColor(Color.white)
+                                    .font(.LibreBodoniBold(size: 16))
+                            }
+                            TextField("", text: $searchAddress)
+                                .font(.LibreBodoniBold(size: 16))
+                                .foregroundColor(Color.white)
+                                .keyboardType(.alphabet)
+                                .focused($isAddressFocused)
+                                .onChange(of: searchAddress) { oldValue, newValue in
+                                    let trimmed = newValue.trimmingCharacters(in: .whitespaces)
+                                    searchAddress = trimmed
+                                    addressVM.searchQuery = trimmed
+                                    showAddressDropdown = !trimmed.isEmpty
+                                }
+                        }
+                        .padding(.leading, 16)
+                        .padding(.trailing, 16)
+                    } else {
+                        HStack {
+                            Text(viewModel.location?.isEmpty == false ? (viewModel.location ?? "") : "address")
+                                .foregroundStyle(Color.white)
+                                .font(.LibreBodoniBold(size: 16))
+                                .lineLimit(1)
+                                .truncationMode(.tail)
+                                .padding(.leading, 16)
+                            Spacer()
+                        }
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            withAnimation(.easeInOut(duration: 0.18)) {
+                                showAddressInput = true
+                                searchAddress = viewModel.location ?? ""
+                            }
+                            isAddressFocused = true
+                            showAddressDropdown = !searchAddress.isEmpty
+                        }
+                        .padding(.trailing, 16)
+                    }
+
+                    Spacer()
+                }
+            }
+            .buttonStyle(.plain)
+
+            if showAddressDropdown {
+                let resultsCount = min(addressVM.searchResults.count, 5)
+                VStack(spacing: 0) {
+                    ForEach(0..<resultsCount, id: \.self) { idx in
+                        let result = addressVM.searchResults[idx]
+                        Button {
+                            addressVM.selectLocation(completion: result) { location in
+                                viewModel.location = location
+                                searchAddress = ""
+                                showAddressDropdown = false
+                                showAddressInput = false
+                                isAddressFocused = false
+                            }
+                        } label: {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(result.title)
+                                        .font(.LibreBodoni(size: 16))
+                                        .foregroundColor(Colors.background)
+                                    if !result.subtitle.isEmpty {
+                                        Text(result.subtitle)
+                                            .font(.LeagueSpartan(size: 14))
+                                            .foregroundColor(Colors.background.opacity(0.8))
+                                    }
+                                }
+                                Spacer()
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
+                        }
+                        .buttonStyle(.plain)
+                        .background(Colors.primaryDark)
+
+                        if idx < resultsCount - 1 {
+                            Divider().background(Colors.background.opacity(0.15))
+                        }
+                    }
+                }
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 4)
+            }
         }
     }
 
@@ -363,18 +459,7 @@ extension CreateEventView {
         )
     }
 
-    // MARK: - Keyboard Accessory
-    private var keyboardAccessoryView: some View {
-        HStack {
-            Spacer()
-            Button("Done") {
-                isFocused = false
-            }
-            .padding(.trailing, 16)
-            .padding(.vertical, 8)
-        }
-        .background(Color(.systemGray6))
-    }
+    // Keyboard accessory removed for cleaner UI
 }
 
 #Preview {
