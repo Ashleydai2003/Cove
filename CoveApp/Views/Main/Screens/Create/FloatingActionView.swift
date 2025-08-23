@@ -30,8 +30,8 @@ struct FloatingActionView: View {
             // Menu options - appear above the + button
             if showMenu {
                 VStack(alignment: .trailing, spacing: 12) {
-                    // Cove option – available to verified users
-                    if appController.profileModel.verified {
+                    // Cove option – only at top level (no coveId) and for verified users
+                    if appController.profileModel.verified && coveId == nil {
                         Button(action: {
                             showMenu = false
                             navigateToCreateCove = true
