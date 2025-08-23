@@ -386,20 +386,20 @@ extension CreateCoveView {
         } label: {
             if viewModel.isSubmitting {
                 ProgressView()
-                    .tint(.black)
+                    .tint(Colors.background)
                     .frame(maxWidth: .infinity, minHeight: 60, maxHeight: 60, alignment: .center)
                     .background(
                         RoundedRectangle(cornerRadius: 14)
-                            .fill(Color.white)
+                            .fill(Colors.primaryDark)
                     )
             } else {
                 Text(viewModel.hasInvites ? "create & invite" : "create")
-                    .foregroundStyle(!viewModel.isFormValid ? Color.gray : Color.black)
+                    .foregroundStyle(!viewModel.isFormValid ? Color.gray : Colors.background)
                     .font(.LibreBodoniBold(size: 16))
                     .frame(maxWidth: .infinity, minHeight: 60, maxHeight: 60, alignment: .center)
                     .background(
                         RoundedRectangle(cornerRadius: 14)
-                            .fill(!viewModel.isFormValid ? Color.gray.opacity(0.3) : Color.white)
+                            .fill(!viewModel.isFormValid ? Color.gray.opacity(0.3) : Colors.primaryDark)
                     )
             }
         }
