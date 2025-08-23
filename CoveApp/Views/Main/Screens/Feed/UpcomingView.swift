@@ -298,7 +298,7 @@ private struct HomeTopTabs: View {
         }
         .padding(.horizontal, 30)
         .padding(.top, 6)
-        .padding(.bottom, 8)
+        .padding(.bottom, 0)
         .contentShape(Rectangle())
         .gesture(
             DragGesture(minimumDistance: 8)
