@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct CoveFeedView: View {
     @EnvironmentObject var appController: AppController
@@ -127,8 +128,10 @@ struct CoveFeedView: View {
                             let dy = value.translation.height
                             guard abs(dx) > abs(dy), abs(dx) > 30 else { return }
                             if dx < 0 {
+                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
                                 withAnimation(.easeInOut(duration: 0.22)) { topTabSelection = .people }
                             } else {
+                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
                                 withAnimation(.easeInOut(duration: 0.22)) { topTabSelection = .coves }
                             }
                         }
@@ -203,6 +206,7 @@ private struct CoveTopTabs: View {
         HStack {
             // Coves tab (left, default)
             Button(action: {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 withAnimation(.easeInOut(duration: 0.22)) { selected = .coves }
             }) {
                 VStack(spacing: 6) {
@@ -228,6 +232,7 @@ private struct CoveTopTabs: View {
 
             // People tab (right)
             Button(action: {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 withAnimation(.easeInOut(duration: 0.22)) { selected = .people }
             }) {
                 VStack(spacing: 6) {

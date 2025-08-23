@@ -5,6 +5,7 @@
 //  Created by Ananya Agarwal
 
 import SwiftUI
+import UIKit
 import Kingfisher
 
 /// CoveView: Displays the feed for a specific cove, including cove details and events.
@@ -164,6 +165,7 @@ struct CoveView: View {
                             let dy = value.translation.height
                             guard abs(dx) > abs(dy), abs(dx) > 30 else { return }
                             if dx < 0 {
+                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
                                 withAnimation(.easeInOut(duration: 0.22)) {
                                     switch selectedTab {
                                     case .events: selectedTab = .posts
@@ -172,6 +174,7 @@ struct CoveView: View {
                                     }
                                 }
                             } else {
+                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
                                 withAnimation(.easeInOut(duration: 0.22)) {
                                     switch selectedTab {
                                     case .events: break
@@ -257,7 +260,10 @@ private struct CoveDetailTabs: View {
 
     var body: some View {
         HStack {
-            Button(action: { withAnimation(.easeInOut(duration: 0.22)) { selected = .events } }) {
+            Button(action: {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                withAnimation(.easeInOut(duration: 0.22)) { selected = .events }
+            }) {
                 VStack(spacing: 6) {
                     Text("events")
                         .font(.LibreBodoni(size: 16))
@@ -275,7 +281,10 @@ private struct CoveDetailTabs: View {
 
             Spacer()
 
-            Button(action: { withAnimation(.easeInOut(duration: 0.22)) { selected = .posts } }) {
+            Button(action: {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                withAnimation(.easeInOut(duration: 0.22)) { selected = .posts }
+            }) {
                 VStack(spacing: 6) {
                     Text("posts")
                         .font(.LibreBodoni(size: 16))
@@ -293,7 +302,10 @@ private struct CoveDetailTabs: View {
 
             Spacer()
 
-            Button(action: { withAnimation(.easeInOut(duration: 0.22)) { selected = .members } }) {
+            Button(action: {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                withAnimation(.easeInOut(duration: 0.22)) { selected = .members }
+            }) {
                 VStack(spacing: 6) {
                     Text("members")
                         .font(.LibreBodoni(size: 16))

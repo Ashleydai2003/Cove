@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import UIKit
 import FirebaseAuth
 
 // MARK: - UpcomingView
@@ -119,8 +120,10 @@ struct UpcomingView: View {
                         let dy = value.translation.height
                         guard abs(dx) > abs(dy), abs(dx) > 30 else { return }
                         if dx < 0 {
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
                             withAnimation(.easeInOut(duration: 0.22)) { topTabSelection = .discover }
                         } else {
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
                             withAnimation(.easeInOut(duration: 0.22)) { topTabSelection = .updates }
                         }
                     }
@@ -311,6 +314,7 @@ private struct HomeTopTabs: View {
         HStack {
             // Updates tab (default)
             Button(action: {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 withAnimation(.easeInOut(duration: 0.22)) { selected = .updates }
             }) {
                 VStack(spacing: 6) {
@@ -336,6 +340,7 @@ private struct HomeTopTabs: View {
 
             // Discover tab
             Button(action: {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 withAnimation(.easeInOut(duration: 0.22)) { selected = .discover }
             }) {
                 VStack(spacing: 6) {
