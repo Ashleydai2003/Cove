@@ -43,18 +43,20 @@ struct CoveView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let cove = viewModel.cove {
                 VStack(spacing: 0) {
-                    // Fixed header (stationary, long press to refresh cove details - 5 hour cache)
-                    CoveHeaderView(cove: cove,
-                                 onBackTapped: { dismiss() },
-                                 isRefreshing: viewModel.isRefreshingCoveDetails,
-                                 onRefresh: {
-                        await withCheckedContinuation { continuation in
-                            viewModel.refreshCoveDetails()
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: {
-                                continuation.resume()
-                            })
+                    // Compact info header (centered, smaller square image)
+                    CoveInfoHeaderView(
+                        cove: cove,
+                        onBackTapped: { dismiss() },
+                        isRefreshing: viewModel.isRefreshingCoveDetails,
+                        onRefresh: {
+                            await withCheckedContinuation { continuation in
+                                viewModel.refreshCoveDetails()
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                    continuation.resume()
+                                }
+                            }
                         }
-                    })
+                    )
                     .background(Colors.background)
 
                     // Top Tabs
