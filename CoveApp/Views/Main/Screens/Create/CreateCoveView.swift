@@ -21,16 +21,7 @@ struct CreateCoveView: View {
         ZStack {
             Colors.background.ignoresSafeArea()
 
-            VStack {
-                HStack {
-                    Button("cancel") { dismiss() }
-                        .font(.LibreBodoni(size: 16))
-                        .foregroundColor(Colors.primaryDark)
-                    Spacer()
-                }
-                .padding(.horizontal, 32)
-                .padding(.top, 8)
-
+            VStack(spacing: 0) {
                 headerView
 
                 ScrollView(.vertical, showsIndicators: false) {
@@ -48,7 +39,7 @@ struct CreateCoveView: View {
 
                 Spacer(minLength: 24)
             }
-            .padding(.top, 50)
+            .padding(.top, 0)
         }
         .sheet(isPresented: $viewModel.showImagePicker) {
             ImagePicker(image: $viewModel.coverPhoto)
@@ -91,23 +82,42 @@ struct CreateCoveView: View {
 extension CreateCoveView {
     // MARK: - Header
     private var headerView: some View {
-        VStack {
-            HStack(alignment: .top) {
-                Spacer()
-
-                Image("cove_logo_circle")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 100, height: 100)
-                    .padding(.leading, -10)
-
-                Spacer()
-            }
-            .padding(.horizontal, 16)
-
-            Text("create a cove")
-                .font(.Lugrasimo(size: 35))
+        ZStack {
+            // Center title
+            Text("create a cove ✨")
+                .font(.LibreBodoni(size: 18))
                 .foregroundColor(Colors.primaryDark)
+
+            // Leading/trailing actions
+            HStack {
+                Button("cancel") { dismiss() }
+                    .font(.LibreBodoni(size: 16))
+                    .foregroundColor(Colors.primaryDark)
+                Spacer()
+                Button(action: handleSave) {
+                    Text("save")
+                        .font(.LibreBodoni(size: 16))
+                        .foregroundColor(Colors.primaryDark)
+                }
+                .disabled(!viewModel.isFormValid || viewModel.isSubmitting)
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 8)
+        .padding(.bottom, 12)
+    }
+
+    private func handleSave() {
+        guard viewModel.isFormValid, !viewModel.isSubmitting else { return }
+        viewModel.submitCove { success in
+            DispatchQueue.main.async {
+                if success {
+                    appController.refreshCoveFeedAfterCreation()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        dismiss()
+                    }
+                }
+            }
         }
     }
 
