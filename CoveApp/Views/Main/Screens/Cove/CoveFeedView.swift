@@ -12,6 +12,7 @@ struct CoveFeedView: View {
     @ObservedObject private var coveFeed: CoveFeed
     @State private var navigationPath = NavigationPath()
     @State private var topTabSelection: CoveTopTabs.Tab = .coves
+    @GestureState private var isHorizontalSwiping: Bool = false
     
 
     init() {
@@ -73,7 +74,7 @@ struct CoveFeedView: View {
                             ScrollView {
                                 VStack(spacing: 0) {
                                     ForEach(Array(coveFeed.userCoves.enumerated()), id: \.element.id) { idx, cove in
-                                        CoveCardView(cove: cove)
+                                        CoveCardView(cove: cove, disableNavigation: isHorizontalSwiping)
                                         if idx < coveFeed.userCoves.count - 1 {
                                             Divider()
                                                 .padding(.leading, 100)
@@ -114,15 +115,28 @@ struct CoveFeedView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .contentShape(Rectangle())
-                .gesture(
-                    DragGesture(minimumDistance: 8)
+                .simultaneousGesture(
+                    DragGesture(minimumDistance: 16)
+                        .updating($isHorizontalSwiping) { value, state, _ in
+                            let dx = value.translation.width
+                            let dy = value.translation.height
+                            if abs(dx) > abs(dy) && abs(dx) > 10 { state = true }
+                        }
                         .onEnded { value in
                             let dx = value.translation.width
-                            if abs(dx) > abs(value.translation.height) {
-                                if dx < -30 { withAnimation(.easeInOut(duration: 0.22)) { topTabSelection = .people } }
-                                else if dx > 30 { withAnimation(.easeInOut(duration: 0.22)) { topTabSelection = .coves } }
+                            let dy = value.translation.height
+                            guard abs(dx) > abs(dy), abs(dx) > 30 else { return }
+                            if dx < 0 {
+                                withAnimation(.easeInOut(duration: 0.22)) { topTabSelection = .people }
+                            } else {
+                                withAnimation(.easeInOut(duration: 0.22)) { topTabSelection = .coves }
                             }
                         }
+                )
+                .overlay(
+                    Color.clear
+                        .ignoresSafeArea()
+                        .allowsHitTesting(isHorizontalSwiping)
                 )
             }
             }
