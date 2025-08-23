@@ -5,6 +5,7 @@
 //  Created by Assistant
 
 import SwiftUI
+import UIKit
 
 /// FloatingActionView: A circular + button that shows event and cove creation options
 struct FloatingActionView: View {
@@ -33,6 +34,7 @@ struct FloatingActionView: View {
                     // Cove option – only at top level (no coveId) and for verified users
                     if appController.profileModel.verified && coveId == nil {
                         Button(action: {
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
                             showMenu = false
                             navigateToCreateCove = true
                         }) {
@@ -60,6 +62,7 @@ struct FloatingActionView: View {
                     // Event option - only show when there's a cove context
                     if coveId != nil {
                     Button(action: {
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
                         showMenu = false
                         navigateToCreateEvent = true
                     }) {
@@ -87,6 +90,7 @@ struct FloatingActionView: View {
                     // Post option - only show when there's a cove context
                     if coveId != nil {
                     Button(action: {
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
                         showMenu = false
                         navigateToCreatePost = true
                     }) {
@@ -118,6 +122,7 @@ struct FloatingActionView: View {
 
             // Main + button - always visible at bottom right
             Button(action: {
+                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                 withAnimation(.easeInOut(duration: 0.2)) {
                     showMenu.toggle()
                 }
