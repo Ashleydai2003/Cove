@@ -36,10 +36,11 @@ struct CoveBannerView: View {
                 .buttonStyle(PlainButtonStyle())
             }
         }
-        .background(Colors.background)
         .padding(.horizontal, 30)
         .padding(.top, 12)
         .padding(.bottom, 8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Colors.background)
         .sheet(isPresented: $showInvites) {
             InboxView()
         }
