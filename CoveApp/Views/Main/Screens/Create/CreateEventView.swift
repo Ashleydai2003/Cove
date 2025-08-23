@@ -289,17 +289,12 @@ extension CreateEventView {
                     .foregroundStyle(Color.white)
                     .padding(.leading, 24)
 
-                Text("set a date")
+                Text(viewModel.eventDate.formatted(date: .abbreviated, time: .omitted))
                     .font(.LibreBodoniBold(size: 16))
                     .foregroundStyle(Color.white)
                     .padding(.leading, 16)
 
                 Spacer()
-
-                Text(viewModel.eventDate.formatted(date: .abbreviated, time: .omitted))
-                    .font(.LibreBodoniBold(size: 16))
-                    .foregroundStyle(Color.white)
-                    .padding(.trailing, 24)
             }
             .frame(height: 44)
             .background(
@@ -320,17 +315,12 @@ extension CreateEventView {
                     .foregroundStyle(Color.white)
                     .padding(.leading, 24)
 
-                Text("time")
+                Text(viewModel.eventTime.formatted(date: .omitted, time: .shortened))
                     .font(.LibreBodoniBold(size: 16))
                     .foregroundStyle(Color.white)
                     .padding(.leading, 16)
 
                 Spacer()
-
-                Text(viewModel.eventTime.formatted(date: .omitted, time: .shortened))
-                    .font(.LibreBodoniBold(size: 16))
-                    .foregroundStyle(Color.white)
-                    .padding(.trailing, 24)
             }
             .frame(height: 44)
             .background(
