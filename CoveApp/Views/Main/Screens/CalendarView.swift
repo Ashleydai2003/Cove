@@ -38,6 +38,15 @@ struct CalendarView: View {
                         }
                     }
                 }
+
+                // Opaque top-safe-area overlay to prevent content peeking during bounce
+                GeometryReader { proxy in
+                    Colors.background
+                        .frame(height: proxy.safeAreaInsets.top)
+                        .ignoresSafeArea(edges: .top)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                }
+                .allowsHitTesting(false)
             }
             .navigationDestination(for: String.self) { eventId in
                 // Find the event to extract cover photo
