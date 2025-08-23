@@ -27,6 +27,7 @@ struct CoveView: View {
     @State private var selectedTab: Tab = .events
     @GestureState private var isHorizontalSwiping: Bool = false
     @State private var headerOpacity: CGFloat = 1.0
+    @State private var showSettingsMenu: Bool = false
 
     // TODO: admin can update cove cover photo
 
@@ -62,8 +63,27 @@ struct CoveView: View {
                                             continuation.resume()
                                         }
                                     }
+                                },
+                                onSettingsTapped: {
+                                    withAnimation(.easeInOut(duration: 0.18)) {
+                                        showSettingsMenu.toggle()
+                                    }
                                 }
                             )
+                            .overlay(alignment: .topTrailing) {
+                                if showSettingsMenu {
+                                    SettingsDropdownMenu(isAdmin: viewModel.isCurrentUserAdmin) {
+                                        withAnimation(.easeInOut(duration: 0.18)) {
+                                            showSettingsMenu = false
+                                        }
+                                    }
+                                    .frame(width: UIScreen.main.bounds.width * 0.65)
+                                    .padding(.trailing, 8)
+                                    .offset(y: 40)
+                                    .transition(.opacity.combined(with: .move(edge: .top)))
+                                    .zIndex(2000)
+                                }
+                            }
                             .opacity(headerOpacity)
                             .animation(.easeInOut(duration: 0.18), value: headerOpacity)
                             .background(
@@ -89,7 +109,7 @@ struct CoveView: View {
                                             set: { selectedTab = $0 }
                                         ))
                                         .padding(.horizontal, 30)
-                                        .padding(.top, 6)
+                                        .padding(.top, 12)
                                     }
                                     .zIndex(1000)
                             ) {
@@ -432,6 +452,75 @@ private extension CoveView {
         upcoming.sort { $0.0 < $1.0 }
         past.sort { $0.0 > $1.0 }
         return upcoming.map { $0.1 } + past.map { $0.1 }
+    }
+}
+
+// MARK: - Settings Dropdown Menu
+private struct SettingsDropdownMenu: View {
+    let isAdmin: Bool
+    let dismiss: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            if isAdmin {
+                MenuRow(title: "edit cove", systemImage: "pencil") { dismiss() }
+                Divider().background(Color.black.opacity(0.08))
+                MenuRow(title: "manage members", systemImage: "person.2") { dismiss() }
+                Divider().background(Color.black.opacity(0.08))
+                MenuRow(title: "share", systemImage: "square.and.arrow.up") { dismiss() }
+                Divider().background(Color.black.opacity(0.08))
+                MenuRow(title: "delete", textColor: .red, systemImage: "trash") { dismiss() }
+            } else {
+                MenuRow(title: "share", systemImage: "square.and.arrow.up") { dismiss() }
+                Divider().background(Color.black.opacity(0.08))
+                MenuRow(title: "leave cove", textColor: .red, systemImage: "rectangle.portrait.and.arrow.right") { dismiss() }
+            }
+        }
+        .padding(.vertical, 6)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Colors.background)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.black.opacity(0.12), lineWidth: 1)
+                )
+        )
+        .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 4)
+    }
+
+    private struct MenuRow: View {
+        let title: String
+        var textColor: Color = Colors.primaryDark
+        var systemImage: String? = nil
+        let action: () -> Void
+
+        var body: some View {
+            Button(action: action) {
+                HStack(spacing: 10) {
+                    if let systemImage {
+                        Image(systemName: systemImage)
+                            .font(.system(size: 16, weight: .regular))
+                            .foregroundStyle(textColor == .red ? .red : Colors.primaryDark)
+                    }
+                    Text(title)
+                        .font(.LibreBodoni(size: 16))
+                        .foregroundStyle(textColor)
+                    Spacer(minLength: 24)
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(PressHighlightStyle())
+        }
+    }
+}
+
+// Row press highlight style
+private struct PressHighlightStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .background(configuration.isPressed ? Color.black.opacity(0.06) : Color.clear)
     }
 }
 
