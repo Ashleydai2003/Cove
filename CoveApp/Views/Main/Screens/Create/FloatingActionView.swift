@@ -13,9 +13,7 @@ struct FloatingActionView: View {
     let coveName: String?
     var onEventCreated: (() -> Void)? = nil
     @State private var showMenu = false
-    @State private var showCreateEventSheet = false
     @State private var showCreatePostSheet = false
-    @State private var showCreateCoveSheet = false
     @State private var navigateToCreateEvent = false
     @State private var navigateToCreateCove = false
     @EnvironmentObject private var appController: AppController
