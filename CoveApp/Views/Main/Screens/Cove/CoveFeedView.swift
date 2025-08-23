@@ -31,7 +31,7 @@ struct CoveFeedView: View {
                 CoveTopTabs(selected: $topTabSelection)
 
                 // Content switcher with full-area swipe
-                VStack(spacing: 0) {
+                ZStack {
                     switch topTabSelection {
                     case .coves:
                         // Only show loading if we have no coves AND we're actively loading
@@ -94,6 +94,22 @@ struct CoveFeedView: View {
                         }
                     case .people:
                         PeopleInNetworkView()
+                    }
+                    // FAB - only for verified/admin users and only on coves tab
+                    if appController.profileModel.verified && topTabSelection == .coves {
+                        VStack {
+                            Spacer()
+                            HStack {
+                                Spacer()
+                                FloatingActionView(coveId: nil) {
+                                    // Optionally refresh coves after creation
+                                    coveFeed.refreshUserCoves()
+                                }
+                                .padding(.trailing, 20)
+                                .padding(.bottom, 20)
+                            }
+                        }
+                        .allowsHitTesting(true)
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
