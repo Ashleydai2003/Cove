@@ -63,8 +63,8 @@ struct UpcomingView: View {
                                         }
                                     }
                                 }
-                            case .calendar:
-                                HomeCalendarView()
+                            case .discover:
+                                DiscoverTabView()
                             }
                         }
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -75,7 +75,7 @@ struct UpcomingView: View {
                             .onEnded { value in
                                 let dx = value.translation.width
                                 if abs(dx) > abs(value.translation.height) {
-                                    if dx < -30 { withAnimation(.easeInOut(duration: 0.22)) { topTabSelection = .calendar } }
+                                    if dx < -30 { withAnimation(.easeInOut(duration: 0.22)) { topTabSelection = .discover } }
                                     else if dx > 30 { withAnimation(.easeInOut(duration: 0.22)) { topTabSelection = .updates } }
                                 }
                             }
@@ -257,7 +257,7 @@ private struct HomeTopTabs: View {
     @State private var dragTranslation: CGFloat = 0
     @State private var isDragging: Bool = false
 
-    enum Tab { case updates, calendar }
+    enum Tab { case updates, discover }
 
     var body: some View {
         HStack {
@@ -286,16 +286,16 @@ private struct HomeTopTabs: View {
 
             Spacer()
 
-            // Calendar tab
+            // Discover tab
             Button(action: {
-                withAnimation(.easeInOut(duration: 0.22)) { selected = .calendar }
+                withAnimation(.easeInOut(duration: 0.22)) { selected = .discover }
             }) {
                 VStack(spacing: 6) {
-                    Text("calendar")
+                    Text("discover")
                         .font(.LibreBodoni(size: 16))
                         .foregroundStyle(Colors.primaryDark)
                     Group {
-                        if selected == .calendar {
+                        if selected == .discover {
                             Capsule()
                                 .fill(Colors.primaryDark)
                                 .matchedGeometryEffect(id: "tabUnderline", in: underlineNamespace)
@@ -307,7 +307,7 @@ private struct HomeTopTabs: View {
                     .opacity(isDragging ? 0 : 1)
                 }
             }
-            .anchorPreference(key: HomeTabBoundsKey.self, value: .bounds) { ["calendar": $0] }
+            .anchorPreference(key: HomeTabBoundsKey.self, value: .bounds) { ["discover": $0] }
         }
         .padding(.horizontal, 30)
         .padding(.top, 6)
@@ -323,7 +323,7 @@ private struct HomeTopTabs: View {
                     isDragging = false
                     let endTranslation = value.translation.width
                     if endTranslation < -30 {
-                        withAnimation(.easeInOut(duration: 0.22)) { selected = .calendar }
+                        withAnimation(.easeInOut(duration: 0.22)) { selected = .discover }
                     } else if endTranslation > 30 {
                         withAnimation(.easeInOut(duration: 0.22)) { selected = .updates }
                     }
@@ -332,7 +332,7 @@ private struct HomeTopTabs: View {
         )
         .overlayPreferenceValue(HomeTabBoundsKey.self) { prefs in
             GeometryReader { proxy in
-                if let leftAnchor = prefs["updates"], let rightAnchor = prefs["calendar"] {
+                if let leftAnchor = prefs["updates"], let rightAnchor = prefs["discover"] {
                     let leftFrame = proxy[leftAnchor]
                     let rightFrame = proxy[rightAnchor]
                     let leftCenterX = leftFrame.midX
@@ -506,5 +506,23 @@ struct UpcomingView_Previews: PreviewProvider {
     static var previews: some View {
         UpcomingView()
             .environmentObject(AppController.shared)
+    }
+}
+
+// MARK: - DiscoverTabView (placeholder)
+struct DiscoverTabView: View {
+    var body: some View {
+        VStack(spacing: 16) {
+            Spacer()
+            Image(systemName: "sparkles")
+                .font(.system(size: 40))
+                .foregroundColor(Colors.primaryDark)
+            Text("discover coming soon")
+                .font(.LibreBodoni(size: 18))
+                .foregroundColor(Colors.primaryDark)
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Colors.background.ignoresSafeArea())
     }
 }

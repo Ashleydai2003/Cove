@@ -44,9 +44,9 @@ struct TabBarView: View {
 
             Spacer()
 
-            // Calendar Tab
+            // Chat Tab
             Button(action: { selectedTab = 2 }) {
-                Image(selectedTab == 2 ? "discover_selected" : "discover_unselected")
+                Image(selectedTab == 2 ? "chat_selected" : "chat_unselected")
                     .tabBarIcon(isSelected: selectedTab == 2, isMiddleButton: false)
                     .animation(.none, value: selectedTab)
                     .padding(.top, 2)
@@ -166,11 +166,11 @@ struct HomeView: View {
                     // Main content area - switch instead of TabView to prevent rebuilding
                     switch tabSelection {
                     case 1: UpcomingView()
-                    case 2: DiscoverView()
+                    case 2: ChatView()
                     case 3: CoveFeedView()
                     case 4: CalendarView()
                     case 5: ProfileView()
-                    default: DiscoverView()
+                    default: ChatView()
                     }
                 }
 
@@ -217,8 +217,8 @@ struct HomeView: View {
         .navigationBarBackButtonHidden()
         .onReceive(NotificationCenter.default.publisher(for: .navigateToEvent)) { note in
             if let eventId = note.userInfo?["eventId"] as? String {
-                // Route to an event: pick Calendar tab (2) which knows how to navigate to eventId
-                tabSelection = 2
+                // Route to an event: pick Calendar tab (4) which knows how to navigate to eventId
+                tabSelection = 4
                 // Push by setting NavigationStack value via Notification; here we rely on NavigationLink(value:)
                 // A minimal approach: store a deep-link on AppController and let the CalendarView pick it up.
                 AppController.shared.calendarFeed.navigateToEventId = eventId
@@ -238,7 +238,7 @@ struct HomeView: View {
             AppController.shared.shouldAutoShowInbox = true
         }
         .onReceive(NotificationCenter.default.publisher(for: .navigateToCalendar)) { _ in
-            tabSelection = 2
+            tabSelection = 4
         }
     }
 }
@@ -246,4 +246,28 @@ struct HomeView: View {
 #Preview {
     HomeView()
         .environmentObject(AppController.shared)
+}
+
+// MARK: - ChatView (placeholder for navbar tab)
+struct ChatView: View {
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Colors.background.ignoresSafeArea()
+
+                VStack(spacing: 12) {
+                    Spacer()
+                    Image(systemName: "bubble.left.and.bubble.right")
+                        .font(.system(size: 40))
+                        .foregroundColor(Colors.primaryDark)
+                    Text("chat is coming soon!")
+                        .font(.LibreBodoniSemiBold(size: 24))
+                        .foregroundColor(Colors.primaryDark)
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+        .navigationBarBackButtonHidden()
+    }
 }
