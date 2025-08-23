@@ -13,6 +13,7 @@ struct UpcomingView: View {
     @ObservedObject private var upcomingFeed: UpcomingFeed
     @State private var topTabSelection: HomeTopTabs.Tab = .updates
     @State private var headerOpacity: CGFloat = 1.0
+    @GestureState private var isHorizontalSwiping: Bool = false
 
     init() {
         self._upcomingFeed = ObservedObject(wrappedValue: AppController.shared.upcomingFeed)
@@ -93,6 +94,29 @@ struct UpcomingView: View {
                 }
                 .allowsHitTesting(false)
             }
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 16)
+                    .updating($isHorizontalSwiping) { value, state, _ in
+                        let dx = value.translation.width
+                        let dy = value.translation.height
+                        if abs(dx) > abs(dy) && abs(dx) > 10 { state = true }
+                    }
+                    .onEnded { value in
+                        let dx = value.translation.width
+                        let dy = value.translation.height
+                        guard abs(dx) > abs(dy), abs(dx) > 30 else { return }
+                        if dx < 0 {
+                            withAnimation(.easeInOut(duration: 0.22)) { topTabSelection = .discover }
+                        } else {
+                            withAnimation(.easeInOut(duration: 0.22)) { topTabSelection = .updates }
+                        }
+                    }
+            )
+            .overlay(
+                Color.clear
+                    .ignoresSafeArea()
+                    .allowsHitTesting(isHorizontalSwiping)
+            )
             .navigationDestination(for: String.self) { eventId in
                 // Find the event in our feed data to get the cover photo
                 let upcomingEvent = appController.upcomingFeed.items.first { item in
@@ -190,7 +214,7 @@ struct UpcomingView: View {
                         createdAt: event.createdAt,
                         coverPhoto: event.coverPhoto
                     )
-                    EventSummaryView(event: calendarEvent, type: .feed)
+                    EventSummaryView(event: calendarEvent, type: .feed, disableNavigation: isHorizontalSwiping)
                         .padding(.horizontal, 20)
                         .onAppear {
                             loadMoreIfNeeded(at: idx)
@@ -277,7 +301,7 @@ private struct HomeTopTabs: View {
                 withAnimation(.easeInOut(duration: 0.22)) { selected = .updates }
             }) {
                 VStack(spacing: 6) {
-                    Text("updates")
+                    Text("updates 🎉")
                         .font(.LibreBodoni(size: 16))
                         .foregroundStyle(Colors.primaryDark)
                     Group {
@@ -302,7 +326,7 @@ private struct HomeTopTabs: View {
                 withAnimation(.easeInOut(duration: 0.22)) { selected = .discover }
             }) {
                 VStack(spacing: 6) {
-                    Text("discover")
+                    Text("discover ✨")
                         .font(.LibreBodoni(size: 16))
                         .foregroundStyle(Colors.primaryDark)
                     Group {
