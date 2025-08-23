@@ -48,20 +48,7 @@ struct UpcomingView: View {
                                         }
                                     }
 
-                                    // FloatingActionView - only show for verified/admin users
-                                    if isUserVerified {
-                                        VStack {
-                                            Spacer()
-                                            HStack {
-                                                Spacer()
-                                                FloatingActionView(onEventCreated: {
-                                                    upcomingFeed.refreshUpcomingEvents()
-                                                })
-                                                .padding(.trailing, 20)
-                                                .padding(.bottom, 20)
-                                            }
-                                        }
-                                    }
+                                    
                                 }
                             case .discover:
                                 DiscoverTabView()
