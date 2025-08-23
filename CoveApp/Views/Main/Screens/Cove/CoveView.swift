@@ -10,12 +10,12 @@ import Kingfisher
 /// CoveView: Displays the feed for a specific cove, including cove details and events.
 struct CoveView: View {
     enum Tab: Int, CaseIterable {
-        case events, members, posts
+        case events, posts, members
         var title: String {
             switch self {
             case .events: return "events"
-            case .members: return "members"
             case .posts: return "posts"
+            case .members: return "members"
             }
         }
     }
@@ -59,15 +59,13 @@ struct CoveView: View {
                     )
                     .background(Colors.background)
 
-                    // Top Tabs
-                    PillTabBar(
-                        titles: Tab.allCases.map { $0.title },
-                        selectedIndex: Binding(
-                            get: { selectedTab.rawValue },
-                            set: { selectedTab = Tab(rawValue: $0) ?? .events }
-                        )
-                    )
-                    .padding(16)
+                    // Top Tabs (underline-style)
+                    CoveDetailTabs(selected: Binding(
+                        get: { selectedTab },
+                        set: { selectedTab = $0 }
+                    ))
+                    .padding(.horizontal, 30)
+                    .padding(.top, 6)
 
                     // Tab Content
                     ZStack {
@@ -82,21 +80,21 @@ struct CoveView: View {
                                     })
                                 }
                             }
-                        case .members:
-                            CoveMembersView(viewModel: viewModel) {
-                                // Refreshes members data
-                                await withCheckedContinuation { continuation in
-                                    viewModel.refreshMembers()
-                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: {
-                                        continuation.resume()
-                                    })
-                                }
-                            }
                         case .posts:
                             CovePostsView(viewModel: viewModel) {
                                 // Refreshes posts only - header stays fixed
                                 await withCheckedContinuation { continuation in
                                     viewModel.refreshPosts()
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: {
+                                        continuation.resume()
+                                    })
+                                }
+                            }
+                        case .members:
+                            CoveMembersView(viewModel: viewModel) {
+                                // Refreshes members data
+                                await withCheckedContinuation { continuation in
+                                    viewModel.refreshMembers()
                                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: {
                                         continuation.resume()
                                     })
@@ -155,6 +153,68 @@ struct CoveView: View {
             Button("ok") { viewModel.errorMessage = nil }
         } message: {
             Text(viewModel.errorMessage ?? "")
+        }
+    }
+}
+
+// MARK: - Cove Detail Tabs
+private struct CoveDetailTabs: View {
+    @Binding var selected: CoveView.Tab
+    @Namespace private var underlineNamespace
+
+    var body: some View {
+        HStack {
+            Button(action: { withAnimation(.easeInOut(duration: 0.22)) { selected = .events } }) {
+                VStack(spacing: 6) {
+                    Text("events")
+                        .font(.LibreBodoni(size: 16))
+                        .foregroundStyle(Colors.primaryDark)
+                    Group {
+                        if selected == .events {
+                            Capsule()
+                                .fill(Colors.primaryDark)
+                                .matchedGeometryEffect(id: "coveDetailUnderline", in: underlineNamespace)
+                        } else { Color.clear }
+                    }
+                    .frame(height: 1)
+                }
+            }
+
+            Spacer()
+
+            Button(action: { withAnimation(.easeInOut(duration: 0.22)) { selected = .posts } }) {
+                VStack(spacing: 6) {
+                    Text("posts")
+                        .font(.LibreBodoni(size: 16))
+                        .foregroundStyle(Colors.primaryDark)
+                    Group {
+                        if selected == .posts {
+                            Capsule()
+                                .fill(Colors.primaryDark)
+                                .matchedGeometryEffect(id: "coveDetailUnderline", in: underlineNamespace)
+                        } else { Color.clear }
+                    }
+                    .frame(height: 1)
+                }
+            }
+
+            Spacer()
+
+            Button(action: { withAnimation(.easeInOut(duration: 0.22)) { selected = .members } }) {
+                VStack(spacing: 6) {
+                    Text("members")
+                        .font(.LibreBodoni(size: 16))
+                        .foregroundStyle(Colors.primaryDark)
+                    Group {
+                        if selected == .members {
+                            Capsule()
+                                .fill(Colors.primaryDark)
+                                .matchedGeometryEffect(id: "coveDetailUnderline", in: underlineNamespace)
+                        } else { Color.clear }
+                    }
+                    .frame(height: 1)
+                }
+            }
         }
     }
 }
