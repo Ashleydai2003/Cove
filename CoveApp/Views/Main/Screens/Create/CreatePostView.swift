@@ -28,17 +28,17 @@ struct CreatePostView: View {
 
     // MARK: - Body
     var body: some View {
-        ZStack(alignment: .topTrailing) {
+        ZStack(alignment: .topLeading) {
             Colors.background.ignoresSafeArea()
 
-            // Cancel button top-right
+            // Close button (SF Symbols x)
             Button(action: { if !viewModel.isSubmitting { dismiss() } }) {
-                Text("cancel")
-                    .font(.LibreBodoni(size: 16))
+                Image(systemName: "xmark")
+                    .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(viewModel.isSubmitting ? .gray : Colors.primaryDark)
             }
-            .padding(.trailing, 20)
-            .padding(.top, 12)
+            .padding(.leading, 20)
+            .padding(.top, 18)
             .disabled(viewModel.isSubmitting)
 
             VStack(spacing: 16) {
@@ -51,7 +51,7 @@ struct CreatePostView: View {
                     .padding(.horizontal, 32)
                 }
             }
-            .padding(.top, 24)
+            .padding(.top, 28)
         }
         .navigationBarBackButtonHidden()
         .onAppear {
@@ -80,15 +80,17 @@ extension CreatePostView {
     private var headerView: some View {
         let target = (coveName ?? coveId) ?? "this cove"
         return VStack(spacing: 8) {
-            Text("post to \(target) ✏️")
-                .font(.Lugrasimo(size: 28))
-                .foregroundColor(Colors.primaryDark)
-                .multilineTextAlignment(.center)
-                .padding(.top, 32)
-
-            Text("posting to \(target)")
-                .font(.LibreBodoni(size: 14))
-                .foregroundColor(.gray)
+            HStack(spacing: 4) {
+                Spacer()
+                Text("posting to")
+                    .font(.LibreBodoni(size: 18))
+                    .foregroundColor(.gray)
+                Text("\(target) ✏️")
+                    .font(.LibreBodoni(size: 18))
+                    .foregroundColor(Colors.primaryDark)
+                Spacer()
+            }
+            .padding(.top, 32)
         }
         .frame(maxWidth: .infinity)
     }
@@ -97,23 +99,34 @@ extension CreatePostView {
     private var postContentSection: some View {
         VStack {
             ZStack(alignment: .topLeading) {
-                if viewModel.content.isEmpty {
-                    Text("share your thoughts...")
-                        .foregroundColor(.gray)
-                        .font(.LibreBodoniSemiBold(size: 16))
-                        .padding(.top, 8)
-                        .padding(.leading, 4)
-                }
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.white.opacity(0.6))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color.black.opacity(0.12), lineWidth: 1)
+                    )
 
-                TextEditor(text: $viewModel.content)
-                    .foregroundColor(.black)
-                    .font(.LibreBodoniSemiBold(size: 16))
-                    .scrollContentBackground(.hidden)
-                    .background(Color.clear)
-                    .frame(minHeight: 220)
-                    .focused($isFocused)
+                ZStack(alignment: .topLeading) {
+                    if viewModel.content.isEmpty {
+                        Text("share your thoughts...")
+                            .foregroundColor(Color.black.opacity(0.35))
+                            .font(.LibreBodoni(size: 16))
+                            .padding(.top, 12)
+                            .padding(.leading, 14)
+                    }
+
+                    TextEditor(text: $viewModel.content)
+                        .foregroundStyle(Colors.primaryDark)
+                        .font(.LibreBodoni(size: 16))
+                        .scrollContentBackground(.hidden)
+                        .frame(minHeight: 160, maxHeight: 220)
+                        .focused($isFocused)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 8)
+                }
             }
-            .padding(16)
+            .frame(maxWidth: .infinity, minHeight: 160, maxHeight: 230)
+            .padding(.top, 12)
             
             // Character counter
             HStack {
@@ -126,10 +139,6 @@ extension CreatePostView {
             .padding(.top, 4)
         }
         .background(Colors.background)
-        .overlay(
-            RoundedRectangle(cornerRadius: 10)
-                .stroke(Color.black, lineWidth: 1)
-        )
     }
 
     // MARK: - Create Button
@@ -149,20 +158,20 @@ extension CreatePostView {
             } label: {
                 if viewModel.isSubmitting {
                     ProgressView()
-                        .tint(.black)
+                        .tint(Colors.background)
                         .frame(maxWidth: .infinity, minHeight: 56, maxHeight: 56, alignment: .center)
                         .background(
                             RoundedRectangle(cornerRadius: 14)
-                                .fill(Colors.background)
+                                .fill(Colors.primaryDark)
                         )
                 } else {
                     Text("post")
-                        .foregroundStyle(!viewModel.isFormValid ? Color.gray : Color.black)
+                        .foregroundStyle(!viewModel.isFormValid ? Color.gray : Colors.background)
                         .font(.LibreBodoniBold(size: 16))
                         .frame(maxWidth: .infinity, minHeight: 56, maxHeight: 56, alignment: .center)
                         .background(
                             RoundedRectangle(cornerRadius: 14)
-                                .fill(!viewModel.isFormValid ? Color.gray.opacity(0.3) : Colors.background)
+                                .fill(!viewModel.isFormValid ? Color.gray.opacity(0.3) : Colors.primaryDark)
                         )
                 }
             }

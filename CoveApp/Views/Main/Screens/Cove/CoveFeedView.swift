@@ -210,7 +210,7 @@ private struct CoveTopTabs: View {
                 withAnimation(.easeInOut(duration: 0.22)) { selected = .coves }
             }) {
                 VStack(spacing: 6) {
-                    Text("coves")
+                    Text("coves ⭐️")
                         .font(.LibreBodoni(size: 16))
                         .foregroundStyle(Colors.primaryDark)
                     Group {
@@ -236,7 +236,7 @@ private struct CoveTopTabs: View {
                 withAnimation(.easeInOut(duration: 0.22)) { selected = .people }
             }) {
                 VStack(spacing: 6) {
-                    Text("people")
+                    Text("people 👋🏽")
                         .font(.LibreBodoni(size: 16))
                         .foregroundStyle(Colors.primaryDark)
                     Group {
