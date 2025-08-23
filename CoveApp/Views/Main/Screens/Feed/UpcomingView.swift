@@ -25,51 +25,72 @@ struct UpcomingView: View {
                 Colors.background.ignoresSafeArea()
 
                 // Scrollable content with pinned tabs and fading header
-                ScrollView(showsIndicators: false) {
-                    LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
-                        // Fading header that scrolls away
-                        CoveBannerView()
-                            .background(Colors.background)
-                            .opacity(headerOpacity)
-                            .animation(.easeInOut(duration: 0.18), value: headerOpacity)
-                            .background(
-                                GeometryReader { geo in
-                                    Color.clear
-                                        .preference(
-                                            key: HeaderOffsetPreferenceKey.self,
-                                            value: HeaderOffset(
-                                                height: geo.size.height,
-                                                minY: geo.frame(in: .named("upcomingScroll")).minY
-                                            )
-                                        )
-                                }
-                            )
+                ScrollViewReader { proxy in
+                    ScrollView(showsIndicators: false) {
+                        LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
+                            // Top anchor for programmatic scrolling
+                            Color.clear.frame(height: 0).id("topAnchor")
 
-                        // Pinned tabs
-                        Section(
-                            header:
-                                ZStack(alignment: .bottom) {
-                                    Colors.background.ignoresSafeArea(edges: .top)
-                                    HomeTopTabs(selected: $topTabSelection)
-                                }
-                                .zIndex(1000)
-                        ) {
-                            Group {
-                                if topTabSelection == .updates {
-                                    VStack(spacing: 5) {
-                                        contentView
-                                        Spacer(minLength: 20)
+                            // Fading header that scrolls away (only on Updates tab)
+                            if topTabSelection == .updates {
+                                CoveBannerView()
+                                    .background(Colors.background)
+                                    .opacity(headerOpacity)
+                                    .animation(.easeInOut(duration: 0.18), value: headerOpacity)
+                                    .background(
+                                        GeometryReader { geo in
+                                            Color.clear
+                                                .preference(
+                                                    key: HeaderOffsetPreferenceKey.self,
+                                                    value: HeaderOffset(
+                                                        height: geo.size.height,
+                                                        minY: geo.frame(in: .named("upcomingScroll")).minY
+                                                    )
+                                                )
+                                        }
+                                    )
+                            }
+
+                            // Pinned tabs
+                            Section(
+                                header:
+                                    ZStack(alignment: .bottom) {
+                                        Colors.background.ignoresSafeArea(edges: .top)
+                                        HomeTopTabs(selected: $topTabSelection)
                                     }
-                                    .zIndex(0)
-                                } else {
-                                    DiscoverTabView()
+                                    .zIndex(1000)
+                            ) {
+                                Group {
+                                    if topTabSelection == .updates {
+                                        VStack(spacing: 5) {
+                                            contentView
+                                            Spacer(minLength: 20)
+                                        }
+                                        .zIndex(0)
+                                    } else {
+                                        DiscoverTabView()
+                                    }
                                 }
                             }
+                        }
+                    }
+                    .onChange(of: topTabSelection) { oldValue, newValue in
+                        if newValue == .discover {
+                            withAnimation(.easeInOut(duration: 0.22)) {
+                                proxy.scrollTo("topAnchor", anchor: .top)
+                            }
+                            headerOpacity = 0
+                        } else if newValue == .updates {
+                            headerOpacity = 1
                         }
                     }
                 }
                 .coordinateSpace(name: "upcomingScroll")
                 .onPreferenceChange(HeaderOffsetPreferenceKey.self) { data in
+                    guard topTabSelection == .updates else {
+                        headerOpacity = 0
+                        return
+                    }
                     let progress = min(max(-data.minY / max(data.height, 1), 0), 1)
                     headerOpacity = 1 - progress
                 }
