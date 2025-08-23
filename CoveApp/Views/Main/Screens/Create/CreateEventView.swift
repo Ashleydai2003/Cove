@@ -164,25 +164,31 @@ extension CreateEventView {
             viewModel.showImagePicker = true
         } label: {
             ZStack {
+                // Background like CreateCoveView
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.white.opacity(0.6))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color.black.opacity(0.12), lineWidth: 1)
+                    )
+
                 if viewModel.eventImage == nil {
-                    Text("image")
+                    Text("choose a photo")
                         .font(.LibreBodoni(size: 16))
                         .foregroundColor(Colors.primaryDark)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    Image(uiImage: viewModel.eventImage ?? UIImage())
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: AppConstants.SystemSize.width-64, height: 250)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color.black.opacity(0.12), lineWidth: 1)
+                        )
                 }
-
-                Image(uiImage: viewModel.eventImage ?? UIImage())
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: AppConstants.SystemSize.width-64, height: 250)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
             }
             .frame(height: 250)
-            .background(Color.white)
-            .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .stroke(Color.black, lineWidth: 1)
-            )
         }
         .padding(.top, 16)
     }
