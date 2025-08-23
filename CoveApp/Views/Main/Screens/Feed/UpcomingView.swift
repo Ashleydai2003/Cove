@@ -344,7 +344,7 @@ private struct HomeTopTabs: View {
                 withAnimation(.easeInOut(duration: 0.22)) { selected = .discover }
             }) {
                 VStack(spacing: 6) {
-                    Text("discover ✨")
+                    Text("discover 🔎")
                         .font(.LibreBodoni(size: 16))
                         .foregroundStyle(Colors.primaryDark)
                     Group {
