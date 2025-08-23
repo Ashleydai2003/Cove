@@ -14,6 +14,7 @@ import Kingfisher
 struct CoveMembersView: View {
     @ObservedObject var viewModel: CoveModel
     let onRefresh: () async -> Void
+    var disableNavigation: Bool = false
     @State private var showMessageBanner = false
     @State private var selectedMemberName: String = ""
     @State private var showSendInvites = false
@@ -63,6 +64,7 @@ struct CoveMembersView: View {
                             )
                         }
                         .buttonStyle(.plain)
+                        .disabled(disableNavigation)
                         .onAppear {
                             viewModel.loadMoreMembersIfNeeded(currentMember: member)
                         }

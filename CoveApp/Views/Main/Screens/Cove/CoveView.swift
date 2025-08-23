@@ -25,6 +25,7 @@ struct CoveView: View {
     @EnvironmentObject var appController: AppController
     @Environment(\.dismiss) private var dismiss
     @State private var selectedTab: Tab = .events
+    @GestureState private var isHorizontalSwiping: Bool = false
 
     // TODO: admin can update cove cover photo
 
@@ -80,6 +81,7 @@ struct CoveView: View {
                                     })
                                 }
                             }
+                            .environment(\.isEnabled, !isHorizontalSwiping)
                         case .posts:
                             CovePostsView(viewModel: viewModel) {
                                 // Refreshes posts only - header stays fixed
@@ -100,8 +102,47 @@ struct CoveView: View {
                                     })
                                 }
                             }
+                            .disabled(isHorizontalSwiping)
                         }
                     }
+                    .contentShape(Rectangle())
+                    .simultaneousGesture(
+                        DragGesture(minimumDistance: 16)
+                            .updating($isHorizontalSwiping) { value, state, _ in
+                                let dx = value.translation.width
+                                let dy = value.translation.height
+                                if abs(dx) > abs(dy) && abs(dx) > 10 { state = true }
+                            }
+                            .onEnded { value in
+                                let dx = value.translation.width
+                                let dy = value.translation.height
+                                guard abs(dx) > abs(dy), abs(dx) > 30 else { return }
+                                if dx < 0 {
+                                    // left swipe → move right
+                                    withAnimation(.easeInOut(duration: 0.22)) {
+                                        switch selectedTab {
+                                        case .events: selectedTab = .posts
+                                        case .posts: selectedTab = .members
+                                        case .members: break
+                                        }
+                                    }
+                                } else {
+                                    // right swipe → move left
+                                    withAnimation(.easeInOut(duration: 0.22)) {
+                                        switch selectedTab {
+                                        case .events: break
+                                        case .posts: selectedTab = .events
+                                        case .members: selectedTab = .posts
+                                        }
+                                    }
+                                }
+                            }
+                    )
+                    .overlay(
+                        Color.clear
+                            .ignoresSafeArea()
+                            .allowsHitTesting(isHorizontalSwiping)
+                    )
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             } else if let error = viewModel.errorMessage {
