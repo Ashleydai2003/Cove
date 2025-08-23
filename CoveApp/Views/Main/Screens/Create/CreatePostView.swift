@@ -58,6 +58,10 @@ struct CreatePostView: View {
             if let coveId = coveId {
                 viewModel.coveId = coveId
             }
+            // Auto-focus the editor shortly after sheet presentation
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                isFocused = true
+            }
         }
         .safeAreaInset(edge: .bottom) {
             createButtonView
