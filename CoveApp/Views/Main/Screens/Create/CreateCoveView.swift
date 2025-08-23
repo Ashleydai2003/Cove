@@ -41,7 +41,6 @@ struct CreateCoveView: View {
                     .padding(.horizontal, 32)
                 }
 
-                Spacer(minLength: 24)
             }
             .padding(.top, 0)
         }
