@@ -94,7 +94,7 @@ struct CoveFeedView: View {
                             }
                         }
                     case .people:
-                        PeopleInNetworkView()
+                        PeopleInNetworkView(disableNavigation: isHorizontalSwiping)
                     }
                     // FAB - only for verified/admin users and only on coves tab
                     if appController.profileModel.verified && topTabSelection == .coves {
@@ -251,7 +251,7 @@ private struct CoveTopTabs: View {
         }
         .padding(.horizontal, 30)
         .padding(.top, 6)
-        .padding(.bottom, 8)
+        .padding(.bottom, 0)
         .contentShape(Rectangle())
         .gesture(
             DragGesture(minimumDistance: 8)

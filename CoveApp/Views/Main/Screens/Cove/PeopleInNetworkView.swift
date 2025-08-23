@@ -10,6 +10,7 @@ import Kingfisher
 struct PeopleInNetworkView: View {
 	@EnvironmentObject private var appController: AppController
 	@ObservedObject private var viewModel: MutualsViewModel = AppController.shared.mutualsViewModel
+	var disableNavigation: Bool = false
 
 	var body: some View {
 		ZStack {
@@ -114,6 +115,7 @@ struct PeopleInNetworkView: View {
 					}
 					.padding(.horizontal, 20)
 				}
+				.disabled(disableNavigation)
 				.buttonStyle(.plain)
 				.onAppear {
 					if person.id == viewModel.mutuals.last?.id { viewModel.loadNextPage() }
