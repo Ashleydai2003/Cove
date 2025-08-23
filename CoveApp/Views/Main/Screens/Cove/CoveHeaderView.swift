@@ -24,9 +24,14 @@ struct CoveHeaderView: View {
                 Button {
                     onBackTapped()
                 } label: {
-                    Images.backArrow
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(Colors.primaryDark)
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
                 }
-                .padding(.top, 16)
+                .padding(.top, 8)
+                .padding(.leading, 8)
 
                 Spacer()
 
