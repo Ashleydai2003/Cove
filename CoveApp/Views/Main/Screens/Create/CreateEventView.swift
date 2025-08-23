@@ -43,16 +43,6 @@ struct CreateEventView: View {
             Colors.background.ignoresSafeArea()
 
             VStack {
-                // In-content Cancel aligned with other sections
-                HStack {
-                    Button("cancel") { dismiss() }
-                        .font(.LibreBodoni(size: 16))
-                        .foregroundColor(Colors.primaryDark)
-                    Spacer()
-                }
-                .padding(.horizontal, 32)
-                .padding(.top, 8)
-
                 headerView
 
                 ScrollView(.vertical, showsIndicators: false) {
@@ -116,47 +106,56 @@ struct CreateEventView: View {
 extension CreateEventView {
     // MARK: - Header
     private var headerView: some View {
-        VStack {
-            HStack(alignment: .top) {
-                Spacer()
+        ZStack {
+            // Center title (CreateCove style)
+            Text("create an event 🎉")
+                .font(.LibreBodoni(size: 18))
+                .foregroundColor(Colors.primaryDark)
 
-                Image("confetti-dark")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 100, height: 100)
-                    .padding(.leading, -10)
-
+            // Leading action
+            HStack {
+                Button("cancel") { dismiss() }
+                    .font(.LibreBodoni(size: 16))
+                    .foregroundColor(Colors.primaryDark)
                 Spacer()
             }
-            .padding(.horizontal, 16)
-
-            Text("host an event")
-                .font(.Lugrasimo(size: 35))
-                .foregroundColor(Colors.primaryDark)
         }
+        .padding(.horizontal, 20)
+        .padding(.top, 8)
+        .padding(.bottom, 12)
     }
 
     // MARK: - Event Name Section
     private var eventNameSection: some View {
-        VStack {
-            ZStack(alignment: .center) {
+        ZStack(alignment: .leading) {
+            // Match CreateCoveView styling
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.white.opacity(0.6))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.black.opacity(0.12), lineWidth: 1)
+                )
+
+            ZStack(alignment: .leading) {
                 if viewModel.eventName.isEmpty {
-                    Text("untitled event")
-                        .foregroundColor(.white)
-                        .font(.LibreBodoniBold(size: 22))
+                    Text("name your event")
+                        .foregroundColor(Color.black.opacity(0.35))
+                        .font(.LibreBodoniBold(size: 20))
+                        .padding(.horizontal, 14)
                 }
 
-                TextField("untitled event", text: $viewModel.eventName)
-                    .foregroundStyle(Color.white)
-                    .font(.LibreBodoniBold(size: 22))
-                    .multilineTextAlignment(.center)
+                TextField("name your event", text: $viewModel.eventName)
+                    .foregroundStyle(Colors.primaryDark)
+                    .font(.LibreBodoniBold(size: 20))
+                    .multilineTextAlignment(.leading)
                     .autocorrectionDisabled()
+                    .textInputAutocapitalization(.never)
                     .focused($isFocused)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 12)
             }
-            .padding(16)
         }
-        .background(Colors.primaryDark)
-        .cornerRadius(10)
+        .padding(.top, 8)
     }
 
 // MARK: - Image Picker Section
