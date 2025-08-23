@@ -83,7 +83,7 @@ struct CoveInfoHeaderView: View {
                     .padding(.horizontal, 24)
             }
         }
-        .padding(.top, 0)
+        .padding(.top, -4)
         .padding(.bottom, 4)
         .background(Colors.background)
         .onLongPressGesture(minimumDuration: 1.0) {
