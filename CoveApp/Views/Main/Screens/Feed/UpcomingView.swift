@@ -31,25 +31,23 @@ struct UpcomingView: View {
                             // Top anchor for programmatic scrolling
                             Color.clear.frame(height: 0).id("topAnchor")
 
-                            // Fading header that scrolls away (only on Updates tab)
-                            if topTabSelection == .updates {
-                                CoveBannerView()
-                                    .background(Colors.background)
-                                    .opacity(headerOpacity)
-                                    .animation(.easeInOut(duration: 0.18), value: headerOpacity)
-                                    .background(
-                                        GeometryReader { geo in
-                                            Color.clear
-                                                .preference(
-                                                    key: HeaderOffsetPreferenceKey.self,
-                                                    value: HeaderOffset(
-                                                        height: geo.size.height,
-                                                        minY: geo.frame(in: .named("upcomingScroll")).minY
-                                                    )
+                            // Fading header shown across tabs; fades only when on Updates
+                            CoveBannerView()
+                                .background(Colors.background)
+                                .opacity(headerOpacity)
+                                .animation(.easeInOut(duration: 0.18), value: headerOpacity)
+                                .background(
+                                    GeometryReader { geo in
+                                        Color.clear
+                                            .preference(
+                                                key: HeaderOffsetPreferenceKey.self,
+                                                value: HeaderOffset(
+                                                    height: geo.size.height,
+                                                    minY: geo.frame(in: .named("upcomingScroll")).minY
                                                 )
-                                        }
-                                    )
-                            }
+                                            )
+                                    }
+                                )
 
                             // Pinned tabs
                             Section(
@@ -79,18 +77,12 @@ struct UpcomingView: View {
                             withAnimation(.easeInOut(duration: 0.22)) {
                                 proxy.scrollTo("topAnchor", anchor: .top)
                             }
-                            headerOpacity = 0
-                        } else if newValue == .updates {
-                            headerOpacity = 1
                         }
                     }
                 }
                 .coordinateSpace(name: "upcomingScroll")
                 .onPreferenceChange(HeaderOffsetPreferenceKey.self) { data in
-                    guard topTabSelection == .updates else {
-                        headerOpacity = 0
-                        return
-                    }
+                    guard topTabSelection == .updates else { return }
                     let progress = min(max(-data.minY / max(data.height, 1), 0), 1)
                     headerOpacity = 1 - progress
                 }
