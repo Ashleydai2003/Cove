@@ -10,19 +10,20 @@ import UIKit
 /// FloatingActionView: A circular + button that shows event and cove creation options
 struct FloatingActionView: View {
     let coveId: String?
+    let coveName: String?
     var onEventCreated: (() -> Void)? = nil
     @State private var showMenu = false
     @State private var showCreateEventSheet = false
     @State private var showCreatePostSheet = false
     @State private var showCreateCoveSheet = false
     @State private var navigateToCreateEvent = false
-    @State private var navigateToCreatePost = false
     @State private var navigateToCreateCove = false
     @EnvironmentObject private var appController: AppController
 
     // MARK: - Initializer
-    init(coveId: String? = nil, onEventCreated: (() -> Void)? = nil) {
+    init(coveId: String? = nil, coveName: String? = nil, onEventCreated: (() -> Void)? = nil) {
         self.coveId = coveId
+        self.coveName = coveName
         self.onEventCreated = onEventCreated
     }
 
@@ -92,7 +93,7 @@ struct FloatingActionView: View {
                     Button(action: {
                         UIImpactFeedbackGenerator(style: .light).impactOccurred()
                         showMenu = false
-                        navigateToCreatePost = true
+                        showCreatePostSheet = true
                     }) {
                         HStack() {
                             Text("post")
@@ -143,16 +144,18 @@ struct FloatingActionView: View {
         .navigationDestination(isPresented: $navigateToCreateEvent) {
             CreateEventView(coveId: coveId, onEventCreated: onEventCreated)
         }
-        .navigationDestination(isPresented: $navigateToCreatePost) {
-            CreatePostView(coveId: coveId, onPostCreated: onEventCreated)
-        }
         .navigationDestination(isPresented: $navigateToCreateCove) {
             CreateCoveView()
+        }
+        .sheet(isPresented: $showCreatePostSheet) {
+            CreatePostView(coveId: coveId, coveName: coveName, onPostCreated: onEventCreated)
+                .presentationDetents([.medium, .large])
+                .interactiveDismissDisabled(true)
         }
     }
 }
 
 #Preview {
-    FloatingActionView(coveId: nil, onEventCreated: nil)
+    FloatingActionView(coveId: nil, coveName: nil, onEventCreated: nil)
         .environmentObject(AppController.shared)
 }

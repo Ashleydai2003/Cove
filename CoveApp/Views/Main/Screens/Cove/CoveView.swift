@@ -210,7 +210,7 @@ struct CoveView: View {
                 Spacer()
                 HStack {
                     Spacer()
-                    FloatingActionView(coveId: coveId, onEventCreated: {
+                    FloatingActionView(coveId: coveId, coveName: viewModel.cove?.name, onEventCreated: {
                         // Refresh both events and posts when something is created
                         viewModel.refreshEvents()
                         viewModel.refreshPosts()
