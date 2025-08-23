@@ -84,6 +84,7 @@ struct CoveView: View {
                                     .zIndex(2000)
                                 }
                             }
+                            .zIndex(showSettingsMenu ? 2500 : 0)
                             .opacity(headerOpacity)
                             .animation(.easeInOut(duration: 0.18), value: headerOpacity)
                             .background(
@@ -109,7 +110,7 @@ struct CoveView: View {
                                             set: { selectedTab = $0 }
                                         ))
                                         .padding(.horizontal, 30)
-                                        .padding(.top, 12)
+                                        .padding(.top, 20)
                                     }
                                     .zIndex(1000)
                             ) {
