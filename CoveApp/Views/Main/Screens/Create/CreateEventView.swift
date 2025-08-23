@@ -90,7 +90,7 @@ struct CreateEventView: View {
 
                 Spacer(minLength: 24)
             }
-            .padding(.top, 50)
+            .padding(.top, 0)
         }
         .sheet(isPresented: $viewModel.showImagePicker) {
             ImagePicker(image: $viewModel.eventImage)
