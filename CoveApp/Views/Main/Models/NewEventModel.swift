@@ -13,6 +13,7 @@ import FirebaseAuth
 class NewEventModel: ObservableObject {
     // MARK: - Published Properties
     @Published var eventName: String = ""
+    @Published var descriptionText: String = ""
     @Published var eventDate = Date()
     @Published var eventTime = Date()
     @Published var numberOfSpots: String = ""
@@ -39,6 +40,7 @@ class NewEventModel: ObservableObject {
     /// Resets all form fields to their initial state
     func resetForm() {
         eventName = ""
+        descriptionText = ""
         eventDate = Date()
         eventTime = Date()
         numberOfSpots = ""
@@ -76,7 +78,7 @@ class NewEventModel: ObservableObject {
         // Build parameters with optional cover photo
         var params: [String: Any] = [
             "name": eventName,
-            "description": "",
+            "description": descriptionText,
             "date": finalDate,
             "location": location,
             "coveId": coveId
