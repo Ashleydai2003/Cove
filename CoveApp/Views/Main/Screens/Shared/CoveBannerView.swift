@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // Uses AlertBannerView for messaging placeholder
 struct CoveBannerView: View {
@@ -25,6 +26,7 @@ struct CoveBannerView: View {
                 }
 
                 Button(action: {
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                     showInvites = true
                     onInbox?()
                 }) {
