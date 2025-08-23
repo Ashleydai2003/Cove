@@ -33,6 +33,8 @@ struct CreateEventView: View {
     @State private var showAddressInput = false
     @State private var showAddressDropdown = false
     @State private var searchAddress: String = ""
+    private enum VisibilityOption: String, CaseIterable { case membersOnly, discoverable }
+    @State private var visibility: VisibilityOption = .membersOnly
 
     var onEventCreated: (() -> Void)? = nil
 
@@ -54,11 +56,13 @@ struct CreateEventView: View {
                     ScrollView(.vertical, showsIndicators: false) {
                         VStack(spacing: 8) {
                             eventNameSection
+                            descriptionSection
                             imagePickerSection
                             dateTimeSection
                             locationSection
                                 .id("locationSection")
                             spotsSection
+                            visibilitySection
                             // TODO: in the future we also want to have a privacy section
                             createButtonView
                         }
@@ -175,6 +179,38 @@ extension CreateEventView {
                     .focused($isFocused)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 12)
+            }
+        }
+        .padding(.top, 8)
+    }
+
+    // MARK: - Description Section
+    private var descriptionSection: some View {
+        ZStack(alignment: .topLeading) {
+            // Match CreateCoveView description styling
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.white.opacity(0.6))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.black.opacity(0.12), lineWidth: 1)
+                )
+
+            ZStack(alignment: .topLeading) {
+                if viewModel.descriptionText.isEmpty {
+                    Text("describe your event...")
+                        .foregroundColor(Color.black.opacity(0.35))
+                        .font(.LibreBodoni(size: 16))
+                        .padding(.top, 12)
+                        .padding(.leading, 14)
+                }
+                TextEditor(text: $viewModel.descriptionText)
+                    .foregroundStyle(Colors.primaryDark)
+                    .font(.LibreBodoni(size: 16))
+                    .scrollContentBackground(.hidden)
+                    .frame(minHeight: 96, maxHeight: 140)
+                    .focused($isFocused)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 8)
             }
         }
         .padding(.top, 8)
@@ -335,6 +371,54 @@ extension CreateEventView {
         numberOfSpotsView
     }
 
+    // MARK: - Visibility Section
+    private var visibilitySection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 0) {
+                Button(action: { visibility = .membersOnly }) {
+                    Text("Members only")
+                        .font(.LibreBodoniBold(size: 16))
+                        .foregroundStyle(visibility == .membersOnly ? Colors.background : Colors.primaryDark)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .padding(.horizontal, 14)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(visibility == .membersOnly ? Colors.primaryDark : Colors.background)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .stroke(Color.black.opacity(0.12), lineWidth: 1)
+                            )
+                    )
+                }
+
+                Button(action: { visibility = .discoverable }) {
+                    Text("Discoverable")
+                        .font(.LibreBodoniBold(size: 16))
+                        .foregroundStyle(visibility == .discoverable ? Colors.background : Colors.primaryDark)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .padding(.horizontal, 14)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(visibility == .discoverable ? Colors.primaryDark : Colors.background)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .stroke(Color.black.opacity(0.12), lineWidth: 1)
+                            )
+                    )
+                }
+            }
+            // Description below segmented buttons
+            Text(visibility == .membersOnly ? "Only members of this Cove can RSVP." : "Visible in Discover, all Cove users can RSVP.")
+                .font(.LibreBodoni(size: 12))
+                .foregroundColor(.gray)
+                .padding(.top, 6)
+        }
+    }
+
     // MARK: - Create Button
     private var createButtonView: some View {
         Button {
@@ -353,20 +437,20 @@ extension CreateEventView {
         } label: {
             if viewModel.isSubmitting {
                 ProgressView()
-                    .tint(.black)
+                    .tint(Colors.background)
                     .frame(maxWidth: .infinity, minHeight: 60, maxHeight: 60, alignment: .center)
                     .background(
                         RoundedRectangle(cornerRadius: 14)
-                            .fill(Color.white)
+                            .fill(Colors.primaryDark)
                     )
             } else {
                 Text("create")
-                    .foregroundStyle(!viewModel.isFormValid ? Color.gray : Color.black)
+                    .foregroundStyle(!viewModel.isFormValid ? Color.gray : Colors.background)
                     .font(.LibreBodoniBold(size: 16))
                     .frame(maxWidth: .infinity, minHeight: 60, maxHeight: 60, alignment: .center)
                     .background(
                         RoundedRectangle(cornerRadius: 14)
-                            .fill(!viewModel.isFormValid ? Color.gray.opacity(0.3) : Color.white)
+                            .fill(!viewModel.isFormValid ? Color.gray.opacity(0.3) : Colors.primaryDark)
                     )
             }
         }
@@ -437,7 +521,7 @@ extension CreateEventView {
             ZStack(alignment: .leading) {
                 if viewModel.numberOfSpots.isEmpty {
                     Text("number of spots")
-                        .foregroundColor(.gray)
+                        .foregroundColor(.white)
                         .font(.LibreBodoniBold(size: 16))
                         .padding(.leading, 6)
                 }
@@ -450,6 +534,13 @@ extension CreateEventView {
                     .autocorrectionDisabled()
                     .keyboardType(.numberPad)
                     .focused($isFocused)
+                    .onChange(of: viewModel.numberOfSpots) { _, newValue in
+                        // Allow only digits; keep blank allowed
+                        let filtered = newValue.filter { $0.isNumber }
+                        if filtered != newValue {
+                            viewModel.numberOfSpots = filtered
+                        }
+                    }
             }
         }
         .frame(height: 44)
