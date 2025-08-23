@@ -14,6 +14,7 @@ struct CoveInfoHeaderView: View {
     let onBackTapped: () -> Void
     let isRefreshing: Bool
     let onRefresh: () async -> Void
+    var onSettingsTapped: () -> Void = {}
 
     var body: some View {
         VStack(spacing: 6) {
@@ -28,6 +29,14 @@ struct CoveInfoHeaderView: View {
                 }
                 .padding(.leading, 8)
                 Spacer()
+                Button(action: { onSettingsTapped() }) {
+                    Image(systemName: "gearshape")
+                        .font(.system(size: 16, weight: .semibold))
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(TintOnPressIconStyle())
+                .padding(.trailing, 8)
             }
 
             // Image or spinner
@@ -89,6 +98,15 @@ struct CoveInfoHeaderView: View {
         .onLongPressGesture(minimumDuration: 1.0) {
             Task { await onRefresh() }
         }
+    }
+}
+
+// MARK: - Press Tint Style
+private struct TintOnPressIconStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .symbolRenderingMode(.monochrome)
+            .foregroundStyle(Colors.primaryDark.opacity(configuration.isPressed ? 0.5 : 1.0))
     }
 }
 
