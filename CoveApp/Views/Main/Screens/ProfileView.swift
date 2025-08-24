@@ -77,6 +77,7 @@ struct ProfileHeader: View {
                 Text("profile \(Int((max(0, min(1, p)) * 100).rounded()))% complete")
                     .font(.LibreBodoni(size: 14))
                     .foregroundColor(Colors.k6F6F73)
+                    .offset(y: -6)
             }
 
             // MARK: - Profile Photo with tight progress ring
@@ -90,7 +91,7 @@ struct ProfileHeader: View {
                             .stroke(Colors.primaryDark, style: StrokeStyle(lineWidth: 8, lineCap: .round))
                             .rotationEffect(.degrees(-90))
                     }
-                    .frame(width: 208, height: 208)
+                    .frame(width: 148, height: 148)
                 }
 
                 // Pull main-actor data into local constants BEFORE entering the PhotosPicker content closure.
@@ -102,13 +103,13 @@ struct ProfileHeader: View {
                             Image(uiImage: profileImage)
                                 .resizable()
                                 .scaledToFill()
-                                .frame(width: 200, height: 200)
+                                .frame(width: 140, height: 140)
                                 .clipShape(Circle())
                         } else if isProfileImageLoading { // <--- use the captured value
                             // Show loading state with proper circular shape
                             Circle()
                                 .fill(Color.gray.opacity(0.3))
-                                .frame(width: 200, height: 200)
+                                .frame(width: 140, height: 140)
                                 .overlay(
                                     ProgressView()
                                         .scaleEffect(1.5)
@@ -119,7 +120,7 @@ struct ProfileHeader: View {
                             Image("default_user_pfp")
                                 .resizable()
                                 .scaledToFill()
-                                .frame(width: 200, height: 200)
+                                .frame(width: 140, height: 140)
                                 .clipShape(Circle())
                                 .onAppear {
                                 }
@@ -130,7 +131,7 @@ struct ProfileHeader: View {
                         if isEditing {
                             Circle()
                                 .fill(Color.black.opacity(pressed ? 0.7 : 0.3))
-                                .frame(width: 200, height: 200)
+                                .frame(width: 140, height: 140)
 
                             Text("change")
                                 .font(.LibreBodoni(size: 16))
@@ -1040,27 +1041,7 @@ struct ProfileView: View {
                                     }
                                 }
 
-                                if showSettingsMenu {
-                                    ProfileSettingsDropdownMenu(
-                                        onEditProfile: {
-                                            withAnimation(.easeInOut(duration: 0.18)) { showSettingsMenu = false }
-                                            isEditing = true
-                                            initializeEditingState()
-                                        },
-                                        onLogout: {
-                                            withAnimation(.easeInOut(duration: 0.18)) { showSettingsMenu = false }
-                                            handleLogout()
-                                        },
-                                        dismiss: {
-                                            withAnimation(.easeInOut(duration: 0.18)) { showSettingsMenu = false }
-                                        }
-                                    )
-                                    .frame(width: UIScreen.main.bounds.width * 0.65)
-                                    .padding(.trailing, 8)
-                                    .offset(y: 40)
-                                    .transition(.opacity.combined(with: .move(edge: .top)))
-                                    .zIndex(10000)
-                                }
+                                
                             }
                             // Progress ring shown around the photo inside ProfileHeader
                             ProfileHeader(
@@ -1093,7 +1074,7 @@ struct ProfileView: View {
                                 onProfileImageChange: { editingProfileImage = $0 }
                             )
                             .frame(maxWidth: 270)
-                            .padding(.top, -10)
+                            .padding(.top, -30)
                             .onAppear {
                             }
                             .onChange(of: appController.profileModel.profileImageURL) { _, newURL in
@@ -1179,6 +1160,30 @@ struct ProfileView: View {
             }
             .allowsHitTesting(false)
         )
+        // Settings dropdown overlay that does not affect layout
+        .overlay(alignment: .topTrailing) {
+            if showSettingsMenu {
+                ProfileSettingsDropdownMenu(
+                    onEditProfile: {
+                        withAnimation(.easeInOut(duration: 0.18)) { showSettingsMenu = false }
+                        isEditing = true
+                        initializeEditingState()
+                    },
+                    onLogout: {
+                        withAnimation(.easeInOut(duration: 0.18)) { showSettingsMenu = false }
+                        handleLogout()
+                    },
+                    dismiss: {
+                        withAnimation(.easeInOut(duration: 0.18)) { showSettingsMenu = false }
+                    }
+                )
+                .frame(width: UIScreen.main.bounds.width * 0.65)
+                .padding(.trailing, 52)
+                .offset(y: 56)
+                .transition(.opacity.combined(with: .move(edge: .top)))
+                .zIndex(10000)
+            }
+        }
         .navigationBarBackButtonHidden()
         .sheet(isPresented: $showingLocationSheet) {
             LocationSelectionPopup(
