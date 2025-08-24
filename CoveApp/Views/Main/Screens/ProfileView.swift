@@ -41,6 +41,7 @@ struct ProfileHeader: View {
     let address: String
     let isEditing: Bool
     let editingProfileImage: UIImage?
+    let progress: Double?
     let onNameChange: (String) -> Void
     let onWorkLocationChange: (String) -> Void
     let onGenderChange: (String) -> Void
@@ -70,75 +71,96 @@ struct ProfileHeader: View {
         let fallbackImage = appController.profileModel.profileUIImage // main-actor safe
         let isProfileImageLoading = appController.profileModel.isProfileImageLoading // <--- capture here
 
-        VStack(spacing: 10) {
-            // MARK: - Profile Photo
-            // Pull main-actor data into local constants BEFORE entering the PhotosPicker content closure.
-            PhotosPicker(selection: $selectedItem, matching: .images) {
-                // The closure passed to PhotosPicker is not main-actor-isolated, so we must avoid directly
-                // touching @MainActor properties inside it. We therefore use the pre-computed values captured above.
-                ZStack {
-                    if let profileImage = editingProfileImage ?? fallbackImage {
-                        Image(uiImage: profileImage)
-                            .resizable()
-                            .scaledToFill()
-                            .frame(maxWidth: 200, maxHeight: 200)
-                            .clipShape(Circle())
-                    } else if isProfileImageLoading { // <--- use the captured value
-                        // Show loading state with proper circular shape
-                        Circle()
-                            .fill(Color.gray.opacity(0.3))
-                            .frame(maxWidth: 200, maxHeight: 200)
-                            .overlay(
-                                ProgressView()
-                                    .scaleEffect(1.5)
-                                    .tint(Color.white)
-                            )
-                    } else {
-                        // default profile photo only if not loading
-                        Image("default_user_pfp")
-                            .resizable()
-                            .scaledToFill()
-                            .frame(maxWidth: 200, maxHeight: 200)
-                            .clipShape(Circle())
-                            .onAppear {
-                            }
-                    }
+        VStack(spacing: 8) {
+            // Progress text above the photo when incomplete
+            if let p = progress, p < 1.0 {
+                Text("profile \(Int((max(0, min(1, p)) * 100).rounded()))% complete")
+                    .font(.LibreBodoni(size: 14))
+                    .foregroundColor(Colors.k6F6F73)
+            }
 
-                    // Overlay for editing
-                    // TODO: actually we should have an x up top and a user can only change after they remove their current picture
+            // MARK: - Profile Photo with tight progress ring
+            ZStack {
+                if let p = progress {
+                    ZStack {
+                        Circle()
+                            .stroke(Colors.primaryDark.opacity(0.12), style: StrokeStyle(lineWidth: 8))
+                        Circle()
+                            .trim(from: 0, to: CGFloat(max(0, min(1, p))))
+                            .stroke(Colors.primaryDark, style: StrokeStyle(lineWidth: 8, lineCap: .round))
+                            .rotationEffect(.degrees(-90))
+                    }
+                    .frame(width: 208, height: 208)
+                }
+
+                // Pull main-actor data into local constants BEFORE entering the PhotosPicker content closure.
+                PhotosPicker(selection: $selectedItem, matching: .images) {
+                    // The closure passed to PhotosPicker is not main-actor-isolated, so we must avoid directly
+                    // touching @MainActor properties inside it. We therefore use the pre-computed values captured above.
+                    ZStack {
+                        if let profileImage = editingProfileImage ?? fallbackImage {
+                            Image(uiImage: profileImage)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 200, height: 200)
+                                .clipShape(Circle())
+                        } else if isProfileImageLoading { // <--- use the captured value
+                            // Show loading state with proper circular shape
+                            Circle()
+                                .fill(Color.gray.opacity(0.3))
+                                .frame(width: 200, height: 200)
+                                .overlay(
+                                    ProgressView()
+                                        .scaleEffect(1.5)
+                                        .tint(Color.white)
+                                )
+                        } else {
+                            // default profile photo only if not loading
+                            Image("default_user_pfp")
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 200, height: 200)
+                                .clipShape(Circle())
+                                .onAppear {
+                                }
+                        }
+
+                        // Overlay for editing
+                        // TODO: actually we should have an x up top and a user can only change after they remove their current picture
+                        if isEditing {
+                            Circle()
+                                .fill(Color.black.opacity(pressed ? 0.7 : 0.3))
+                                .frame(width: 200, height: 200)
+
+                            Text("change")
+                                .font(.LibreBodoni(size: 16))
+                                .foregroundColor(.white)
+                        }
+                    }
+                }
+                .disabled(!isEditing)
+                .animation(.easeInOut(duration: 0.1), value: pressed)
+                .onTapGesture {
                     if isEditing {
-                        Circle()
-                            .fill(Color.black.opacity(pressed ? 0.7 : 0.3))
-                            .frame(maxWidth: 200, maxHeight: 200)
-
-                        Text("change")
-                            .font(.LibreBodoni(size: 16))
-                            .foregroundColor(.white)
-                    }
-                }
-            }
-            .disabled(!isEditing)
-            .animation(.easeInOut(duration: 0.1), value: pressed)
-            .onTapGesture {
-                if isEditing {
-                    Task { @MainActor in
-                        withAnimation(.easeInOut(duration: 0.1)) {
-                            isPressed = true
-                        }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        Task { @MainActor in
                             withAnimation(.easeInOut(duration: 0.1)) {
-                                isPressed = false
+                                isPressed = true
+                            }
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                withAnimation(.easeInOut(duration: 0.1)) {
+                                    isPressed = false
+                                }
                             }
                         }
                     }
                 }
-            }
-            // TODO: what is selectedItem?
-            .onChange(of: selectedItem) { _, newItem in
-                Task {
-                    if let data = try? await newItem?.loadTransferable(type: Data.self),
-                       let image = UIImage(data: data) {
-                        onProfileImageChange(image)
+                // TODO: what is selectedItem?
+                .onChange(of: selectedItem) { _, newItem in
+                    Task {
+                        if let data = try? await newItem?.loadTransferable(type: Data.self),
+                           let image = UIImage(data: data) {
+                            onProfileImageChange(image)
+                        }
                     }
                 }
             }
@@ -946,6 +968,7 @@ struct ProfileView: View {
     @State private var showingLocationSheet = false
     @State private var isSaving = false
     @State private var isLoggingOut = false
+    @State private var showSettingsMenu = false
 
     // Local editing state
     @State private var editingName: String = ""
@@ -969,53 +992,6 @@ struct ProfileView: View {
                 .ignoresSafeArea()
 
             VStack {
-                // Custom Header
-                HStack(alignment: .center) {
-                    Text("cove")
-                        .font(.LibreBodoniBold(size: 32))
-                        .foregroundColor(Colors.primaryDark)
-                    Spacer()
-                    HStack(spacing: 18) {
-                        // Edit/Save button
-                        Button(action: {
-                                    Log.debug("Save/Edit button tapped! isEditing: \(isEditing)")
-                            if isEditing {
-                                // Show loading spinner immediately
-                                isSaving = true
-
-                                // Save changes and wait for completion before toggling
-                                saveChanges { success in
-                                    DispatchQueue.main.async {
-                                        isSaving = false
-                                        if success {
-                                            isEditing = false
-                                        }
-                                        // If failed, stay in editing mode so user can try again
-                                    }
-                                }
-                            } else {
-                                // Enter editing mode
-                                isEditing = true
-                                initializeEditingState()
-                            }
-                        }) {
-                        if isSaving {
-                            ProgressView()
-                                .scaleEffect(0.8)
-                                .foregroundColor(Colors.primaryDark)
-                        } else {
-                            (isEditing ? Image(systemName: "checkmark") : Image("edit_button"))
-                                .foregroundColor(Colors.primaryDark)
-                                .frame(width: 26, height: 26)
-                        }
-                    }
-                    .disabled(isSaving)
-                }
-                }
-                .padding(.horizontal, 10)
-                .padding(.top, 24)
-                .padding(.bottom, 8)
-
                 if appController.profileModel.isLoading {
                     Spacer()
                     ProgressView("Loading profile...")
@@ -1024,11 +1000,69 @@ struct ProfileView: View {
                 } else {
                     ScrollView(.vertical, showsIndicators: false) {
                         VStack(spacing: 20) {
-                            // Profile Progress Bar - only show if not 100% complete
-                            let progress = appController.profileModel.calculateProfileProgress()
-                            if progress < 1.0 {
-                                ProfileProgressBar(progress: progress)
+                            // Top row gear/checkmark, matching Cove header placement
+                            ZStack(alignment: .topTrailing) {
+                                HStack {
+                                    Spacer()
+                                    if isSaving {
+                                        ProgressView()
+                                            .tint(Colors.primaryDark)
+                                            .frame(width: 44, height: 44)
+                                    } else if isEditing {
+                                        Button(action: {
+                                            Log.debug("Save button tapped! isEditing: \(isEditing)")
+                                            isSaving = true
+                                            saveChanges { success in
+                                                DispatchQueue.main.async {
+                                                    isSaving = false
+                                                    if success { isEditing = false }
+                                                }
+                                            }
+                                        }) {
+                                            Image(systemName: "checkmark")
+                                                .font(.system(size: 16, weight: .semibold))
+                                                .frame(width: 44, height: 44)
+                                                .contentShape(Rectangle())
+                                        }
+                                        .foregroundStyle(Colors.primaryDark)
+                                        .disabled(isSaving)
+                                    } else {
+                                        Button(action: {
+                                            withAnimation(.easeInOut(duration: 0.18)) { showSettingsMenu.toggle() }
+                                        }) {
+                                            Image(systemName: "gearshape")
+                                                .font(.system(size: 16, weight: .semibold))
+                                                .frame(width: 44, height: 44)
+                                                .contentShape(Rectangle())
+                                        }
+                                        .foregroundStyle(Colors.primaryDark)
+                                        .padding(.trailing, 8)
+                                    }
+                                }
+
+                                if showSettingsMenu {
+                                    ProfileSettingsDropdownMenu(
+                                        onEditProfile: {
+                                            withAnimation(.easeInOut(duration: 0.18)) { showSettingsMenu = false }
+                                            isEditing = true
+                                            initializeEditingState()
+                                        },
+                                        onLogout: {
+                                            withAnimation(.easeInOut(duration: 0.18)) { showSettingsMenu = false }
+                                            handleLogout()
+                                        },
+                                        dismiss: {
+                                            withAnimation(.easeInOut(duration: 0.18)) { showSettingsMenu = false }
+                                        }
+                                    )
+                                    .frame(width: UIScreen.main.bounds.width * 0.65)
+                                    .padding(.trailing, 8)
+                                    .offset(y: 40)
+                                    .transition(.opacity.combined(with: .move(edge: .top)))
+                                    .zIndex(10000)
+                                }
                             }
+                            // Progress ring shown around the photo inside ProfileHeader
                             ProfileHeader(
                                 name: isEditing ? $editingName : .constant(appController.profileModel.name),
                                 workLocation: isEditing ? $editingWorkLocation : .constant(appController.profileModel.workLocation),
@@ -1042,6 +1076,10 @@ struct ProfileView: View {
                                 address: isEditing ? editingAddress : appController.profileModel.address,
                                 isEditing: isEditing,
                                 editingProfileImage: editingProfileImage,
+                                progress: {
+                                    let p = appController.profileModel.calculateProfileProgress()
+                                    return p < 1.0 ? p : nil
+                                }(),
                                 onNameChange: { editingName = $0 },
                                 onWorkLocationChange: { editingWorkLocation = $0 },
                                 onGenderChange: { editingGender = $0 },
@@ -1053,7 +1091,9 @@ struct ProfileView: View {
                                     showingLocationSheet = true
                                 },
                                 onProfileImageChange: { editingProfileImage = $0 }
-                            ).frame(maxWidth: 270)
+                            )
+                            .frame(maxWidth: 270)
+                            .padding(.top, -10)
                             .onAppear {
                             }
                             .onChange(of: appController.profileModel.profileImageURL) { _, newURL in
@@ -1129,6 +1169,16 @@ struct ProfileView: View {
             }
             .padding(.horizontal, 20)
         }
+        // Opaque top-safe-area overlay to prevent content peeking during bounce
+        .overlay(
+            GeometryReader { proxy in
+                Colors.background
+                    .frame(height: proxy.safeAreaInsets.top)
+                    .ignoresSafeArea(edges: .top)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            }
+            .allowsHitTesting(false)
+        )
         .navigationBarBackButtonHidden()
         .sheet(isPresented: $showingLocationSheet) {
             LocationSelectionPopup(
@@ -1148,6 +1198,67 @@ struct ProfileView: View {
         .onDisappear {
             // Don't cancel requests here - let ProfileModel handle its own lifecycle
             // The image loading should complete naturally
+        }
+    }
+
+    // MARK: - Profile Settings Dropdown
+    private struct ProfileSettingsDropdownMenu: View {
+        let onEditProfile: () -> Void
+        let onLogout: () -> Void
+        let dismiss: () -> Void
+
+        var body: some View {
+            VStack(alignment: .leading, spacing: 0) {
+                MenuRow(title: "edit profile", systemImage: "pencil") { onEditProfile() }
+                Divider().background(Color.black.opacity(0.08))
+                MenuRow(title: "logout", textColor: .red, systemImage: "rectangle.portrait.and.arrow.right") { onLogout() }
+            }
+            .padding(.vertical, 6)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Colors.background)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color.black.opacity(0.12), lineWidth: 1)
+                    )
+            )
+            .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 4)
+            .onTapGesture { dismiss() }
+        }
+
+        private struct MenuRow: View {
+            let title: String
+            var textColor: Color = Colors.primaryDark
+            var systemImage: String? = nil
+            let action: () -> Void
+
+            var body: some View {
+                Button(action: action) {
+                    HStack(spacing: 10) {
+                        if let systemImage {
+                            Image(systemName: systemImage)
+                                .font(.system(size: 16, weight: .regular))
+                                .foregroundStyle(textColor == .red ? .red : Colors.primaryDark)
+                        }
+                        Text(title)
+                            .font(.LibreBodoni(size: 16))
+                            .foregroundStyle(textColor)
+                        Spacer(minLength: 24)
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(PressHighlightStyle())
+            }
+        }
+    }
+
+    // Row press highlight style
+    private struct PressHighlightStyle: ButtonStyle {
+        func makeBody(configuration: Configuration) -> some View {
+            configuration.label
+                .background(configuration.isPressed ? Color.black.opacity(0.06) : Color.clear)
         }
     }
 
