@@ -93,48 +93,12 @@ struct TabBarView: View {
 
             Spacer()
 
-            // Profile Tab with KFImage
+            // Profile Tab
             Button(action: { selectedTab = 5 }) {
-                if let profileImage = appController.profileModel.profileUIImage {
-                    Image(uiImage: profileImage)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(maxWidth: 28, maxHeight: 28)
-                        .clipShape(Circle())
-                        .overlay(
-                            Circle()
-                                .stroke(Color(hex: "F5F0E6"), lineWidth: selectedTab == 5 ? 3 : 0)
-                        )
-                        .animation(nil, value: selectedTab)
-                        .padding(.top, 2)
-                } else if appController.profileModel.isProfileImageLoading {
-                    // Show loading state with proper circular shape
-                    Circle()
-                        .fill(Color.gray.opacity(0.3))
-                        .frame(maxWidth: 28, maxHeight: 28)
-                        .overlay(
-                            ProgressView()
-                                .scaleEffect(0.7)
-                                .tint(Color.white)
-                        )
-                        .overlay(
-                            Circle()
-                                .stroke(Color(hex: "F5F0E6"), lineWidth: selectedTab == 5 ? 3 : 0)
-                        )
-                        .animation(.none, value: selectedTab)
-                        .padding(.top, 2)
-                } else {
-                    // Show default placeholder only if not loading
-                    Image("default_user_pfp")
-                        .tabBarIcon(isSelected: selectedTab == 5, isMiddleButton: false)
-                        .clipShape(Circle())
-                        .overlay(
-                            Circle()
-                                .stroke(Color(hex: "F5F0E6"), lineWidth: selectedTab == 5 ? 3 : 0)
-                        )
-                        .animation(.none, value: selectedTab)
-                        .padding(.top, 2)
-                }
+                Image(selectedTab == 5 ? "pfp_selected" : "pfp_unselected")
+                    .tabBarIcon(isSelected: selectedTab == 5, isMiddleButton: false)
+                    .animation(.none, value: selectedTab)
+                    .padding(.top, 2)
             }
             .frame(maxWidth: 36, maxHeight: 36)
 
