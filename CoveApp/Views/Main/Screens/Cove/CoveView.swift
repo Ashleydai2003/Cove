@@ -82,10 +82,10 @@ struct CoveView: View {
                                     .padding(.trailing, 8)
                                     .offset(y: 40)
                                     .transition(.opacity.combined(with: .move(edge: .top)))
-                                    .zIndex(2000)
+                                    .zIndex(10000)
                                 }
                             }
-                            .zIndex(showSettingsMenu ? 2500 : 0)
+                            .zIndex(showSettingsMenu ? 20000 : 0)
                             .opacity(headerOpacity)
                             .animation(.easeInOut(duration: 0.18), value: headerOpacity)
                             .background(
