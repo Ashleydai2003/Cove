@@ -310,20 +310,24 @@ export const handleSendInvite = async (event: APIGatewayProxyEvent): Promise<API
             prisma.user.findUnique({ where: { id: user.uid }, select: { name: true } }),
             prisma.cove.findUnique({ where: { id: coveId }, select: { name: true } })
           ]);
-          if (recipient?.fcmToken) {
-            await admin.messaging().send({
-              token: recipient.fcmToken,
-              notification: {
-                title: '🔓 New cove unlocked',
-                body: `${senderUser?.name || 'Someone'} invited you to join ${coveInfo?.name || 'a cove'}`
-              },
-              data: {
-                type: 'cove_invite',
-                coveId,
-                inviteId: invite.id
+                      if (recipient?.fcmToken) {
+              if (process.env.NODE_ENV === 'production') {
+                await admin.messaging().send({
+                  token: recipient.fcmToken,
+                  notification: {
+                    title: '🔓 New cove unlocked',
+                    body: `${senderUser?.name || 'Someone'} invited you to join ${coveInfo?.name || 'a cove'}`
+                  },
+                  data: {
+                    type: 'cove_invite',
+                    coveId,
+                    inviteId: invite.id
+                  }
+                });
+              } else {
+                console.log('Skipping push notification in non-production (cove invite)');
               }
-            });
-          }
+            }
         } catch (notifyErr) {
           console.error('Invite notify error:', notifyErr);
         }

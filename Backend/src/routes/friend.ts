@@ -137,17 +137,21 @@ export const handleSendFriendRequest = async (event: APIGatewayProxyEvent): Prom
       for (const r of recipients) {
         if (r.fcmToken) {
           try {
-            await admin.messaging().send({
-              token: r.fcmToken,
-              notification: {
-                title: '💌 New friend request',
-                body: `${senderName} wants to connect on Cove`
-              },
-              data: {
-                type: 'friend_request',
-                senderId: fromUserId
-              }
-            });
+            if (process.env.NODE_ENV === 'production') {
+              await admin.messaging().send({
+                token: r.fcmToken,
+                notification: {
+                  title: '💌 New friend request',
+                  body: `${senderName} wants to connect on Cove`
+                },
+                data: {
+                  type: 'friend_request',
+                  senderId: fromUserId
+                }
+              });
+            } else {
+              console.log('Skipping push notification in non-production (friend request)');
+            }
           } catch (err) {
             console.error('Error sending friend request notification:', err);
           }
@@ -278,17 +282,21 @@ export const handleResolveFriendRequest = async (event: APIGatewayProxyEvent): P
         ]);
         const recipientName = recipient?.name || 'Someone';
         if (sender && senderToken?.fcmToken) {
-          await admin.messaging().send({
-            token: senderToken.fcmToken,
-            notification: {
-              title: '💫 It\'s mutual',
-              body: `${recipientName} accepted your friend request`
-            },
-            data: {
-              type: 'friend_request_accepted',
-              userId: friendRequest.toUserId
-            }
-          });
+          if (process.env.NODE_ENV === 'production') {
+            await admin.messaging().send({
+              token: senderToken.fcmToken,
+              notification: {
+                title: '💫 It\'s mutual',
+                body: `${recipientName} accepted your friend request`
+              },
+              data: {
+                type: 'friend_request_accepted',
+                userId: friendRequest.toUserId
+              }
+            });
+          } else {
+            console.log('Skipping push notification in non-production (friend request accepted)');
+          }
         }
       } catch (notifyErr) {
         console.error('Friend accept notify error:', notifyErr);

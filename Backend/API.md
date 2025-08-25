@@ -273,15 +273,18 @@ Takes Data Parameters:
 * eventId: String (required) - ID of the event to RSVP to
 * status: String (required) - One of: "GOING", "MAYBE", "NOT_GOING"
 
+Behavior:
+* When status = "NOT_GOING": the user's RSVP entry is deleted from the database
+
 Returns:
-* message: String
+* message: String - "RSVP removed successfully" when status is "NOT_GOING"; otherwise "RSVP status updated successfully"
 * rsvp: {
   * id: String
   * status: String
   * eventId: String
   * userId: String
   * createdAt: DateTime
-}
+} | null - Will be null when status is "NOT_GOING"
 
 ### `/join-cove`
 
@@ -470,40 +473,54 @@ Returns:
 
 ### `/cove-events`
 
-Retrieves events for a specific cove with pagination. User must be a member of the cove.
+Retrieves events for a specific cove with pagination. Authentication is optional and each event item is returned in limited or enriched form depending on the caller's relationship to that event.
 
 Takes Query String Parameters:
 * coveId: String (required)
 * cursor: String (optional, for pagination)
 * limit: Number (optional, defaults to 10, max 50)
 
+Behavior:
+* If unauthenticated: returns only the first 5 limited events (no pagination object returned)
+
 Returns:
-* events: Array<{
-  * id: String
-  * name: String
-  * description: String | null
-  * date: String
-  * location: String
-  * coveId: String
-  * coveName: String
-  * coveCoverPhoto: {
-    * id: String
-    * url: String
-  } | null
-  * hostId: String
-  * hostName: String
-  * rsvpStatus: "GOING" | "MAYBE" | "NOT_GOING" | null
-  * goingCount: Number - Number of users who RSVP'd "GOING"
-  * createdAt: DateTime
-  * coverPhoto: {
-    * id: String
-    * url: String
-  } | null
-}>
+* events: Array of items where each item is either:
+  * Limited (unauthenticated or authenticated without RSVP/host for that event):
+    * {
+      * id: String
+      * name: String
+      * description: String | null
+      * date: String
+      * coveCoverPhoto: { id: String, url: String } | null
+      * hostName: String
+      * coverPhoto: { id: String, url: String } | null
+      * rsvpStatus: null (included only when caller is authenticated)
+    }
+  * Enriched (authenticated and either host or has RSVP for that event):
+    * {
+      * id: String
+      * name: String
+      * description: String | null
+      * date: String
+      * location: String
+      * coveId: String
+      * coveName: String
+      * coveCoverPhoto: { id: String, url: String } | null
+      * hostId: String
+      * hostName: String
+      * rsvpStatus: "GOING" | "MAYBE" | "NOT_GOING"
+      * goingCount: Number
+      * createdAt: DateTime
+      * coverPhoto: { id: String, url: String } | null
+    }
 * pagination: {
   * hasMore: Boolean
   * nextCursor: String | null
-}
+} (present only when authenticated; omitted when unauthenticated)
+
+Caching:
+* If any item is enriched: `Cache-Control: private, no-store`, `Vary: Authorization, Cookie`
+* If all items are limited: `Cache-Control: public, max-age=60`
 
 ### `/upcoming-events`
 
@@ -707,46 +724,77 @@ Returns:
 
 ### `/event`
 
-Retrieves detailed information about a specific event. User must be a member of the event's cove.
+Retrieves detailed information about a specific event. Authentication is optional and the response varies based on the caller's relationship to the event.
 
 Takes Query String Parameters:
 * eventId: String (required) - ID of the event to retrieve
 
 Returns:
-* event: {
-  * id: String
-  * name: String
-  * description: String | null
-  * date: String
-  * location: String
-  * coveId: String
-  * host: {
+* When unauthenticated (or authenticated but neither the host nor RSVP'd), returns LIMITED details:
+  * event: {
     * id: String
     * name: String
-  }
-  * cove: {
-    * id: String
-    * name: String
+    * description: String | null
+    * date: String
+    * host: {
+      * name: String
+    }
+    * cove: {
+      * coverPhoto: {
+        * id: String
+        * url: String
+      } | null
+    }
     * coverPhoto: {
       * id: String
       * url: String
     } | null
   }
-  * rsvpStatus: "GOING" | "MAYBE" | "NOT_GOING" | null
-  * rsvps: Array<{
+  * Caching: `Cache-Control: public, max-age=60`
+* When authenticated (but not host and has no RSVP), the LIMITED response also includes:
+  * isHost: Boolean (false)
+  * rsvpStatus: "GOING" | "MAYBE" | "NOT_GOING" | null (null when no RSVP)
+  * Caching: `Cache-Control: public, max-age=60`
+* When authenticated and either the user is the host OR has an RSVP to the event, FULL details are returned (unchanged shape but attendee list is truncated to first 10):
+  * event: {
     * id: String
-    * status: "GOING" | "MAYBE" | "NOT_GOING"
-    * userId: String
-    * userName: String
-    * profilePhotoID: String | null
-    * createdAt: DateTime
-  }> - All RSVPs for this event
-  * coverPhoto: {
-    * id: String
-    * url: String
-  } | null
-  * isHost: Boolean - Indicates whether the current user is the host of this event
-}
+    * name: String
+    * description: String | null
+    * date: String
+    * location: String
+    * coveId: String
+    * host: {
+      * id: String
+      * name: String
+    }
+    * cove: {
+      * id: String
+      * name: String
+      * coverPhoto: {
+        * id: String
+        * url: String
+      } | null
+    }
+    * rsvpStatus: "GOING" | "MAYBE" | "NOT_GOING" | null
+    * rsvps (first 10 only): Array<{
+      * id: String
+      * status: "GOING" | "MAYBE" | "NOT_GOING"
+      * userId: String
+      * userName: String
+      * profilePhotoUrl: String | null
+      * createdAt: DateTime
+    }>
+    * coverPhoto: {
+      * id: String
+      * url: String
+    } | null
+    * isHost: Boolean - Indicates whether the current user is the host of this event
+  }
+  * Caching: `Cache-Control: private, no-store`, `Vary: Authorization, Cookie`
+
+Notes:
+- Attendee list hygiene: attendee list is limited to the first 10 RSVPs by most recent.
+- Over-fetch prevention: sensitive relations (full RSVP graph) are only fetched when the user is entitled to full details.
 
 ### `/invites`
 

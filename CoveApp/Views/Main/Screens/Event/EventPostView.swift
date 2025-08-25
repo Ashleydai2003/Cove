@@ -47,7 +47,7 @@ class EventPostViewModel: ObservableObject {
 
                 switch result {
                 case .success:
-                    () // No action needed
+                    completion(true)
                 case .failure(let error):
                     self.errorMessage = error.localizedDescription
                     completion(false)
@@ -83,31 +83,38 @@ class EventPostViewModel: ObservableObject {
         // Update the current user's RSVP status in the local event
         if let currentUserId = Auth.auth().currentUser?.uid {
             // Create a new RSVPs array with the updated status
-            var updatedRsvps = currentEvent.rsvps
+            var updatedRsvps: [EventRSVP] = currentEvent.rsvps ?? []
 
             // Find and update existing RSVP or add new one
             if let index = updatedRsvps.firstIndex(where: { $0.userId == currentUserId }) {
-                // Create a new RSVP with updated status
-                let updatedRSVP = EventRSVP(
-                    id: updatedRsvps[index].id,
-                    status: status,
-                    userId: currentUserId,
-                    userName: updatedRsvps[index].userName,
-                    profilePhotoUrl: updatedRsvps[index].profilePhotoUrl,
-                    createdAt: updatedRsvps[index].createdAt
-                )
-                updatedRsvps[index] = updatedRSVP
+                if status == "NOT_GOING" {
+                    // Remove RSVP entirely for NOT_GOING
+                    updatedRsvps.remove(at: index)
+                } else {
+                    // Create a new RSVP with updated status
+                    let updatedRSVP = EventRSVP(
+                        id: updatedRsvps[index].id,
+                        status: status,
+                        userId: currentUserId,
+                        userName: updatedRsvps[index].userName,
+                        profilePhotoUrl: updatedRsvps[index].profilePhotoUrl,
+                        createdAt: updatedRsvps[index].createdAt
+                    )
+                    updatedRsvps[index] = updatedRSVP
+                }
             } else {
-                // Add new RSVP for current user
-                let newRSVP = EventRSVP(
-                    id: UUID().uuidString, // Temporary ID
-                    status: status,
-                    userId: currentUserId,
-                    userName: "You", // Placeholder name
-                    profilePhotoUrl: nil,
-                    createdAt: ISO8601DateFormatter().string(from: Date())
-                )
-                updatedRsvps.append(newRSVP)
+                if status != "NOT_GOING" {
+                    // Add new RSVP for current user
+                    let newRSVP = EventRSVP(
+                        id: UUID().uuidString, // Temporary ID
+                        status: status,
+                        userId: currentUserId,
+                        userName: "You", // Placeholder name
+                        profilePhotoUrl: nil,
+                        createdAt: ISO8601DateFormatter().string(from: Date())
+                    )
+                    updatedRsvps.append(newRSVP)
+                }
             }
 
             // Create a new Event instance with updated RSVPs
@@ -120,7 +127,7 @@ class EventPostViewModel: ObservableObject {
                 coveId: currentEvent.coveId,
                 host: currentEvent.host,
                 cove: currentEvent.cove,
-                rsvpStatus: status,
+                rsvpStatus: status == "NOT_GOING" ? nil : status,
                 rsvps: updatedRsvps,
                 coverPhoto: currentEvent.coverPhoto,
                 isHost: currentEvent.isHost
@@ -219,7 +226,7 @@ struct EventPostView: View {
                             Spacer()
 
                             // Add delete button if user is the host
-                            if event.isHost {
+                            if event.isHost == true {
                                 Button {
                                     showingDeleteAlert = true
                                 } label: {
@@ -283,7 +290,9 @@ struct EventPostView: View {
                                     .aspectRatio(contentMode: .fit)
                                     .frame(width: 15, height: 20)
 
-                                Text(event.location.isEmpty ? "TBD" : event.location)
+                                let entitled = (event.isHost == true) || ((currentRSVPStatus ?? event.rsvpStatus) != nil)
+                                let locText = event.location ?? (entitled ? "TBD" : "RSVP to see location")
+                                Text(locText)
                                     .foregroundStyle(Colors.primaryDark)
                                     .font(.LibreBodoniBold(size: 16))
                             }
@@ -310,60 +319,66 @@ struct EventPostView: View {
                                 .font(.LibreBodoni(size: 18))
                                 .foregroundColor(Colors.primaryDark)
 
-                            // Filter RSVPs to only show "GOING" status
-                            let goingRsvps = event.rsvps.filter { $0.status == "GOING" }
+                            if let rsvps = event.rsvps {
+                                // Filter RSVPs to only show "GOING" status
+                                let goingRsvps = rsvps.filter { $0.status == "GOING" }
 
-                            if goingRsvps.isEmpty {
-                                Text("no guests yet! send your invites!")
-                                    .font(.LibreBodoni(size: 14))
-                                    .foregroundColor(Colors.primaryDark)
-                            } else {
-                                HStack {
-                                    // Show up to 4 profile photos
-                                    ForEach(Array(goingRsvps.prefix(4).enumerated()), id: \.element.id) { index, rsvp in
-                                        if let profilePhotoUrl = rsvp.profilePhotoUrl {
-                                            KFImage(profilePhotoUrl)
-                                                .placeholder {
+                                if goingRsvps.isEmpty {
+                                    Text("no guests yet! send your invites!")
+                                        .font(.LibreBodoni(size: 14))
+                                        .foregroundColor(Colors.primaryDark)
+                                } else {
+                                    HStack {
+                                        // Show up to 4 profile photos
+                                        ForEach(Array(goingRsvps.prefix(4).enumerated()), id: \.element.id) { index, rsvp in
+                                            if let profilePhotoUrl = rsvp.profilePhotoUrl {
+                                                KFImage(profilePhotoUrl)
+                                                    .placeholder {
+                                                        Circle()
+                                                            .fill(Color.gray.opacity(0.2))
+                                                            .frame(width: 62, height: 62)
+                                                    }
+                                                    .onFailure { error in
+                                                        Log.debug("❌ Failed to load profile photo: \(error)")
+                                                    }
+                                                    .resizable()
+                                                    .scaleFactor(UIScreen.main.scale)
+                                                    .setProcessor(DownsamplingImageProcessor(size: CGSize(width: 62 * UIScreen.main.scale, height: 62 * UIScreen.main.scale)))
+                                                    .fade(duration: 0.2)
+                                                    .cacheOriginalImage()
+                                                    .cancelOnDisappear(true)
+                                                    .scaledToFill()
+                                                    .frame(width: 62, height: 62)
+                                                    .clipShape(Circle())
+                                            } else {
+                                                Circle()
+                                                    .fill(Color.gray.opacity(0.2))
+                                                    .frame(width: 62, height: 62)
+                                                    .overlay(
+                                                        Image(systemName: "person.fill")
+                                                            .foregroundColor(.gray)
+                                                            .font(.system(size: 25))
+                                                    )
+                                            }
+                                        }
+
+                                        // Show "+X" if there are more than 4 people
+                                        if goingRsvps.count > 4 {
+                                            Text("+\(goingRsvps.count - 4)")
+                                                .foregroundStyle(Colors.primaryDark)
+                                                .font(.LibreBodoniBold(size: 10))
+                                                .padding(.all, 8)
+                                                .overlay {
                                                     Circle()
-                                                        .fill(Color.gray.opacity(0.2))
-                                                        .frame(width: 62, height: 62)
+                                                        .stroke(Colors.primaryDark, lineWidth: 1.0)
                                                 }
-                                                .onFailure { error in
-                                                    Log.debug("❌ Failed to load profile photo: \(error)")
-                                                }
-                                                .resizable()
-                                                .scaleFactor(UIScreen.main.scale)
-                                                .setProcessor(DownsamplingImageProcessor(size: CGSize(width: 62 * UIScreen.main.scale, height: 62 * UIScreen.main.scale)))
-                                                .fade(duration: 0.2)
-                                                .cacheOriginalImage()
-                                                .cancelOnDisappear(true)
-                                                .scaledToFill()
-                                                .frame(width: 62, height: 62)
-                                                .clipShape(Circle())
-                                        } else {
-                                            Circle()
-                                                .fill(Color.gray.opacity(0.2))
-                                                .frame(width: 62, height: 62)
-                                                .overlay(
-                                                    Image(systemName: "person.fill")
-                                                        .foregroundColor(.gray)
-                                                        .font(.system(size: 25))
-                                                )
                                         }
                                     }
-
-                                    // Show "+X" if there are more than 4 people
-                                    if goingRsvps.count > 4 {
-                                        Text("+\(goingRsvps.count - 4)")
-                                            .foregroundStyle(Colors.primaryDark)
-                                            .font(.LibreBodoniBold(size: 10))
-                                            .padding(.all, 8)
-                                            .overlay {
-                                                Circle()
-                                                    .stroke(Colors.primaryDark, lineWidth: 1.0)
-                                            }
-                                    }
                                 }
+                            } else {
+                                Text("RSVP to see guest list")
+                                    .font(.LibreBodoni(size: 14))
+                                    .foregroundColor(Colors.primaryDark)
                             }
                         }
 
@@ -377,6 +392,12 @@ struct EventPostView: View {
                                     if success {
                                         // Update local event state to reflect RSVP change
                                         viewModel.updateLocalRSVPStatus(status: "NOT_GOING")
+                                        // Force refresh from server to get authoritative state
+                                        viewModel.fetchEventDetails(eventId: eventId) {
+                                            if let updated = viewModel.event {
+                                                currentRSVPStatus = updated.rsvpStatus
+                                            }
+                                        }
                                     }
                                 }
                             } else {
@@ -386,6 +407,12 @@ struct EventPostView: View {
                                     if success {
                                         // Update local event state to reflect RSVP change
                                         viewModel.updateLocalRSVPStatus(status: "GOING")
+                                        // Force refresh from server to get authoritative state
+                                        viewModel.fetchEventDetails(eventId: eventId) {
+                                            if let updated = viewModel.event {
+                                                currentRSVPStatus = updated.rsvpStatus
+                                            }
+                                        }
                                     }
                                 }
                             }
