@@ -190,17 +190,18 @@ export const handleGetCove = async (event: APIGatewayProxyEvent): Promise<APIGat
       };
     }
 
+    // TODO: this is saved for later, when we want to make private coves an option
     // Authenticate the request using Firebase
-    const authResult = await authMiddleware(event);
+    // const authResult = await authMiddleware(event);
     
     // If auth failed, return the error response
-    if ('statusCode' in authResult) {
-      return authResult;
-    }
+    // if ('statusCode' in authResult) {
+    //   return authResult;
+    // }
 
     // Get the authenticated user's info from Firebase
-    const user = authResult.user;
-    console.log('Authenticated user:', user.uid);
+    // const user = authResult.user;
+    // console.log('Authenticated user:', user.uid);
 
     // Get coveId from query parameters
     const coveId = event.queryStringParameters?.coveId;
@@ -216,25 +217,26 @@ export const handleGetCove = async (event: APIGatewayProxyEvent): Promise<APIGat
     // Initialize database connection
     const prisma = await initializeDatabase();
 
+    // TODO: this is saved for later, when we want to make private coves an option
     // Check if user is a member of the cove
     // This is done before fetching cove details to prevent unauthorized access
-    const userMembership = await prisma.coveMember.findUnique({
-      where: {
-        coveId_userId: {
-          coveId,
-          userId: user.uid
-        }
-      }
-    });
+    // const userMembership = await prisma.coveMember.findUnique({
+    //   where: {
+    //     coveId_userId: {
+    //       coveId,
+    //       userId: user.uid
+    //     }
+    //   }
+    // });
 
-    if (!userMembership) {
-      return {
-        statusCode: 403,
-        body: JSON.stringify({
+    // if (!userMembership) {
+    //   return {
+    //     statusCode: 403,
+    //     body: JSON.stringify({
           message: 'You must be a member of this cove to view its information'
-        })
-      };
-    }
+    //     })
+    //   };
+    // }
 
     // Get cove information including:
     // - Basic details (name, description, location)
@@ -249,6 +251,7 @@ export const handleGetCove = async (event: APIGatewayProxyEvent): Promise<APIGat
             id: true
           }
         },
+        // TODO: consider privacy of returning creator firebase id
         createdBy: {
           select: {
             id: true,

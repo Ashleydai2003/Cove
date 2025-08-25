@@ -33,17 +33,12 @@ class NetworkManager {
 
         // Get current Firebase token
         Auth.auth().currentUser?.getIDToken { token, error in
-            if let error = error {
+            // Allow optional auth for certain endpoints
+            let allowsOptionalAuth = (endpoint == "/event" || endpoint == "/cove-events")
+            if let error = error, !allowsOptionalAuth {
                 Log.error("Auth error: \(error.localizedDescription) | Error: \(error)", category: "network")
                 CrashlyticsHandler.recordNetworkError(error, endpoint: endpoint, method: "GET")
                 completion(.failure(.authError(error)))
-                return
-            }
-
-            guard let token = token else {
-                Log.error("Missing auth token", category: "network")
-                CrashlyticsHandler.recordCustomError(domain: "CoveApp.Network", code: 1, message: "Missing auth token", context: "GET \(endpoint)")
-                completion(.failure(.missingToken))
                 return
             }
 
@@ -51,10 +46,18 @@ class NetworkManager {
             var urlComponents = URLComponents(string: "\(self.apiBaseURL)\(endpoint)")
 
             // Add query parameters if provided
+            var queryItems: [URLQueryItem] = []
             if let parameters = parameters {
-                urlComponents?.queryItems = parameters.map { key, value in
+                queryItems.append(contentsOf: parameters.map { key, value in
                     URLQueryItem(name: key, value: String(describing: value))
-                }
+                })
+            }
+            // Add cache buster for dynamic event endpoints to avoid stale cached limited responses
+            if endpoint == "/event" || endpoint == "/cove-events" {
+                queryItems.append(URLQueryItem(name: "cb", value: String(Int(Date().timeIntervalSince1970))))
+            }
+            if !queryItems.isEmpty {
+                urlComponents?.queryItems = queryItems
             }
 
             // Create URL
@@ -66,9 +69,17 @@ class NetworkManager {
             }
 
             // Create request
-            var request = URLRequest(url: url)
+            var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 30)
             request.httpMethod = "GET"
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            request.setValue("no-cache", forHTTPHeaderField: "Cache-Control")
+            if let token = token {
+                request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            } else if !allowsOptionalAuth {
+                Log.error("Missing auth token", category: "network")
+                CrashlyticsHandler.recordCustomError(domain: "CoveApp.Network", code: 1, message: "Missing auth token", context: "GET \(endpoint)")
+                completion(.failure(.missingToken))
+                return
+            }
 
             // Make the request
             let task = URLSession.shared.dataTask(with: request) { data, response, error in

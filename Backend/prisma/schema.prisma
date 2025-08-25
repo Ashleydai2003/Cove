@@ -169,6 +169,7 @@ model Event {
   description String?
   date        DateTime
   location    String
+  isPublic    Boolean     @default(false)
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   coveId      String
