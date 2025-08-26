@@ -93,6 +93,7 @@ class RequestsViewModel: ObservableObject {
             DispatchQueue.main.async {
             switch result {
                 case .success(let resp):
+                    Log.debug("✅ REQUESTS: Friend request accepted successfully")
                     // Optimistically add to friends list so UI (members) shows message button
                     let isoFormatter = ISO8601DateFormatter()
                     let friendDTO = FriendDTO(
@@ -105,12 +106,27 @@ class RequestsViewModel: ObservableObject {
                     var arr = AppController.shared.friendsViewModel.friends
                     arr.append(friendDTO)
                     AppController.shared.friendsViewModel.friends = arr
+                    
+                    // Remove from mutuals pending requests since they're now friends
+                    var mutualsVM = AppController.shared.mutualsViewModel
+                    var pendingSet = mutualsVM.pendingRequests
+                    pendingSet.remove(req.sender.id)
+                    mutualsVM.pendingRequests = pendingSet
                 case .failure(let error):
-                    // Re-add on failure
-                    var arr = self.requests
-                    arr.append(req)
-                    withAnimation { self.requests = arr }
-                    self.errorMessage = error.localizedDescription
+                    Log.debug("❌ REQUESTS: Accept failed: \(error.localizedDescription)")
+                    
+                    // Handle 404/409 conflicts specifically - request may already be resolved
+                    if case .serverError(let statusCode) = error, (statusCode == 404 || statusCode == 409) {
+                        Log.debug("🔄 REQUESTS: Conflict detected - refreshing all friend state")
+                        self.refreshAllFriendState()
+                        self.errorMessage = "Request has already been resolved"
+                    } else {
+                        // Re-add on failure
+                        var arr = self.requests
+                        arr.append(req)
+                        withAnimation { self.requests = arr }
+                        self.errorMessage = error.localizedDescription
+                    }
                 }
             }
         }
@@ -128,12 +144,21 @@ class RequestsViewModel: ObservableObject {
             DispatchQueue.main.async {
             switch result {
             case .success:
-                ()
+                Log.debug("✅ REQUESTS: Friend request rejected successfully")
             case .failure(let error):
+                Log.debug("❌ REQUESTS: Reject failed: \(error.localizedDescription)")
+                
+                // Handle 404/409 conflicts specifically - request may already be resolved
+                if case .serverError(let statusCode) = error, (statusCode == 404 || statusCode == 409) {
+                    Log.debug("🔄 REQUESTS: Conflict detected - refreshing all friend state")
+                    self.refreshAllFriendState()
+                    self.errorMessage = "Request has already been resolved"
+                } else {
                     var arr = self.requests
                     arr.append(req)
                     withAnimation { self.requests = arr }
                     self.errorMessage = error.localizedDescription
+                }
                 }
             }
         }
@@ -146,5 +171,23 @@ class RequestsViewModel: ObservableObject {
         // Force refresh to get the latest requests
         lastFetched = nil
         loadNextPage()
+    }
+
+    /// Force refresh all friend-related state to sync with backend
+    /// Call this when conflicts are detected (e.g., 404/409 errors)
+    private func refreshAllFriendState() {
+        Log.debug("🔄 REQUESTS: Refreshing all friend state due to conflict")
+        
+        // Clear cache and refresh requests data
+        self.lastFetched = nil
+        self.loadNextPage()
+        
+        // Refresh friends list
+        AppController.shared.friendsViewModel.lastFetched = nil
+        AppController.shared.friendsViewModel.loadNextPage()
+        
+        // Refresh mutuals/recommendations
+        AppController.shared.mutualsViewModel.lastFetched = nil
+        AppController.shared.mutualsViewModel.loadNextPage()
     }
 }
