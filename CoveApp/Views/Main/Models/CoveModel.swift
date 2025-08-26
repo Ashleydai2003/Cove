@@ -193,10 +193,17 @@ class CoveModel: ObservableObject {
                 self.isLoading = false
                 switch result {
                 case .success(let response):
-                    Log.debug("✅ CoveModel: Events received: \(response.events.count) events")
-                    self.events.append(contentsOf: response.events)
-                    self.hasMore = response.pagination.hasMore
-                    self.nextCursor = response.pagination.nextCursor
+                    let newEvents = response.events ?? []
+                    Log.debug("✅ CoveModel: Events received: \(newEvents.count) events")
+                    self.events.append(contentsOf: newEvents)
+                    if let pagination = response.pagination {
+                        self.hasMore = pagination.hasMore
+                        self.nextCursor = pagination.nextCursor
+                    } else {
+                        // Unauthenticated limited response has no pagination
+                        self.hasMore = false
+                        self.nextCursor = nil
+                    }
                     self.eventsLastFetched = Date()
                 case .failure(let error):
                     Log.debug("❌ CoveModel: Events error: \(error.localizedDescription)")
@@ -278,16 +285,22 @@ class CoveModel: ObservableObject {
                 self.isRefreshingEvents = false
                 switch result {
                 case .success(let response):
-                    Log.debug("✅ CoveModel: Events refresh completed: \(response.events.count) events")
+                    let refreshed = response.events ?? []
+                    Log.debug("✅ CoveModel: Events refresh completed: \(refreshed.count) events")
 
                     // Use smart diffing to only update UI if events actually changed
                     updateIfChanged(
                         current: self.events,
-                        new: response.events
+                        new: refreshed
                     ) {
-                        self.events = response.events
-                        self.hasMore = response.pagination.hasMore
-                        self.nextCursor = response.pagination.nextCursor
+                        self.events = refreshed
+                        if let pagination = response.pagination {
+                            self.hasMore = pagination.hasMore
+                            self.nextCursor = pagination.nextCursor
+                        } else {
+                            self.hasMore = false
+                            self.nextCursor = nil
+                        }
                     }
 
                     self.eventsLastFetched = Date()
@@ -616,8 +629,8 @@ struct FeedCoveDetails: Decodable, ContentComparable {
 }
 /// Response for /cove-events API
 struct CoveEventsResponse: Decodable {
-    let events: [CalendarEvent]
-    let pagination: Pagination
+    let events: [CalendarEvent]?
+    let pagination: Pagination?
     struct Pagination: Decodable {
         let hasMore: Bool
         let nextCursor: String?

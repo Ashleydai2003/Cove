@@ -55,17 +55,9 @@ struct TabBarView: View {
 
             // Cove Tab
             Button(action: { selectedTab = 3 }) {
-                ZStack(alignment: .topTrailing) {
-                    Image(selectedTab == 3 ? "cove_selected" : "cove_unselected")
-                        .tabBarIcon(isSelected: selectedTab == 3, isMiddleButton: true)
-                        .animation(.none, value: selectedTab)
-                    if appController.inboxViewModel.hasUnopenedInvites {
-                        Circle()
-                            .fill(Color.red)
-                            .frame(width: 10, height: 10)
-                            .offset(x: 6, y: -6)
-                    }
-                }
+                Image(selectedTab == 3 ? "cove_selected" : "cove_unselected")
+                    .tabBarIcon(isSelected: selectedTab == 3, isMiddleButton: true)
+                    .animation(.none, value: selectedTab)
             }
             .frame(maxWidth: 56, maxHeight: 56)
 

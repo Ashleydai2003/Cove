@@ -17,6 +17,9 @@ class MutualsViewModel: ObservableObject {
     @Published var pendingRequests: Set<String> = []
     @Published var lastFetched: Date?
 
+    // Track request attempts to prevent rapid firing
+    private var pendingRequestAttempts: Set<String> = []
+
     // TODO: Adjust cache duration as needed - currently set to 30 minutes
     private let cacheTimeout: TimeInterval = 30 * 60 // 30 minutes
     private let pageSize = 10
@@ -88,6 +91,15 @@ class MutualsViewModel: ObservableObject {
     func sendFriendRequest(to userId: String) {
         Log.debug("🔗 MUTUALS: Sending friend request to \(userId)")
 
+        // Prevent rapid-fire requests to the same user
+        guard !pendingRequestAttempts.contains(userId) else {
+            Log.debug("🔗 MUTUALS: Request already in progress for \(userId), ignoring")
+            return
+        }
+
+        // Track this attempt
+        pendingRequestAttempts.insert(userId)
+
         // Optimistic UI update by assigning NEW Set reference
         var newSet = pendingRequests
         newSet.insert(userId)
@@ -99,17 +111,57 @@ class MutualsViewModel: ObservableObject {
         ) { [weak self] (result: Result<SendRequestResponse, NetworkError>) in
             DispatchQueue.main.async {
                 guard let self = self else { return }
+                
+                // Remove from pending attempts regardless of outcome
+                self.pendingRequestAttempts.remove(userId)
+                
                 switch result {
                 case .success:
-                    () // No action needed
+                    Log.debug("🔗 MUTUALS: ✅ Friend request sent successfully to \(userId)")
+                    // Keep optimistic UI state - request is now truly pending
                 case .failure(let error):
-                    var reverted = self.pendingRequests
-                    reverted.remove(userId)
-                    withAnimation { self.pendingRequests = reverted }
-                    self.errorMessage = error.localizedDescription
+                    Log.debug("🔗 MUTUALS: ❌ Friend request failed for \(userId): \(error.localizedDescription)")
+                    
+                    // Handle 409 conflict specifically - state is stale
+                    if case .serverError(let statusCode) = error, statusCode == 409 {
+                        Log.debug("🔗 MUTUALS: 409 conflict - refreshing state for \(userId)")
+                        // Remove from pending since request already exists or they're already friends
+                        var reverted = self.pendingRequests
+                        reverted.remove(userId)
+                        withAnimation { self.pendingRequests = reverted }
+                        
+                        // Force refresh all friend-related state to sync with backend
+                        self.refreshAllFriendState()
+                        
+                        // Show user-friendly message instead of raw 409 error
+                        self.errorMessage = "Request already sent or you're already friends"
+                    } else {
+                        // Other errors - revert optimistic update
+                        var reverted = self.pendingRequests
+                        reverted.remove(userId)
+                        withAnimation { self.pendingRequests = reverted }
+                        self.errorMessage = error.localizedDescription
+                    }
                 }
             }
         }
+    }
+
+    /// Refreshes all friend-related state when conflicts are detected
+    private func refreshAllFriendState() {
+        Log.debug("🔗 MUTUALS: Refreshing all friend state due to conflict")
+        
+        // Clear cache and refresh mutuals data
+        self.lastFetched = nil
+        self.loadNextPage()
+        
+        // Refresh friends list
+        AppController.shared.friendsViewModel.lastFetched = nil
+        AppController.shared.friendsViewModel.loadNextPage()
+        
+        // Refresh friend requests
+        AppController.shared.requestsViewModel.lastFetched = nil
+        AppController.shared.requestsViewModel.loadNextPage()
     }
 
     /// Smooth refresh that preserves the current list while fetching fresh data
