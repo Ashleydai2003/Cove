@@ -142,18 +142,22 @@ export const handleCreatePost = async (request: APIGatewayProxyEvent): Promise<A
         const token = m.user.fcmToken;
         if (!token) continue;
         try {
-          await admin.messaging().send({
-            token,
-            notification: {
-              title: '🗣️ New post in your cove',
-              body: content.length > 80 ? content.slice(0, 77) + '…' : content
-            },
-            data: {
-              type: 'post_created',
-              coveId,
-              postId: newPost.id
-            }
-          });
+          if (process.env.NODE_ENV === 'production') {
+            await admin.messaging().send({
+              token,
+              notification: {
+                title: '🗣️ New post in your cove',
+                body: content.length > 80 ? content.slice(0, 77) + '…' : content
+              },
+              data: {
+                type: 'post_created',
+                coveId,
+                postId: newPost.id
+              }
+            });
+          } else {
+            console.log('Skipping push notification in non-production (post created)');
+          }
         } catch (err) {
           console.error('Post created notify error:', err);
         }
