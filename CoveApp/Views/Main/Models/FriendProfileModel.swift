@@ -96,4 +96,22 @@ class FriendProfileModel: ObservableObject {
         case pending
         case sendRequest
     }
+
+    /// Force refresh all friend-related state to sync with backend
+    /// Call this when you suspect state might be stale (e.g., after 409 errors)
+    func refreshAllFriendState() {
+        Log.debug("👤 FriendProfileModel: Refreshing all friend state")
+        
+        // Refresh friends list
+        AppController.shared.friendsViewModel.lastFetched = nil
+        AppController.shared.friendsViewModel.loadNextPage()
+        
+        // Refresh friend requests
+        AppController.shared.requestsViewModel.lastFetched = nil
+        AppController.shared.requestsViewModel.loadNextPage()
+        
+        // Refresh mutuals/recommendations
+        AppController.shared.mutualsViewModel.lastFetched = nil
+        AppController.shared.mutualsViewModel.loadNextPage()
+    }
 }
