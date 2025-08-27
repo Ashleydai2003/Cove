@@ -19,9 +19,10 @@ import FirebaseAuth
 struct ProfileText: View {
     let text: String
     let isPlaceholder: Bool
+    var fontSize: CGFloat = 15
     var body: some View {
         Text(text.lowercased())
-            .font(.LibreBodoni(size: 15))
+            .font(.LibreBodoni(size: fontSize))
             // lighter grey color for place holder
             .foregroundColor(isPlaceholder ? Colors.k6F6F73 : Colors.primaryDark)
     }
@@ -54,6 +55,7 @@ struct ProfileHeader: View {
 
     @State private var selectedItem: PhotosPickerItem?
     @State private var isPressed = false
+    @State private var showDetails = false
     @EnvironmentObject var appController: AppController
 
     // Computed property to format grad year as last two digits
@@ -196,10 +198,10 @@ struct ProfileHeader: View {
 
             VStack(alignment: .center, spacing: 16) {
                 // Combined header row: Age, Location, Alma Mater + Grad Year
-                HStack(spacing: 20) {
+                HStack(spacing: 16) {
                     // Age
                     Text(age.map(String.init) ?? "21")
-                        .font(.LibreBodoni(size: 20))
+                        .font(.LibreBodoni(size: 18))
                         .foregroundColor(Colors.primaryDark)
 
                     // Location segment
@@ -213,7 +215,7 @@ struct ProfileHeader: View {
                         if isEditing {
                             Button(action: onLocationSelect) {
                                 Text(address.isEmpty ? "add your location" : address.lowercased())
-                                    .font(.LibreBodoni(size: 15))
+                                    .font(.LibreBodoni(size: 14))
                                     .foregroundColor(address.isEmpty ? Colors.k6F6F73 : Colors.primaryDark)
                                     .multilineTextAlignment(.center)
                                     .padding(.vertical, 4)
@@ -221,12 +223,13 @@ struct ProfileHeader: View {
                         } else {
                             ProfileText(
                                 text: address.isEmpty ? "add your location" : address,
-                                isPlaceholder: address.isEmpty
+                                isPlaceholder: address.isEmpty,
+                                fontSize: 14
                             )
                         }
                     }
 
-                    // Alma mater + grad year segment
+                    // Alma mater + grad year segment with dropdown carrot (carrot on the right)
                     HStack(spacing: 6) {
                         Image("gradIcon")
                             .resizable()
@@ -237,7 +240,7 @@ struct ProfileHeader: View {
                         if isEditing {
                             HStack {
                                 TextField("university", text: $almaMater, onCommit: { onAlmaMaterChange(almaMater) })
-                                    .font(.LibreBodoni(size: 15))
+                                    .font(.LibreBodoni(size: 14))
                                     .foregroundColor(Colors.primaryDark)
                                     .textFieldStyle(PlainTextFieldStyle())
                                     .padding(.vertical, 4)
@@ -254,11 +257,11 @@ struct ProfileHeader: View {
                                     }
 
                                 Text("'")
-                                    .font(.LibreBodoni(size: 15))
+                                    .font(.LibreBodoni(size: 14))
                                     .foregroundColor(Colors.primaryDark)
 
                                 TextField("year", text: $gradYear, onCommit: { onGradYearChange(gradYear) })
-                                    .font(.LibreBodoni(size: 15))
+                                    .font(.LibreBodoni(size: 14))
                                     .foregroundColor(Colors.primaryDark)
                                     .textFieldStyle(PlainTextFieldStyle())
                                     .padding(.vertical, 4)
@@ -277,80 +280,157 @@ struct ProfileHeader: View {
                             }
                         } else {
                             if !almaMater.isEmpty && !gradYear.isEmpty {
-                                ProfileText(text: "\(almaMater) '\(formattedGradYear)", isPlaceholder: false)
+                                ProfileText(text: "\(almaMater) '\(formattedGradYear)", isPlaceholder: false, fontSize: 14)
                             } else if !almaMater.isEmpty {
-                                ProfileText(text: almaMater, isPlaceholder: false)
+                                ProfileText(text: almaMater, isPlaceholder: false, fontSize: 14)
                             } else if !gradYear.isEmpty {
-                                ProfileText(text: "'\(formattedGradYear)", isPlaceholder: false)
+                                ProfileText(text: "'\(formattedGradYear)", isPlaceholder: false, fontSize: 14)
                             } else {
-                                ProfileText(text: "add your alma mater", isPlaceholder: true)
+                                ProfileText(text: "add your alma mater", isPlaceholder: true, fontSize: 14)
                             }
                         }
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .center)
 
-                // Bottom row: Work (centered below the top row)
-                HStack(spacing: 6) {
-                    Image("workIcon")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 16, height: 16)
-                        .foregroundStyle(Colors.k6B6B6B)
-
-                    if isEditing {
-                        HStack {
-                            TextField("job", text: $job, onCommit: { onJobChange(job) })
-                                .font(.LibreBodoni(size: 15))
+                        Button(action: {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                showDetails.toggle()
+                            }
+                        }) {
+                            Image(systemName: showDetails ? "chevron.up" : "chevron.down")
+                                .font(.system(size: 12, weight: .semibold))
                                 .foregroundColor(Colors.primaryDark)
-                                .textFieldStyle(PlainTextFieldStyle())
-                                .padding(.vertical, 4)
-                                .overlay(
-                                    Rectangle()
-                                        .frame(height: 1)
-                                        .foregroundColor(Colors.primaryDark.opacity(0.3))
-                                        .offset(y: 12)
-                                )
-                                .onChange(of: job) { _, newValue in
-                                    let lowercasedValue = newValue.lowercased()
-                                    job = lowercasedValue
-                                    onJobChange(lowercasedValue)
-                                }
-
-                            Text("@")
-                                .font(.LibreBodoni(size: 15))
-                                .foregroundColor(Colors.primaryDark)
-
-                            TextField("work location", text: $workLocation, onCommit: { onWorkLocationChange(workLocation) })
-                                .font(.LibreBodoni(size: 15))
-                                .foregroundColor(Colors.primaryDark)
-                                .textFieldStyle(PlainTextFieldStyle())
-                                .padding(.vertical, 4)
-                                .overlay(
-                                    Rectangle()
-                                        .frame(height: 1)
-                                        .foregroundColor(Colors.primaryDark.opacity(0.3))
-                                        .offset(y: 12)
-                                )
-                                .onChange(of: workLocation) { _, newValue in
-                                    let lowercasedValue = newValue.lowercased()
-                                    workLocation = lowercasedValue
-                                    onWorkLocationChange(lowercasedValue)
-                                }
-                        }
-                    } else {
-                        if !job.isEmpty && !workLocation.isEmpty {
-                            ProfileText(text: "\(job) @ \(workLocation)", isPlaceholder: false)
-                        } else if !job.isEmpty {
-                            ProfileText(text: job, isPlaceholder: false)
-                        } else if !workLocation.isEmpty {
-                            ProfileText(text: workLocation, isPlaceholder: false)
-                        } else {
-                            ProfileText(text: "add your work", isPlaceholder: true)
+                                .frame(width: 16, height: 16)
+                                .contentShape(Rectangle())
                         }
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
+
+                // Collapsible details grid
+                if showDetails {
+                    LazyVGrid(columns: [
+                        GridItem(.flexible(), spacing: 12),
+                        GridItem(.flexible(), spacing: 12)
+                    ], spacing: 12) {
+                        // Gender
+                        HStack(spacing: 6) {
+                            Image("genderIcon")
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 16, height: 16)
+
+                            if isEditing {
+                                TextField("gender", text: $gender, onCommit: { onGenderChange(gender) })
+                                    .font(.LibreBodoni(size: 15))
+                                    .foregroundColor(Colors.primaryDark)
+                                    .textFieldStyle(PlainTextFieldStyle())
+                                    .padding(.vertical, 4)
+                                    .overlay(
+                                        Rectangle()
+                                            .frame(height: 1)
+                                            .foregroundColor(Colors.primaryDark.opacity(0.3))
+                                            .offset(y: 12)
+                                    )
+                                    .onChange(of: gender) { _, newValue in
+                                        let lowercasedValue = newValue.lowercased()
+                                        gender = lowercasedValue
+                                        onGenderChange(lowercasedValue)
+                                    }
+                            } else {
+                                ProfileText(
+                                    text: gender.isEmpty ? "add gender" : gender,
+                                    isPlaceholder: gender.isEmpty
+                                )
+                            }
+                            Spacer(minLength: 0)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                        // Relationship Status
+                        HStack(spacing: 6) {
+                            Image("relationshipIcon")
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 16, height: 16)
+
+                            if isEditing {
+                                RelationStatusPicker(selectedStatus: relationStatus, onStatusChange: onRelationStatusChange)
+                            } else {
+                                ProfileText(
+                                    text: relationStatus.isEmpty ? "add status" : relationStatus,
+                                    isPlaceholder: relationStatus.isEmpty
+                                )
+                            }
+                            Spacer(minLength: 0)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                        // Work (job @ location)
+                        HStack(spacing: 6) {
+                            Image("workIcon")
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 16, height: 16)
+                                .foregroundStyle(Colors.k6B6B6B)
+
+                            if isEditing {
+                                HStack(spacing: 6) {
+                                    TextField("job", text: $job, onCommit: { onJobChange(job) })
+                                        .font(.LibreBodoni(size: 15))
+                                        .foregroundColor(Colors.primaryDark)
+                                        .textFieldStyle(PlainTextFieldStyle())
+                                        .padding(.vertical, 4)
+                                        .overlay(
+                                            Rectangle()
+                                                .frame(height: 1)
+                                                .foregroundColor(Colors.primaryDark.opacity(0.3))
+                                                .offset(y: 12)
+                                        )
+                                        .onChange(of: job) { _, newValue in
+                                            let lowercasedValue = newValue.lowercased()
+                                            job = lowercasedValue
+                                            onJobChange(lowercasedValue)
+                                        }
+
+                                    Text("@")
+                                        .font(.LibreBodoni(size: 15))
+                                        .foregroundColor(Colors.primaryDark)
+
+                                    TextField("work location", text: $workLocation, onCommit: { onWorkLocationChange(workLocation) })
+                                        .font(.LibreBodoni(size: 15))
+                                        .foregroundColor(Colors.primaryDark)
+                                        .textFieldStyle(PlainTextFieldStyle())
+                                        .padding(.vertical, 4)
+                                        .overlay(
+                                            Rectangle()
+                                                .frame(height: 1)
+                                                .foregroundColor(Colors.primaryDark.opacity(0.3))
+                                                .offset(y: 12)
+                                        )
+                                        .onChange(of: workLocation) { _, newValue in
+                                            let lowercasedValue = newValue.lowercased()
+                                            workLocation = lowercasedValue
+                                            onWorkLocationChange(lowercasedValue)
+                                        }
+                                }
+                            } else {
+                                if !job.isEmpty && !workLocation.isEmpty {
+                                    ProfileText(text: "\(job) @ \(workLocation)", isPlaceholder: false)
+                                } else if !job.isEmpty {
+                                    ProfileText(text: job, isPlaceholder: false)
+                                } else if !workLocation.isEmpty {
+                                    ProfileText(text: workLocation, isPlaceholder: false)
+                                } else {
+                                    ProfileText(text: "add your work", isPlaceholder: true)
+                                }
+                            }
+                            Spacer(minLength: 0)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+
+                // Removed standalone work row in favor of collapsible grid
             }
         }
         .onAppear {
@@ -1028,7 +1108,7 @@ struct ProfileView: View {
                                 },
                                 onProfileImageChange: { editingProfileImage = $0 }
                             )
-                            .frame(maxWidth: 270)
+                            .frame(maxWidth: 320)
                             .padding(.top, -30)
                             .onAppear {
                             }
