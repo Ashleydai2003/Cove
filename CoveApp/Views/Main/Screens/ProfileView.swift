@@ -37,6 +37,7 @@ struct ProfileHeader: View {
     @Binding var job: String
     @Binding var almaMater: String
     @Binding var gradYear: String
+    @Binding var bio: String
     let profileImageURL: URL?
     let age: Int?
     let address: String
@@ -50,6 +51,7 @@ struct ProfileHeader: View {
     let onJobChange: (String) -> Void
     let onAlmaMaterChange: (String) -> Void
     let onGradYearChange: (String) -> Void
+    let onBioChange: (String) -> Void
     let onLocationSelect: () -> Void
     let onProfileImageChange: (UIImage?) -> Void
 
@@ -194,6 +196,28 @@ struct ProfileHeader: View {
                 Text(name.lowercased())
                     .font(.LibreBodoniMedium(size: 35))
                     .foregroundColor(Colors.primaryDark)
+            }
+
+            // Headline bio centered below the name
+            if isEditing {
+                TextField("Add your headline...", text: $bio, axis: .vertical)
+                    .font(.LibreBodoni(size: 16))
+                    .foregroundStyle(Colors.k6F6F73)
+                    .multilineTextAlignment(.center)
+                    .onChange(of: bio) { _, newValue in
+                        let lowercasedValue = newValue.lowercased()
+                        bio = lowercasedValue
+                        onBioChange(lowercasedValue)
+                    }
+                    .padding(.horizontal, 8)
+            } else {
+                if !bio.isEmpty {
+                    Text(bio.lowercased())
+                        .font(.LibreBodoni(size: 16))
+                        .foregroundStyle(Colors.k6F6F73)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 8)
+                }
             }
 
             VStack(alignment: .center, spacing: 16) {
@@ -341,9 +365,8 @@ struct ProfileHeader: View {
                                     isPlaceholder: gender.isEmpty
                                 )
                             }
-                            Spacer(minLength: 0)
                         }
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .frame(maxWidth: .infinity, alignment: .center)
 
                         // Relationship Status
                         HStack(spacing: 6) {
@@ -360,9 +383,8 @@ struct ProfileHeader: View {
                                     isPlaceholder: relationStatus.isEmpty
                                 )
                             }
-                            Spacer(minLength: 0)
                         }
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .frame(maxWidth: .infinity, alignment: .center)
 
                         // Work (job @ location)
                         HStack(spacing: 6) {
@@ -423,9 +445,9 @@ struct ProfileHeader: View {
                                     ProfileText(text: "add your work", isPlaceholder: true)
                                 }
                             }
-                            Spacer(minLength: 0)
                         }
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .gridCellColumns(2)
                     }
                     .transition(.opacity.combined(with: .move(edge: .top)))
                 }
@@ -1087,6 +1109,7 @@ struct ProfileView: View {
                                 job: isEditing ? $editingJob : .constant(appController.profileModel.job),
                                 almaMater: isEditing ? $editingAlmaMater : .constant(appController.profileModel.almaMater ?? ""),
                                 gradYear: isEditing ? $editingGradYear : .constant(appController.profileModel.gradYear),
+                                bio: isEditing ? $editingBio : .constant(appController.profileModel.bio),
                                 profileImageURL: isEditing ? nil : appController.profileModel.profileImageURL,
                                 age: appController.profileModel.calculatedAge,
                                 address: isEditing ? editingAddress : appController.profileModel.address,
@@ -1103,6 +1126,7 @@ struct ProfileView: View {
                                 onJobChange: { editingJob = $0 },
                                 onAlmaMaterChange: { editingAlmaMater = $0 },
                                 onGradYearChange: { editingGradYear = $0 },
+                                onBioChange: { editingBio = $0 },
                                 onLocationSelect: {
                                     showingLocationSheet = true
                                 },
@@ -1126,11 +1150,7 @@ struct ProfileView: View {
                             .onChange(of: appController.profileModel.extraImageURLs.first) { _, newURL in
                             }
 
-                            BioSection(
-                                bio: isEditing ? $editingBio : .constant(appController.profileModel.bio),
-                                isEditing: isEditing,
-                                onBioChange: { editingBio = $0 }
-                            )
+                            // Bio moved under name as headline; removed boxed BioSection here
 
                             ExtraPhotoView(
                                 imageIndex: 1,
