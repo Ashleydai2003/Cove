@@ -334,7 +334,7 @@ struct ProfileHeader: View {
                     LazyVGrid(columns: [
                         GridItem(.flexible(), spacing: 12),
                         GridItem(.flexible(), spacing: 12)
-                    ], spacing: 12) {
+                    ], alignment: .center, spacing: 12) {
                         // Gender
                         HStack(spacing: 6) {
                             Image("genderIcon")
@@ -367,6 +367,7 @@ struct ProfileHeader: View {
                             }
                         }
                         .frame(maxWidth: .infinity, alignment: .center)
+                        .gridCellAnchor(.center)
 
                         // Relationship Status
                         HStack(spacing: 6) {
@@ -385,6 +386,7 @@ struct ProfileHeader: View {
                             }
                         }
                         .frame(maxWidth: .infinity, alignment: .center)
+                        .gridCellAnchor(.center)
 
                         // Work (job @ location)
                         HStack(spacing: 6) {
@@ -446,11 +448,42 @@ struct ProfileHeader: View {
                                 }
                             }
                         }
-                        .frame(maxWidth: .infinity, alignment: .center)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                         .gridCellColumns(2)
+                        .gridCellAnchor(.leading)
                     }
                     .transition(.opacity.combined(with: .move(edge: .top)))
                 }
+
+                // Stats row: friends, coves, events (always shown, directly under collapsible)
+                HStack(spacing: 24) {
+                    VStack(spacing: 2) {
+                        Text("23")
+                            .font(.LibreBodoniSemiBold(size: 18))
+                            .foregroundColor(Colors.primaryDark)
+                        Text("friends")
+                            .font(.LibreBodoni(size: 13))
+                            .foregroundColor(Colors.k6F6F73)
+                    }
+                    VStack(spacing: 2) {
+                        Text("4")
+                            .font(.LibreBodoniSemiBold(size: 18))
+                            .foregroundColor(Colors.primaryDark)
+                        Text("coves")
+                            .font(.LibreBodoni(size: 13))
+                            .foregroundColor(Colors.k6F6F73)
+                    }
+                    VStack(spacing: 2) {
+                        Text("16")
+                            .font(.LibreBodoniSemiBold(size: 18))
+                            .foregroundColor(Colors.primaryDark)
+                        Text("events")
+                            .font(.LibreBodoni(size: 13))
+                            .foregroundColor(Colors.k6F6F73)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.top, 4)
 
                 // Removed standalone work row in favor of collapsible grid
             }
@@ -1168,6 +1201,8 @@ struct ProfileView: View {
                                 isEditing: isEditing,
                                 onInterestsChange: { editingInterests = $0 }
                             )
+
+                            
 
                             // Logout button shown only when NOT editing
                             if !isEditing {
