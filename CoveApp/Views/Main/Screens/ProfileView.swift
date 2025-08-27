@@ -27,6 +27,25 @@ struct ProfileText: View {
     }
 }
 
+// Small reusable chip with an icon and text
+private struct IconChip: View {
+    let imageName: String
+    let text: String
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(imageName)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 16, height: 16)
+            Text(text.lowercased())
+                .font(.LibreBodoni(size: 14))
+                .foregroundColor(Colors.k6F6F73)
+        }
+        .padding(.vertical, 6)
+        .padding(.horizontal, 10)
+    }
+}
+
 @MainActor
 struct ProfileHeader: View {
     @Binding var name: String
@@ -474,7 +493,7 @@ struct BioSection: View {
             HStack {
                 if isEditing {
                     TextField("Add your bio...", text: $bio, axis: .vertical)
-                        .font(.LeagueSpartan(size: 14))
+                        .font(.LibreBodoni(size: 14))
                         .foregroundStyle(Colors.k6F6F73)
                         .multilineTextAlignment(.leading)
                         .frame(maxWidth: .infinity, minHeight: 50, maxHeight: .infinity, alignment: .leading)
@@ -495,20 +514,17 @@ struct BioSection: View {
                         }
                 } else {
                     Text(bio.isEmpty ? "add your bio" : bio.lowercased())
-                        .font(.LeagueSpartan(size: 14))
+                        .font(.LibreBodoni(size: 14))
                         .foregroundStyle(bio.isEmpty ? Colors.k6F6F73 : Colors.k6F6F73)
                         .multilineTextAlignment(.leading)
-                        .frame(maxWidth: .infinity, minHeight: 50, maxHeight: .infinity, alignment: .leading)
-                        .padding()
-                        .background(
-                            RoundedRectangle(cornerRadius: 10)
-                                .fill(Color.white)
-                                .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
-                        )
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 4)
                 }
             }
         }
-        .padding()
+        .padding(.horizontal)
+        .padding(.top, 8)
     }
 }
 
@@ -1043,42 +1059,129 @@ struct ProfileView: View {
 
                                 
                             }
-                            // Progress ring shown around the photo inside ProfileHeader
-                            ProfileHeader(
-                                name: isEditing ? $editingName : .constant(appController.profileModel.name),
-                                workLocation: isEditing ? $editingWorkLocation : .constant(appController.profileModel.workLocation),
-                                gender: isEditing ? $editingGender : .constant(appController.profileModel.gender),
-                                relationStatus: isEditing ? $editingRelationStatus : .constant(appController.profileModel.relationStatus),
-                                job: isEditing ? $editingJob : .constant(appController.profileModel.job),
-                                almaMater: isEditing ? $editingAlmaMater : .constant(appController.profileModel.almaMater ?? ""),
-                                gradYear: isEditing ? $editingGradYear : .constant(appController.profileModel.gradYear),
-                                profileImageURL: isEditing ? nil : appController.profileModel.profileImageURL,
-                                age: appController.profileModel.calculatedAge,
-                                address: isEditing ? editingAddress : appController.profileModel.address,
-                                isEditing: isEditing,
-                                editingProfileImage: editingProfileImage,
-                                progress: {
-                                    let p = appController.profileModel.calculateProfileProgress()
-                                    return p < 1.0 ? p : nil
-                                }(),
-                                onNameChange: { editingName = $0 },
-                                onWorkLocationChange: { editingWorkLocation = $0 },
-                                onGenderChange: { editingGender = $0 },
-                                onRelationStatusChange: { editingRelationStatus = $0 },
-                                onJobChange: { editingJob = $0 },
-                                onAlmaMaterChange: { editingAlmaMater = $0 },
-                                onGradYearChange: { editingGradYear = $0 },
-                                onLocationSelect: {
-                                    showingLocationSheet = true
-                                },
-                                onProfileImageChange: { editingProfileImage = $0 }
-                            )
-                            .frame(maxWidth: 270)
-                            .padding(.top, -30)
-                            .onAppear {
+                            // Header layout similar to FriendProfileView
+                            HStack(alignment: .top, spacing: 20) {
+                                // Profile image
+                                VStack(alignment: .center, spacing: 10) {
+                                    let profileUIImage = appController.profileModel.profileUIImage
+                                    let isProfileImageLoading = appController.profileModel.isProfileImageLoading
+                                    if let img = editingProfileImage ?? profileUIImage {
+                                        Image(uiImage: img)
+                                            .resizable()
+                                            .scaledToFill()
+                                            .frame(width: 120, height: 120)
+                                            .clipShape(Circle())
+                                    } else if isProfileImageLoading {
+                                        Circle()
+                                            .fill(Color.gray.opacity(0.3))
+                                            .frame(width: 120, height: 120)
+                                            .overlay(
+                                                ProgressView()
+                                                    .scaleEffect(1.0)
+                                                    .tint(Color.white)
+                                            )
+                                    } else {
+                                        Image("default_user_pfp")
+                                            .resizable()
+                                            .scaledToFill()
+                                            .frame(width: 120, height: 120)
+                                            .clipShape(Circle())
+                                    }
+                                }
+
+                                VStack(alignment: .leading, spacing: 8) {
+                                    // Name
+                                    Text(appController.profileModel.name)
+                                        .font(.LibreBodoniBold(size: 32))
+                                        .foregroundColor(Colors.primaryDark)
+
+                                    // Location + Alma Mater row
+                                    let addressText = appController.profileModel.address
+                                    let almaMaterText = (appController.profileModel.almaMater ?? "")
+                                    let gradRaw = appController.profileModel.gradYear
+                                    let gradYY = gradRaw.count == 4 ? String(gradRaw.suffix(2)) : gradRaw
+
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        HStack(spacing: 6) {
+                                            Image("locationIcon")
+                                                .resizable()
+                                                .aspectRatio(contentMode: .fit)
+                                                .frame(width: 16, height: 16)
+                                            Text(addressText.isEmpty ? "add your location" : addressText)
+                                                .font(.LibreBodoni(size: 14))
+                                                .foregroundColor(Colors.k6F6F73)
+                                        }
+                                        HStack(spacing: 6) {
+                                            Image("gradIcon")
+                                                .resizable()
+                                                .aspectRatio(contentMode: .fit)
+                                                .frame(width: 16, height: 16)
+                                            if !almaMaterText.isEmpty || !gradYY.isEmpty {
+                                                Text(almaMaterText.isEmpty ? "alma mater" : (gradYY.isEmpty ? almaMaterText : "\(almaMaterText) '\(gradYY)"))
+                                                    .font(.LibreBodoni(size: 14))
+                                                    .foregroundColor(Colors.k6F6F73)
+                                            } else {
+                                                Text("add your alma mater")
+                                                    .font(.LibreBodoni(size: 14))
+                                                    .foregroundColor(Colors.k6F6F73)
+                                            }
+                                        }
+                                    }
+
+                                    // Bio below
+                                    if isEditing {
+                                        BioSection(
+                                            bio: $editingBio,
+                                            isEditing: true,
+                                            onBioChange: { editingBio = $0 }
+                                        )
+                                    } else {
+                                        let bioText = appController.profileModel.bio
+                                        if !bioText.isEmpty {
+                                            Text(bioText)
+                                                .font(.LibreBodoni(size: 15))
+                                                .foregroundColor(Colors.k6F6F73)
+                                                .fixedSize(horizontal: false, vertical: true)
+                                        }
+                                    }
+
+                                    // Stats moved under profile picture (left column)
+                                }
                             }
-                            .onChange(of: appController.profileModel.profileImageURL) { _, newURL in
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.top, 4)
+
+                            // Wide stats row directly under bio
+                            HStack(spacing: 24) {
+                                HStack(spacing: 6) {
+                                    Text("0")
+                                        .font(.LibreBodoniBold(size: 20))
+                                        .foregroundColor(Colors.primaryDark)
+                                    Text("friends")
+                                        .font(.LibreBodoni(size: 14))
+                                        .foregroundColor(Colors.k6F6F73)
+                                }
+                                .frame(maxWidth: .infinity)
+                                HStack(spacing: 6) {
+                                    Text("0")
+                                        .font(.LibreBodoniBold(size: 20))
+                                        .foregroundColor(Colors.primaryDark)
+                                    Text("coves")
+                                        .font(.LibreBodoni(size: 14))
+                                        .foregroundColor(Colors.k6F6F73)
+                                }
+                                .frame(maxWidth: .infinity)
+                                HStack(spacing: 6) {
+                                    Text("0")
+                                        .font(.LibreBodoniBold(size: 20))
+                                        .foregroundColor(Colors.primaryDark)
+                                    Text("events")
+                                        .font(.LibreBodoni(size: 14))
+                                        .foregroundColor(Colors.k6F6F73)
+                                }
+                                .frame(maxWidth: .infinity)
                             }
+                            .frame(maxWidth: .infinity)
 
                             ExtraPhotoView(
                                 imageIndex: 0,
@@ -1091,10 +1194,18 @@ struct ProfileView: View {
                             .onChange(of: appController.profileModel.extraImageURLs.first) { _, newURL in
                             }
 
+                            // Bio placed directly under the first additional photo
                             BioSection(
                                 bio: isEditing ? $editingBio : .constant(appController.profileModel.bio),
                                 isEditing: isEditing,
                                 onBioChange: { editingBio = $0 }
+                            )
+                            .padding(.top, 8)
+
+                            InterestsSection(
+                                interests: isEditing ? editingInterests : appController.profileModel.interests,
+                                isEditing: isEditing,
+                                onInterestsChange: { editingInterests = $0 }
                             )
 
                             ExtraPhotoView(
@@ -1107,12 +1218,6 @@ struct ProfileView: View {
                             }
                             .onChange(of: appController.profileModel.extraImageURLs.dropFirst().first) { _, newURL in
                             }
-
-                            InterestsSection(
-                                interests: isEditing ? editingInterests : appController.profileModel.interests,
-                                isEditing: isEditing,
-                                onInterestsChange: { editingInterests = $0 }
-                            )
 
                             // Logout button shown only when NOT editing
                             if !isEditing {
