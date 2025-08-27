@@ -70,6 +70,10 @@ struct ProfileHeader: View {
         let pressed = isPressed
         let fallbackImage = appController.profileModel.profileUIImage // main-actor safe
         let isProfileImageLoading = appController.profileModel.isProfileImageLoading // <--- capture here
+        // Profile photo sizing
+        let ringLineWidth: CGFloat = 8
+        let profileImageSize: CGFloat = 170
+        let ringSize: CGFloat = profileImageSize + ringLineWidth
 
         VStack(spacing: 8) {
             // Progress text above the photo when incomplete
@@ -85,13 +89,13 @@ struct ProfileHeader: View {
                 if let p = progress {
                     ZStack {
                         Circle()
-                            .stroke(Colors.primaryDark.opacity(0.12), style: StrokeStyle(lineWidth: 8))
+                            .stroke(Colors.primaryDark.opacity(0.12), style: StrokeStyle(lineWidth: ringLineWidth))
                         Circle()
                             .trim(from: 0, to: CGFloat(max(0, min(1, p))))
-                            .stroke(Colors.primaryDark, style: StrokeStyle(lineWidth: 8, lineCap: .round))
+                            .stroke(Colors.primaryDark, style: StrokeStyle(lineWidth: ringLineWidth, lineCap: .round))
                             .rotationEffect(.degrees(-90))
                     }
-                    .frame(width: 148, height: 148)
+                    .frame(width: ringSize, height: ringSize)
                 }
 
                 // Pull main-actor data into local constants BEFORE entering the PhotosPicker content closure.
@@ -103,13 +107,13 @@ struct ProfileHeader: View {
                             Image(uiImage: profileImage)
                                 .resizable()
                                 .scaledToFill()
-                                .frame(width: 140, height: 140)
+                                .frame(width: profileImageSize, height: profileImageSize)
                                 .clipShape(Circle())
                         } else if isProfileImageLoading { // <--- use the captured value
                             // Show loading state with proper circular shape
                             Circle()
                                 .fill(Color.gray.opacity(0.3))
-                                .frame(width: 140, height: 140)
+                                .frame(width: profileImageSize, height: profileImageSize)
                                 .overlay(
                                     ProgressView()
                                         .scaleEffect(1.5)
@@ -120,7 +124,7 @@ struct ProfileHeader: View {
                             Image("default_user_pfp")
                                 .resizable()
                                 .scaledToFill()
-                                .frame(width: 140, height: 140)
+                                .frame(width: profileImageSize, height: profileImageSize)
                                 .clipShape(Circle())
                                 .onAppear {
                                 }
@@ -131,7 +135,7 @@ struct ProfileHeader: View {
                         if isEditing {
                             Circle()
                                 .fill(Color.black.opacity(pressed ? 0.7 : 0.3))
-                                .frame(width: 140, height: 140)
+                                .frame(width: profileImageSize, height: profileImageSize)
 
                             Text("change")
                                 .font(.LibreBodoni(size: 16))
@@ -191,145 +195,96 @@ struct ProfileHeader: View {
             }
 
             VStack(alignment: .center, spacing: 16) {
-                // Top row: Age, Gender, Relationship Status (centered)
+                // Combined header row: Age, Location, Alma Mater + Grad Year
                 HStack(spacing: 20) {
+                    // Age
                     Text(age.map(String.init) ?? "21")
                         .font(.LibreBodoni(size: 20))
                         .foregroundColor(Colors.primaryDark)
 
+                    // Location segment
                     HStack(spacing: 6) {
-                        Image("genderIcon")
+                        Image("locationIcon")
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                             .frame(width: 16, height: 16)
+                            .foregroundColor(Colors.primaryDark)
 
                         if isEditing {
-                            TextField("gender", text: $gender, onCommit: { onGenderChange(gender) })
-                                .font(.LibreBodoni(size: 15))
-                                .foregroundColor(Colors.primaryDark)
-                                .multilineTextAlignment(.center)
-                                .textFieldStyle(PlainTextFieldStyle())
-                                .padding(.vertical, 4)
-                                .overlay(
-                                    Rectangle()
-                                        .frame(height: 1)
-                                        .foregroundColor(Colors.primaryDark.opacity(0.3))
-                                        .offset(y: 12)
-                                )
-                                .onChange(of: gender) { _, newValue in
-                                    let lowercasedValue = newValue.lowercased()
-                                    gender = lowercasedValue
-                                    onGenderChange(lowercasedValue)
-                                }
+                            Button(action: onLocationSelect) {
+                                Text(address.isEmpty ? "add your location" : address.lowercased())
+                                    .font(.LibreBodoni(size: 15))
+                                    .foregroundColor(address.isEmpty ? Colors.k6F6F73 : Colors.primaryDark)
+                                    .multilineTextAlignment(.center)
+                                    .padding(.vertical, 4)
+                            }
                         } else {
                             ProfileText(
-                                text: gender.isEmpty ? "add gender" : gender,
-                                isPlaceholder: gender.isEmpty
+                                text: address.isEmpty ? "add your location" : address,
+                                isPlaceholder: address.isEmpty
                             )
                         }
                     }
 
+                    // Alma mater + grad year segment
                     HStack(spacing: 6) {
-                        Image("relationshipIcon")
+                        Image("gradIcon")
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                             .frame(width: 16, height: 16)
+                            .foregroundStyle(Colors.k6B6B6B)
 
                         if isEditing {
-                            RelationStatusPicker(selectedStatus: relationStatus, onStatusChange: onRelationStatusChange)
+                            HStack {
+                                TextField("university", text: $almaMater, onCommit: { onAlmaMaterChange(almaMater) })
+                                    .font(.LibreBodoni(size: 15))
+                                    .foregroundColor(Colors.primaryDark)
+                                    .textFieldStyle(PlainTextFieldStyle())
+                                    .padding(.vertical, 4)
+                                    .overlay(
+                                        Rectangle()
+                                            .frame(height: 1)
+                                            .foregroundColor(Colors.primaryDark.opacity(0.3))
+                                            .offset(y: 12)
+                                    )
+                                    .onChange(of: almaMater) { _, newValue in
+                                        let lowercasedValue = newValue.lowercased()
+                                        almaMater = lowercasedValue
+                                        onAlmaMaterChange(lowercasedValue)
+                                    }
+
+                                Text("'")
+                                    .font(.LibreBodoni(size: 15))
+                                    .foregroundColor(Colors.primaryDark)
+
+                                TextField("year", text: $gradYear, onCommit: { onGradYearChange(gradYear) })
+                                    .font(.LibreBodoni(size: 15))
+                                    .foregroundColor(Colors.primaryDark)
+                                    .textFieldStyle(PlainTextFieldStyle())
+                                    .padding(.vertical, 4)
+                                    .overlay(
+                                        Rectangle()
+                                            .frame(height: 1)
+                                            .foregroundColor(Colors.primaryDark.opacity(0.3))
+                                            .offset(y: 12)
+                                    )
+                                    .onChange(of: gradYear) { _, newValue in
+                                        // Take only the last two digits if it's a 4-digit year
+                                        let processedValue = newValue.count == 4 ? String(newValue.suffix(2)) : newValue
+                                        gradYear = processedValue
+                                        onGradYearChange(processedValue)
+                                    }
+                            }
                         } else {
-                            ProfileText(
-                                text: relationStatus.isEmpty ? "add status" : relationStatus,
-                                isPlaceholder: relationStatus.isEmpty
-                            )
-                        }
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .center)
-
-                // Middle row: Location (centered)
-                HStack(spacing: 6) {
-                    Image("locationIcon")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 16, height: 16)
-                        .foregroundColor(Colors.primaryDark)
-
-                    if isEditing {
-                        Button(action: onLocationSelect) {
-                            Text(address.isEmpty ? "add your location" : address.lowercased())
-                                .font(.LibreBodoni(size: 15))
-                                .foregroundColor(address.isEmpty ? Colors.k6F6F73 : Colors.primaryDark)
-                                .multilineTextAlignment(.center)
-                                .padding(.vertical, 4)
-                        }
-                    } else {
-                        ProfileText(
-                            text: address.isEmpty ? "add your location" : address,
-                            isPlaceholder: address.isEmpty
-                        )
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .center)
-
-                // Bottom row: University (centered below location)
-                HStack(spacing: 6) {
-                    Image("gradIcon")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 16, height: 16)
-                        .foregroundStyle(Colors.k6B6B6B)
-
-                    if isEditing {
-                        HStack {
-                            TextField("university", text: $almaMater, onCommit: { onAlmaMaterChange(almaMater) })
-                                .font(.LibreBodoni(size: 15))
-                                .foregroundColor(Colors.primaryDark)
-                                .textFieldStyle(PlainTextFieldStyle())
-                                .padding(.vertical, 4)
-                                .overlay(
-                                    Rectangle()
-                                        .frame(height: 1)
-                                        .foregroundColor(Colors.primaryDark.opacity(0.3))
-                                        .offset(y: 12)
-                                )
-                                .onChange(of: almaMater) { _, newValue in
-                                    let lowercasedValue = newValue.lowercased()
-                                    almaMater = lowercasedValue
-                                    onAlmaMaterChange(lowercasedValue)
-                                }
-
-                            Text("'")
-                                .font(.LibreBodoni(size: 15))
-                                .foregroundColor(Colors.primaryDark)
-
-                            TextField("year", text: $gradYear, onCommit: { onGradYearChange(gradYear) })
-                                .font(.LibreBodoni(size: 15))
-                                .foregroundColor(Colors.primaryDark)
-                                .textFieldStyle(PlainTextFieldStyle())
-                                .padding(.vertical, 4)
-                                .overlay(
-                                    Rectangle()
-                                        .frame(height: 1)
-                                        .foregroundColor(Colors.primaryDark.opacity(0.3))
-                                        .offset(y: 12)
-                                )
-                                .onChange(of: gradYear) { _, newValue in
-                                    // Take only the last two digits if it's a 4-digit year
-                                    let processedValue = newValue.count == 4 ? String(newValue.suffix(2)) : newValue
-                                    gradYear = processedValue
-                                    onGradYearChange(processedValue)
-                                }
-                        }
-                    } else {
-                        if !almaMater.isEmpty && !gradYear.isEmpty {
-                            ProfileText(text: "\(almaMater) '\(formattedGradYear)", isPlaceholder: false)
-                        } else if !almaMater.isEmpty {
-                            ProfileText(text: almaMater, isPlaceholder: false)
-                        } else if !gradYear.isEmpty {
-                            ProfileText(text: "'\(formattedGradYear)", isPlaceholder: false)
-                        } else {
-                            ProfileText(text: "add your alma mater", isPlaceholder: true)
+                            if !almaMater.isEmpty && !gradYear.isEmpty {
+                                ProfileText(text: "\(almaMater) '\(formattedGradYear)", isPlaceholder: false)
+                            } else if !almaMater.isEmpty {
+                                ProfileText(text: almaMater, isPlaceholder: false)
+                            } else if !gradYear.isEmpty {
+                                ProfileText(text: "'\(formattedGradYear)", isPlaceholder: false)
+                            } else {
+                                ProfileText(text: "add your alma mater", isPlaceholder: true)
+                            }
                         }
                     }
                 }
