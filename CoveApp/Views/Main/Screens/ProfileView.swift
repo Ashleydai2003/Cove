@@ -1011,10 +1011,10 @@ struct ProfileView: View {
                     Spacer()
                 } else {
                     ScrollView(.vertical, showsIndicators: false) {
-                        VStack(spacing: 20) {
-                            // Top row gear/checkmark, matching Cove header placement
+                        VStack(spacing: 16) {
+                            // Top row gear/checkmark, align similar to Cove header
                             ZStack(alignment: .topTrailing) {
-                                HStack {
+                                HStack(spacing: 0) {
                                     Spacer()
                                     if isSaving {
                                         ProgressView()
@@ -1279,11 +1279,11 @@ struct ProfileView: View {
                             .padding(.top, 8)
                             .padding(.leading)
                         }
-                        .padding(.vertical, 20)
+                        .padding(.bottom, 20)
                     }
                 }
             }
-            .padding(.horizontal, 20)
+            .padding(.horizontal, 16)
         }
         // Opaque top-safe-area overlay to prevent content peeking during bounce
         .overlay(
@@ -1313,8 +1313,8 @@ struct ProfileView: View {
                     }
                 )
                 .frame(width: UIScreen.main.bounds.width * 0.65)
-                .padding(.trailing, 52)
-                .offset(y: 56)
+                .padding(.trailing, 8)
+                .offset(y: 40)
                 .transition(.opacity.combined(with: .move(edge: .top)))
                 .zIndex(10000)
             }

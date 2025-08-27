@@ -17,7 +17,7 @@ struct CoveInfoHeaderView: View {
     var onSettingsTapped: () -> Void = {}
 
     var body: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: 4) {
             // Back button row
             HStack {
                 Button(action: { onBackTapped() }) {
@@ -32,6 +32,7 @@ struct CoveInfoHeaderView: View {
                 Button(action: { onSettingsTapped() }) {
                     Image(systemName: "gearshape")
                         .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(Colors.primaryDark)
                         .frame(width: 44, height: 44)
                         .contentShape(Rectangle())
                 }
@@ -92,7 +93,7 @@ struct CoveInfoHeaderView: View {
                     .padding(.horizontal, 24)
             }
         }
-        .padding(.top, -4)
+        .padding(.top, -8)
         .padding(.bottom, 4)
         .background(Colors.background)
         .onLongPressGesture(minimumDuration: 1.0) {
