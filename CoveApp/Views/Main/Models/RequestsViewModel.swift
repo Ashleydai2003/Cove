@@ -108,7 +108,7 @@ class RequestsViewModel: ObservableObject {
                     AppController.shared.friendsViewModel.friends = arr
                     
                     // Remove from mutuals pending requests since they're now friends
-                    var mutualsVM = AppController.shared.mutualsViewModel
+                    let mutualsVM = AppController.shared.mutualsViewModel
                     var pendingSet = mutualsVM.pendingRequests
                     pendingSet.remove(req.sender.id)
                     mutualsVM.pendingRequests = pendingSet
