@@ -314,7 +314,7 @@ struct ProfileHeader: View {
                             }
                         }
 
-                        Color.clear.frame(width: 10, height: 1)
+                        Color.clear.frame(width: 8, height: 1) // carrot spacing: 8pt
                         Button(action: {
                             withAnimation(.easeInOut(duration: 0.2)) {
                                 showDetails.toggle()
@@ -1151,6 +1151,12 @@ struct ProfileView: View {
 
                             // Bio moved under name as headline; removed boxed BioSection here
 
+                            InterestsSection(
+                                interests: isEditing ? editingInterests : appController.profileModel.interests,
+                                isEditing: isEditing,
+                                onInterestsChange: { editingInterests = $0 }
+                            )
+
                             ExtraPhotoView(
                                 imageIndex: 1,
                                 isEditing: isEditing,
@@ -1161,12 +1167,6 @@ struct ProfileView: View {
                             }
                             .onChange(of: appController.profileModel.extraImageURLs.dropFirst().first) { _, newURL in
                             }
-
-                            InterestsSection(
-                                interests: isEditing ? editingInterests : appController.profileModel.interests,
-                                isEditing: isEditing,
-                                onInterestsChange: { editingInterests = $0 }
-                            )
 
                             
 
