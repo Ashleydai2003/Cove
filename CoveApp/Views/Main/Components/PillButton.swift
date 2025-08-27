@@ -56,6 +56,8 @@ struct HobbyPill: View {
                 }
                 Text(text.lowercased())
                     .lineLimit(1)
+                    .minimumScaleFactor(0.9)
+                    .allowsTightening(true)
                     .truncationMode(.tail)
             }
             .foregroundColor(isSelected ? selectedTextColor : unselectedTextColor)
@@ -88,7 +90,7 @@ struct StaticHobbyPill: View {
         emoji: String? = nil,
         height: CGFloat = 36,
         cornerRadius: CGFloat = 12,
-        backgroundColor: Color = Colors.kFAF8F4,
+        backgroundColor: Color = Colors.kF8F4ED,
         textColor: Color = Colors.k6F6F73,
         font: Font = .LibreBodoni(size: 14)
     ) {
@@ -109,6 +111,8 @@ struct StaticHobbyPill: View {
             }
             Text(text.lowercased())
                 .lineLimit(1)
+                .minimumScaleFactor(0.9)
+                .allowsTightening(true)
                 .truncationMode(.tail)
         }
         .foregroundColor(textColor)

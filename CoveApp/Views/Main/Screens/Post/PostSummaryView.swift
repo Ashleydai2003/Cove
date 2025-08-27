@@ -97,7 +97,7 @@ struct PostSummaryView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(
                         RoundedRectangle(cornerRadius: 12)
-                            .fill(Colors.kFAF8F4)
+                            .fill(Colors.kF8F4ED)
                     )
                     .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
 

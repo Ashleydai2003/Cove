@@ -542,11 +542,6 @@ struct InterestsSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("interests")
-                .font(.LibreBodoni(size: 18))
-                .foregroundColor(Colors.primaryDark)
-                .frame(maxWidth: .infinity, alignment: .leading)
-
             if interests.isEmpty && !isEditing {
                 StaticHobbyPill(text: "no interests :(", textColor: Colors.k6F6F73)
             } else {
@@ -1161,7 +1156,7 @@ struct ProfileView: View {
 
                             // Wide stats row directly under bio
                             HStack(spacing: 24) {
-                                HStack(spacing: 6) {
+                                HStack(spacing: 8) {
                                     Text("0")
                                         .font(.LibreBodoniBold(size: 20))
                                         .foregroundColor(Colors.primaryDark)
@@ -1170,7 +1165,7 @@ struct ProfileView: View {
                                         .foregroundColor(Colors.k6F6F73)
                                 }
                                 .frame(maxWidth: .infinity)
-                                HStack(spacing: 6) {
+                                HStack(spacing: 8) {
                                     Text("0")
                                         .font(.LibreBodoniBold(size: 20))
                                         .foregroundColor(Colors.primaryDark)
@@ -1179,7 +1174,7 @@ struct ProfileView: View {
                                         .foregroundColor(Colors.k6F6F73)
                                 }
                                 .frame(maxWidth: .infinity)
-                                HStack(spacing: 6) {
+                                HStack(spacing: 8) {
                                     Text("0")
                                         .font(.LibreBodoniBold(size: 20))
                                         .foregroundColor(Colors.primaryDark)
@@ -1223,12 +1218,12 @@ struct ProfileView: View {
                             
                             // More info section under the second photo
                             VStack(alignment: .leading, spacing: 12) {
-                                Text("more info")
-                                    .font(.LibreBodoni(size: 18))
-                                    .foregroundColor(Colors.primaryDark)
                                 
-                                // Adaptive grid to wrap items horizontally then vertically
-                                LazyVGrid(columns: [GridItem(.adaptive(minimum: 160), spacing: 12)], alignment: .leading, spacing: 12) {
+                                // Two columns, as many rows as needed
+                                LazyVGrid(columns: [
+                                    GridItem(.flexible(), spacing: 12),
+                                    GridItem(.flexible(), spacing: 12)
+                                ], alignment: .leading, spacing: 12) {
                                     // Gender
                                     HStack(spacing: 8) {
                                         Image("genderIcon")
@@ -1282,7 +1277,7 @@ struct ProfileView: View {
                                 }
                             }
                             .padding(.top, 8)
-                            .padding(.horizontal)
+                            .padding(.leading)
                         }
                         .padding(.vertical, 20)
                     }
