@@ -474,7 +474,7 @@ struct BioSection: View {
             HStack {
                 if isEditing {
                     TextField("Add your bio...", text: $bio, axis: .vertical)
-                        .font(.LeagueSpartan(size: 14))
+                        .font(.LibreBodoni(size: 14))
                         .foregroundStyle(Colors.k6F6F73)
                         .multilineTextAlignment(.leading)
                         .frame(maxWidth: .infinity, minHeight: 50, maxHeight: .infinity, alignment: .leading)
@@ -495,7 +495,7 @@ struct BioSection: View {
                         }
                 } else {
                     Text(bio.isEmpty ? "add your bio" : bio.lowercased())
-                        .font(.LeagueSpartan(size: 14))
+                        .font(.LibreBodoni(size: 14))
                         .foregroundStyle(bio.isEmpty ? Colors.k6F6F73 : Colors.k6F6F73)
                         .multilineTextAlignment(.leading)
                         .frame(maxWidth: .infinity, minHeight: 50, maxHeight: .infinity, alignment: .leading)

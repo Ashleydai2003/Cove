@@ -13,6 +13,8 @@ enum Colors {
     static let primaryDark = Color("CovePrimaryDarkColor")
     // Global light background used across the app
     static let background = Color(hex: "F5F0E6")
+    // Hobbies and posts card background color
+    static let hobbyBackground = Color(hex: "F8F4ED")
     // tmp for now
     static let k292929 = Color(hex: "292929")
     static let k6F6F73 = Color(hex: "6F6F73")
