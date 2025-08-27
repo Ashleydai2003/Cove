@@ -1110,6 +1110,14 @@ struct ProfileView: View {
                                             Text(addressText.isEmpty ? "add your location" : addressText)
                                                 .font(.LibreBodoni(size: 14))
                                                 .foregroundColor(Colors.k6F6F73)
+                                            if let ageValue = appController.profileModel.calculatedAge ?? appController.profileModel.age {
+                                                Text("•")
+                                                    .font(.LibreBodoni(size: 14))
+                                                    .foregroundColor(Colors.k6F6F73)
+                                                Text("\(ageValue)")
+                                                    .font(.LibreBodoniBold(size: 14))
+                                                    .foregroundColor(Colors.primaryDark)
+                                            }
                                         }
                                         HStack(spacing: 6) {
                                             Image("gradIcon")
@@ -1194,13 +1202,7 @@ struct ProfileView: View {
                             .onChange(of: appController.profileModel.extraImageURLs.first) { _, newURL in
                             }
 
-                            // Bio placed directly under the first additional photo
-                            BioSection(
-                                bio: isEditing ? $editingBio : .constant(appController.profileModel.bio),
-                                isEditing: isEditing,
-                                onBioChange: { editingBio = $0 }
-                            )
-                            .padding(.top, 8)
+                            
 
                             InterestsSection(
                                 interests: isEditing ? editingInterests : appController.profileModel.interests,
@@ -1218,36 +1220,65 @@ struct ProfileView: View {
                             }
                             .onChange(of: appController.profileModel.extraImageURLs.dropFirst().first) { _, newURL in
                             }
+                            
+                            // More info section under the second photo
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text("more info")
+                                    .font(.LibreBodoni(size: 18))
+                                    .foregroundColor(Colors.primaryDark)
 
-                            // Logout button shown only when NOT editing
-                            if !isEditing {
-                                Button(action: handleLogout) {
-                                    HStack {
-                                        if isLoggingOut {
-                                            ProgressView()
-                                                .scaleEffect(0.8)
-                                                .tint(.white)
-                                            Text("logging out...")
-                                                .font(.LibreBodoni(size: 16))
-                                                .foregroundColor(.white)
-                                        } else {
-                                            Text("log out")
-                                                .font(.LibreBodoni(size: 16))
-                                                .foregroundColor(.white)
-                                        }
-                                    }
-                                    .padding(.horizontal, 40)
-                                    .padding(.vertical, 12)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .fill(isLoggingOut ? Colors.primaryDark.opacity(0.8) : Colors.primaryDark)
-                                    )
+                                // Gender
+                                HStack(spacing: 8) {
+                                    Image("genderIcon")
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fit)
+                                        .frame(width: 16, height: 16)
+                                    let genderText = appController.profileModel.gender
+                                    Text(genderText.isEmpty ? "add gender" : genderText)
+                                        .font(.LibreBodoni(size: 14))
+                                        .foregroundColor(genderText.isEmpty ? Colors.k6F6F73 : Colors.primaryDark)
                                 }
-                                .disabled(isLoggingOut)
-                                .scaleEffect(isLoggingOut ? 0.95 : 1.0)
-                                .animation(.easeInOut(duration: 0.2), value: isLoggingOut)
-                                .padding(.top, 20)
+
+                                // Relationship Status
+                                HStack(spacing: 8) {
+                                    Image("relationshipIcon")
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fit)
+                                        .frame(width: 16, height: 16)
+                                    let statusText = appController.profileModel.relationStatus
+                                    Text(statusText.isEmpty ? "add status" : statusText)
+                                        .font(.LibreBodoni(size: 14))
+                                        .foregroundColor(statusText.isEmpty ? Colors.k6F6F73 : Colors.primaryDark)
+                                }
+
+                                // Work (job @ location)
+                                HStack(spacing: 8) {
+                                    Image("workIcon")
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fit)
+                                        .frame(width: 16, height: 16)
+                                    let jobText = appController.profileModel.job
+                                    let workLocationText = appController.profileModel.workLocation
+                                    if !jobText.isEmpty && !workLocationText.isEmpty {
+                                        Text("\(jobText) @ \(workLocationText)")
+                                            .font(.LibreBodoni(size: 14))
+                                            .foregroundColor(Colors.primaryDark)
+                                    } else if !jobText.isEmpty {
+                                        Text(jobText)
+                                            .font(.LibreBodoni(size: 14))
+                                            .foregroundColor(Colors.primaryDark)
+                                    } else if !workLocationText.isEmpty {
+                                        Text(workLocationText)
+                                            .font(.LibreBodoni(size: 14))
+                                            .foregroundColor(Colors.primaryDark)
+                                    } else {
+                                        Text("add your work")
+                                            .font(.LibreBodoni(size: 14))
+                                            .foregroundColor(Colors.k6F6F73)
+                                    }
+                                }
                             }
+                            .padding(.top, 8)
                         }
                         .padding(.vertical, 20)
                     }
