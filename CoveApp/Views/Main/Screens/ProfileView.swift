@@ -78,6 +78,8 @@ struct ProfileHeader: View {
         let ringLineWidth: CGFloat = 8
         let profileImageSize: CGFloat = 170
         let ringSize: CGFloat = profileImageSize + ringLineWidth
+        // Spacing between alma mater text and the carrot toggle
+        let carrotSpacing: CGFloat = 10 // editable: controls spacing before carrot
 
         VStack(spacing: 8) {
             // Progress text above the photo when incomplete
@@ -254,7 +256,7 @@ struct ProfileHeader: View {
                     }
 
                     // Alma mater + grad year segment with dropdown carrot (carrot on the right)
-                    HStack(spacing: 6) {
+                    HStack(spacing: carrotSpacing) {
                         Image("gradIcon")
                             .resizable()
                             .aspectRatio(contentMode: .fit)
@@ -313,8 +315,6 @@ struct ProfileHeader: View {
                                 ProfileText(text: "add your alma mater", isPlaceholder: true, fontSize: 14)
                             }
                         }
-
-                        Color.clear.frame(width: 8, height: 1) // carrot spacing: 8pt
                         Button(action: {
                             withAnimation(.easeInOut(duration: 0.2)) {
                                 showDetails.toggle()
@@ -330,12 +330,9 @@ struct ProfileHeader: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
 
-                // Collapsible details grid
+                // Collapsible details row (centered): status and work
                 if showDetails {
-                    LazyVGrid(columns: [
-                        GridItem(.flexible(), spacing: 12),
-                        GridItem(.flexible(), spacing: 12)
-                    ], alignment: .center, spacing: 12) {
+                    HStack(spacing: 16) {
                         // Relationship Status
                         HStack(spacing: 6) {
                             Image("relationshipIcon")
@@ -348,12 +345,11 @@ struct ProfileHeader: View {
                             } else {
                                 ProfileText(
                                     text: relationStatus.isEmpty ? "add status" : relationStatus,
-                                    isPlaceholder: relationStatus.isEmpty
+                                    isPlaceholder: relationStatus.isEmpty,
+                                    fontSize: 14
                                 )
                             }
                         }
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .gridCellAnchor(.center)
 
                         // Work (job @ location)
                         HStack(spacing: 6) {
@@ -415,9 +411,8 @@ struct ProfileHeader: View {
                                 }
                             }
                         }
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .gridCellAnchor(.center)
                     }
+                    .frame(maxWidth: .infinity, alignment: .center)
                     .transition(.opacity.combined(with: .move(edge: .top)))
                 }
 
