@@ -11,14 +11,14 @@ struct CitiesData {
     // MARK: - Cities List
     // Same cities list as used in onboarding CitySelectionView
     static let cities: [String] = [
-        "New York", "San Francisco", "Los Angeles", "Boston", "Chicago", "Seattle", "Austin",
-        "Washington D.C.", "Denver", "Atlanta", "Philadelphia", "San Diego", "Miami", "Portland",
-        "Nashville", "Dallas", "Houston", "Phoenix", "Minneapolis", "Charlotte", "Raleigh",
-        "Tampa", "Orlando", "San Jose", "Oakland", "Sacramento", "Boulder", "Madison",
-        "Ann Arbor", "Pittsburgh", "Baltimore", "Richmond", "Columbus", "Cincinnati",
-        "Cleveland", "Detroit", "Milwaukee", "Kansas City", "St. Louis", "New Orleans",
-        "Salt Lake City", "Boise", "Las Vegas", "Tucson", "Albuquerque", "Oklahoma City",
-        "Omaha", "Des Moines", "Buffalo", "Hartford"
+        "new york", "san francisco", "los angeles", "boston", "chicago", "seattle", "austin",
+        "washington d.c.", "denver", "atlanta", "philadelphia", "san diego", "miami", "portland",
+        "nashville", "dallas", "houston", "phoenix", "minneapolis", "charlotte", "raleigh",
+        "tampa", "orlando", "san jose", "oakland", "sacramento", "boulder", "madison",
+        "ann arbor", "pittsburgh", "baltimore", "richmond", "columbus", "cincinnati",
+        "cleveland", "detroit", "milwaukee", "kansas city", "st. louis", "new orleans",
+        "salt lake city", "boise", "las vegas", "tucson", "albuquerque", "oklahoma city",
+        "omaha", "des moines", "buffalo", "hartford"
     ]
     
     // MARK: - Filtering Logic

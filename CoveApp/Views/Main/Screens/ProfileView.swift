@@ -1226,59 +1226,63 @@ struct ProfileView: View {
                                 Text("more info")
                                     .font(.LibreBodoni(size: 18))
                                     .foregroundColor(Colors.primaryDark)
+                                
+                                // Adaptive grid to wrap items horizontally then vertically
+                                LazyVGrid(columns: [GridItem(.adaptive(minimum: 160), spacing: 12)], alignment: .leading, spacing: 12) {
+                                    // Gender
+                                    HStack(spacing: 8) {
+                                        Image("genderIcon")
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fit)
+                                            .frame(width: 16, height: 16)
+                                        let genderText = appController.profileModel.gender
+                                        Text(genderText.isEmpty ? "add gender" : genderText)
+                                            .font(.LibreBodoni(size: 14))
+                                            .foregroundColor(genderText.isEmpty ? Colors.k6F6F73 : Colors.primaryDark)
+                                    }
 
-                                // Gender
-                                HStack(spacing: 8) {
-                                    Image("genderIcon")
-                                        .resizable()
-                                        .aspectRatio(contentMode: .fit)
-                                        .frame(width: 16, height: 16)
-                                    let genderText = appController.profileModel.gender
-                                    Text(genderText.isEmpty ? "add gender" : genderText)
-                                        .font(.LibreBodoni(size: 14))
-                                        .foregroundColor(genderText.isEmpty ? Colors.k6F6F73 : Colors.primaryDark)
-                                }
+                                    // Relationship Status
+                                    HStack(spacing: 8) {
+                                        Image("relationshipIcon")
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fit)
+                                            .frame(width: 16, height: 16)
+                                        let statusText = appController.profileModel.relationStatus
+                                        Text(statusText.isEmpty ? "add status" : statusText)
+                                            .font(.LibreBodoni(size: 14))
+                                            .foregroundColor(statusText.isEmpty ? Colors.k6F6F73 : Colors.primaryDark)
+                                    }
 
-                                // Relationship Status
-                                HStack(spacing: 8) {
-                                    Image("relationshipIcon")
-                                        .resizable()
-                                        .aspectRatio(contentMode: .fit)
-                                        .frame(width: 16, height: 16)
-                                    let statusText = appController.profileModel.relationStatus
-                                    Text(statusText.isEmpty ? "add status" : statusText)
-                                        .font(.LibreBodoni(size: 14))
-                                        .foregroundColor(statusText.isEmpty ? Colors.k6F6F73 : Colors.primaryDark)
-                                }
-
-                                // Work (job @ location)
-                                HStack(spacing: 8) {
-                                    Image("workIcon")
-                                        .resizable()
-                                        .aspectRatio(contentMode: .fit)
-                                        .frame(width: 16, height: 16)
-                                    let jobText = appController.profileModel.job
-                                    let workLocationText = appController.profileModel.workLocation
-                                    if !jobText.isEmpty && !workLocationText.isEmpty {
-                                        Text("\(jobText) @ \(workLocationText)")
-                                            .font(.LibreBodoni(size: 14))
-                                            .foregroundColor(Colors.primaryDark)
-                                    } else if !jobText.isEmpty {
-                                        Text(jobText)
-                                            .font(.LibreBodoni(size: 14))
-                                            .foregroundColor(Colors.primaryDark)
-                                    } else if !workLocationText.isEmpty {
-                                        Text(workLocationText)
-                                            .font(.LibreBodoni(size: 14))
-                                            .foregroundColor(Colors.primaryDark)
-                                    } else {
-                                        Text("add your work")
-                                            .font(.LibreBodoni(size: 14))
-                                            .foregroundColor(Colors.k6F6F73)
+                                    // Work (job @ location)
+                                    HStack(spacing: 8) {
+                                        Image("workIcon")
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fit)
+                                            .frame(width: 16, height: 16)
+                                        let jobText = appController.profileModel.job
+                                        let workLocationText = appController.profileModel.workLocation
+                                        if !jobText.isEmpty && !workLocationText.isEmpty {
+                                            Text("\(jobText) @ \(workLocationText)")
+                                                .font(.LibreBodoni(size: 14))
+                                                .foregroundColor(Colors.primaryDark)
+                                        } else if !jobText.isEmpty {
+                                            Text(jobText)
+                                                .font(.LibreBodoni(size: 14))
+                                                .foregroundColor(Colors.primaryDark)
+                                        } else if !workLocationText.isEmpty {
+                                            Text(workLocationText)
+                                                .font(.LibreBodoni(size: 14))
+                                                .foregroundColor(Colors.primaryDark)
+                                        } else {
+                                            Text("add your work")
+                                                .font(.LibreBodoni(size: 14))
+                                                .foregroundColor(Colors.k6F6F73)
+                                        }
                                     }
                                 }
                             }
                             .padding(.top, 8)
+                            .padding(.horizontal)
                         }
                         .padding(.vertical, 20)
                     }

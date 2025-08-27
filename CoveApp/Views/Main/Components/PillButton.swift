@@ -31,7 +31,7 @@ struct HobbyPill: View {
         unselectedColor: Color = .white,
         selectedTextColor: Color = .white,
         unselectedTextColor: Color = .black,
-        font: Font = .LeagueSpartan(size: 14),
+        font: Font = .LibreBodoni(size: 14),
         action: @escaping () -> Void
     ) {
         self.text = text
@@ -88,9 +88,9 @@ struct StaticHobbyPill: View {
         emoji: String? = nil,
         height: CGFloat = 36,
         cornerRadius: CGFloat = 12,
-        backgroundColor: Color = .white,
+        backgroundColor: Color = Colors.kFAF8F4,
         textColor: Color = Colors.k6F6F73,
-        font: Font = .LeagueSpartan(size: 14)
+        font: Font = .LibreBodoni(size: 14)
     ) {
         self.text = text
         self.emoji = emoji
@@ -119,8 +119,8 @@ struct StaticHobbyPill: View {
         .background(
             RoundedRectangle(cornerRadius: cornerRadius)
                 .fill(backgroundColor)
-                .shadow(color: .black.opacity(0.15), radius: 3, x: 0, y: 3)
         )
+        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
         .multilineTextAlignment(.center)
     }
 }
