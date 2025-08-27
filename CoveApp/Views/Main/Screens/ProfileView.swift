@@ -314,6 +314,7 @@ struct ProfileHeader: View {
                             }
                         }
 
+                        Color.clear.frame(width: 10, height: 1)
                         Button(action: {
                             withAnimation(.easeInOut(duration: 0.2)) {
                                 showDetails.toggle()
@@ -335,40 +336,6 @@ struct ProfileHeader: View {
                         GridItem(.flexible(), spacing: 12),
                         GridItem(.flexible(), spacing: 12)
                     ], alignment: .center, spacing: 12) {
-                        // Gender
-                        HStack(spacing: 6) {
-                            Image("genderIcon")
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: 16, height: 16)
-
-                            if isEditing {
-                                TextField("gender", text: $gender, onCommit: { onGenderChange(gender) })
-                                    .font(.LibreBodoni(size: 15))
-                                    .foregroundColor(Colors.primaryDark)
-                                    .textFieldStyle(PlainTextFieldStyle())
-                                    .padding(.vertical, 4)
-                                    .overlay(
-                                        Rectangle()
-                                            .frame(height: 1)
-                                            .foregroundColor(Colors.primaryDark.opacity(0.3))
-                                            .offset(y: 12)
-                                    )
-                                    .onChange(of: gender) { _, newValue in
-                                        let lowercasedValue = newValue.lowercased()
-                                        gender = lowercasedValue
-                                        onGenderChange(lowercasedValue)
-                                    }
-                            } else {
-                                ProfileText(
-                                    text: gender.isEmpty ? "add gender" : gender,
-                                    isPlaceholder: gender.isEmpty
-                                )
-                            }
-                        }
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .gridCellAnchor(.center)
-
                         // Relationship Status
                         HStack(spacing: 6) {
                             Image("relationshipIcon")
@@ -448,9 +415,8 @@ struct ProfileHeader: View {
                                 }
                             }
                         }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .gridCellColumns(2)
-                        .gridCellAnchor(.leading)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .gridCellAnchor(.center)
                     }
                     .transition(.opacity.combined(with: .move(edge: .top)))
                 }
