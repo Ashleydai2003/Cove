@@ -15,15 +15,19 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
   };
 
   const title = event.name || 'Untitled Event';
-  const hostName = event.host?.name || 'cove';
+  const hostName = event.host?.name || '';
   const dateStr = formatDate(event.date);
   const timeStr = formatTime(event.date);
-  const coveName = event.cove?.name || 'cove';
+  const coveName = event.cove?.name || '';
 
-  // Create the hosted by text - show both cove and host if they're different
-  const hostedByText = coveName && hostName && coveName !== hostName 
-    ? `hosted by ${coveName} & ${hostName}`
-    : `hosted by ${coveName || hostName}`;
+  // Create the hosted by text in the format "hosted by [host] @ [cove]"
+  const hostedByText = hostName && coveName 
+    ? `hosted by ${hostName} @ ${coveName}`
+    : hostName 
+    ? `hosted by ${hostName}`
+    : coveName 
+    ? `hosted by ${coveName}`
+    : 'hosted by cove';
 
   return (
     <div className="w-full">
@@ -47,63 +51,40 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
             {/* Divider */}
             <div className="h-px w-full bg-[#E5E5E5]"></div>
 
-            {/* Price and spots */}
-            <div className="flex items-center gap-8">
-              {event.ticketPrice !== null && event.ticketPrice !== undefined && (
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-6 bg-[#E8E8E8] rounded-sm"></div>
-                  <span className="font-libre-bodoni text-base text-[#2D2D2D]">
-                    ${event.ticketPrice} per person
-                  </span>
-                </div>
-              )}
-              {event.memberCap !== null && event.memberCap !== undefined && (
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-6 bg-[#E8E8E8] rounded-sm"></div>
-                  <span className="font-libre-bodoni text-base text-[#2D2D2D]">
-                    {event.goingCount !== undefined && event.goingCount !== null 
-                      ? `${Math.max(0, event.memberCap - event.goingCount)}/${event.memberCap} spots left`
-                      : `x/${event.memberCap} spots left`
-                    }
-                  </span>
-                </div>
-              )}
-              {/* Fallback to placeholders if neither field is set */}
-              {(event.ticketPrice === null || event.ticketPrice === undefined) && 
-               (event.memberCap === null || event.memberCap === undefined) && (
-                <>
+            {/* Price and spots - only show if data exists */}
+            {(event.ticketPrice !== null && event.ticketPrice !== undefined) || 
+             (event.memberCap !== null && event.memberCap !== undefined) ? (
+              <div className="flex items-center gap-8">
+                {event.ticketPrice !== null && event.ticketPrice !== undefined && (
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-6 bg-[#E8E8E8] rounded-sm"></div>
-                    <span className="font-libre-bodoni text-base text-[#2D2D2D]">$6 per person</span>
+                    <span className="font-libre-bodoni text-base text-[#2D2D2D]">
+                      ${event.ticketPrice.toFixed(2)} per person
+                    </span>
                   </div>
+                )}
+                {event.memberCap !== null && event.memberCap !== undefined && (
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-6 bg-[#E8E8E8] rounded-sm"></div>
-                    <span className="font-libre-bodoni text-base text-[#2D2D2D]">x/150 spots left</span>
+                    <span className="font-libre-bodoni text-base text-[#2D2D2D]">
+                      {event.goingCount !== undefined && event.goingCount !== null 
+                        ? `${Math.max(0, event.memberCap - event.goingCount)}/${event.memberCap} spots left`
+                        : `${event.memberCap} spots available`
+                      }
+                    </span>
                   </div>
-                </>
-              )}
-            </div>
+                )}
+              </div>
+            ) : null}
 
             {/* Description */}
-            <div className="space-y-4 max-w-md">
-              {event.description ? (
+            {event.description && (
+              <div className="space-y-4 max-w-md">
                 <div className="font-libre-bodoni text-base text-[#2D2D2D] leading-relaxed whitespace-pre-wrap">
                   {event.description}
                 </div>
-              ) : (
-                <>
-                  <p className="font-libre-bodoni text-base text-[#2D2D2D]">hey san francisco,</p>
-                  <p className="font-libre-bodoni text-base text-[#2D2D2D] leading-relaxed">
-                    you're invited to the city's first ever cafe dj set. we've invited the city's hottest djs to spin a set you won't want to miss.
-                  </p>
-                </>
-              )}
-              
-              {/* Random string from mock */}
-              <p className="font-libre-bodoni text-sm text-[#8B8B8B] break-all pt-4">
-                xkjnfkjnjknkjsdnfkjsdnfkjsdnfskjdfnks jnf
-              </p>
-            </div>
+              </div>
+            )}
           </div>
         </div>
 
