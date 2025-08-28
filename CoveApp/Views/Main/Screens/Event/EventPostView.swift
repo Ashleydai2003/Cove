@@ -295,9 +295,7 @@ struct EventPostView: View {
                                     .aspectRatio(contentMode: .fit)
                                     .frame(width: 15, height: 20)
 
-                                let entitled = (event.isHost == true) || ((currentRSVPStatus ?? event.rsvpStatus) != nil)
-                                let locText = event.location ?? (entitled ? "TBD" : "RSVP to see location")
-                                Text(locText)
+                                Text(event.location ?? "RSVP to see location")
                                     .foregroundStyle(Colors.primaryDark)
                                     .font(.LibreBodoniBold(size: 16))
                             }
