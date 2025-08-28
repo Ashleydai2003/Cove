@@ -6,8 +6,6 @@ import Link from 'next/link';
 import { Event } from '@/types/event';
 import { apiClient } from '@/lib/api';
 import { EventDetailCard } from '@/components/EventDetailCard';
-import { LoadingSpinner } from '@/components/LoadingSpinner';
-import { ErrorMessage } from '@/components/ErrorMessage';
 
 export default function EventPage() {
   const params = useParams();
@@ -38,15 +36,44 @@ export default function EventPage() {
   }, [eventId]);
 
   if (loading) {
-    return <LoadingSpinner />;
+    return (
+      <div className="min-h-screen bg-faf8f4 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-dark mx-auto mb-4"></div>
+          <p className="font-libre-bodoni text-primary-dark">Loading event...</p>
+        </div>
+      </div>
+    );
   }
 
   if (error) {
-    return <ErrorMessage message={error} />;
+    return (
+      <div className="min-h-screen bg-faf8f4 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto px-6">
+          <h2 className="font-libre-bodoni text-2xl font-semibold text-primary-dark mb-4">
+            {error.includes('not found') ? 'Event not found' : 'Something went wrong'}
+          </h2>
+          <p className="font-libre-bodoni text-lg text-k6F6F73 mb-6">{error}</p>
+          <Link href="/" className="font-libre-bodoni text-primary-dark underline underline-offset-4">
+            Back to home
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   if (!event) {
-    return <ErrorMessage message="Event not found" />;
+    return (
+      <div className="min-h-screen bg-faf8f4 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto px-6">
+          <h2 className="font-libre-bodoni text-2xl font-semibold text-primary-dark mb-4">Event not found</h2>
+          <p className="font-libre-bodoni text-lg text-k6F6F73 mb-6">This event may have been deleted or the link is incorrect.</p>
+          <Link href="/" className="font-libre-bodoni text-primary-dark underline underline-offset-4">
+            Back to home
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (
