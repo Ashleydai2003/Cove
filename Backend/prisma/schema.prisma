@@ -169,6 +169,8 @@ model Event {
   description String?
   date        DateTime
   location    String
+  memberCap   Int?        // Optional maximum number of attendees
+  ticketPrice Float?      // Optional ticket price in dollars
   isPublic    Boolean     @default(false)
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
