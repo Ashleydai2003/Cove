@@ -52,6 +52,8 @@ export const handleCreateEvent = async (request: APIGatewayProxyEvent): Promise<
       description, 
       date, 
       location,
+      memberCap,
+      ticketPrice,
       coverPhoto,
       coveId 
     } = JSON.parse(request.body);
@@ -62,6 +64,25 @@ export const handleCreateEvent = async (request: APIGatewayProxyEvent): Promise<
         statusCode: 400,
         body: JSON.stringify({
           message: 'Name, date, location, and coveId are required fields'
+        })
+      };
+    }
+
+    // Validate optional numeric fields if provided
+    if (memberCap !== undefined && memberCap !== null && (!Number.isInteger(memberCap) || memberCap < 1)) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          message: 'Member cap must be a positive integer if provided'
+        })
+      };
+    }
+
+    if (ticketPrice !== undefined && ticketPrice !== null && (typeof ticketPrice !== 'number' || ticketPrice < 0)) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          message: 'Ticket price must be a non-negative number if provided'
         })
       };
     }
@@ -109,6 +130,8 @@ export const handleCreateEvent = async (request: APIGatewayProxyEvent): Promise<
         description: description || null,
         date: new Date(date),
         location,
+        memberCap: memberCap || null,
+        ticketPrice: ticketPrice || null,
         coveId,
         hostId: user.uid,
       }
@@ -170,6 +193,8 @@ export const handleCreateEvent = async (request: APIGatewayProxyEvent): Promise<
           description: newEvent.description,
           date: newEvent.date,
           location: newEvent.location,
+          memberCap: newEvent.memberCap,
+          ticketPrice: newEvent.ticketPrice,
           coveId: newEvent.coveId,
           createdAt: newEvent.createdAt
         }
@@ -418,6 +443,8 @@ export const handleGetCoveEvents = async (event: APIGatewayProxyEvent): Promise<
           description: ev.description,
           date: ev.date,
           location: ev.location,
+          memberCap: ev.memberCap,
+          ticketPrice: ev.ticketPrice,
           coveId: ev.coveId,
           coveName: ev.cove.name,
           coveCoverPhoto: coveCoverPhoto,
@@ -562,6 +589,11 @@ export const handleGetEvent = async (event: APIGatewayProxyEvent): Promise<APIGa
         }
       });
 
+      // Count RSVPs with "GOING" status for this event
+      const goingCount = await prisma.eventRSVP.count({
+        where: { eventId: eventData.id, status: 'GOING' }
+      });
+
       return {
         statusCode: 200,
         headers: {
@@ -575,6 +607,8 @@ export const handleGetEvent = async (event: APIGatewayProxyEvent): Promise<APIGa
             description: eventData.description,
             date: eventData.date,
             location: eventData.location,
+            memberCap: eventData.memberCap,
+            ticketPrice: eventData.ticketPrice,
             coveId: eventData.coveId,
             host: {
               id: eventData.hostedBy.id,
@@ -586,6 +620,7 @@ export const handleGetEvent = async (event: APIGatewayProxyEvent): Promise<APIGa
               coverPhoto: coveCoverPhoto
             },
             rsvpStatus: userRsvp?.status || 'NOT_GOING',
+            goingCount: goingCount,
             rsvps: await Promise.all(attendees.map(async rsvp => {
               const profilePhotoUrl = rsvp.user.profilePhotoID ?
                 await getSignedUrl(s3Client, new GetObjectCommand({
@@ -608,14 +643,26 @@ export const handleGetEvent = async (event: APIGatewayProxyEvent): Promise<APIGa
       };
     }
 
+    // Count RSVPs with "GOING" status for this event (for limited response)
+    const goingCount = await prisma.eventRSVP.count({
+      where: { eventId: eventData.id, status: 'GOING' }
+    });
+
     // Limited response for unauthenticated or authenticated-without-RSVP/host
     const limitedEvent: any = {
       id: eventData.id,
       name: eventData.name,
       description: eventData.description,
       date: eventData.date,
+      location: eventData.location,
+      memberCap: eventData.memberCap,
+      ticketPrice: eventData.ticketPrice,
       host: { name: eventData.hostedBy.name },
-      cove: { coverPhoto: coveCoverPhoto },
+      cove: { 
+        name: eventData.cove.name,
+        coverPhoto: coveCoverPhoto 
+      },
+      goingCount: goingCount,
       coverPhoto
     };
 
@@ -1002,6 +1049,8 @@ export const handleGetCalendarEvents = async (event: APIGatewayProxyEvent): Prom
             description: event.description,
             date: event.date,
             location: event.location,
+            memberCap: event.memberCap,
+            ticketPrice: event.ticketPrice,
             coveId: event.coveId,
             coveName: event.cove.name,
             coveCoverPhoto: coveCoverPhoto,

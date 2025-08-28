@@ -16,6 +16,8 @@ struct CalendarEvent: Decodable, Identifiable, ContentComparable {
     let description: String?
     let date: String
     let location: String
+    let memberCap: Int?
+    let ticketPrice: Double?
     let coveId: String
     let coveName: String
     let coveCoverPhoto: CoverPhoto?
@@ -33,6 +35,8 @@ struct CalendarEvent: Decodable, Identifiable, ContentComparable {
         description: String?,
         date: String,
         location: String,
+        memberCap: Int? = nil,
+        ticketPrice: Double? = nil,
         coveId: String,
         coveName: String,
         coveCoverPhoto: CoverPhoto?,
@@ -48,6 +52,8 @@ struct CalendarEvent: Decodable, Identifiable, ContentComparable {
         self.description = description
         self.date = date
         self.location = location
+        self.memberCap = memberCap
+        self.ticketPrice = ticketPrice
         self.coveId = coveId
         self.coveName = coveName
         self.coveCoverPhoto = coveCoverPhoto
@@ -60,7 +66,7 @@ struct CalendarEvent: Decodable, Identifiable, ContentComparable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, name, description, date, location, coveId, coveName, coveCoverPhoto, hostId, hostName, rsvpStatus, goingCount, createdAt, coverPhoto
+        case id, name, description, date, location, memberCap, ticketPrice, coveId, coveName, coveCoverPhoto, hostId, hostName, rsvpStatus, goingCount, createdAt, coverPhoto
     }
 
     init(from decoder: Decoder) throws {
@@ -71,6 +77,8 @@ struct CalendarEvent: Decodable, Identifiable, ContentComparable {
         self.date = try container.decode(String.self, forKey: .date)
         // Provide frontend defaults when limited fields are omitted
         self.location = try container.decodeIfPresent(String.self, forKey: .location) ?? "RSVP to see location"
+        self.memberCap = try container.decodeIfPresent(Int.self, forKey: .memberCap)
+        self.ticketPrice = try container.decodeIfPresent(Double.self, forKey: .ticketPrice)
         self.coveId = try container.decodeIfPresent(String.self, forKey: .coveId) ?? ""
         self.coveName = try container.decodeIfPresent(String.self, forKey: .coveName) ?? ""
         self.coveCoverPhoto = try container.decodeIfPresent(CoverPhoto.self, forKey: .coveCoverPhoto)
@@ -111,6 +119,8 @@ struct CalendarEvent: Decodable, Identifiable, ContentComparable {
                description != other.description ||
                date != other.date ||
                location != other.location ||
+               memberCap != other.memberCap ||
+               ticketPrice != other.ticketPrice ||
                rsvpStatus != other.rsvpStatus ||
                goingCount != other.goingCount ||
                hostName != other.hostName ||
@@ -125,10 +135,13 @@ struct Event: Decodable {
     let description: String?
     let date: String
     let location: String?
+    let memberCap: Int?
+    let ticketPrice: Double?
     let coveId: String?
     let host: Host
     let cove: Cove
     let rsvpStatus: String?
+    let goingCount: Int?
     let rsvps: [EventRSVP]?
     let coverPhoto: CoverPhoto?
     let isHost: Bool?

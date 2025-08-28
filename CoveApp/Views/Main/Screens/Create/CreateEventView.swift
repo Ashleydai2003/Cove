@@ -58,10 +58,12 @@ struct CreateEventView: View {
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 8) {
                         eventNameSection
+                        eventDescriptionSection
                         imagePickerSection
                         dateTimeSection
                         locationSection
                         spotsSection
+                        ticketPriceSection
                         // TODO: in the future we also want to have a privacy section
                         createButtonView
                     }
@@ -159,6 +161,47 @@ extension CreateEventView {
         .cornerRadius(10)
     }
 
+    // MARK: - Event Description Section
+    private var eventDescriptionSection: some View {
+        VStack(alignment: .leading) {
+            HStack {
+                Image(systemName: "text.alignleft")
+                    .font(.system(size: 16))
+                    .foregroundStyle(Color.white)
+                    .padding(.leading, 16)
+                
+                Text("description")
+                    .foregroundStyle(Color.white)
+                    .font(.LibreBodoniBold(size: 16))
+                    .padding(.leading, 8)
+                
+                Spacer()
+            }
+            .padding(.top, 12)
+            
+            if #available(iOS 16.0, *) {
+                TextField("add a description (optional)", text: $viewModel.eventDescription, axis: .vertical)
+                    .foregroundStyle(Color.white)
+                    .font(.LibreBodoni(size: 14))
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 12)
+                    .lineLimit(3...6)
+                    .autocorrectionDisabled()
+                    .focused($isFocused)
+            } else {
+                TextField("add a description (optional)", text: $viewModel.eventDescription)
+                    .foregroundStyle(Color.white)
+                    .font(.LibreBodoni(size: 14))
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 12)
+                    .autocorrectionDisabled()
+                    .focused($isFocused)
+            }
+        }
+        .background(Colors.primaryDark)
+        .cornerRadius(10)
+    }
+
 // MARK: - Image Picker Section
     private var imagePickerSection: some View {
         Button {
@@ -232,6 +275,52 @@ extension CreateEventView {
     // MARK: - Number of Spots Section
     private var spotsSection: some View {
         numberOfSpotsView
+    }
+
+    // MARK: - Ticket Price Section
+    private var ticketPriceSection: some View {
+        HStack {
+            Image(systemName: "dollarsign.circle")
+                .font(.system(size: 20))
+                .foregroundStyle(Color.white)
+                .padding(.leading, 15)
+
+            HStack(spacing: 4) {
+                Text("$")
+                    .foregroundStyle(Color.white)
+                    .font(.LibreBodoniBold(size: 16))
+                
+                ZStack(alignment: .leading) {
+                    if viewModel.ticketPriceString.isEmpty {
+                        Text("0.00")
+                            .foregroundColor(.gray)
+                            .font(.LibreBodoniBold(size: 16))
+                    }
+
+                    TextField("", text: $viewModel.ticketPriceString)
+                        .foregroundStyle(Color.white)
+                        .font(.LibreBodoniBold(size: 16))
+                        .autocorrectionDisabled()
+                        .keyboardType(.decimalPad)
+                        .focused($isFocused)
+                        .onChange(of: viewModel.ticketPriceString) { newValue in
+                            let validatedInput = viewModel.validateTicketPriceInput(newValue)
+                            if validatedInput != newValue {
+                                viewModel.ticketPriceString = validatedInput
+                            }
+                        }
+                }
+                .frame(minWidth: 60)
+            }
+            .padding(.leading, 6)
+            
+            Spacer()
+        }
+        .frame(height: 44)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Colors.primaryDark)
+        )
     }
 
     // MARK: - Create Button
@@ -359,6 +448,12 @@ extension CreateEventView {
                     .autocorrectionDisabled()
                     .keyboardType(.numberPad)
                     .focused($isFocused)
+                    .onChange(of: viewModel.numberOfSpots) { newValue in
+                        let validatedInput = viewModel.validateNumberOfSpotsInput(newValue)
+                        if validatedInput != newValue {
+                            viewModel.numberOfSpots = validatedInput
+                        }
+                    }
             }
         }
         .frame(height: 44)
