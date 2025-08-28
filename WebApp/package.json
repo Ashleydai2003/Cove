@@ -10,16 +10,17 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@next/font": "^14.1.0",
+    "@notionhq/client": "^4.0.2",
+    "clsx": "^2.1.0",
+    "date-fns": "^3.3.1",
+    "lucide-react": "^0.344.0",
     "next": "^14.1.0",
+    "next-themes": "^0.2.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "@next/font": "^14.1.0",
-    "clsx": "^2.1.0",
-    "tailwind-merge": "^2.2.1",
-    "lucide-react": "^0.344.0",
-    "date-fns": "^3.3.1",
-    "next-themes": "^0.2.1",
-    "sharp": "^0.33.2"
+    "sharp": "^0.33.2",
+    "tailwind-merge": "^2.2.1"
   },
   "devDependencies": {
     "@types/node": "^20.11.19",
@@ -32,4 +33,4 @@
     "tailwindcss": "^3.4.1",
     "typescript": "^5.3.3"
   }
-} 
+}
