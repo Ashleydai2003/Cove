@@ -33,31 +33,6 @@
   }
 }
 
-@layer components {
-  .card {
-    @apply bg-white rounded-2xl shadow-cove p-6 md:p-8;
-  }
-
-  .shadow-cove {
-    box-shadow: 0 4px 20px rgba(94, 28, 29, 0.1);
-  }
-
-  .shadow-cove-hover {
-    box-shadow: 0 8px 30px rgba(94, 28, 29, 0.15);
-  }
-
-  .text-headline {
-    font-size: 2.5rem;
-    line-height: 1.2;
-  }
-
-  @media (max-width: 768px) {
-    .text-headline {
-      font-size: 2rem;
-    }
-  }
-}
-
 /* Landing page styles */
 :root {
   --background: #ffffff;
