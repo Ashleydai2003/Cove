@@ -746,7 +746,6 @@ Returns:
     * name: String
     * description: String | null
     * date: String
-    * location: String
     * memberCap: Integer | null
     * ticketPrice: Float | null
     * host: {
@@ -813,6 +812,7 @@ Returns:
 Notes:
 - Attendee list hygiene: attendee list is limited to the first 10 RSVPs by most recent.
 - Over-fetch prevention: sensitive relations (full RSVP graph) are only fetched when the user is entitled to full details.
+- Privacy: Location and guest list (rsvps) are only provided to event hosts or users who have RSVP'd to the event.
 
 ### `/invites`
 

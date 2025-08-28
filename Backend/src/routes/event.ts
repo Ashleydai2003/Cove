@@ -578,8 +578,9 @@ export const handleGetEvent = async (event: APIGatewayProxyEvent): Promise<APIGa
       select: { id: true, status: true, userId: true }
     }) : null;
 
-    // If entitled (host or has RSVP), fetch attendee list (first 10 only) and return full details
-    if (isHost || userRsvp) {
+    // If entitled (host or has active RSVP), fetch attendee list (first 10 only) and return full details
+    const hasActiveRsvp = userRsvp && userRsvp.status !== 'NOT_GOING';
+    if (isHost || hasActiveRsvp) {
       const attendees = await prisma.eventRSVP.findMany({
         where: { eventId: eventData.id },
         orderBy: { createdAt: 'desc' },
@@ -654,7 +655,6 @@ export const handleGetEvent = async (event: APIGatewayProxyEvent): Promise<APIGa
       name: eventData.name,
       description: eventData.description,
       date: eventData.date,
-      location: eventData.location,
       memberCap: eventData.memberCap,
       ticketPrice: eventData.ticketPrice,
       host: { name: eventData.hostedBy.name },
