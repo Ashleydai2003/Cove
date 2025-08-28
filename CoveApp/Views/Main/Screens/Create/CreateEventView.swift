@@ -303,7 +303,7 @@ extension CreateEventView {
                         .autocorrectionDisabled()
                         .keyboardType(.decimalPad)
                         .focused($isFocused)
-                        .onChange(of: viewModel.ticketPriceString) { newValue in
+                        .onChange(of: viewModel.ticketPriceString) { oldValue, newValue in
                             let validatedInput = viewModel.validateTicketPriceInput(newValue)
                             if validatedInput != newValue {
                                 viewModel.ticketPriceString = validatedInput
@@ -448,7 +448,7 @@ extension CreateEventView {
                     .autocorrectionDisabled()
                     .keyboardType(.numberPad)
                     .focused($isFocused)
-                    .onChange(of: viewModel.numberOfSpots) { newValue in
+                    .onChange(of: viewModel.numberOfSpots) { oldValue, newValue in
                         let validatedInput = viewModel.validateNumberOfSpotsInput(newValue)
                         if validatedInput != newValue {
                             viewModel.numberOfSpots = validatedInput
