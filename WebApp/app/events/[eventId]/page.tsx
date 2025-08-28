@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
+import Link from 'next/link';
 import { Event } from '@/types/event';
 import { apiClient } from '@/lib/api';
 import { EventDetailCard } from '@/components/EventDetailCard';
@@ -50,16 +51,15 @@ export default function EventPage() {
 
   return (
     <div className="min-h-screen bg-faf8f4">
-      {/* Cove Logo in top corner */}
-      <div className="absolute top-6 left-6 z-10">
-        <img
-          src="/cove-logo.svg"
-          alt="Cove"
-          className="w-12 h-12"
-        />
+      {/* Top Bar */}
+      <div className="w-full max-w-5xl mx-auto px-6 pt-8 flex items-center justify-between">
+        <span className="font-libre-bodoni text-3xl text-primary-dark">cove</span>
+        <Link href="/" className="font-libre-bodoni text-primary-dark underline underline-offset-4">
+          join the waitlist
+        </Link>
       </div>
-      
-      <div className="max-w-2xl mx-auto px-4 py-8">
+
+      <div className="max-w-5xl mx-auto px-6 py-8">
         <EventDetailCard event={event} />
       </div>
     </div>
