@@ -11,6 +11,8 @@ Takes Data Parameters:
 * description: String (optional)
 * date: ISO 8601 string (required)
 * location: String (required)
+* memberCap: Integer (optional) - Maximum number of attendees
+* ticketPrice: Float (optional) - Ticket price in dollars
 * coverPhoto: String (optional, base64 encoded)
 * coveId: String (required)
 
@@ -22,6 +24,8 @@ Returns:
   * description: String
   * date: String
   * location: String
+  * memberCap: Integer | null
+  * ticketPrice: Float | null
   * coveId: String
   * createdAt: DateTime
 }
@@ -503,6 +507,8 @@ Returns:
       * description: String | null
       * date: String
       * location: String
+      * memberCap: Integer | null
+      * ticketPrice: Float | null
       * coveId: String
       * coveName: String
       * coveCoverPhoto: { id: String, url: String } | null
@@ -537,6 +543,8 @@ Returns:
   * description: String | null
   * date: String
   * location: String
+  * memberCap: Integer | null
+  * ticketPrice: Float | null
   * coveId: String
   * coveName: String
   * coveCoverPhoto: {
@@ -573,6 +581,8 @@ Returns:
   * description: String | null
   * date: String
   * location: String
+  * memberCap: Integer | null
+  * ticketPrice: Float | null
   * coveId: String
   * coveName: String
   * coveCoverPhoto: {
@@ -736,15 +746,20 @@ Returns:
     * name: String
     * description: String | null
     * date: String
+    * location: String
+    * memberCap: Integer | null
+    * ticketPrice: Float | null
     * host: {
       * name: String
     }
     * cove: {
+      * name: String
       * coverPhoto: {
         * id: String
         * url: String
       } | null
     }
+    * goingCount: Integer - Number of users who RSVP'd "GOING"
     * coverPhoto: {
       * id: String
       * url: String
@@ -762,6 +777,8 @@ Returns:
     * description: String | null
     * date: String
     * location: String
+    * memberCap: Integer | null
+    * ticketPrice: Float | null
     * coveId: String
     * host: {
       * id: String
@@ -776,6 +793,7 @@ Returns:
       } | null
     }
     * rsvpStatus: "GOING" | "MAYBE" | "NOT_GOING" | null
+    * goingCount: Integer - Number of users who RSVP'd "GOING"
     * rsvps (first 10 only): Array<{
       * id: String
       * status: "GOING" | "MAYBE" | "NOT_GOING"
@@ -910,6 +928,8 @@ Returns:
     * description: String | null
     * date: String
     * location: String
+    * memberCap: Integer | null
+    * ticketPrice: Float | null
     * coveId: String
     * coveName: String
     * coveCoverPhoto: {
@@ -946,5 +966,4 @@ Returns:
 
 Examples:
 * `GET /feed?types=event` - Events only
-* `GET /feed?types=post` - Posts only  
-* `GET /feed?types=event,post` - Both events and posts (default)
+* `GET /feed?types=post`

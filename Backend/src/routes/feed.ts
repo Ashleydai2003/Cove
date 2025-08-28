@@ -111,6 +111,8 @@ export const handleGetFeed = async (event: APIGatewayProxyEvent): Promise<APIGat
             description: event.description,
             date: event.date,
             location: event.location,
+            memberCap: event.memberCap,
+            ticketPrice: event.ticketPrice,
             coveId: event.coveId,
             coveName: event.cove.name,
             coveCoverPhoto: coveCoverPhoto,

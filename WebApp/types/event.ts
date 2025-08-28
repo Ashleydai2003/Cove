@@ -26,15 +26,18 @@ export interface EventRSVP {
 export interface Event {
   id: string;
   name: string;
-  description?: string | null;
+  description?: string;
   date: string;
-  location?: string;
-  coveId?: string;
+  location: string;
+  memberCap?: number | null;
+  ticketPrice?: number | null;
+  coveId: string;
   host: Host;
   cove: Cove;
   rsvpStatus?: 'GOING' | 'MAYBE' | 'NOT_GOING' | null;
+  goingCount?: number;
   rsvps?: EventRSVP[];
-  coverPhoto?: CoverPhoto | null;
+  coverPhoto?: CoverPhoto;
   isHost?: boolean;
 }
 
