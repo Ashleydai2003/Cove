@@ -13,9 +13,13 @@ import FirebaseAuth
 class NewEventModel: ObservableObject {
     // MARK: - Published Properties
     @Published var eventName: String = ""
+    @Published var eventDescription: String = ""
     @Published var eventDate = Date()
     @Published var eventTime = Date()
     @Published var numberOfSpots: String = ""
+    @Published var ticketPriceString: String = ""
+    @Published var memberCap: Int?
+    @Published var ticketPrice: Double?
     @Published var eventImage: UIImage?
     @Published var location: String?
     @Published var coveId: String = ""
@@ -36,12 +40,42 @@ class NewEventModel: ObservableObject {
 
     // MARK: - Methods
 
+    /// Validates and formats ticket price input to ensure only valid decimal numbers
+    func validateTicketPriceInput(_ input: String) -> String {
+        // Remove any non-numeric characters except decimal point
+        let filtered = input.filter { $0.isNumber || $0 == "." }
+        
+        // Ensure only one decimal point
+        let components = filtered.components(separatedBy: ".")
+        if components.count > 2 {
+            // If more than one decimal point, keep only the first one
+            return components[0] + "." + components[1...].joined()
+        }
+        
+        // Limit to 2 decimal places
+        if components.count == 2 && components[1].count > 2 {
+            return components[0] + "." + String(components[1].prefix(2))
+        }
+        
+        return filtered
+    }
+
+    /// Validates number of spots input to ensure only integers
+    func validateNumberOfSpotsInput(_ input: String) -> String {
+        // Remove any non-numeric characters
+        return input.filter { $0.isNumber }
+    }
+
     /// Resets all form fields to their initial state
     func resetForm() {
         eventName = ""
+        eventDescription = ""
         eventDate = Date()
         eventTime = Date()
         numberOfSpots = ""
+        ticketPriceString = ""
+        memberCap = nil
+        ticketPrice = nil
         eventImage = nil
         location = nil
         coveId = ""
@@ -73,14 +107,35 @@ class NewEventModel: ObservableObject {
         // Format date to ISO 8601
         let finalDate: String = combineDateTime(date: eventDate, time: eventTime) ?? ""
 
+        // Convert string inputs to appropriate types
+        if !numberOfSpots.isEmpty, let spots = Int(numberOfSpots) {
+            memberCap = spots
+        }
+        
+        if !ticketPriceString.isEmpty, let price = Double(ticketPriceString) {
+            ticketPrice = price
+        }
+
         // Build parameters with optional cover photo
         var params: [String: Any] = [
             "name": eventName,
-            "description": "",
             "date": finalDate,
             "location": location,
             "coveId": coveId
         ]
+
+        // Add optional fields if they have values
+        if !eventDescription.isEmpty {
+            params["description"] = eventDescription
+        }
+        
+        if let memberCap = memberCap {
+            params["memberCap"] = memberCap
+        }
+        
+        if let ticketPrice = ticketPrice {
+            params["ticketPrice"] = ticketPrice
+        }
 
         // Debug: Log the current userId from Firebase Auth
         let firebaseUserId = Auth.auth().currentUser?.uid ?? "no-firebase-user"
@@ -151,6 +206,8 @@ struct CreatedEvent: Decodable {
     let description: String?
     let date: String
     let location: String
+    let memberCap: Int?
+    let ticketPrice: Double?
     let coveId: String
     let createdAt: String
 }

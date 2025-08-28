@@ -48,6 +48,8 @@ struct FeedEvent: Decodable, Identifiable {
     let description: String?
     let date: String
     let location: String
+    let memberCap: Int?
+    let ticketPrice: Double?
     let coveId: String
     let coveName: String
     let coveCoverPhoto: CoverPhoto?

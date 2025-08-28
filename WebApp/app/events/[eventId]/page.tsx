@@ -37,10 +37,10 @@ export default function EventPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-faf8f4 flex items-center justify-center">
+      <div className="min-h-screen bg-[#F5F0E6] flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-dark mx-auto mb-4"></div>
-          <p className="font-libre-bodoni text-primary-dark">Loading event...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#5E1C1D] mx-auto mb-4"></div>
+          <p className="font-libre-bodoni text-[#5E1C1D]">Loading event...</p>
         </div>
       </div>
     );
@@ -48,13 +48,13 @@ export default function EventPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-faf8f4 flex items-center justify-center">
+      <div className="min-h-screen bg-[#F5F0E6] flex items-center justify-center">
         <div className="text-center max-w-md mx-auto px-6">
-          <h2 className="font-libre-bodoni text-2xl font-semibold text-primary-dark mb-4">
+          <h2 className="font-libre-bodoni text-2xl font-semibold text-[#5E1C1D] mb-4">
             {error.includes('not found') ? 'Event not found' : 'Something went wrong'}
           </h2>
-          <p className="font-libre-bodoni text-lg text-k6F6F73 mb-6">{error}</p>
-          <Link href="/" className="font-libre-bodoni text-primary-dark underline underline-offset-4">
+          <p className="font-libre-bodoni text-lg text-[#8B8B8B] mb-6">{error}</p>
+          <Link href="/" className="font-libre-bodoni text-[#5E1C1D] underline underline-offset-4">
             Back to home
           </Link>
         </div>
@@ -64,11 +64,11 @@ export default function EventPage() {
 
   if (!event) {
     return (
-      <div className="min-h-screen bg-faf8f4 flex items-center justify-center">
+      <div className="min-h-screen bg-[#F5F0E6] flex items-center justify-center">
         <div className="text-center max-w-md mx-auto px-6">
-          <h2 className="font-libre-bodoni text-2xl font-semibold text-primary-dark mb-4">Event not found</h2>
-          <p className="font-libre-bodoni text-lg text-k6F6F73 mb-6">This event may have been deleted or the link is incorrect.</p>
-          <Link href="/" className="font-libre-bodoni text-primary-dark underline underline-offset-4">
+          <h2 className="font-libre-bodoni text-2xl font-semibold text-[#5E1C1D] mb-4">Event not found</h2>
+          <p className="font-libre-bodoni text-lg text-[#8B8B8B] mb-6">This event may have been deleted or the link is incorrect.</p>
+          <Link href="/" className="font-libre-bodoni text-[#5E1C1D] underline underline-offset-4">
             Back to home
           </Link>
         </div>
@@ -77,16 +77,19 @@ export default function EventPage() {
   }
 
   return (
-    <div className="min-h-screen bg-faf8f4">
+    <div className="min-h-screen bg-[#F5F0E6]">
       {/* Top Bar */}
-      <div className="w-full max-w-5xl mx-auto px-6 pt-8 flex items-center justify-between">
-        <span className="font-libre-bodoni text-3xl text-primary-dark">cove</span>
-        <Link href="/" className="font-libre-bodoni text-primary-dark underline underline-offset-4">
-          join the waitlist
-        </Link>
+      <div className="w-full px-8 pt-8 pb-12">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <span className="font-libre-bodoni text-3xl text-[#5E1C1D]">cove</span>
+          <Link href="/" className="font-libre-bodoni text-[#5E1C1D] underline underline-offset-4 text-lg">
+            join the waitlist
+          </Link>
+        </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-6 py-8">
+      {/* Event Content */}
+      <div className="max-w-7xl mx-auto px-8 pb-16">
         <EventDetailCard event={event} />
       </div>
     </div>

@@ -124,10 +124,13 @@ class EventPostViewModel: ObservableObject {
                 description: currentEvent.description,
                 date: currentEvent.date,
                 location: currentEvent.location,
+                memberCap: currentEvent.memberCap,
+                ticketPrice: currentEvent.ticketPrice,
                 coveId: currentEvent.coveId,
                 host: currentEvent.host,
                 cove: currentEvent.cove,
                 rsvpStatus: status == "NOT_GOING" ? nil : status,
+                goingCount: currentEvent.goingCount,
                 rsvps: updatedRsvps,
                 coverPhoto: currentEvent.coverPhoto,
                 isHost: currentEvent.isHost
@@ -273,7 +276,8 @@ struct EventPostView: View {
                                 .clipped()
                         }
 
-                        VStack(alignment: .leading) {
+                        VStack(alignment: .leading, spacing: 20) {
+                            // Date and Time
                             HStack {
                                 Text(event.formattedDate)
                                     .foregroundStyle(Color.black)
@@ -284,6 +288,7 @@ struct EventPostView: View {
                                     .font(.LibreBodoni(size: 18))
                             }
 
+                            // Location
                             HStack {
                                 Image("locationIcon")
                                     .resizable()
@@ -297,6 +302,7 @@ struct EventPostView: View {
                                     .font(.LibreBodoniBold(size: 16))
                             }
 
+                            // Host information
                             HStack {
                                 Text("hosted by")
                                     .font(.LibreBodoni(size: 18))
@@ -305,6 +311,43 @@ struct EventPostView: View {
                                 .font(.LibreBodoni(size: 18))
                                 .foregroundColor(Colors.primaryDark)
                             }
+                            
+                            // Event details section (price, capacity, going count)
+                            VStack(alignment: .leading, spacing: 12) {
+                                // Ticket price display
+                                if let ticketPrice = event.ticketPrice {
+                                    HStack {
+                                        Image(systemName: "dollarsign.circle")
+                                            .foregroundColor(Colors.primaryDark)
+                                            .font(.system(size: 16))
+                                        Text("$\(String(format: "%.2f", ticketPrice))")
+                                            .font(.LibreBodoni(size: 16))
+                                            .foregroundColor(Colors.primaryDark)
+                                    }
+                                }
+                                
+                                // Member cap and spots left display
+                                if let memberCap = event.memberCap, let goingCount = event.goingCount {
+                                    HStack {
+                                        Image(systemName: "person.2")
+                                            .foregroundColor(Colors.primaryDark)
+                                            .font(.system(size: 16))
+                                        let spotsLeft = max(0, memberCap - goingCount)
+                                        Text("\(goingCount)/\(memberCap) going • \(spotsLeft) spots left")
+                                            .font(.LibreBodoni(size: 16))
+                                            .foregroundColor(Colors.primaryDark)
+                                    }
+                                } else if let goingCount = event.goingCount {
+                                    HStack {
+                                        Image(systemName: "person.2")
+                                            .foregroundColor(Colors.primaryDark)
+                                            .font(.system(size: 16))
+                                        Text("\(goingCount) going")
+                                            .font(.LibreBodoni(size: 16))
+                                            .foregroundColor(Colors.primaryDark)
+                                    }
+                                }
+                            }
                         }
 
                         if let description = event.description {
@@ -312,9 +355,16 @@ struct EventPostView: View {
                                 .foregroundStyle(Colors.k292929)
                                 .font(.LibreBodoni(size: 18))
                                 .multilineTextAlignment(.leading)
+                                .padding(.top, 8)
                         }
 
-                        VStack(alignment: .leading) {
+                        // Subtle divider
+                        Rectangle()
+                            .fill(Color.gray.opacity(0.2))
+                            .frame(height: 1)
+                            .padding(.vertical, 8)
+
+                        VStack(alignment: .leading, spacing: 16) {
                             Text("guest list")
                                 .font(.LibreBodoni(size: 18))
                                 .foregroundColor(Colors.primaryDark)
@@ -327,8 +377,9 @@ struct EventPostView: View {
                                     Text("no guests yet! send your invites!")
                                         .font(.LibreBodoni(size: 14))
                                         .foregroundColor(Colors.primaryDark)
+                                        .padding(.leading, 4)
                                 } else {
-                                    HStack {
+                                    HStack(spacing: 12) {
                                         // Show up to 4 profile photos
                                         ForEach(Array(goingRsvps.prefix(4).enumerated()), id: \.element.id) { index, rsvp in
                                             if let profilePhotoUrl = rsvp.profilePhotoUrl {
@@ -379,11 +430,13 @@ struct EventPostView: View {
                                 Text("RSVP to see guest list")
                                     .font(.LibreBodoni(size: 14))
                                     .foregroundColor(Colors.primaryDark)
+                                    .padding(.leading, 4)
                             }
                         }
+                        .padding(.top, 16)
 
                         // Single RSVP button with two states
-                            Button {
+                        Button {
                             let currentStatus = currentRSVPStatus ?? event.rsvpStatus
                             if currentStatus == "GOING" {
                                 // User is going, change to not going
@@ -424,7 +477,7 @@ struct EventPostView: View {
                                 .foregroundStyle(isGoing ? Colors.primaryDark : .white)
                                 .font(.LibreBodoni(size: 25))
                                 .frame(maxWidth: .infinity)
-                                .padding(.vertical, 10)
+                                .padding(.vertical, 12)
                                     .background(
                                     RoundedRectangle(cornerRadius: 20)
                                         .fill(isGoing ? Color.white : Colors.primaryDark)
@@ -432,10 +485,11 @@ struct EventPostView: View {
                                     )
                             }
                             .disabled(viewModel.isUpdatingRSVP)
+                            .padding(.top, 24)
 
-                        Spacer(minLength: 24)
+                        Spacer(minLength: 32)
                     }
-                    .padding(.horizontal, 50)
+                    .padding(.horizontal, 40)
                     .padding(.top, 10)
                 }
             } else if let error = viewModel.errorMessage {

@@ -1,3 +1,7 @@
 {
-  "/events/[eventId]/page": "app/events/[eventId]/page.js"
+  "/_not-found/page": "app/_not-found/page.js",
+  "/events/[eventId]/page": "app/events/[eventId]/page.js",
+  "/api/notion/route": "app/api/notion/route.js",
+  "/page": "app/page.js",
+  "/events/[eventId]/opengraph-image/route": "app/events/[eventId]/opengraph-image/route.js"
 }

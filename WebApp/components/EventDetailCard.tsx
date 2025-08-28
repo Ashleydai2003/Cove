@@ -20,56 +20,87 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
   const timeStr = formatTime(event.date);
   const coveName = event.cove?.name || 'cove';
 
-  return (
-    <div className="max-w-5xl mx-auto">
-      {/* Two-column layout */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-start">
-        {/* Left column: text */}
-        <div>
-          <h1 className="font-libre-bodoni text-5xl md:text-6xl text-primary-dark leading-tight mb-6">
-            {title}
-          </h1>
+  // Create the hosted by text - show both cove and host if they're different
+  const hostedByText = coveName && hostName && coveName !== hostName 
+    ? `hosted by ${coveName} & ${hostName}`
+    : `hosted by ${coveName || hostName}`;
 
-          <p className="mb-8 font-libre-bodoni text-lg text-k6F6F73">hosted by {coveName}</p>
+  return (
+    <div className="w-full">
+      {/* Two-column layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-start">
+        {/* Left column: text */}
+        <div className="space-y-8">
+          <div>
+            <h1 className="font-libre-bodoni text-5xl lg:text-6xl text-[#5E1C1D] leading-[0.9] mb-4">
+              {title}
+            </h1>
+            <p className="font-libre-bodoni text-base text-[#A8A8A8]">{hostedByText}</p>
+          </div>
 
           <div className="space-y-6">
             <div>
-              <p className="font-libre-bodoni text-xl text-k171719 mb-1">{dateStr}</p>
-              <p className="font-libre-bodoni text-lg text-k6F6F73">{timeStr.replace('AM','am').replace('PM','pm')}</p>
+              <p className="font-libre-bodoni text-lg text-[#2D2D2D] font-medium">{dateStr}</p>
+              <p className="font-libre-bodoni text-base text-[#8B8B8B]">{timeStr.replace('AM','am').replace('PM','pm')}</p>
             </div>
 
             {/* Divider */}
-            <div className="h-px w-full bg-k262627/20 my-8"></div>
+            <div className="h-px w-full bg-[#E5E5E5]"></div>
 
-            {/* Price and spots placeholders */}
+            {/* Price and spots */}
             <div className="flex items-center gap-8">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-8 bg-f3f3f3 rounded"></div>
-                <span className="font-libre-bodoni text-lg text-primary-dark">$6 per person</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-8 bg-f3f3f3 rounded"></div>
-                <span className="font-libre-bodoni text-lg text-primary-dark">x/150 spots left</span>
-              </div>
+              {event.ticketPrice !== null && event.ticketPrice !== undefined && (
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-6 bg-[#E8E8E8] rounded-sm"></div>
+                  <span className="font-libre-bodoni text-base text-[#2D2D2D]">
+                    ${event.ticketPrice} per person
+                  </span>
+                </div>
+              )}
+              {event.memberCap !== null && event.memberCap !== undefined && (
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-6 bg-[#E8E8E8] rounded-sm"></div>
+                  <span className="font-libre-bodoni text-base text-[#2D2D2D]">
+                    {event.goingCount !== undefined && event.goingCount !== null 
+                      ? `${Math.max(0, event.memberCap - event.goingCount)}/${event.memberCap} spots left`
+                      : `x/${event.memberCap} spots left`
+                    }
+                  </span>
+                </div>
+              )}
+              {/* Fallback to placeholders if neither field is set */}
+              {(event.ticketPrice === null || event.ticketPrice === undefined) && 
+               (event.memberCap === null || event.memberCap === undefined) && (
+                <>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-6 bg-[#E8E8E8] rounded-sm"></div>
+                    <span className="font-libre-bodoni text-base text-[#2D2D2D]">$6 per person</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-6 bg-[#E8E8E8] rounded-sm"></div>
+                    <span className="font-libre-bodoni text-base text-[#2D2D2D]">x/150 spots left</span>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Description */}
-            <div className="mt-8 space-y-4 max-w-lg">
+            <div className="space-y-4 max-w-md">
               {event.description ? (
-                <div className="font-libre-bodoni text-lg text-k171719 leading-relaxed whitespace-pre-wrap">
+                <div className="font-libre-bodoni text-base text-[#2D2D2D] leading-relaxed whitespace-pre-wrap">
                   {event.description}
                 </div>
               ) : (
                 <>
-                  <p className="font-libre-bodoni text-lg text-k171719">hey san francisco,</p>
-                  <p className="font-libre-bodoni text-lg text-k171719 leading-relaxed">
+                  <p className="font-libre-bodoni text-base text-[#2D2D2D]">hey san francisco,</p>
+                  <p className="font-libre-bodoni text-base text-[#2D2D2D] leading-relaxed">
                     you're invited to the city's first ever cafe dj set. we've invited the city's hottest djs to spin a set you won't want to miss.
                   </p>
                 </>
               )}
               
-              {/* Random string from mock - keeping as placeholder */}
-              <p className="font-libre-bodoni text-sm text-k6F6F73 mt-6 break-all">
+              {/* Random string from mock */}
+              <p className="font-libre-bodoni text-sm text-[#8B8B8B] break-all pt-4">
                 xkjnfkjnjknkjsdnfkjsdnfkjsdnfskjdfnks jnf
               </p>
             </div>
@@ -77,16 +108,16 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
         </div>
 
         {/* Right column: image + button */}
-        <div>
+        <div className="space-y-6">
           {/* Image */}
-          <div className="relative w-full h-96 rounded-2xl overflow-hidden mb-8">
+          <div className="relative w-full aspect-square rounded-2xl overflow-hidden">
             {event.coverPhoto?.url ? (
               <Image
                 src={event.coverPhoto.url}
                 alt={title}
                 fill
                 className="object-cover"
-                sizes="(max-width: 768px) 100vw, 640px"
+                sizes="(max-width: 768px) 100vw, 50vw"
                 priority
               />
             ) : (
@@ -98,7 +129,7 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
           <div className="flex justify-center">
             <button
               onClick={handleRSVP}
-              className="px-20 py-4 bg-white text-primary-dark rounded-2xl border border-gray-200 font-libre-bodoni text-xl hover:shadow-sm transition-shadow"
+              className="px-16 py-3 bg-[#F5F5F5] text-[#2D2D2D] rounded-full font-libre-bodoni text-lg border border-[#E5E5E5] hover:bg-[#EEEEEE] transition-colors"
             >
               rsvp
             </button>
