@@ -925,7 +925,7 @@ private struct LocationHalfSheet: View {
             .padding(.leading, 20)
             .padding(.top, 18)
 
-            VStack(spacing: 16) {
+            VStack(spacing: 22) {
                 // Icon + Title (match CreatePostView feel)
                 VStack(spacing: 10) {
                     Image("locationIcon")
@@ -940,10 +940,10 @@ private struct LocationHalfSheet: View {
                 }
 
                 // Center input area more vertically
-                Spacer(minLength: 8)
+                Spacer(minLength: 16)
 
                 // Input
-                VStack(spacing: 10) {
+                VStack(spacing: 14) {
                     ZStack(alignment: .leading) {
                         if searchCity.isEmpty {
                             Text("search cities...")
@@ -1001,15 +1001,15 @@ private struct LocationHalfSheet: View {
                     }
                     .background(Colors.primaryLight)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .frame(height: min(CGFloat(filteredCities.count * 44), 220))
+                    .frame(height: min(CGFloat(filteredCities.count * 48), 320))
                     .padding(.horizontal, 24)
-                    .padding(.top, 8)
+                    .padding(.top, 12)
                     .shadow(color: .black.opacity(0.08), radius: 10, x: 0, y: 5)
                 }
 
-                Spacer(minLength: 16)
+                Spacer(minLength: 24)
             }
-            .padding(.top, 20)
+            .padding(.top, 24)
         }
         .safeAreaInset(edge: .bottom) {
             // Save button pinned to bottom
@@ -1074,7 +1074,7 @@ private struct AlmaMaterHalfSheet: View {
             .padding(.leading, 20)
             .padding(.top, 18)
 
-            VStack(spacing: 16) {
+            VStack(spacing: 22) {
                 // Icon + Title
                 VStack(spacing: 10) {
                     Image("gradIcon")
@@ -1088,10 +1088,10 @@ private struct AlmaMaterHalfSheet: View {
                         .foregroundColor(Colors.primaryDark)
                 }
 
-                Spacer(minLength: 8)
+                Spacer(minLength: 16)
 
                 // University input
-                VStack(spacing: 10) {
+                VStack(spacing: 14) {
                     ZStack(alignment: .leading) {
                         if university.isEmpty {
                             Text("search universities...")
@@ -1148,14 +1148,14 @@ private struct AlmaMaterHalfSheet: View {
                     }
                     .background(Colors.primaryLight)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .frame(height: min(CGFloat(filteredUniversities.count * 44), 200))
+                    .frame(height: min(CGFloat(filteredUniversities.count * 48), 320))
                     .padding(.horizontal, 24)
-                    .padding(.top, 8)
+                    .padding(.top, 12)
                     .shadow(color: .black.opacity(0.08), radius: 10, x: 0, y: 5)
                 }
 
                 // Year input
-                VStack(spacing: 10) {
+                VStack(spacing: 14) {
                     ZStack(alignment: .leading) {
                         if gradYear.isEmpty {
                             Text("graduation year...")
@@ -1215,15 +1215,15 @@ private struct AlmaMaterHalfSheet: View {
                     }
                     .background(Colors.primaryLight)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .frame(height: min(CGFloat(filteredYears.count * 44), 200))
+                    .frame(height: min(CGFloat(filteredYears.count * 48), 320))
                     .padding(.horizontal, 24)
-                    .padding(.top, 8)
+                    .padding(.top, 12)
                     .shadow(color: .black.opacity(0.08), radius: 10, x: 0, y: 5)
                 }
 
-                Spacer(minLength: 16)
+                Spacer(minLength: 24)
             }
-            .padding(.top, 20)
+            .padding(.top, 24)
         }
         .safeAreaInset(edge: .bottom) {
             VStack {
@@ -1842,7 +1842,7 @@ struct ProfileView: View {
                     editingLongitude = coordinate.longitude
                 }
             )
-            .presentationDetents([.medium])
+            .presentationDetents([.large])
             .presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $showingAlmaMaterSheet) {
@@ -1854,7 +1854,7 @@ struct ProfileView: View {
                     editingGradYear = year
                 }
             )
-            .presentationDetents([.medium])
+            .presentationDetents([.large])
             .presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $showingGenderSheet) {
