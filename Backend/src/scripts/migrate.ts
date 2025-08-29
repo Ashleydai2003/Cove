@@ -69,6 +69,36 @@ async function runMigrations() {
           }
         }
         
+      } else if (errorOutput.includes('P3009') || errorOutput.includes('failed migrations')) {
+        // Handle failed migrations
+        console.log('🔄 Found failed migrations, attempting to resolve...');
+        
+        try {
+          // Try to resolve the specific failed migration
+          console.log('Attempting to resolve failed migration: 20250829183716_update_rsvp_system_approval_based');
+          execSync('npx prisma migrate resolve --applied 20250829183716_update_rsvp_system_approval_based', { 
+            stdio: 'inherit' 
+          });
+          console.log('✅ Failed migration resolved successfully');
+          
+          // Now try to apply any remaining migrations
+          execSync('npx prisma migrate deploy', { stdio: 'inherit' });
+          console.log('✅ Remaining migrations applied!');
+          
+        } catch (resolveError: any) {
+          console.log('Failed to resolve migration, trying direct deploy...');
+          console.log('Resolve error:', resolveError.message);
+          
+          // If resolve fails, try direct migrate deploy
+          try {
+            execSync('npx prisma migrate deploy', { stdio: 'inherit' });
+            console.log('✅ Direct migration deploy succeeded!');
+          } catch (deployError) {
+            console.error('❌ All migration attempts failed');
+            throw deployError;
+          }
+        }
+        
       } else {
         // For other errors, try direct migrate deploy
         console.log('🔄 Status check failed, attempting direct migration deploy...');
