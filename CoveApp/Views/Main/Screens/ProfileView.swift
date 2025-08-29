@@ -958,10 +958,12 @@ private struct LocationHalfSheet: View {
                             .onChange(of: searchCity) { oldValue, newValue in
                                 let processed = newValue.lowercased()
                                 searchCity = processed
-                                if !processed.isEmpty && processed != oldValue {
-                                    showCityDropdown = true
-                                } else if processed.isEmpty {
+                                if processed.isEmpty {
                                     showCityDropdown = false
+                                } else if CitiesData.cities.contains(where: { $0.lowercased() == processed }) {
+                                    showCityDropdown = false
+                                } else if processed != oldValue {
+                                    showCityDropdown = true
                                 }
                             }
                     }
@@ -1037,6 +1039,317 @@ private struct LocationHalfSheet: View {
         .onAppear {
             searchCity = currentAddress.lowercased()
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) { isCityFocused = true }
+        }
+    }
+}
+
+// MARK: - Alma Mater + Grad Year Half Sheet
+private struct AlmaMaterHalfSheet: View {
+    let initialUniversity: String
+    let initialYear: String
+    let onSaved: (String, String) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var university: String = ""
+    @State private var gradYear: String = ""
+    @State private var showUniversityDropdown = false
+    @State private var showYearDropdown = false
+    @FocusState private var isUniversityFocused: Bool
+
+    private var filteredUniversities: [String] { AlmaMaterData.filteredUniversities(searchQuery: university) }
+    private var filteredYears: [String] { GradYearsData.filteredYears(prefix: gradYear) }
+    private var isValidUniversity: Bool { AlmaMaterData.isValidUniversity(university) }
+    private var isValidYear: Bool { GradYearsData.isValidYear(gradYear) }
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            Colors.background.ignoresSafeArea()
+
+            // Close button
+            Button(action: { dismiss() }) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(Colors.primaryDark)
+            }
+            .padding(.leading, 20)
+            .padding(.top, 18)
+
+            VStack(spacing: 16) {
+                // Icon + Title
+                VStack(spacing: 10) {
+                    Image("gradIcon")
+                        .renderingMode(.template)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 30, height: 30)
+                        .foregroundColor(Colors.primaryDark)
+                    Text("alma mater")
+                        .font(.LibreBodoni(size: 22))
+                        .foregroundColor(Colors.primaryDark)
+                }
+
+                Spacer(minLength: 8)
+
+                // University input
+                VStack(spacing: 10) {
+                    ZStack(alignment: .leading) {
+                        if university.isEmpty {
+                            Text("search universities...")
+                                .foregroundColor(Colors.k656566)
+                                .font(.LeagueSpartan(size: 30))
+                        }
+                        TextField("", text: $university)
+                            .font(.LeagueSpartan(size: 30))
+                            .foregroundStyle(Colors.k060505)
+                            .keyboardType(.alphabet)
+                            .focused($isUniversityFocused)
+                            .onChange(of: university) { oldValue, newValue in
+                                let processed = newValue.lowercased()
+                                university = processed
+                                if processed.isEmpty {
+                                    showUniversityDropdown = false
+                                } else if AlmaMaterData.isValidUniversity(processed) {
+                                    showUniversityDropdown = false
+                                } else if processed != oldValue {
+                                    showUniversityDropdown = true
+                                }
+                            }
+                    }
+                    Divider()
+                        .frame(height: 2)
+                        .background(Colors.k060505)
+                }
+                .padding(.horizontal, 24)
+
+                if university.count > 0 && showUniversityDropdown {
+                    VStack(spacing: 0) {
+                        ScrollView(.vertical, showsIndicators: false) {
+                            VStack(spacing: 0) {
+                                ForEach(filteredUniversities, id: \.self) { item in
+                                    Button {
+                                        university = item.lowercased()
+                                        DispatchQueue.main.async { showUniversityDropdown = false }
+                                    } label: {
+                                        Text(item.lowercased())
+                                            .font(.LeagueSpartanMedium(size: 20))
+                                            .foregroundColor(Colors.k0F100F)
+                                            .multilineTextAlignment(.leading)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                            .padding(.horizontal, 16)
+                                            .padding(.vertical, 12)
+                                    }
+                                    .background(Color.clear)
+                                    if item != filteredUniversities.last {
+                                        Divider().background(Colors.k060505.opacity(0.2))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    .background(Colors.primaryLight)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .frame(height: min(CGFloat(filteredUniversities.count * 44), 200))
+                    .padding(.horizontal, 24)
+                    .padding(.top, 8)
+                    .shadow(color: .black.opacity(0.08), radius: 10, x: 0, y: 5)
+                }
+
+                // Year input
+                VStack(spacing: 10) {
+                    ZStack(alignment: .leading) {
+                        if gradYear.isEmpty {
+                            Text("graduation year...")
+                                .foregroundColor(Colors.k656566)
+                                .font(.LeagueSpartan(size: 30))
+                        }
+                        TextField("", text: $gradYear)
+                            .font(.LeagueSpartan(size: 30))
+                            .foregroundStyle(Colors.k060505)
+                            .keyboardType(.numberPad)
+                            .onChange(of: gradYear) { oldValue, newValue in
+                                let filtered = newValue.filter { $0.isNumber }
+                                if filtered.count <= 4 {
+                                    gradYear = filtered
+                                    if filtered.isEmpty {
+                                        showYearDropdown = false
+                                    } else if GradYearsData.isValidYear(filtered) {
+                                        showYearDropdown = false
+                                    } else if filtered != oldValue {
+                                        showYearDropdown = true
+                                    }
+                                } else {
+                                    gradYear = oldValue
+                                }
+                            }
+                    }
+                    Divider()
+                        .frame(height: 2)
+                        .background(Colors.k060505)
+                }
+                .padding(.horizontal, 24)
+
+                if gradYear.count > 0 && showYearDropdown {
+                    VStack(spacing: 0) {
+                        ScrollView(.vertical, showsIndicators: false) {
+                            VStack(spacing: 0) {
+                                ForEach(filteredYears, id: \.self) { year in
+                                    Button {
+                                        gradYear = year
+                                        DispatchQueue.main.async { showYearDropdown = false }
+                                    } label: {
+                                        Text(year)
+                                            .font(.LeagueSpartanMedium(size: 20))
+                                            .foregroundColor(Colors.k0F100F)
+                                            .multilineTextAlignment(.leading)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                            .padding(.horizontal, 16)
+                                            .padding(.vertical, 12)
+                                    }
+                                    .background(Color.clear)
+                                    if year != filteredYears.last {
+                                        Divider().background(Colors.k060505.opacity(0.2))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    .background(Colors.primaryLight)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .frame(height: min(CGFloat(filteredYears.count * 44), 200))
+                    .padding(.horizontal, 24)
+                    .padding(.top, 8)
+                    .shadow(color: .black.opacity(0.08), radius: 10, x: 0, y: 5)
+                }
+
+                Spacer(minLength: 16)
+            }
+            .padding(.top, 20)
+        }
+        .safeAreaInset(edge: .bottom) {
+            VStack {
+                Button {
+                    guard AlmaMaterData.isValidUniversity(university), GradYearsData.isValidYear(gradYear) else { return }
+                    onSaved(university, gradYear)
+                    dismiss()
+                } label: {
+                    Text("save")
+                        .foregroundStyle((!isValidUniversity || !isValidYear) ? Color.gray : Colors.background)
+                        .font(.LibreBodoniBold(size: 16))
+                        .frame(maxWidth: .infinity, minHeight: 56, maxHeight: 56, alignment: .center)
+                        .background(
+                            RoundedRectangle(cornerRadius: 14)
+                                .fill((!isValidUniversity || !isValidYear) ? Color.gray.opacity(0.3) : Colors.primaryDark)
+                        )
+                }
+                .disabled(!isValidUniversity || !isValidYear)
+                .padding(.horizontal, 24)
+                .padding(.top, 8)
+                .padding(.bottom, 12)
+            }
+            .background(Colors.background)
+        }
+        .onAppear {
+            university = initialUniversity.lowercased()
+            gradYear = initialYear
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) { isUniversityFocused = true }
+        }
+    }
+}
+
+// MARK: - Gender Half Sheet (button select)
+private struct GenderHalfSheet: View {
+    let initialGender: String
+    let onSaved: (String) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var selected: String = ""
+    private let options: [String] = ["man", "woman", "nonbinary"]
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            Colors.background.ignoresSafeArea()
+
+            // Close button
+            Button(action: { dismiss() }) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(Colors.primaryDark)
+            }
+            .padding(.leading, 20)
+            .padding(.top, 18)
+
+            VStack(spacing: 16) {
+                // Icon + Title
+                VStack(spacing: 10) {
+                    Image("genderIcon")
+                        .renderingMode(.template)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 30, height: 30)
+                        .foregroundColor(Colors.primaryDark)
+                    Text("gender")
+                        .font(.LibreBodoni(size: 22))
+                        .foregroundColor(Colors.primaryDark)
+                }
+
+                Spacer(minLength: 8)
+
+                VStack(spacing: 12) {
+                    ForEach(options, id: \.self) { opt in
+                        Button(action: { selected = opt }) {
+                            HStack {
+                                Text(opt)
+                                    .font(.LeagueSpartan(size: 20))
+                                    .foregroundColor(Colors.primaryDark)
+                                Spacer()
+                                if selected == opt {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundStyle(Colors.primaryDark)
+                                } else {
+                                    Image(systemName: "circle")
+                                        .foregroundStyle(Colors.k6F6F73)
+                                }
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Colors.hobbyBackground)
+                            )
+                        }
+                    }
+                }
+                .padding(.horizontal, 24)
+
+                Spacer(minLength: 16)
+            }
+            .padding(.top, 20)
+        }
+        .safeAreaInset(edge: .bottom) {
+            VStack {
+                Button {
+                    guard !selected.isEmpty else { return }
+                    onSaved(selected)
+                    dismiss()
+                } label: {
+                    Text("save")
+                        .foregroundStyle(selected.isEmpty ? Color.gray : Colors.background)
+                        .font(.LibreBodoniBold(size: 16))
+                        .frame(maxWidth: .infinity, minHeight: 56, maxHeight: 56, alignment: .center)
+                        .background(
+                            RoundedRectangle(cornerRadius: 14)
+                                .fill(selected.isEmpty ? Color.gray.opacity(0.3) : Colors.primaryDark)
+                        )
+                }
+                .disabled(selected.isEmpty)
+                .padding(.horizontal, 24)
+                .padding(.top, 8)
+                .padding(.bottom, 12)
+            }
+            .background(Colors.background)
+        }
+        .onAppear {
+            selected = initialGender.lowercased()
         }
     }
 }
@@ -1274,6 +1587,8 @@ struct ProfileView: View {
     @State private var isLoggingOut = false
     @State private var showSettingsMenu = false
     @State private var navigationPath = NavigationPath()
+    @State private var showingAlmaMaterSheet = false
+    @State private var showingGenderSheet = false
 
     // Local editing state
     @State private var editingName: String = ""
@@ -1401,8 +1716,8 @@ struct ProfileView: View {
                                         }(),
                                         statusValue: editingRelationStatus,
                                         onLocationTap: { showingLocationSheet = true },
-                                        onAlmaMaterTap: { navigationPath.append(EditDestination.almaMater) },
-                                        onGenderTap: { navigationPath.append(EditDestination.gender) },
+                                        onAlmaMaterTap: { showingAlmaMaterSheet = true },
+                                        onGenderTap: { showingGenderSheet = true },
                                         onWorkTap: { navigationPath.append(EditDestination.work) },
                                         onStatusTap: { navigationPath.append(EditDestination.status) }
                                     )
@@ -1525,6 +1840,28 @@ struct ProfileView: View {
                     editingAddress = address
                     editingLatitude = coordinate.latitude
                     editingLongitude = coordinate.longitude
+                }
+            )
+            .presentationDetents([.medium])
+            .presentationDragIndicator(.hidden)
+        }
+        .sheet(isPresented: $showingAlmaMaterSheet) {
+            AlmaMaterHalfSheet(
+                initialUniversity: editingAlmaMater,
+                initialYear: editingGradYear,
+                onSaved: { university, year in
+                    editingAlmaMater = university
+                    editingGradYear = year
+                }
+            )
+            .presentationDetents([.medium])
+            .presentationDragIndicator(.hidden)
+        }
+        .sheet(isPresented: $showingGenderSheet) {
+            GenderHalfSheet(
+                initialGender: editingGender,
+                onSaved: { gender in
+                    editingGender = gender
                 }
             )
             .presentationDetents([.medium])
