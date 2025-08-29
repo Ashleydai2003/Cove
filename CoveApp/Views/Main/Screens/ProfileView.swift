@@ -1354,6 +1354,125 @@ private struct GenderHalfSheet: View {
     }
 }
 
+// MARK: - Work Half Sheet (two free-text fields)
+private struct WorkHalfSheet: View {
+    let initialCompany: String
+    let initialTitle: String
+    let onSaved: (String, String) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var company: String = ""
+    @State private var title: String = ""
+    @FocusState private var isCompanyFocused: Bool
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            Colors.background.ignoresSafeArea()
+
+            // Close button
+            Button(action: { dismiss() }) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(Colors.primaryDark)
+            }
+            .padding(.leading, 20)
+            .padding(.top, 18)
+
+            VStack(spacing: 22) {
+                // Icon + Title
+                VStack(spacing: 10) {
+                    Image("workIcon")
+                        .renderingMode(.template)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 30, height: 30)
+                        .foregroundColor(Colors.primaryDark)
+                    Text("work")
+                        .font(.LibreBodoni(size: 22))
+                        .foregroundColor(Colors.primaryDark)
+                }
+
+                Spacer(minLength: 12)
+
+                // Company
+                VStack(spacing: 12) {
+                    ZStack(alignment: .leading) {
+                        if company.isEmpty {
+                            Text("workplace")
+                                .foregroundColor(Colors.k656566)
+                                .font(.LeagueSpartan(size: 26))
+                        }
+                        TextField("", text: $company)
+                            .font(.LeagueSpartan(size: 26))
+                            .foregroundStyle(Colors.k060505)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled(true)
+                            .focused($isCompanyFocused)
+                    }
+                    Divider()
+                        .frame(height: 2)
+                        .background(Colors.k060505)
+                }
+                .padding(.horizontal, 24)
+
+                // Title
+                VStack(spacing: 12) {
+                    ZStack(alignment: .leading) {
+                        if title.isEmpty {
+                            Text("job title")
+                                .foregroundColor(Colors.k656566)
+                                .font(.LeagueSpartan(size: 26))
+                        }
+                        TextField("", text: $title)
+                            .font(.LeagueSpartan(size: 26))
+                            .foregroundStyle(Colors.k060505)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled(true)
+                    }
+                    Divider()
+                        .frame(height: 2)
+                        .background(Colors.k060505)
+                }
+                .padding(.horizontal, 24)
+
+                Spacer(minLength: 24)
+            }
+            .padding(.top, 24)
+        }
+        .safeAreaInset(edge: .bottom) {
+            VStack {
+                Button {
+                    // Free text; save if at least one field filled
+                    let trimmedCompany = company.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+                    let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+                    guard !trimmedCompany.isEmpty || !trimmedTitle.isEmpty else { return }
+                    onSaved(trimmedCompany, trimmedTitle)
+                    dismiss()
+                } label: {
+                    let isDisabled = company.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                    Text("save")
+                        .foregroundStyle(isDisabled ? Color.gray : Colors.background)
+                        .font(.LibreBodoniBold(size: 16))
+                        .frame(maxWidth: .infinity, minHeight: 56, maxHeight: 56, alignment: .center)
+                        .background(
+                            RoundedRectangle(cornerRadius: 14)
+                                .fill(isDisabled ? Color.gray.opacity(0.3) : Colors.primaryDark)
+                        )
+                }
+                .padding(.horizontal, 24)
+                .padding(.top, 8)
+                .padding(.bottom, 12)
+            }
+            .background(Colors.background)
+        }
+        .onAppear {
+            company = initialCompany
+            title = initialTitle
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) { isCompanyFocused = true }
+        }
+    }
+}
+
 // MARK: - Hobbies Selection View (Updated to use shared data)
 struct HobbiesSelectionView: View {
     let selectedHobbies: Set<String>
@@ -1718,7 +1837,7 @@ struct ProfileView: View {
                                         onLocationTap: { showingLocationSheet = true },
                                         onAlmaMaterTap: { showingAlmaMaterSheet = true },
                                         onGenderTap: { showingGenderSheet = true },
-                                        onWorkTap: { navigationPath.append(EditDestination.work) },
+                                        onWorkTap: { showingWorkSheet = true },
                                         onStatusTap: { navigationPath.append(EditDestination.status) }
                                     )
                                     .padding(.top, 6)
@@ -1862,6 +1981,18 @@ struct ProfileView: View {
                 initialGender: editingGender,
                 onSaved: { gender in
                     editingGender = gender
+                }
+            )
+            .presentationDetents([.medium])
+            .presentationDragIndicator(.hidden)
+        }
+        .sheet(isPresented: $showingWorkSheet) {
+            WorkHalfSheet(
+                initialCompany: editingWorkLocation,
+                initialTitle: editingJob,
+                onSaved: { company, title in
+                    editingWorkLocation = company
+                    editingJob = title
                 }
             )
             .presentationDetents([.medium])
