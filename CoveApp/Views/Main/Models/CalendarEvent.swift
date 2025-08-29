@@ -25,6 +25,7 @@ struct CalendarEvent: Decodable, Identifiable, ContentComparable {
     let hostName: String
     let rsvpStatus: String?
     let goingCount: Int
+    let pendingCount: Int?
     let createdAt: String
     let coverPhoto: CoverPhoto?
 
@@ -44,6 +45,7 @@ struct CalendarEvent: Decodable, Identifiable, ContentComparable {
         hostName: String,
         rsvpStatus: String?,
         goingCount: Int,
+        pendingCount: Int? = nil,
         createdAt: String,
         coverPhoto: CoverPhoto?
     ) {
@@ -61,12 +63,13 @@ struct CalendarEvent: Decodable, Identifiable, ContentComparable {
         self.hostName = hostName
         self.rsvpStatus = rsvpStatus
         self.goingCount = goingCount
+        self.pendingCount = pendingCount
         self.createdAt = createdAt
         self.coverPhoto = coverPhoto
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, name, description, date, location, memberCap, ticketPrice, coveId, coveName, coveCoverPhoto, hostId, hostName, rsvpStatus, goingCount, createdAt, coverPhoto
+        case id, name, description, date, location, memberCap, ticketPrice, coveId, coveName, coveCoverPhoto, hostId, hostName, rsvpStatus, goingCount, pendingCount, createdAt, coverPhoto
     }
 
     init(from decoder: Decoder) throws {
@@ -86,6 +89,7 @@ struct CalendarEvent: Decodable, Identifiable, ContentComparable {
         self.hostName = try container.decodeIfPresent(String.self, forKey: .hostName) ?? ""
         self.rsvpStatus = try container.decodeIfPresent(String.self, forKey: .rsvpStatus)
         self.goingCount = try container.decodeIfPresent(Int.self, forKey: .goingCount) ?? 0
+        self.pendingCount = try container.decodeIfPresent(Int.self, forKey: .pendingCount)
         self.createdAt = try container.decodeIfPresent(String.self, forKey: .createdAt) ?? self.date
         self.coverPhoto = try container.decodeIfPresent(CoverPhoto.self, forKey: .coverPhoto)
     }
@@ -123,6 +127,7 @@ struct CalendarEvent: Decodable, Identifiable, ContentComparable {
                ticketPrice != other.ticketPrice ||
                rsvpStatus != other.rsvpStatus ||
                goingCount != other.goingCount ||
+               pendingCount != other.pendingCount ||
                hostName != other.hostName ||
                coveName != other.coveName
     }
@@ -137,11 +142,13 @@ struct Event: Decodable {
     let location: String?
     let memberCap: Int?
     let ticketPrice: Double?
+    let paymentHandle: String?
     let coveId: String?
     let host: Host
     let cove: Cove
     let rsvpStatus: String?
     let goingCount: Int?
+    let pendingCount: Int?
     let rsvps: [EventRSVP]?
     let coverPhoto: CoverPhoto?
     let isHost: Bool?

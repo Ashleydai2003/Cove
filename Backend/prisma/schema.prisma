@@ -24,9 +24,8 @@ model DummyTest {
 
 // Prisma Enum for RSVPs 
 enum RSVPStatus {
-  GOING
-  MAYBE
-  NOT_GOING
+  GOING    // Approved by host
+  PENDING  // Awaiting host approval
 }
 
 enum MemberRole {
@@ -171,6 +170,7 @@ model Event {
   location    String
   memberCap   Int?        // Optional maximum number of attendees
   ticketPrice Float?      // Optional ticket price in dollars
+  paymentHandle String?   // Optional payment handle (Venmo, etc.)
   isPublic    Boolean     @default(false)
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
@@ -216,7 +216,7 @@ model EventRSVP {
   id        String   @id @default(cuid())
   eventId   String
   userId    String
-  status    RSVPStatus   @default(GOING) // Can be "GOING", "MAYBE", "NOT_GOING"
+  status    RSVPStatus   @default(PENDING) // Can be "GOING" (approved), "PENDING" (awaiting approval)
   createdAt DateTime @default(now())
   event     Event    @relation(fields: [eventId], references: [id])
   user      User     @relation(fields: [userId], references: [id])

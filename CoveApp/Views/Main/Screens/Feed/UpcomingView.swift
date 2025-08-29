@@ -123,6 +123,7 @@ struct UpcomingView: View {
                         hostName: event.hostName,
                         rsvpStatus: event.rsvpStatus,
                         goingCount: event.goingCount,
+                        pendingCount: event.pendingCount,
                         createdAt: event.createdAt,
                         coverPhoto: event.coverPhoto
                     )
@@ -279,6 +280,7 @@ private struct FeedItemsListView: View {
                         hostName: event.hostName,
                         rsvpStatus: event.rsvpStatus,
                         goingCount: event.goingCount,
+                        pendingCount: event.pendingCount,
                         createdAt: event.createdAt,
                         coverPhoto: event.coverPhoto
                     )
