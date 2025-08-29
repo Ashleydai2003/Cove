@@ -18,6 +18,7 @@ class NewEventModel: ObservableObject {
     @Published var eventTime = Date()
     @Published var numberOfSpots: String = ""
     @Published var ticketPriceString: String = ""
+    @Published var paymentHandle: String = ""
     @Published var memberCap: Int?
     @Published var ticketPrice: Double?
     @Published var eventImage: UIImage?
@@ -74,6 +75,7 @@ class NewEventModel: ObservableObject {
         eventTime = Date()
         numberOfSpots = ""
         ticketPriceString = ""
+        paymentHandle = ""
         memberCap = nil
         ticketPrice = nil
         eventImage = nil
@@ -135,6 +137,10 @@ class NewEventModel: ObservableObject {
         
         if let ticketPrice = ticketPrice {
             params["ticketPrice"] = ticketPrice
+        }
+        
+        if !paymentHandle.isEmpty {
+            params["paymentHandle"] = paymentHandle
         }
 
         // Debug: Log the current userId from Firebase Auth
