@@ -158,14 +158,15 @@ class UpcomingFeed: ObservableObject {
                     date: event.date,
                     location: event.location,
                     memberCap: event.memberCap,
-                    ticketPrice: event.ticketPrice,
-                    coveId: event.coveId,
+                                ticketPrice: event.ticketPrice,
+            coveId: event.coveId,
                     coveName: event.coveName,
                     coveCoverPhoto: event.coveCoverPhoto,
                     hostId: event.hostId,
                     hostName: event.hostName,
                     rsvpStatus: event.rsvpStatus,
                     goingCount: event.goingCount,
+                    pendingCount: event.pendingCount,
                     createdAt: event.createdAt,
                     coverPhoto: event.coverPhoto
                 )

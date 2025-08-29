@@ -13,6 +13,7 @@ Takes Data Parameters:
 * location: String (required)
 * memberCap: Integer (optional) - Maximum number of attendees
 * ticketPrice: Float (optional) - Ticket price in dollars
+* paymentHandle: String (optional) - Payment handle (Venmo username, etc.) - Available to all authenticated users
 * coverPhoto: String (optional, base64 encoded)
 * coveId: String (required)
 
@@ -26,6 +27,7 @@ Returns:
   * location: String
   * memberCap: Integer | null
   * ticketPrice: Float | null
+  * paymentHandle: String | null (available to all authenticated users)
   * coveId: String
   * createdAt: DateTime
 }
@@ -275,10 +277,14 @@ Updates a user's RSVP status for an event. User must be a member of the event's 
 
 Takes Data Parameters:
 * eventId: String (required) - ID of the event to RSVP to
-* status: String (required) - One of: "GOING", "MAYBE", "NOT_GOING"
+* status: String (required) - One of: "PENDING", "NOT_GOING"
+
+**Note**: When users RSVP, they are automatically set to "PENDING" status and must await host approval to become "GOING". **Exception**: Event hosts can automatically approve themselves and will receive "GOING" status immediately when they RSVP.
 
 Behavior:
 * When status = "NOT_GOING": the user's RSVP entry is deleted from the database
+* When status = "PENDING": creates or updates user's RSVP to pending approval status
+* **Host Auto-Approval**: If the user is the event host, their status is automatically set to "GOING" instead of "PENDING"
 
 Returns:
 * message: String - "RSVP removed successfully" when status is "NOT_GOING"; otherwise "RSVP status updated successfully"
@@ -740,7 +746,7 @@ Takes Query String Parameters:
 * eventId: String (required) - ID of the event to retrieve
 
 Returns:
-* When unauthenticated (or authenticated but neither the host nor RSVP'd), returns LIMITED details:
+* When unauthenticated (or authenticated but not host and no GOING RSVP), returns LIMITED details:
   * event: {
     * id: String
     * name: String
@@ -764,12 +770,12 @@ Returns:
       * url: String
     } | null
   }
-  * Caching: `Cache-Control: public, max-age=60`
-* When authenticated (but not host and has no RSVP), the LIMITED response also includes:
+  * Caching: `Cache-Control: private, no-store`
+* When authenticated (but not host and has no GOING RSVP), the LIMITED response also includes:
   * isHost: Boolean (false)
-  * rsvpStatus: "GOING" | "MAYBE" | "NOT_GOING" | null (null when no RSVP)
-  * Caching: `Cache-Control: public, max-age=60`
-* When authenticated and either the user is the host OR has an RSVP to the event, FULL details are returned (unchanged shape but attendee list is truncated to first 10):
+  * rsvpStatus: "GOING" | "PENDING" | "NOT_GOING" | null (null when no RSVP)
+  * Caching: `Cache-Control: private, no-store`
+* When authenticated and either the user is the host OR has GOING RSVP status, FULL details are returned (unchanged shape but attendee list is truncated to first 5):
   * event: {
     * id: String
     * name: String
@@ -812,7 +818,7 @@ Returns:
 Notes:
 - Attendee list hygiene: attendee list is limited to the first 10 RSVPs by most recent.
 - Over-fetch prevention: sensitive relations (full RSVP graph) are only fetched when the user is entitled to full details.
-- Privacy: Location and guest list (rsvps) are only provided to event hosts or users who have RSVP'd to the event.
+- Privacy: Location and guest list (rsvps) are only provided to event hosts or users who have GOING RSVP status.
 
 ### `/invites`
 
@@ -967,3 +973,103 @@ Returns:
 Examples:
 * `GET /feed?types=event` - Events only
 * `GET /feed?types=post`
+
+---
+
+## Event Member Management
+
+### `GET /event-members`
+
+Retrieves paginated list of approved event members (GOING status). User must be authenticated and either be the event host or have GOING status to access this endpoint.
+
+Query Parameters:
+* eventId: String (required) - Event ID
+* cursor: String (optional) - Pagination cursor
+* limit: Integer (optional) - Max items per page (default: 20, max: 50)
+
+Returns:
+* members: Array of {
+  * id: String - RSVP ID
+  * userId: String - User ID
+  * userName: String - User name
+  * profilePhotoUrl: String | null - Profile photo URL
+  * joinedAt: String - ISO 8601 timestamp when approved
+}
+* hasMore: Boolean - Whether there are more members
+* nextCursor: String | null - Cursor for next page
+
+Caching: `Cache-Control: private, no-store`
+
+### `GET /pending-members`
+
+Retrieves paginated list of pending event members (PENDING status) - **HOST ONLY**. User must be authenticated and be the event host.
+
+Query Parameters:
+* eventId: String (required) - Event ID
+* cursor: String (optional) - Pagination cursor
+* limit: Integer (optional) - Max items per page (default: 20, max: 50)
+
+Returns:
+* pendingMembers: Array of {
+  * id: String - RSVP ID
+  * userId: String - User ID
+  * userName: String - User name
+  * profilePhotoUrl: String | null - Profile photo URL
+  * requestedAt: String - ISO 8601 timestamp when RSVP was submitted
+}
+* hasMore: Boolean - Whether there are more pending members
+* nextCursor: String | null - Cursor for next page
+
+Caching: `Cache-Control: private, no-store`
+
+### `POST /approve-decline-rsvp`
+
+Approve or decline a pending RSVP - **HOST ONLY**. User must be authenticated and be the event host.
+
+Takes Data Parameters:
+* rsvpId: String (required) - RSVP ID to approve/decline
+* action: String (required) - Either "approve" or "decline"
+
+Actions:
+* "approve" - Changes RSVP status from PENDING to GOING
+* "decline" - Deletes the RSVP record entirely
+
+Returns:
+* message: String - Success message
+* action: String - The action performed
+* rsvpId: String - The RSVP ID
+
+Sends push notification to the user about the decision.
+
+---
+
+## RSVP Status System
+
+The RSVP system uses an approval-based workflow:
+
+### RSVP Statuses:
+* **GOING** - User is approved to attend (has full access to event details)
+* **PENDING** - User has requested to attend, awaiting host approval (limited access)
+
+### RSVP Flow:
+1. User clicks "RSVP" → Status becomes `PENDING`
+2. Host sees pending request in special interface
+3. Host can "approve" → Status becomes `GOING` (user gains full access)
+4. Host can "decline" → RSVP deleted (user loses access)
+
+### Privacy Model:
+* **Limited Response** (unauthenticated or non-GOING status): No location, no guest list
+* **Full Response** (host OR GOING status): Includes location, guest list, pending counts
+* **Host Privileges**: Hosts always get full access to their events (location, guest list, management) regardless of their RSVP status
+
+### Counts:
+* `goingCount` - Number of approved attendees (GOING status)  
+* `pendingCount` - Number of pending approvals (PENDING status)
+
+### Host Behavior:
+* **Event Management**: Hosts can always access `/pending-members`, `/event-members`, and `/approve-decline-rsvp` regardless of their RSVP status
+* **Event Details**: Hosts always see location and guest list (full access regardless of RSVP status)
+* **RSVP Auto-Approval**: When hosts RSVP to their own events, they are automatically approved to GOING status (no pending approval needed)
+* **RSVP Flexibility**: Hosts can RSVP as NOT_GOING and still have full access to manage and view their event
+
+Users with GOING status OR event hosts can see full event details including location and guest lists.
