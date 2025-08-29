@@ -64,6 +64,7 @@ struct CreateEventView: View {
                         locationSection
                         spotsSection
                         ticketPriceSection
+                        paymentHandleSection
                         // TODO: in the future we also want to have a privacy section
                         createButtonView
                     }
@@ -321,6 +322,42 @@ extension CreateEventView {
             RoundedRectangle(cornerRadius: 10)
                 .fill(Colors.primaryDark)
         )
+    }
+
+    // MARK: - Payment Handle Section
+    private var paymentHandleSection: some View {
+        Group {
+            if !viewModel.ticketPriceString.isEmpty {
+                HStack {
+                    Image(systemName: "person.crop.circle")
+                        .font(.system(size: 20))
+                        .foregroundStyle(Color.white)
+                        .padding(.leading, 15)
+
+                    ZStack(alignment: .leading) {
+                        if viewModel.paymentHandle.isEmpty {
+                            Text("venmo handle (optional)")
+                                .foregroundColor(.gray)
+                                .font(.LibreBodoniBold(size: 16))
+                                .padding(.leading, 6)
+                        }
+
+                        TextField("", text: $viewModel.paymentHandle)
+                            .foregroundStyle(Color.white)
+                            .font(.LibreBodoniBold(size: 16))
+                            .padding(.leading, 6)
+                            .padding(.trailing, 24)
+                            .autocorrectionDisabled()
+                            .focused($isFocused)
+                    }
+                }
+                .frame(height: 44)
+                .background(
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(Colors.primaryDark)
+                )
+            }
+        }
     }
 
     // MARK: - Create Button

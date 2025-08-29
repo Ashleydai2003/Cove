@@ -46,6 +46,9 @@ import {
   handleGetPost,
   handleTogglePostLike,
   handleGetFeed,
+  handleGetEventMembers,
+  handleGetPendingMembers,
+  handleApproveDeclineRSVP,
 } from './routes';
 
 export const handler = async (
@@ -158,6 +161,13 @@ export const handler = async (
       // Feed routes
       case '/feed':
         return handleGetFeed(event);
+      // Event member management routes  
+      case '/event-members':
+        return handleGetEventMembers(event);
+      case '/pending-members':
+        return handleGetPendingMembers(event);
+      case '/approve-decline-rsvp':
+        return handleApproveDeclineRSVP(event);
       default:
         // Handle common web standard files
         switch (event.path) {

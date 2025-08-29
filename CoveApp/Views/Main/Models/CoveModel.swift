@@ -195,7 +195,16 @@ class CoveModel: ObservableObject {
                 case .success(let response):
                     let newEvents = response.events ?? []
                     Log.debug("✅ CoveModel: Events received: \(newEvents.count) events")
-                    self.events.append(contentsOf: newEvents)
+                    
+                    // Deduplicate events before appending to prevent duplicates from race conditions
+                    let existingEventIds = Set(self.events.map { $0.id })
+                    let uniqueNewEvents = newEvents.filter { !existingEventIds.contains($0.id) }
+                    
+                    if uniqueNewEvents.count != newEvents.count {
+                        Log.debug("⚠️ CoveModel: Filtered out \(newEvents.count - uniqueNewEvents.count) duplicate events")
+                    }
+                    
+                    self.events.append(contentsOf: uniqueNewEvents)
                     if let pagination = response.pagination {
                         self.hasMore = pagination.hasMore
                         self.nextCursor = pagination.nextCursor
