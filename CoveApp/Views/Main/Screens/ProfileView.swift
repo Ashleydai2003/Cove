@@ -222,9 +222,10 @@ struct ProfileHeader: View {
                 }
             }
 
-            VStack(alignment: .center, spacing: 16) {
-                // Combined header row: Age, Location, Alma Mater + Grad Year
-                HStack(spacing: 16) {
+            if !isEditing {
+                VStack(alignment: .center, spacing: 16) {
+                    // Combined header row: Age, Location, Alma Mater + Grad Year
+                    HStack(spacing: 16) {
                     // Age
                     Text(age.map(String.init) ?? "21")
                         .font(.LibreBodoni(size: 18))
@@ -327,12 +328,12 @@ struct ProfileHeader: View {
                                 .contentShape(Rectangle())
                         }
                     }
-                }
-                .frame(maxWidth: .infinity, alignment: .center)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .center)
 
-                // Collapsible details row (centered): status and work
-                if showDetails {
-                    HStack(spacing: 16) {
+                    // Collapsible details row (centered): status and work
+                    if showDetails {
+                        HStack(spacing: 16) {
                         // Relationship Status
                         HStack(spacing: 6) {
                             Image("relationshipIcon")
@@ -411,42 +412,43 @@ struct ProfileHeader: View {
                                 }
                             }
                         }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .transition(.opacity.combined(with: .move(edge: .top)))
                     }
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-                }
 
-                // Stats row: friends, coves, events (always shown, directly under collapsible)
-                HStack(spacing: 24) {
-                    VStack(spacing: 2) {
-                        Text("23")
-                            .font(.LibreBodoniSemiBold(size: 18))
-                            .foregroundColor(Colors.primaryDark)
-                        Text("friends")
-                            .font(.LibreBodoni(size: 13))
-                            .foregroundColor(Colors.k6F6F73)
+                    // Stats row: friends, coves, events (always shown, directly under collapsible)
+                    HStack(spacing: 24) {
+                        VStack(spacing: 2) {
+                            Text("23")
+                                .font(.LibreBodoniSemiBold(size: 18))
+                                .foregroundColor(Colors.primaryDark)
+                            Text("friends")
+                                .font(.LibreBodoni(size: 13))
+                                .foregroundColor(Colors.k6F6F73)
+                        }
+                        VStack(spacing: 2) {
+                            Text("4")
+                                .font(.LibreBodoniSemiBold(size: 18))
+                                .foregroundColor(Colors.primaryDark)
+                            Text("coves")
+                                .font(.LibreBodoni(size: 13))
+                                .foregroundColor(Colors.k6F6F73)
+                        }
+                        VStack(spacing: 2) {
+                            Text("16")
+                                .font(.LibreBodoniSemiBold(size: 18))
+                                .foregroundColor(Colors.primaryDark)
+                            Text("events")
+                                .font(.LibreBodoni(size: 13))
+                                .foregroundColor(Colors.k6F6F73)
+                        }
                     }
-                    VStack(spacing: 2) {
-                        Text("4")
-                            .font(.LibreBodoniSemiBold(size: 18))
-                            .foregroundColor(Colors.primaryDark)
-                        Text("coves")
-                            .font(.LibreBodoni(size: 13))
-                            .foregroundColor(Colors.k6F6F73)
-                    }
-                    VStack(spacing: 2) {
-                        Text("16")
-                            .font(.LibreBodoniSemiBold(size: 18))
-                            .foregroundColor(Colors.primaryDark)
-                        Text("events")
-                            .font(.LibreBodoni(size: 13))
-                            .foregroundColor(Colors.k6F6F73)
-                    }
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.top, 4)
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 4)
 
-                // Removed standalone work row in favor of collapsible grid
+                    // Removed standalone work row in favor of collapsible grid
+                }
             }
         }
         .onAppear {
@@ -638,6 +640,103 @@ struct InterestsSection: View {
     }
 }
 
+// Row press highlight style (file-scope for reuse)
+private struct RowPressHighlightStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .background(configuration.isPressed ? Color.black.opacity(0.06) : Color.clear)
+    }
+}
+
+// MARK: - Edit Item Row & List (Edit Landing)
+private struct EditItemRow: View {
+    let iconName: String
+    let title: String
+    let value: String
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: 12) {
+                Image(iconName)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 18, height: 18)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.LibreBodoni(size: 13))
+                        .foregroundColor(Colors.k6F6F73)
+                    Text(value.isEmpty ? "add \(title)" : value.lowercased())
+                        .font(.LibreBodoni(size: 16))
+                        .foregroundColor(value.isEmpty ? Colors.k6F6F73 : Colors.primaryDark)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(Colors.primaryDark)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(RowPressHighlightStyle())
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Colors.hobbyBackground)
+                .shadow(color: .black.opacity(0.06), radius: 6, x: 0, y: 3)
+        )
+    }
+}
+
+// MARK: - Edit Destinations and temporary placeholders
+private enum EditDestination: Hashable {
+    case location
+    case almaMater
+    case gender
+    case work
+    case status
+}
+
+// Temporary placeholder screens; will implement real ones in next steps
+private struct AlmaMaterEditPlaceholder: View {
+    var body: some View { Text("alma mater editor").font(.LibreBodoni(size: 20)).foregroundColor(Colors.primaryDark) }
+}
+private struct GenderEditPlaceholder: View {
+    var body: some View { Text("gender editor").font(.LibreBodoni(size: 20)).foregroundColor(Colors.primaryDark) }
+}
+private struct WorkEditPlaceholder: View {
+    var body: some View { Text("work editor").font(.LibreBodoni(size: 20)).foregroundColor(Colors.primaryDark) }
+}
+private struct StatusEditPlaceholder: View {
+    var body: some View { Text("status editor").font(.LibreBodoni(size: 20)).foregroundColor(Colors.primaryDark) }
+}
+
+private struct EditItemsList: View {
+    let locationValue: String
+    let almaMaterValue: String
+    let genderValue: String
+    let workValue: String
+    let statusValue: String
+    let onLocationTap: () -> Void
+    let onAlmaMaterTap: () -> Void
+    let onGenderTap: () -> Void
+    let onWorkTap: () -> Void
+    let onStatusTap: () -> Void
+
+    var body: some View {
+        VStack(spacing: 10) {
+            EditItemRow(iconName: "locationIcon", title: "location", value: locationValue, onTap: onLocationTap)
+            EditItemRow(iconName: "gradIcon", title: "alma mater", value: almaMaterValue, onTap: onAlmaMaterTap)
+            EditItemRow(iconName: "genderIcon", title: "gender", value: genderValue, onTap: onGenderTap)
+            EditItemRow(iconName: "workIcon", title: "work", value: workValue, onTap: onWorkTap)
+            EditItemRow(iconName: "relationshipIcon", title: "status", value: statusValue, onTap: onStatusTap)
+        }
+        .padding(.horizontal, 6)
+    }
+}
+
 // MARK: - Location Selection Popup (Identical to Onboarding)
 struct LocationSelectionPopup: View {
     let currentAddress: String
@@ -786,6 +885,159 @@ struct LocationSelectionPopup: View {
     
     var filteredCities: [String] {
         return CitiesData.filteredCities(searchQuery: searchCity)
+    }
+}
+
+// MARK: - Location Half Sheet (Simple, clean, consistent)
+private struct LocationHalfSheet: View {
+    let currentAddress: String
+    let onLocationSelected: (String, CLLocationCoordinate2D) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var searchCity: String = ""
+    @State private var showCityDropdown: Bool = false
+    @FocusState private var isCityFocused: Bool
+
+    private var filteredCities: [String] {
+        CitiesData.filteredCities(searchQuery: searchCity)
+    }
+
+    private var isValidCity: Bool {
+        let lc = searchCity.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        return CitiesData.cities.contains { $0.lowercased() == lc }
+    }
+
+    private var matchedCityCase: String? {
+        let lc = searchCity.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        return CitiesData.cities.first { $0.lowercased() == lc }
+    }
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            Colors.background.ignoresSafeArea()
+
+            // Close button (X)
+            Button(action: { dismiss() }) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(Colors.primaryDark)
+            }
+            .padding(.leading, 20)
+            .padding(.top, 18)
+
+            VStack(spacing: 16) {
+                // Icon + Title (match CreatePostView feel)
+                VStack(spacing: 10) {
+                    Image("locationIcon")
+                        .renderingMode(.template)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 30, height: 30)
+                        .foregroundColor(Colors.primaryDark)
+                    Text("choose your city")
+                        .font(.LibreBodoni(size: 22))
+                        .foregroundColor(Colors.primaryDark)
+                }
+
+                // Center input area more vertically
+                Spacer(minLength: 8)
+
+                // Input
+                VStack(spacing: 10) {
+                    ZStack(alignment: .leading) {
+                        if searchCity.isEmpty {
+                            Text("search cities...")
+                                .foregroundColor(Colors.k656566)
+                                .font(.LeagueSpartan(size: 30))
+                        }
+                        TextField("", text: $searchCity)
+                            .font(.LeagueSpartan(size: 30))
+                            .foregroundStyle(Colors.k060505)
+                            .keyboardType(.alphabet)
+                            .focused($isCityFocused)
+                            .onChange(of: searchCity) { oldValue, newValue in
+                                let processed = newValue.lowercased()
+                                searchCity = processed
+                                if !processed.isEmpty && processed != oldValue {
+                                    showCityDropdown = true
+                                } else if processed.isEmpty {
+                                    showCityDropdown = false
+                                }
+                            }
+                    }
+                    Divider()
+                        .frame(height: 2)
+                        .background(Colors.k060505)
+                }
+                .padding(.horizontal, 24)
+
+                // Suggestions
+                if searchCity.count > 0 && showCityDropdown {
+                    VStack(spacing: 0) {
+                        ScrollView(.vertical, showsIndicators: false) {
+                            VStack(spacing: 0) {
+                                ForEach(filteredCities, id: \.self) { city in
+                                    Button {
+                                        searchCity = city.lowercased()
+                                        DispatchQueue.main.async { showCityDropdown = false }
+                                    } label: {
+                                        Text(city.lowercased())
+                                            .font(.LeagueSpartanMedium(size: 20))
+                                            .foregroundColor(Colors.k0F100F)
+                                            .multilineTextAlignment(.leading)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                            .padding(.horizontal, 16)
+                                            .padding(.vertical, 12)
+                                    }
+                                    .background(Color.clear)
+                                    if city != filteredCities.last {
+                                        Divider().background(Colors.k060505.opacity(0.2))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    .background(Colors.primaryLight)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .frame(height: min(CGFloat(filteredCities.count * 44), 220))
+                    .padding(.horizontal, 24)
+                    .padding(.top, 8)
+                    .shadow(color: .black.opacity(0.08), radius: 10, x: 0, y: 5)
+                }
+
+                Spacer(minLength: 16)
+            }
+            .padding(.top, 20)
+        }
+        .safeAreaInset(edge: .bottom) {
+            // Save button pinned to bottom
+            VStack {
+                Button {
+                    guard let city = matchedCityCase else { return }
+                    let coordinate = CLLocationCoordinate2D(latitude: 40.7128, longitude: -74.0060)
+                    onLocationSelected(city.lowercased(), coordinate)
+                    dismiss()
+                } label: {
+                    Text("save")
+                        .foregroundStyle(!isValidCity ? Color.gray : Colors.background)
+                        .font(.LibreBodoniBold(size: 16))
+                        .frame(maxWidth: .infinity, minHeight: 56, maxHeight: 56, alignment: .center)
+                        .background(
+                            RoundedRectangle(cornerRadius: 14)
+                                .fill(!isValidCity ? Color.gray.opacity(0.3) : Colors.primaryDark)
+                        )
+                }
+                .disabled(!isValidCity)
+                .padding(.horizontal, 24)
+                .padding(.top, 8)
+                .padding(.bottom, 12)
+            }
+            .background(Colors.background)
+        }
+        .onAppear {
+            searchCity = currentAddress.lowercased()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) { isCityFocused = true }
+        }
     }
 }
 
@@ -1021,6 +1273,7 @@ struct ProfileView: View {
     @State private var isSaving = false
     @State private var isLoggingOut = false
     @State private var showSettingsMenu = false
+    @State private var navigationPath = NavigationPath()
 
     // Local editing state
     @State private var editingName: String = ""
@@ -1039,168 +1292,198 @@ struct ProfileView: View {
     @State private var editingExtraImages: [UIImage?] = [nil, nil]
 
     var body: some View {
-        ZStack {
-            Colors.background
-                .ignoresSafeArea()
+        NavigationStack(path: $navigationPath) {
+            ZStack {
+                Colors.background
+                    .ignoresSafeArea()
 
-            VStack {
-                if appController.profileModel.isLoading {
-                    Spacer()
-                    ProgressView("Loading profile...")
-                        .foregroundColor(Colors.primaryDark)
-                    Spacer()
-                } else {
-                    ScrollView(.vertical, showsIndicators: false) {
-                        VStack(spacing: 20) {
-                            // Top row gear/checkmark, matching Cove header placement
-                            ZStack(alignment: .topTrailing) {
-                                HStack {
-                                    Spacer()
-                                    if isSaving {
-                                        ProgressView()
-                                            .tint(Colors.primaryDark)
-                                            .frame(width: 44, height: 44)
-                                    } else if isEditing {
-                                        Button(action: {
-                                            Log.debug("Save button tapped! isEditing: \(isEditing)")
-                                            isSaving = true
-                                            saveChanges { success in
-                                                DispatchQueue.main.async {
-                                                    isSaving = false
-                                                    if success { isEditing = false }
-                                                }
-                                            }
-                                        }) {
-                                            Image(systemName: "checkmark")
-                                                .font(.system(size: 16, weight: .semibold))
-                                                .frame(width: 44, height: 44)
-                                                .contentShape(Rectangle())
-                                        }
-                                        .foregroundStyle(Colors.primaryDark)
-                                        .disabled(isSaving)
-                                    } else {
-                                        Button(action: {
-                                            withAnimation(.easeInOut(duration: 0.18)) { showSettingsMenu.toggle() }
-                                        }) {
-                                            Image(systemName: "gearshape")
-                                                .font(.system(size: 16, weight: .semibold))
-                                                .frame(width: 44, height: 44)
-                                                .contentShape(Rectangle())
-                                        }
-                                        .foregroundStyle(Colors.primaryDark)
-                                        .padding(.trailing, 8)
-                                    }
-                                }
-
-                                
-                            }
-                            // Progress ring shown around the photo inside ProfileHeader
-                            ProfileHeader(
-                                name: isEditing ? $editingName : .constant(appController.profileModel.name),
-                                workLocation: isEditing ? $editingWorkLocation : .constant(appController.profileModel.workLocation),
-                                gender: isEditing ? $editingGender : .constant(appController.profileModel.gender),
-                                relationStatus: isEditing ? $editingRelationStatus : .constant(appController.profileModel.relationStatus),
-                                job: isEditing ? $editingJob : .constant(appController.profileModel.job),
-                                almaMater: isEditing ? $editingAlmaMater : .constant(appController.profileModel.almaMater ?? ""),
-                                gradYear: isEditing ? $editingGradYear : .constant(appController.profileModel.gradYear),
-                                bio: isEditing ? $editingBio : .constant(appController.profileModel.bio),
-                                profileImageURL: isEditing ? nil : appController.profileModel.profileImageURL,
-                                age: appController.profileModel.calculatedAge,
-                                address: isEditing ? editingAddress : appController.profileModel.address,
-                                isEditing: isEditing,
-                                editingProfileImage: editingProfileImage,
-                                progress: {
-                                    let p = appController.profileModel.calculateProfileProgress()
-                                    return p < 1.0 ? p : nil
-                                }(),
-                                onNameChange: { editingName = $0 },
-                                onWorkLocationChange: { editingWorkLocation = $0 },
-                                onGenderChange: { editingGender = $0 },
-                                onRelationStatusChange: { editingRelationStatus = $0 },
-                                onJobChange: { editingJob = $0 },
-                                onAlmaMaterChange: { editingAlmaMater = $0 },
-                                onGradYearChange: { editingGradYear = $0 },
-                                onBioChange: { editingBio = $0 },
-                                onLocationSelect: {
-                                    showingLocationSheet = true
-                                },
-                                onProfileImageChange: { editingProfileImage = $0 }
-                            )
-                            .frame(maxWidth: 320)
-                            .padding(.top, -30)
-                            .onAppear {
-                            }
-                            .onChange(of: appController.profileModel.profileImageURL) { _, newURL in
-                            }
-
-                            ExtraPhotoView(
-                                imageIndex: 0,
-                                isEditing: isEditing,
-                                editingImage: editingExtraImages[0],
-                                onImageChange: { editingExtraImages[0] = $0 }
-                            )
-                            .onAppear {
-                            }
-                            .onChange(of: appController.profileModel.extraImageURLs.first) { _, newURL in
-                            }
-
-                            // Bio moved under name as headline; removed boxed BioSection here
-
-                            InterestsSection(
-                                interests: isEditing ? editingInterests : appController.profileModel.interests,
-                                isEditing: isEditing,
-                                onInterestsChange: { editingInterests = $0 }
-                            )
-
-                            ExtraPhotoView(
-                                imageIndex: 1,
-                                isEditing: isEditing,
-                                editingImage: editingExtraImages[1],
-                                onImageChange: { editingExtraImages[1] = $0 }
-                            )
-                            .onAppear {
-                            }
-                            .onChange(of: appController.profileModel.extraImageURLs.dropFirst().first) { _, newURL in
-                            }
-
-                            
-
-                            // Logout button shown only when NOT editing
-                            if !isEditing {
-                                Button(action: handleLogout) {
+                VStack {
+                    if appController.profileModel.isLoading {
+                        Spacer()
+                        ProgressView("Loading profile...")
+                            .foregroundColor(Colors.primaryDark)
+                        Spacer()
+                    } else {
+                        ScrollView(.vertical, showsIndicators: false) {
+                            VStack(spacing: 20) {
+                                // Top row gear/checkmark, matching Cove header placement
+                                ZStack(alignment: .topTrailing) {
                                     HStack {
-                                        if isLoggingOut {
+                                        Spacer()
+                                        if isSaving {
                                             ProgressView()
-                                                .scaleEffect(0.8)
-                                                .tint(.white)
-                                            Text("logging out...")
-                                                .font(.LibreBodoni(size: 16))
-                                                .foregroundColor(.white)
+                                                .tint(Colors.primaryDark)
+                                                .frame(width: 44, height: 44)
+                                        } else if isEditing {
+                                            Button(action: {
+                                                Log.debug("Save button tapped! isEditing: \(isEditing)")
+                                                isSaving = true
+                                                saveChanges { success in
+                                                    DispatchQueue.main.async {
+                                                        isSaving = false
+                                                        if success { isEditing = false }
+                                                    }
+                                                }
+                                            }) {
+                                                Image(systemName: "checkmark")
+                                                    .font(.system(size: 16, weight: .semibold))
+                                                    .frame(width: 44, height: 44)
+                                                    .contentShape(Rectangle())
+                                            }
+                                            .foregroundStyle(Colors.primaryDark)
+                                            .disabled(isSaving)
                                         } else {
-                                            Text("log out")
-                                                .font(.LibreBodoni(size: 16))
-                                                .foregroundColor(.white)
+                                            Button(action: {
+                                                withAnimation(.easeInOut(duration: 0.18)) { showSettingsMenu.toggle() }
+                                            }) {
+                                                Image(systemName: "gearshape")
+                                                    .font(.system(size: 16, weight: .semibold))
+                                                    .frame(width: 44, height: 44)
+                                                    .contentShape(Rectangle())
+                                            }
+                                            .foregroundStyle(Colors.primaryDark)
+                                            .padding(.trailing, 8)
                                         }
                                     }
-                                    .padding(.horizontal, 40)
-                                    .padding(.vertical, 12)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .fill(isLoggingOut ? Colors.primaryDark.opacity(0.8) : Colors.primaryDark)
-                                    )
                                 }
-                                .disabled(isLoggingOut)
-                                .scaleEffect(isLoggingOut ? 0.95 : 1.0)
-                                .animation(.easeInOut(duration: 0.2), value: isLoggingOut)
-                                .padding(.top, 20)
+
+                                // Progress ring shown around the photo inside ProfileHeader
+                                ProfileHeader(
+                                    name: isEditing ? $editingName : .constant(appController.profileModel.name),
+                                    workLocation: isEditing ? $editingWorkLocation : .constant(appController.profileModel.workLocation),
+                                    gender: isEditing ? $editingGender : .constant(appController.profileModel.gender),
+                                    relationStatus: isEditing ? $editingRelationStatus : .constant(appController.profileModel.relationStatus),
+                                    job: isEditing ? $editingJob : .constant(appController.profileModel.job),
+                                    almaMater: isEditing ? $editingAlmaMater : .constant(appController.profileModel.almaMater ?? ""),
+                                    gradYear: isEditing ? $editingGradYear : .constant(appController.profileModel.gradYear),
+                                    bio: isEditing ? $editingBio : .constant(appController.profileModel.bio),
+                                    profileImageURL: isEditing ? nil : appController.profileModel.profileImageURL,
+                                    age: appController.profileModel.calculatedAge,
+                                    address: isEditing ? editingAddress : appController.profileModel.address,
+                                    isEditing: isEditing,
+                                    editingProfileImage: editingProfileImage,
+                                    progress: {
+                                        let p = appController.profileModel.calculateProfileProgress()
+                                        return p < 1.0 ? p : nil
+                                    }(),
+                                    onNameChange: { editingName = $0 },
+                                    onWorkLocationChange: { editingWorkLocation = $0 },
+                                    onGenderChange: { editingGender = $0 },
+                                    onRelationStatusChange: { editingRelationStatus = $0 },
+                                    onJobChange: { editingJob = $0 },
+                                    onAlmaMaterChange: { editingAlmaMater = $0 },
+                                    onGradYearChange: { editingGradYear = $0 },
+                                    onBioChange: { editingBio = $0 },
+                                    onLocationSelect: {
+                                        showingLocationSheet = true
+                                    },
+                                    onProfileImageChange: { editingProfileImage = $0 }
+                                )
+                                .frame(maxWidth: 320)
+                                .padding(.top, -30)
+                                .onChange(of: appController.profileModel.profileImageURL) { _, _ in }
+
+                                if isEditing {
+                                    EditItemsList(
+                                        locationValue: editingAddress,
+                                        almaMaterValue: {
+                                            if !editingAlmaMater.isEmpty && !editingGradYear.isEmpty { return "\(editingAlmaMater) \(editingGradYear)" }
+                                            if !editingAlmaMater.isEmpty { return editingAlmaMater }
+                                            if !editingGradYear.isEmpty { return editingGradYear }
+                                            return ""
+                                        }(),
+                                        genderValue: editingGender,
+                                        workValue: {
+                                            if !editingJob.isEmpty && !editingWorkLocation.isEmpty { return "\(editingJob) @ \(editingWorkLocation)" }
+                                            if !editingJob.isEmpty { return editingJob }
+                                            if !editingWorkLocation.isEmpty { return editingWorkLocation }
+                                            return ""
+                                        }(),
+                                        statusValue: editingRelationStatus,
+                                        onLocationTap: { showingLocationSheet = true },
+                                        onAlmaMaterTap: { navigationPath.append(EditDestination.almaMater) },
+                                        onGenderTap: { navigationPath.append(EditDestination.gender) },
+                                        onWorkTap: { navigationPath.append(EditDestination.work) },
+                                        onStatusTap: { navigationPath.append(EditDestination.status) }
+                                    )
+                                    .padding(.top, 6)
+                                }
+
+                                ExtraPhotoView(
+                                    imageIndex: 0,
+                                    isEditing: isEditing,
+                                    editingImage: editingExtraImages[0],
+                                    onImageChange: { editingExtraImages[0] = $0 }
+                                )
+                                .onChange(of: appController.profileModel.extraImageURLs.first) { _, _ in }
+
+                                // Bio moved under name as headline; removed boxed BioSection here
+                                InterestsSection(
+                                    interests: isEditing ? editingInterests : appController.profileModel.interests,
+                                    isEditing: isEditing,
+                                    onInterestsChange: { editingInterests = $0 }
+                                )
+
+                                ExtraPhotoView(
+                                    imageIndex: 1,
+                                    isEditing: isEditing,
+                                    editingImage: editingExtraImages[1],
+                                    onImageChange: { editingExtraImages[1] = $0 }
+                                )
+
+                                // Logout button shown only when NOT editing
+                                if !isEditing {
+                                    Button(action: handleLogout) {
+                                        HStack {
+                                            if isLoggingOut {
+                                                ProgressView()
+                                                    .scaleEffect(0.8)
+                                                    .tint(.white)
+                                                Text("logging out...")
+                                                    .font(.LibreBodoni(size: 16))
+                                                    .foregroundColor(.white)
+                                            } else {
+                                                Text("log out")
+                                                    .font(.LibreBodoni(size: 16))
+                                                    .foregroundColor(.white)
+                                            }
+                                        }
+                                        .padding(.horizontal, 40)
+                                        .padding(.vertical, 12)
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 10)
+                                                .fill(isLoggingOut ? Colors.primaryDark.opacity(0.8) : Colors.primaryDark)
+                                        )
+                                    }
+                                    .disabled(isLoggingOut)
+                                    .scaleEffect(isLoggingOut ? 0.95 : 1.0)
+                                    .animation(.easeInOut(duration: 0.2), value: isLoggingOut)
+                                    .padding(.top, 20)
+                                }
                             }
+                            .padding(.vertical, 20)
                         }
-                        .padding(.vertical, 20)
                     }
                 }
+                .padding(.horizontal, 20)
             }
-            .padding(.horizontal, 20)
         }
+        .navigationDestination(for: EditDestination.self) { destination in
+            switch destination {
+            case .location:
+                // Use sheet for location; do not push
+                EmptyView()
+            case .almaMater:
+                AlmaMaterEditPlaceholder()
+            case .gender:
+                GenderEditPlaceholder()
+            case .work:
+                WorkEditPlaceholder()
+            case .status:
+                StatusEditPlaceholder()
+            }
+        }
+        .navigationBarBackButtonHidden()
         // Opaque top-safe-area overlay to prevent content peeking during bounce
         .overlay(
             GeometryReader { proxy in
@@ -1235,9 +1518,8 @@ struct ProfileView: View {
                 .zIndex(10000)
             }
         }
-        .navigationBarBackButtonHidden()
         .sheet(isPresented: $showingLocationSheet) {
-            LocationSelectionPopup(
+            LocationHalfSheet(
                 currentAddress: editingAddress,
                 onLocationSelected: { address, coordinate in
                     editingAddress = address
@@ -1245,9 +1527,10 @@ struct ProfileView: View {
                     editingLongitude = coordinate.longitude
                 }
             )
+            .presentationDetents([.medium])
+            .presentationDragIndicator(.hidden)
         }
         .task {
-
             // Profile data should already be loaded during login/onboarding
             // No need to fetch again - this was causing redundant network calls
         }
