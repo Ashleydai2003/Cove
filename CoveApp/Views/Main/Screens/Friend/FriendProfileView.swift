@@ -25,9 +25,13 @@ struct FriendProfileView: View {
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 24) {
 
-                        // MARK: Header (back & chat)
+                        // MARK: Header (back)
                         HStack {
-                            Button { dismiss() } label: { Images.backArrow }
+                            Button { dismiss() } label: {
+                                Image(systemName: "chevron.left")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundStyle(Colors.primaryDark)
+                            }
                             Spacer()
                         }
                         .padding(.horizontal)
