@@ -40,7 +40,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
 
   // Validation functions
   const isGradYearValid = (year: string) => {
-    return /^\d{4,}$/.test(year); // At least 4 digits
+    return /^\d{4}$/.test(year); // Exactly 4 digits
   };
 
   const isFormValid = () => {
@@ -221,7 +221,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
     
     // Validate graduation year before submitting
     if (!isGradYearValid(formData.gradYear)) {
-      setError('Please enter a valid graduation year');
+      setError('Please enter a valid 4-digit graduation year');
       return;
     }
     
@@ -401,7 +401,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
                   required
                 />
                 {formData.gradYear && !isGradYearValid(formData.gradYear) && (
-                  <p className="text-red-500 text-sm mt-1">Please enter a valid 4-digit year</p>
+                  <p className="text-red-500 text-sm mt-1">Please enter a valid 4-digit year (e.g., 2025)</p>
                 )}
               </div>
 
