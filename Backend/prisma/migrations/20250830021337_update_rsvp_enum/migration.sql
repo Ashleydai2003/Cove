@@ -1,13 +1,14 @@
--- Update RSVPStatus enum to use PENDING instead of MAYBE and NOT_GOING
--- First, update any existing records to use GOING instead of MAYBE/NOT_GOING
-UPDATE "EventRSVP" SET status = 'GOING' WHERE status = 'MAYBE';
-UPDATE "EventRSVP" SET status = 'GOING' WHERE status = 'NOT_GOING';
-
--- Drop the old enum and recreate it
-DROP TYPE "RSVPStatus";
-
--- CreateEnum
-CREATE TYPE "RSVPStatus" AS ENUM ('GOING', 'PENDING');
+-- Add PENDING to RSVPStatus enum if it doesn't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_enum 
+        WHERE enumlabel = 'PENDING' 
+        AND enumtypid = (SELECT oid FROM pg_type WHERE typname = 'RSVPStatus')
+    ) THEN
+        ALTER TYPE "RSVPStatus" ADD VALUE 'PENDING';
+    END IF;
+END $$;
 
 -- Update the default value for the EventRSVP table
 ALTER TABLE "EventRSVP" ALTER COLUMN "status" SET DEFAULT 'PENDING'; 
