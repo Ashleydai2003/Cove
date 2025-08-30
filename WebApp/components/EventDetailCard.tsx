@@ -19,9 +19,10 @@ import RSVPSuccessModal from './RSVPSuccessModal';
 
 interface EventDetailCardProps {
   event: Event;
+  onEventUpdate?: (updatedEvent: Event) => void;
 }
 
-export function EventDetailCard({ event }: EventDetailCardProps) {
+export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showGuestList, setShowGuestList] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -102,6 +103,10 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
         try {
           const eventData = await apiClient.fetchEvent(event.id);
           setRsvpStatus(eventData.rsvpStatus ?? null);
+          // Update parent component with fresh event data
+          if (onEventUpdate) {
+            onEventUpdate(eventData);
+          }
         } catch (refreshError) {
           console.error('Error refreshing event data after RSVP:', refreshError);
         }
@@ -137,6 +142,10 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
         try {
           const eventData = await apiClient.fetchEvent(event.id);
           setRsvpStatus(eventData.rsvpStatus ?? null);
+          // Update parent component with fresh event data
+          if (onEventUpdate) {
+            onEventUpdate(eventData);
+          }
         } catch (refreshError) {
           console.error('Error refreshing event data after RSVP removal:', refreshError);
         }
@@ -160,6 +169,10 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
       // Refresh event data to get updated RSVP status
       const eventData = await apiClient.fetchEvent(event.id);
       setRsvpStatus(eventData.rsvpStatus ?? null);
+      // Update parent component with fresh event data
+      if (onEventUpdate) {
+        onEventUpdate(eventData);
+      }
     } catch (error) {
       console.error('Error refreshing after login:', error);
       // Fallback: update basic auth state
