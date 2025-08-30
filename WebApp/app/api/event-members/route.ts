@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get auth token from cookie
-    const authToken = request.cookies.get('auth-token')?.value;
+    const authToken = request.cookies.get('firebase-token')?.value;
 
     if (!authToken) {
       return NextResponse.json(

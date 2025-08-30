@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function GET(request: NextRequest) {
   try {
     // Get auth token from cookie
-    const authToken = request.cookies.get('auth-token')?.value;
+    const authToken = request.cookies.get('firebase-token')?.value;
 
     if (!authToken) {
       return NextResponse.json(
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
         { isAuthenticated: false },
         { status: 401 }
       );
-      response.cookies.delete('auth-token');
+              response.cookies.delete('firebase-token');
       return response;
     }
   } catch (error) {
