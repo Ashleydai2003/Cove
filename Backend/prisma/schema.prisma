@@ -1,98 +1,65 @@
-// /Backend/prisma/schema.prisma
-// This file contains the Prisma schema, learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Configure the Prisma Client generator
 generator client {
-  provider = "prisma-client-js"
-  // Generate TypeScript types
+  provider        = "prisma-client-js"
+  output          = "../node_modules/.prisma/client"
   previewFeatures = []
-  output = "../node_modules/.prisma/client"
-  binaryTargets = ["native", "rhel-openssl-1.0.x"]
+  binaryTargets   = ["native", "rhel-openssl-1.0.x"]
 }
 
-// Configure the database connection
 datasource db {
   provider = "postgresql"
-  // The connection URL will be provided via environment variable
-  url = env("DATABASE_URL")
+  url      = env("DATABASE_URL")
 }
 
-// TODO: for testing purposes
 model DummyTest {
   id String @id @default(cuid())
 }
 
-// Prisma Enum for RSVPs 
-enum RSVPStatus {
-  GOING    // Approved by host
-  PENDING  // Awaiting host approval
-}
-
-enum MemberRole {
-  MEMBER
-  ADMIN
-}
-
-// User model with Firebase authentication
-// authentication, verification, app status
 model User {
-  id              String      @id // Using Firebase UID as ID
-  name            String?
-  phone           String      @unique
-  onboarding      Boolean     @default(true)
-  verified        Boolean     @default(false)  // IMPORTANT: in MVP, only verified users can create Coves
-  fcmToken        String?     // For push notifications
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-
-  // Relations
-  profile         UserProfile?
-  profilePhotoID  String?     @unique
-  profilePhoto    UserImage?  @relation("ProfilePhoto", fields: [profilePhotoID], references: [id])
-  photos          UserImage[] @relation("UserPhotos")
-  createdCoves    Cove[]      @relation("CreatedCoves")
-  coveMemberships CoveMember[]
-  createdEvents   Event[]     @relation("CreatedEvents")
-  eventRSVPs      EventRSVP[]
-  createdPosts    Post[]      @relation("CreatedPosts")
-  postLikes       PostLike[]
-
-  // Friendship relations
-  friendships1   Friendship[] @relation("FriendshipUser1")
-  friendships2   Friendship[] @relation("FriendshipUser2")
-
-  // Friend requests sent and received
+  id                     String          @id
+  name                   String?
+  phone                  String          @unique
+  onboarding             Boolean         @default(true)
+  verified               Boolean         @default(false)
+  createdAt              DateTime        @default(now())
+  updatedAt              DateTime        @updatedAt
+  profilePhotoID         String?         @unique
+  fcmToken               String?
+  createdCoves           Cove[]          @relation("CreatedCoves")
+  coveMemberships        CoveMember[]
+  createdEvents          Event[]         @relation("CreatedEvents")
+  eventRSVPs             EventRSVP[]
   sentFriendRequests     FriendRequest[] @relation("SentRequests")
   receivedFriendRequests FriendRequest[] @relation("ReceivedRequests")
-  
-  // Cove invites sent
+  friendships1           Friendship[]    @relation("FriendshipUser1")
+  friendships2           Friendship[]    @relation("FriendshipUser2")
   sentInvites            Invite[]        @relation("SentInvites")
+  sentMessages           Message[]
+  messageReads           MessageRead[]
+  createdPosts           Post[]          @relation("CreatedPosts")
+  postLikes              PostLike[]
+  threadMemberships      ThreadMember[]
+  profilePhoto           UserImage?      @relation("ProfilePhoto", fields: [profilePhotoID], references: [id])
+  photos                 UserImage[]     @relation("UserPhotos")
+  profile                UserProfile?
+}
 
-  // Messaging relations
-  sentMessages     Message[]
-  threadMemberships ThreadMember[]
-  messageReads      MessageRead[]
-} 
-
-// UserProfile Model
-// Optional, user-controlled, descriptive
 model UserProfile {
-  id             String   @id @default(cuid())
-  user           User     @relation(fields: [userId], references: [id])
-  userId         String   @unique
+  id             String    @id @default(cuid())
+  userId         String    @unique
   age            Int?
-  birthdate       DateTime? 
+  birthdate      DateTime?
   interests      String[]
   latitude       Float?
   longitude      Float?
   almaMater      String?
-  gradYear       String?
   job            String?
   workLocation   String?
   relationStatus String?
   sexuality      String?
   bio            String?
-  gender         String? 
+  gender         String?
+  gradYear       String?
+  user           User      @relation(fields: [userId], references: [id])
 }
 
 model Friendship {
@@ -100,12 +67,11 @@ model Friendship {
   user1Id   String
   user2Id   String
   createdAt DateTime @default(now())
-
   user1     User     @relation("FriendshipUser1", fields: [user1Id], references: [id])
   user2     User     @relation("FriendshipUser2", fields: [user2Id], references: [id])
 
   @@unique([user1Id, user2Id])
-  @@index([user2Id, user1Id]) // For reverse lookups
+  @@index([user2Id, user1Id])
 }
 
 model FriendRequest {
@@ -113,90 +79,82 @@ model FriendRequest {
   fromUserId String
   toUserId   String
   createdAt  DateTime @default(now())
-
   fromUser   User     @relation("SentRequests", fields: [fromUserId], references: [id])
   toUser     User     @relation("ReceivedRequests", fields: [toUserId], references: [id])
 
   @@unique([fromUserId, toUserId])
 }
 
-// User Image model 
-// Document how to use the @relation somewhere 
 model UserImage {
-  id            String    @id @default(cuid())
-  user          User      @relation("UserPhotos", fields: [userId], references: [id])
-  userId        String
-  createdAt     DateTime  @default(now())
-  profileUser   User?     @relation("ProfilePhoto")
+  id          String   @id @default(cuid())
+  userId      String
+  createdAt   DateTime @default(now())
+  profileUser User?    @relation("ProfilePhoto")
+  user        User     @relation("UserPhotos", fields: [userId], references: [id])
 }
 
-// Cove model for groups
 model Cove {
-  id          String      @id @default(cuid())
-  name        String
-  description String?
-  location    String     // City name for now
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  creatorId   String      // ID of the user who created the cove
-  createdBy   User        @relation("CreatedCoves", fields: [creatorId], references: [id])
-  members     CoveMember[]
-  events      Event[]
-  invites     Invite[]
-  coverPhotoID String?    @unique
-  coverPhoto  CoveImage?  @relation("CoveCoverPhoto", fields: [coverPhotoID], references: [id])
-  posts       Post[]
+  id           String       @id @default(cuid())
+  name         String
+  description  String?
+  location     String
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  creatorId    String
+  coverPhotoID String?      @unique
+  coverPhoto   CoveImage?   @relation("CoveCoverPhoto", fields: [coverPhotoID], references: [id])
+  createdBy    User         @relation("CreatedCoves", fields: [creatorId], references: [id])
+  members      CoveMember[]
+  events       Event[]
+  invites      Invite[]
+  posts        Post[]
 }
 
-// Cove Member model for managing member permissions
 model CoveMember {
-  id        String     @id @default(cuid())
-  coveId    String
-  userId    String
-  role      MemberRole @default(MEMBER)
-  joinedAt  DateTime   @default(now())
-  cove      Cove       @relation(fields: [coveId], references: [id])
-  user      User       @relation(fields: [userId], references: [id])
+  id       String     @id @default(cuid())
+  coveId   String
+  userId   String
+  role     MemberRole @default(MEMBER)
+  joinedAt DateTime   @default(now())
+  cove     Cove       @relation(fields: [coveId], references: [id])
+  user     User       @relation(fields: [userId], references: [id])
 
   @@unique([coveId, userId])
 }
 
-// Event model for cove events
 model Event {
-  id          String      @id @default(cuid())
-  name        String
-  description String?
-  date        DateTime
-  location    String
-  memberCap   Int?        // Optional maximum number of attendees
-  ticketPrice Float?      // Optional ticket price in dollars
-  paymentHandle String?   // Optional payment handle (Venmo, etc.)
-  isPublic    Boolean     @default(false)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  coveId      String
-  cove        Cove        @relation(fields: [coveId], references: [id])
-  hostId      String      // ID of the user who is hosting the event
-  hostedBy    User        @relation("CreatedEvents", fields: [hostId], references: [id])
-  rsvps       EventRSVP[]
-  coverPhotoID String?    @unique
-  coverPhoto  EventImage? @relation("EventCoverPhoto", fields: [coverPhotoID], references: [id])
+  id            String      @id @default(cuid())
+  name          String
+  description   String?
+  date          DateTime
+  location      String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  coveId        String
+  hostId        String
+  coverPhotoID  String?     @unique
+  isPublic      Boolean     @default(false)
+  memberCap     Int?
+  ticketPrice   Float?
+  paymentHandle String?
+  cove          Cove        @relation(fields: [coveId], references: [id])
+  coverPhoto    EventImage? @relation("EventCoverPhoto", fields: [coverPhotoID], references: [id])
+  hostedBy      User        @relation("CreatedEvents", fields: [hostId], references: [id])
+  rsvps         EventRSVP[]
 }
 
-// Post model for text-only posts within coves
 model Post {
-  id          String      @id @default(cuid())
-  content     String      // The text content of the post Max length enforced at API layer
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  coveId      String
-  cove        Cove        @relation(fields: [coveId], references: [id])
-  authorId    String      // ID of the user who created the post
-  author      User        @relation("CreatedPosts", fields: [authorId], references: [id])
-  likes       PostLike[]
+  id        String     @id @default(cuid())
+  content   String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  coveId    String
+  authorId  String
+  author    User       @relation("CreatedPosts", fields: [authorId], references: [id])
+  cove      Cove       @relation(fields: [coveId], references: [id])
+  likes     PostLike[]
 }
 
-// Post Like model for tracking post likes
 model PostLike {
   id        String   @id @default(cuid())
   postId    String
@@ -210,131 +168,119 @@ model PostLike {
   @@index([userId])
 }
 
-// TODO: Change RSVP model to only have GOING and MAYBE 
-// Event RSVP model for tracking attendees
 model EventRSVP {
-  id        String   @id @default(cuid())
+  id        String     @id @default(cuid())
   eventId   String
   userId    String
-  status    RSVPStatus   @default(PENDING) // Can be "GOING" (approved), "PENDING" (awaiting approval)
-  createdAt DateTime @default(now())
-  event     Event    @relation(fields: [eventId], references: [id])
-  user      User     @relation(fields: [userId], references: [id])
+  status    RSVPStatus @default(PENDING)
+  createdAt DateTime   @default(now())
+  event     Event      @relation(fields: [eventId], references: [id])
+  user      User       @relation(fields: [userId], references: [id])
 
   @@unique([eventId, userId])
 }
 
-// Cove Image model for storing cove photos
 model CoveImage {
-  id            String    @id @default(cuid())
-  coveId        String
-  createdAt     DateTime  @default(now())
-  coverCove     Cove?     @relation("CoveCoverPhoto")
+  id        String   @id @default(cuid())
+  coveId    String
+  createdAt DateTime @default(now())
+  coverCove Cove?    @relation("CoveCoverPhoto")
 }
 
-// Event Image model for storing event photos
 model EventImage {
-  id            String    @id @default(cuid())
-  eventId       String
-  createdAt     DateTime  @default(now())
-  coverEvent    Event?    @relation("EventCoverPhoto")
+  id         String   @id @default(cuid())
+  eventId    String
+  createdAt  DateTime @default(now())
+  coverEvent Event?   @relation("EventCoverPhoto")
 }
 
-// Admin allowlist model (modifiable by super admin)
 model AdminPhoneAllowlist {
-  id          String    @id @default(cuid())
-  phoneNumber String    @unique
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  addedBy     String    // ID of the super admin who added this number
-  isActive    Boolean   @default(false) // Indicates whether this admin has completed their signup process
+  id          String   @id @default(cuid())
+  phoneNumber String   @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  addedBy     String
+  isActive    Boolean  @default(false)
   cove        String?
 
   @@map("admin_phone_allowlist")
 }
 
-// Cove invite model for phone-based invitations
 model Invite {
-  id          String    @id @default(cuid())
-  phoneNumber String    // Phone number of the person being invited
-  coveId      String    // ID of the cove they're being invited to
-  sentByUserId String   // ID of the user who sent the invite
-  message     String?   // Optional invitation message
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  isOpened    Boolean   @default(false) // Whether the invite has been viewed/opened
-  
-  // Relations
-  cove        Cove      @relation(fields: [coveId], references: [id])
-  sentBy      User      @relation("SentInvites", fields: [sentByUserId], references: [id])
+  id           String   @id @default(cuid())
+  phoneNumber  String
+  coveId       String
+  sentByUserId String
+  message      String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  isOpened     Boolean  @default(false)
+  cove         Cove     @relation(fields: [coveId], references: [id])
+  sentBy       User     @relation("SentInvites", fields: [sentByUserId], references: [id])
 
-  @@unique([phoneNumber, coveId]) // Prevent duplicate invites to same cove
-  @@index([phoneNumber]) // For efficient lookups by phone number
-  @@index([coveId]) // For efficient lookups by cove
+  @@unique([phoneNumber, coveId])
+  @@index([phoneNumber])
+  @@index([coveId])
 }
 
-// Messaging Models
-
-// Thread model for direct message conversations
 model Thread {
-  id          String          @id @default(cuid())
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  id            String         @id @default(cuid())
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   lastMessageId String?
-  lastMessage Message?        @relation("ThreadLastMessage", fields: [lastMessageId], references: [id])
-  
-  // Relations
-  messages    Message[]
-  members     ThreadMember[]
+  messages      Message[]
+  lastMessage   Message?       @relation("ThreadLastMessage", fields: [lastMessageId], references: [id])
+  members       ThreadMember[]
 }
 
-// ThreadMember model for managing thread participants
 model ThreadMember {
-  id        String   @id @default(cuid())
-  threadId  String
-  userId    String
-  joinedAt  DateTime @default(now())
-  
-  // Relations
-  thread    Thread   @relation(fields: [threadId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id       String   @id @default(cuid())
+  threadId String
+  userId   String
+  joinedAt DateTime @default(now())
+  thread   Thread   @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([threadId, userId])
   @@index([userId])
   @@index([threadId])
 }
 
-// Message model for storing individual messages
 model Message {
-  id        String   @id @default(cuid())
-  threadId  String
-  senderId  String
-  content   String
-  createdAt DateTime @default(now())
-  
-  // Relations
-  thread    Thread   @relation(fields: [threadId], references: [id], onDelete: Cascade)
-  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
-  reads     MessageRead[]
-  threadLastMessage Thread[] @relation("ThreadLastMessage")
+  id                String        @id @default(cuid())
+  threadId          String
+  senderId          String
+  content           String
+  createdAt         DateTime      @default(now())
+  sender            User          @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  thread            Thread        @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  reads             MessageRead[]
+  threadLastMessage Thread[]      @relation("ThreadLastMessage")
 
   @@index([threadId])
   @@index([senderId])
   @@index([createdAt])
 }
 
-// MessageRead model for tracking read receipts
 model MessageRead {
   id        String   @id @default(cuid())
   messageId String
   userId    String
   readAt    DateTime @default(now())
-  
-  // Relations
   message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([messageId, userId])
   @@index([messageId])
   @@index([userId])
+}
+
+enum RSVPStatus {
+  GOING
+  PENDING
+}
+
+enum MemberRole {
+  MEMBER
+  ADMIN
 }
