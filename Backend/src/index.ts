@@ -3,6 +3,7 @@
 // Entry point for the backend application Lambda handler
 
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
+import { addCorsHeaders, handleCorsPreflightRequest } from './utils/cors';
 import {
   handleProfile,
   handleEditProfile,
@@ -45,6 +46,9 @@ import {
   handleGetPost,
   handleTogglePostLike,
   handleGetFeed,
+  handleGetEventMembers,
+  handleGetPendingMembers,
+  handleApproveDeclineRSVP,
 } from './routes';
 
 export const handler = async (
@@ -53,14 +57,28 @@ export const handler = async (
 ): Promise<APIGatewayProxyResult> => {
   console.log('=== Lambda Function Start ===');
   console.log('Path:', event.path);
+  console.log('Method:', event.httpMethod);
+  console.log('Origin:', event.headers.origin || event.headers.Origin);
+  
+  // Get the request origin for CORS
+  const requestOrigin = event.headers.origin || event.headers.Origin;
+  
+  // Handle CORS preflight requests
+  if (event.httpMethod === 'OPTIONS') {
+    return handleCorsPreflightRequest(requestOrigin);
+  }
   
   try {
     // Route handling based on path
+    let response: APIGatewayProxyResult;
+    
     switch (event.path) {
       case '/profile':
-        return handleProfile(event);
+        response = await handleProfile(event);
+        break;
       case '/login':
-        return handleLogin(event);
+        response = await handleLogin(event);
+        break;
       case '/test-database':
         return handleTestDatabase(event);
       case '/test-s3':
@@ -98,7 +116,8 @@ export const handler = async (
       case '/delete-event':
         return handleDeleteEvent(event);
       case '/event':
-        return handleGetEvent(event);
+        response = await handleGetEvent(event);
+        break;
       case '/user-coves':
         return handleGetUserCoves(event);
       case '/update-event-rsvp':
@@ -142,6 +161,13 @@ export const handler = async (
       // Feed routes
       case '/feed':
         return handleGetFeed(event);
+      // Event member management routes  
+      case '/event-members':
+        return handleGetEventMembers(event);
+      case '/pending-members':
+        return handleGetPendingMembers(event);
+      case '/approve-decline-rsvp':
+        return handleApproveDeclineRSVP(event);
       default:
         // Handle common web standard files
         switch (event.path) {
@@ -176,24 +202,30 @@ export const handler = async (
           };
         }
         
-        return {
+        response = {
           statusCode: 404,
           body: JSON.stringify({ 
             message: 'Not Found',
             path: event.path
           })
         };
+        break;
     }
+    
+    // Add CORS headers to all responses
+    return addCorsHeaders(response, requestOrigin);
   } catch (error) {
     console.error('Error:', error instanceof Error ? error.message : 'Unknown error');
     console.error('Stack:', error instanceof Error ? error.stack : 'No stack trace');
     
-    return {
+    const errorResponse = {
       statusCode: 500,
       body: JSON.stringify({
         message: 'Error processing request',
         error: error instanceof Error ? error.message : 'Unknown error'
       })
     };
+    
+    return addCorsHeaders(errorResponse, requestOrigin);
   }
 };

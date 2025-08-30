@@ -220,6 +220,8 @@ struct UpcomingView: View {
                         description: event.description,
                         date: event.date,
                         location: event.location,
+                        memberCap: event.memberCap,
+                        ticketPrice: event.ticketPrice,
                         coveId: event.coveId,
                         coveName: event.coveName,
                         coveCoverPhoto: event.coveCoverPhoto,
@@ -227,6 +229,7 @@ struct UpcomingView: View {
                         hostName: event.hostName,
                         rsvpStatus: event.rsvpStatus,
                         goingCount: event.goingCount,
+                        pendingCount: event.pendingCount,
                         createdAt: event.createdAt,
                         coverPhoto: event.coverPhoto
                     )
@@ -504,6 +507,8 @@ private struct FeedItemsListView: View {
                         description: event.description,
                         date: event.date,
                         location: event.location,
+                        memberCap: event.memberCap,
+                        ticketPrice: event.ticketPrice,
                         coveId: event.coveId,
                         coveName: event.coveName,
                         coveCoverPhoto: event.coveCoverPhoto,
@@ -511,6 +516,7 @@ private struct FeedItemsListView: View {
                         hostName: event.hostName,
                         rsvpStatus: event.rsvpStatus,
                         goingCount: event.goingCount,
+                        pendingCount: event.pendingCount,
                         createdAt: event.createdAt,
                         coverPhoto: event.coverPhoto
                     )

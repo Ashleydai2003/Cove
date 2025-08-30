@@ -30,10 +30,18 @@ struct CoveBannerView: View {
                     showInvites = true
                     onInbox?()
                 }) {
-                    Image(systemName: "envelope")
-                        .resizable()
-                        .frame(width: 28, height: 22)
-                        .foregroundColor(Colors.primaryDark)
+                    ZStack(alignment: .topTrailing) {
+                        Image(systemName: "envelope")
+                            .resizable()
+                            .frame(width: 28, height: 22)
+                            .foregroundColor(Colors.primaryDark)
+                        if appController.inboxViewModel.hasUnopenedInvites {
+                            Circle()
+                                .fill(Color.red)
+                                .frame(width: 8, height: 8)
+                                .offset(x: 6, y: -6)
+                        }
+                    }
                 }
                 .buttonStyle(PlainButtonStyle())
             }
@@ -51,4 +59,5 @@ struct CoveBannerView: View {
 
 #Preview {
     CoveBannerView()
+        .environmentObject(AppController.shared)
 }

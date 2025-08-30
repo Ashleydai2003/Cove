@@ -150,12 +150,12 @@ class Onboarding {
     }
 
     // MARK: - Validation
-    // Updated to reflect current onboarding requirements
+    // Updated to reflect new backend requirements
     static func isOnboardingComplete() -> Bool {
         // Core required fields: name, birthdate, university, city
         // Optional fields: profilePic, hobbies (archived)
         
-        let hasName = userName != nil
+        let hasName = userName != nil && !userName!.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         let hasBirthdate = userBirthdate != nil
         let hasUniversity = userAlmaMater != nil && !userAlmaMater!.isEmpty
         let hasCity = userCity != nil && !userCity!.isEmpty
@@ -167,8 +167,8 @@ class Onboarding {
         if !hasBirthdate {
             Log.error("Onboarding incomplete: Missing birthdate")
         }
-        if !hasUniversity {
-            Log.error("Onboarding incomplete: Missing university")
+        if !hasAlmaMater {
+            Log.error("Onboarding incomplete: Missing almaMater")
         }
         if !hasCity {
             Log.error("Onboarding incomplete: Missing city")
@@ -278,12 +278,22 @@ class Onboarding {
     }
 
     private static func makeOnboardingCompleteRequest(completion: @escaping (Bool) -> Void) {
-        // Format date to ISO 8601
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd"
-        let formattedDate = userBirthdate.map { dateFormatter.string(from: $0) } ?? ""
+        // Validate required fields before making the request
+        guard let name = userName, !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              let birthdate = userBirthdate,
+              let almaMater = userAlmaMater, !almaMater.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              let gradYear = userGradYear, !gradYear.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            Log.error("Missing required fields for onboarding")
+            completion(false)
+            return
+        }
 
-        // Create request parameters with current onboarding data
+        // Format date to ISO 8601
+        let dateFormatter = ISO8601DateFormatter()
+        dateFormatter.formatOptions = [.withFullDate]
+        let formattedDate = dateFormatter.string(from: birthdate)
+
+        // Create request parameters with mandatory fields first
         var parameters: [String: Any] = [
             "name": userName ?? "",
             "birthdate": formattedDate
@@ -299,12 +309,13 @@ class Onboarding {
             parameters["graduationYear"] = graduationYear
         }
 
-        if let gradYear = userGradYear, !gradYear.isEmpty {
-            parameters["gradYear"] = gradYear
+        // Add optional fields
+        if !userHobbies.isEmpty {
+            parameters["hobbies"] = Array(userHobbies)
         }
 
-        if let city = userCity, !city.isEmpty {
-            parameters["city"] = city
+        if let city = userCity, !city.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            parameters["city"] = city.trimmingCharacters(in: .whitespacesAndNewlines)
         }
 
         NetworkManager.shared.post(

@@ -11,6 +11,9 @@ Takes Data Parameters:
 * description: String (optional)
 * date: ISO 8601 string (required)
 * location: String (required)
+* memberCap: Integer (optional) - Maximum number of attendees
+* ticketPrice: Float (optional) - Ticket price in dollars
+* paymentHandle: String (optional) - Payment handle (Venmo username, etc.) - Available to all authenticated users
 * coverPhoto: String (optional, base64 encoded)
 * coveId: String (required)
 
@@ -22,6 +25,9 @@ Returns:
   * description: String
   * date: String
   * location: String
+  * memberCap: Integer | null
+  * ticketPrice: Float | null
+  * paymentHandle: String | null (available to all authenticated users)
   * coveId: String
   * createdAt: DateTime
 }
@@ -157,18 +163,20 @@ Returns:
 Completes user onboarding by setting up their profile.
 
 Takes Data Parameters: 
-* name: String
-* birthdate: ISO 8601 string
-* hobbies: Array(userHobbies)
-* bio: String
+* name: String (required)
+* birthdate: ISO 8601 string (required)
+* almaMater: String (required)
+* gradYear: String (required)
+* hobbies: Array(userHobbies) (optional)
+* bio: String (optional)
 * latitude: Double (optional - will be geocoded from city if not provided)
 * longitude: Double (optional - will be geocoded from city if not provided)
 * city: String (optional - will be converted to coordinates if provided)
-* almaMater: String
-* job: String
-* workLocation: String
-* relationStatus: String
-* sexuality: String
+* job: String (optional)
+* workLocation: String (optional)
+* relationStatus: String (optional)
+* sexuality: String (optional)
+* gender: String (optional)
 
 Returns: 
 * message: string
@@ -271,17 +279,24 @@ Updates a user's RSVP status for an event. User must be a member of the event's 
 
 Takes Data Parameters:
 * eventId: String (required) - ID of the event to RSVP to
-* status: String (required) - One of: "GOING", "MAYBE", "NOT_GOING"
+* status: String (required) - One of: "PENDING", "NOT_GOING"
+
+**Note**: When users RSVP, they are automatically set to "PENDING" status and must await host approval to become "GOING". **Exception**: Event hosts can automatically approve themselves and will receive "GOING" status immediately when they RSVP.
+
+Behavior:
+* When status = "NOT_GOING": the user's RSVP entry is deleted from the database
+* When status = "PENDING": creates or updates user's RSVP to pending approval status
+* **Host Auto-Approval**: If the user is the event host, their status is automatically set to "GOING" instead of "PENDING"
 
 Returns:
-* message: String
+* message: String - "RSVP removed successfully" when status is "NOT_GOING"; otherwise "RSVP status updated successfully"
 * rsvp: {
   * id: String
   * status: String
   * eventId: String
   * userId: String
   * createdAt: DateTime
-}
+} | null - Will be null when status is "NOT_GOING"
 
 ### `/join-cove`
 
@@ -470,40 +485,56 @@ Returns:
 
 ### `/cove-events`
 
-Retrieves events for a specific cove with pagination. User must be a member of the cove.
+Retrieves events for a specific cove with pagination. Authentication is optional and each event item is returned in limited or enriched form depending on the caller's relationship to that event.
 
 Takes Query String Parameters:
 * coveId: String (required)
 * cursor: String (optional, for pagination)
 * limit: Number (optional, defaults to 10, max 50)
 
+Behavior:
+* If unauthenticated: returns only the first 5 limited events (no pagination object returned)
+
 Returns:
-* events: Array<{
-  * id: String
-  * name: String
-  * description: String | null
-  * date: String
-  * location: String
-  * coveId: String
-  * coveName: String
-  * coveCoverPhoto: {
-    * id: String
-    * url: String
-  } | null
-  * hostId: String
-  * hostName: String
-  * rsvpStatus: "GOING" | "MAYBE" | "NOT_GOING" | null
-  * goingCount: Number - Number of users who RSVP'd "GOING"
-  * createdAt: DateTime
-  * coverPhoto: {
-    * id: String
-    * url: String
-  } | null
-}>
+* events: Array of items where each item is either:
+  * Limited (unauthenticated or authenticated without RSVP/host for that event):
+    * {
+      * id: String
+      * name: String
+      * description: String | null
+      * date: String
+      * coveCoverPhoto: { id: String, url: String } | null
+      * hostName: String
+      * coverPhoto: { id: String, url: String } | null
+      * rsvpStatus: null (included only when caller is authenticated)
+    }
+  * Enriched (authenticated and either host or has RSVP for that event):
+    * {
+      * id: String
+      * name: String
+      * description: String | null
+      * date: String
+      * location: String
+      * memberCap: Integer | null
+      * ticketPrice: Float | null
+      * coveId: String
+      * coveName: String
+      * coveCoverPhoto: { id: String, url: String } | null
+      * hostId: String
+      * hostName: String
+      * rsvpStatus: "GOING" | "MAYBE" | "NOT_GOING"
+      * goingCount: Number
+      * createdAt: DateTime
+      * coverPhoto: { id: String, url: String } | null
+    }
 * pagination: {
   * hasMore: Boolean
   * nextCursor: String | null
-}
+} (present only when authenticated; omitted when unauthenticated)
+
+Caching:
+* If any item is enriched: `Cache-Control: private, no-store`, `Vary: Authorization, Cookie`
+* If all items are limited: `Cache-Control: public, max-age=60`
 
 ### `/upcoming-events`
 
@@ -520,6 +551,8 @@ Returns:
   * description: String | null
   * date: String
   * location: String
+  * memberCap: Integer | null
+  * ticketPrice: Float | null
   * coveId: String
   * coveName: String
   * coveCoverPhoto: {
@@ -556,6 +589,8 @@ Returns:
   * description: String | null
   * date: String
   * location: String
+  * memberCap: Integer | null
+  * ticketPrice: Float | null
   * coveId: String
   * coveName: String
   * coveCoverPhoto: {
@@ -707,46 +742,85 @@ Returns:
 
 ### `/event`
 
-Retrieves detailed information about a specific event. User must be a member of the event's cove.
+Retrieves detailed information about a specific event. Authentication is optional and the response varies based on the caller's relationship to the event.
 
 Takes Query String Parameters:
 * eventId: String (required) - ID of the event to retrieve
 
 Returns:
-* event: {
-  * id: String
-  * name: String
-  * description: String | null
-  * date: String
-  * location: String
-  * coveId: String
-  * host: {
+* When unauthenticated (or authenticated but not host and no GOING RSVP), returns LIMITED details:
+  * event: {
     * id: String
     * name: String
-  }
-  * cove: {
-    * id: String
-    * name: String
+    * description: String | null
+    * date: String
+    * memberCap: Integer | null
+    * ticketPrice: Float | null
+    * host: {
+      * name: String
+    }
+    * cove: {
+      * name: String
+      * coverPhoto: {
+        * id: String
+        * url: String
+      } | null
+    }
+    * goingCount: Integer - Number of users who RSVP'd "GOING"
     * coverPhoto: {
       * id: String
       * url: String
     } | null
   }
-  * rsvpStatus: "GOING" | "MAYBE" | "NOT_GOING" | null
-  * rsvps: Array<{
+  * Caching: `Cache-Control: private, no-store`
+* When authenticated (but not host and has no GOING RSVP), the LIMITED response also includes:
+  * isHost: Boolean (false)
+  * rsvpStatus: "GOING" | "PENDING" | "NOT_GOING" | null (null when no RSVP)
+  * Caching: `Cache-Control: private, no-store`
+* When authenticated and either the user is the host OR has GOING RSVP status, FULL details are returned (unchanged shape but attendee list is truncated to first 5):
+  * event: {
     * id: String
-    * status: "GOING" | "MAYBE" | "NOT_GOING"
-    * userId: String
-    * userName: String
-    * profilePhotoID: String | null
-    * createdAt: DateTime
-  }> - All RSVPs for this event
-  * coverPhoto: {
-    * id: String
-    * url: String
-  } | null
-  * isHost: Boolean - Indicates whether the current user is the host of this event
-}
+    * name: String
+    * description: String | null
+    * date: String
+    * location: String
+    * memberCap: Integer | null
+    * ticketPrice: Float | null
+    * coveId: String
+    * host: {
+      * id: String
+      * name: String
+    }
+    * cove: {
+      * id: String
+      * name: String
+      * coverPhoto: {
+        * id: String
+        * url: String
+      } | null
+    }
+    * rsvpStatus: "GOING" | "MAYBE" | "NOT_GOING" | null
+    * goingCount: Integer - Number of users who RSVP'd "GOING"
+    * rsvps (first 10 only): Array<{
+      * id: String
+      * status: "GOING" | "MAYBE" | "NOT_GOING"
+      * userId: String
+      * userName: String
+      * profilePhotoUrl: String | null
+      * createdAt: DateTime
+    }>
+    * coverPhoto: {
+      * id: String
+      * url: String
+    } | null
+    * isHost: Boolean - Indicates whether the current user is the host of this event
+  }
+  * Caching: `Cache-Control: private, no-store`, `Vary: Authorization, Cookie`
+
+Notes:
+- Attendee list hygiene: attendee list is limited to the first 10 RSVPs by most recent.
+- Over-fetch prevention: sensitive relations (full RSVP graph) are only fetched when the user is entitled to full details.
+- Privacy: Location and guest list (rsvps) are only provided to event hosts or users who have GOING RSVP status.
 
 ### `/invites`
 
@@ -862,6 +936,8 @@ Returns:
     * description: String | null
     * date: String
     * location: String
+    * memberCap: Integer | null
+    * ticketPrice: Float | null
     * coveId: String
     * coveName: String
     * coveCoverPhoto: {
@@ -898,5 +974,104 @@ Returns:
 
 Examples:
 * `GET /feed?types=event` - Events only
-* `GET /feed?types=post` - Posts only  
-* `GET /feed?types=event,post` - Both events and posts (default)
+* `GET /feed?types=post`
+
+---
+
+## Event Member Management
+
+### `GET /event-members`
+
+Retrieves paginated list of approved event members (GOING status). User must be authenticated and either be the event host or have GOING status to access this endpoint.
+
+Query Parameters:
+* eventId: String (required) - Event ID
+* cursor: String (optional) - Pagination cursor
+* limit: Integer (optional) - Max items per page (default: 20, max: 50)
+
+Returns:
+* members: Array of {
+  * id: String - RSVP ID
+  * userId: String - User ID
+  * userName: String - User name
+  * profilePhotoUrl: String | null - Profile photo URL
+  * joinedAt: String - ISO 8601 timestamp when approved
+}
+* hasMore: Boolean - Whether there are more members
+* nextCursor: String | null - Cursor for next page
+
+Caching: `Cache-Control: private, no-store`
+
+### `GET /pending-members`
+
+Retrieves paginated list of pending event members (PENDING status) - **HOST ONLY**. User must be authenticated and be the event host.
+
+Query Parameters:
+* eventId: String (required) - Event ID
+* cursor: String (optional) - Pagination cursor
+* limit: Integer (optional) - Max items per page (default: 20, max: 50)
+
+Returns:
+* pendingMembers: Array of {
+  * id: String - RSVP ID
+  * userId: String - User ID
+  * userName: String - User name
+  * profilePhotoUrl: String | null - Profile photo URL
+  * requestedAt: String - ISO 8601 timestamp when RSVP was submitted
+}
+* hasMore: Boolean - Whether there are more pending members
+* nextCursor: String | null - Cursor for next page
+
+Caching: `Cache-Control: private, no-store`
+
+### `POST /approve-decline-rsvp`
+
+Approve or decline a pending RSVP - **HOST ONLY**. User must be authenticated and be the event host.
+
+Takes Data Parameters:
+* rsvpId: String (required) - RSVP ID to approve/decline
+* action: String (required) - Either "approve" or "decline"
+
+Actions:
+* "approve" - Changes RSVP status from PENDING to GOING
+* "decline" - Deletes the RSVP record entirely
+
+Returns:
+* message: String - Success message
+* action: String - The action performed
+* rsvpId: String - The RSVP ID
+
+Sends push notification to the user about the decision.
+
+---
+
+## RSVP Status System
+
+The RSVP system uses an approval-based workflow:
+
+### RSVP Statuses:
+* **GOING** - User is approved to attend (has full access to event details)
+* **PENDING** - User has requested to attend, awaiting host approval (limited access)
+
+### RSVP Flow:
+1. User clicks "RSVP" → Status becomes `PENDING`
+2. Host sees pending request in special interface
+3. Host can "approve" → Status becomes `GOING` (user gains full access)
+4. Host can "decline" → RSVP deleted (user loses access)
+
+### Privacy Model:
+* **Limited Response** (unauthenticated or non-GOING status): No location, no guest list
+* **Full Response** (host OR GOING status): Includes location, guest list, pending counts
+* **Host Privileges**: Hosts always get full access to their events (location, guest list, management) regardless of their RSVP status
+
+### Counts:
+* `goingCount` - Number of approved attendees (GOING status)  
+* `pendingCount` - Number of pending approvals (PENDING status)
+
+### Host Behavior:
+* **Event Management**: Hosts can always access `/pending-members`, `/event-members`, and `/approve-decline-rsvp` regardless of their RSVP status
+* **Event Details**: Hosts always see location and guest list (full access regardless of RSVP status)
+* **RSVP Auto-Approval**: When hosts RSVP to their own events, they are automatically approved to GOING status (no pending approval needed)
+* **RSVP Flexibility**: Hosts can RSVP as NOT_GOING and still have full access to manage and view their event
+
+Users with GOING status OR event hosts can see full event details including location and guest lists.
