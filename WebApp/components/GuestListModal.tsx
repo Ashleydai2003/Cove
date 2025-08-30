@@ -58,7 +58,7 @@ export default function GuestListModal({ isOpen, onClose, eventId }: GuestListMo
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-hidden">
+      <div className="bg-white rounded-2xl w-full max-w-lg h-[400px] sm:h-[450px] md:h-[500px] lg:h-[550px] overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-6">
           <div className="flex-1"></div>
@@ -74,7 +74,7 @@ export default function GuestListModal({ isOpen, onClose, eventId }: GuestListMo
         </div>
 
         {/* Content */}
-        <div className="px-6 pb-6 overflow-y-auto max-h-[calc(90vh-80px)]">
+        <div className="px-6 pb-6 overflow-y-auto h-[280px] sm:h-[330px] md:h-[380px] lg:h-[430px]">
           {loading && (
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#5E1C1D] mx-auto mb-4"></div>
