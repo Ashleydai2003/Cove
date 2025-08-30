@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
     );
 
     // Clear the auth token cookie
-    response.cookies.delete('auth-token');
+    response.cookies.delete('firebase-token');
 
     return response;
   } catch (error) {

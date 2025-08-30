@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(request: NextRequest) {
   try {
     const { eventId, status } = await request.json();
+    console.log('RSVP API called with:', { eventId, status });
 
     if (!eventId || !status) {
       return NextResponse.json(
@@ -12,9 +13,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Get auth token from cookie
-    const authToken = request.cookies.get('auth-token')?.value;
+    const authToken = request.cookies.get('firebase-token')?.value;
+    console.log('Auth token present:', !!authToken);
 
     if (!authToken) {
+      console.log('No auth token found in cookies');
       return NextResponse.json(
         { message: 'Authentication required' },
         { status: 401 }
