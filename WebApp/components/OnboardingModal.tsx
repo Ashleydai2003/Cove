@@ -56,7 +56,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
           }
           
           const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-            'size': 'invisible',
+            'size': 'normal',
             'callback': () => {
               console.log('reCAPTCHA callback executed');
               setRecaptchaCompleted(true);
@@ -97,12 +97,6 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
           recaptchaVerifier.clear();
           setRecaptchaVerifier(null);
           setRecaptchaCompleted(false);
-          
-          // Remove the reCAPTCHA container to prevent errors
-          const container = document.getElementById('recaptcha-container');
-          if (container) {
-            container.innerHTML = '';
-          }
         } catch (error) {
           console.log('Error clearing reCAPTCHA:', error);
         }
@@ -122,7 +116,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
         console.log('Creating reCAPTCHA verifier on-demand...');
         try {
           verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-            'size': 'invisible',
+            'size': 'normal',
             'callback': () => {
               console.log('reCAPTCHA callback executed');
               setRecaptchaCompleted(true);
@@ -162,7 +156,6 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
       // Send OTP using Firebase
       const confirmationResult = await signInWithPhoneNumber(auth, formattedPhone, verifier);
       setVerificationId(confirmationResult.verificationId);
-      setRecaptchaCompleted(true); // Hide reCAPTCHA after successful phone verification
       setStep('otp');
     } catch (err: any) {
       console.error('Firebase phone auth error:', err);
@@ -343,7 +336,11 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
               </button>
               <button
                 type="button"
-                onClick={() => setStep('phone')}
+                onClick={() => {
+                  setStep('phone');
+                  setRecaptchaCompleted(false);
+                  setRecaptchaVerifier(null);
+                }}
                 className="w-full text-[#5E1C1D] hover:text-[#4A1718] text-sm"
               >
                 back to phone number
@@ -409,7 +406,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
         </div>
         
         {/* reCAPTCHA container */}
-        {!recaptchaCompleted && (
+        {step === 'phone' && !recaptchaCompleted && (
           <div id="recaptcha-container" className="flex justify-center mt-4 p-2 transform scale-90"></div>
         )}
       </div>
