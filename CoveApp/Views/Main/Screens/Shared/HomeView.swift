@@ -12,8 +12,8 @@ let tabIconSize: CGFloat = 10
 // MARK: - Image Extension for Tab Bar Icons
 extension Image {
     func tabBarIcon(isSelected: Bool = false, isMiddleButton: Bool = false) -> some View {
-        let baseSize: CGFloat = isMiddleButton ? 45 : 40
-        let selectedSize: CGFloat = isMiddleButton ? 48 : 43
+        let baseSize: CGFloat = isMiddleButton ? 32 : 28
+        let selectedSize: CGFloat = isMiddleButton ? 34 : 30
 
         return self
             .resizable()
@@ -38,37 +38,49 @@ struct TabBarView: View {
                 Image(selectedTab == 1 ? "home_selected" : "home_unselected")
                     .tabBarIcon(isSelected: selectedTab == 1, isMiddleButton: false)
                     .animation(.none, value: selectedTab)
+                    .padding(.top, 2)
             }
-            .frame(maxWidth: 50, maxHeight: 50)
+            .frame(maxWidth: 36, maxHeight: 36)
 
             Spacer()
 
-            // Calendar Tab
+            // Chat Tab
             Button(action: { selectedTab = 2 }) {
-                Image(selectedTab == 2 ? "calendar_selected" : "calendar_unselected")
+                Image(selectedTab == 2 ? "chat_selected" : "chat_unselected")
                     .tabBarIcon(isSelected: selectedTab == 2, isMiddleButton: false)
                     .animation(.none, value: selectedTab)
+                    .padding(.top, 2)
             }
-            .frame(maxWidth: 50, maxHeight: 50)
+            .frame(maxWidth: 36, maxHeight: 36)
 
             Spacer()
 
             // Cove Tab
             Button(action: { selectedTab = 3 }) {
-                Image(selectedTab == 3 ? "cove_selected" : "cove_unselected")
-                    .tabBarIcon(isSelected: selectedTab == 3, isMiddleButton: true)
-                    .animation(.none, value: selectedTab)
+                ZStack(alignment: .topTrailing) {
+                    Image(selectedTab == 3 ? "cove_selected" : "cove_unselected")
+                        .tabBarIcon(isSelected: selectedTab == 3, isMiddleButton: true)
+                        .animation(.none, value: selectedTab)
+                        .padding(.top, 2)
+                    if appController.inboxViewModel.hasUnopenedInvites {
+                        Circle()
+                            .fill(Color.red)
+                            .frame(width: 10, height: 10)
+                            .offset(x: 6, y: -6)
+                    }
+                }
             }
-            .frame(maxWidth: 56, maxHeight: 56)
+            .frame(maxWidth: 40, maxHeight: 40)
 
             Spacer()
 
             // Friends Tab
             Button(action: { selectedTab = 4 }) {
                 ZStack(alignment: .topTrailing) {
-                    Image(selectedTab == 4 ? "friends_selected" : "friends_unselected")
+                    Image(selectedTab == 4 ? "calendar_selected" : "calendar_unselected")
                         .tabBarIcon(isSelected: selectedTab == 4, isMiddleButton: true)
                         .animation(.none, value: selectedTab)
+                        .padding(.top, 2)
                     if !appController.requestsViewModel.requests.isEmpty {
                         Circle()
                             .fill(Color.red)
@@ -77,55 +89,22 @@ struct TabBarView: View {
                     }
                 }
             }
-            .frame(maxWidth: 56, maxHeight: 56)
+            .frame(maxWidth: 40, maxHeight: 40)
 
             Spacer()
 
-            // Profile Tab with KFImage
+            // Profile Tab
             Button(action: { selectedTab = 5 }) {
-                if let profileImage = appController.profileModel.profileUIImage {
-                    Image(uiImage: profileImage)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(maxWidth: 40, maxHeight: 40)
-                        .clipShape(Circle())
-                        .overlay(
-                            Circle()
-                                .stroke(Color(hex: "F5F0E6"), lineWidth: selectedTab == 5 ? 3 : 0)
-                        )
-                        .animation(nil, value: selectedTab)
-                } else if appController.profileModel.isProfileImageLoading {
-                    // Show loading state with proper circular shape
-                    Circle()
-                        .fill(Color.gray.opacity(0.3))
-                        .frame(maxWidth: 40, maxHeight: 40)
-                        .overlay(
-                            ProgressView()
-                                .scaleEffect(0.7)
-                                .tint(Color.white)
-                        )
-                        .overlay(
-                            Circle()
-                                .stroke(Color(hex: "F5F0E6"), lineWidth: selectedTab == 5 ? 3 : 0)
-                        )
-                        .animation(.none, value: selectedTab)
-                } else {
-                    // Show default placeholder only if not loading
-                    Image("default_user_pfp")
-                        .tabBarIcon(isSelected: selectedTab == 5, isMiddleButton: false)
-                        .clipShape(Circle())
-                        .overlay(
-                            Circle()
-                                .stroke(Color(hex: "F5F0E6"), lineWidth: selectedTab == 5 ? 3 : 0)
-                        )
-                        .animation(.none, value: selectedTab)
-                }
+                Image(selectedTab == 5 ? "pfp_selected" : "pfp_unselected")
+                    .tabBarIcon(isSelected: selectedTab == 5, isMiddleButton: false)
+                    .animation(.none, value: selectedTab)
+                    .padding(.top, 2)
             }
-            .frame(maxWidth: 50, maxHeight: 50)
+            .frame(maxWidth: 36, maxHeight: 36)
 
             Spacer()
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, 6)
         .background(Color(hex: "5E1C1D"))
         .overlay(
             Rectangle()
@@ -142,21 +121,25 @@ struct HomeView: View {
     @EnvironmentObject var appController: AppController
 
     var body: some View {
-        VStack(spacing: 0) {
-            ZStack {
-                // Main content area - switch instead of TabView to prevent rebuilding
-                switch tabSelection {
-                case 1: HomeFeedView()
-                case 2: CalendarView()
-                case 3: CoveFeedView()
-                case 4: FriendsTabView()
-                case 5: ProfileView()
-                default: CalendarView()
-                }
-            }
+        ZStack {
+            Colors.background.ignoresSafeArea()
 
-            // Tab bar - now won't be recreated on tab switches
-            TabBarView(selectedTab: $tabSelection)
+            VStack(spacing: 0) {
+                ZStack {
+                    // Main content area - switch instead of TabView to prevent rebuilding
+                    switch tabSelection {
+                    case 1: UpcomingView()
+                    case 2: ChatView()
+                    case 3: CoveFeedView()
+                    case 4: CalendarView()
+                    case 5: ProfileView()
+                    default: ChatView()
+                    }
+                }
+
+                // Tab bar - now won't be recreated on tab switches
+                TabBarView(selectedTab: $tabSelection)
+            }
         }
         .onAppear(perform: {
             // Set default tab selection
@@ -197,8 +180,8 @@ struct HomeView: View {
         .navigationBarBackButtonHidden()
         .onReceive(NotificationCenter.default.publisher(for: .navigateToEvent)) { note in
             if let eventId = note.userInfo?["eventId"] as? String {
-                // Route to an event: pick Calendar tab (2) which knows how to navigate to eventId
-                tabSelection = 2
+                // Route to an event: pick Calendar tab (4) which knows how to navigate to eventId
+                tabSelection = 4
                 // Push by setting NavigationStack value via Notification; here we rely on NavigationLink(value:)
                 // A minimal approach: store a deep-link on AppController and let the CalendarView pick it up.
                 AppController.shared.calendarFeed.navigateToEventId = eventId
@@ -217,10 +200,37 @@ struct HomeView: View {
             tabSelection = 1
             AppController.shared.shouldAutoShowInbox = true
         }
+        .onReceive(NotificationCenter.default.publisher(for: .navigateToCalendar)) { _ in
+            tabSelection = 4
+        }
     }
 }
 
 #Preview {
     HomeView()
         .environmentObject(AppController.shared)
+}
+
+// MARK: - ChatView (placeholder for navbar tab)
+struct ChatView: View {
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Colors.background.ignoresSafeArea()
+
+                VStack(spacing: 12) {
+                    Spacer()
+                    Image(systemName: "bubble.left.and.bubble.right")
+                        .font(.system(size: 40))
+                        .foregroundColor(Colors.primaryDark)
+                    Text("chat is coming soon!")
+                        .font(.LibreBodoniSemiBold(size: 24))
+                        .foregroundColor(Colors.primaryDark)
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+        .navigationBarBackButtonHidden()
+    }
 }

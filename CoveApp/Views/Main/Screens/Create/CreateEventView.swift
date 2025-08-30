@@ -28,6 +28,13 @@ struct CreateEventView: View {
     @StateObject private var viewModel = NewEventModel()
 
     @FocusState private var isFocused: Bool
+    @FocusState private var isAddressFocused: Bool
+    @StateObject private var addressVM = LocationSearchViewModel()
+    @State private var showAddressInput = false
+    @State private var showAddressDropdown = false
+    @State private var searchAddress: String = ""
+    private enum VisibilityOption: String, CaseIterable { case membersOnly, discoverable }
+    @State private var visibility: VisibilityOption = .membersOnly
 
     var onEventCreated: (() -> Void)? = nil
 
@@ -40,40 +47,49 @@ struct CreateEventView: View {
     // MARK: - Body
     var body: some View {
         ZStack {
-            Colors.faf8f4.ignoresSafeArea()
+            Colors.background.ignoresSafeArea()
 
             VStack {
-                // In-content Cancel aligned with other sections
-                HStack {
-                    Button("cancel") { dismiss() }
-                        .font(.LibreBodoni(size: 16))
-                        .foregroundColor(Colors.primaryDark)
-                    Spacer()
-                }
-                .padding(.horizontal, 32)
-                .padding(.top, 8)
-
                 headerView
 
-                ScrollView(.vertical, showsIndicators: false) {
-                    VStack(spacing: 8) {
-                        eventNameSection
-                        eventDescriptionSection
-                        imagePickerSection
-                        dateTimeSection
-                        locationSection
-                        spotsSection
-                        ticketPriceSection
-                        paymentHandleSection
-                        // TODO: in the future we also want to have a privacy section
-                        createButtonView
+                ScrollViewReader { proxy in
+                    ScrollView(.vertical, showsIndicators: false) {
+                        VStack(spacing: 8) {
+                            eventNameSection
+                            descriptionSection
+                            imagePickerSection
+                            dateTimeSection
+                            locationSection
+                                .id("locationSection")
+                            spotsSection
+                            visibilitySection
+                            // TODO: in the future we also want to have a privacy section
+                            createButtonView
+                        }
+                        .padding(.horizontal, 32)
                     }
-                    .padding(.horizontal, 32)
+                    .onChange(of: showAddressInput) { _, newValue in
+                        if newValue {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    proxy.scrollTo("locationSection", anchor: .center)
+                                }
+                            }
+                        }
+                    }
+                    .onChange(of: isAddressFocused) { _, focused in
+                        if focused {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    proxy.scrollTo("locationSection", anchor: .center)
+                                }
+                            }
+                        }
+                    }
                 }
 
-                Spacer(minLength: 24)
             }
-            .padding(.top, 50)
+            .padding(.top, 0)
         }
         .sheet(isPresented: $viewModel.showImagePicker) {
             ImagePicker(image: $viewModel.eventImage)
@@ -93,12 +109,8 @@ struct CreateEventView: View {
                 .datePickerStyle(.wheel)
                 .presentationDetents([.height(200)])
         }
-        .toolbar {
-            ToolbarItem(placement: .keyboard) {
-                keyboardAccessoryView
-            }
-        }
         .navigationBarBackButtonHidden()
+        .toolbar(.hidden, for: .navigationBar)
         .onAppear {
             if let coveId = coveId {
                 viewModel.coveId = coveId
@@ -119,88 +131,88 @@ struct CreateEventView: View {
 extension CreateEventView {
     // MARK: - Header
     private var headerView: some View {
-        VStack {
-            HStack(alignment: .top) {
-                Spacer()
+        ZStack {
+            // Center title (CreateCove style)
+            Text("create an event 🎉")
+                .font(.LibreBodoni(size: 18))
+                .foregroundColor(Colors.primaryDark)
 
-                Image("confetti-dark")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 100, height: 100)
-                    .padding(.leading, -10)
-
+            // Leading action
+            HStack {
+                Button("cancel") { dismiss() }
+                    .font(.LibreBodoni(size: 16))
+                    .foregroundColor(Colors.primaryDark)
                 Spacer()
             }
-            .padding(.horizontal, 16)
-
-            Text("host an event")
-                .font(.Lugrasimo(size: 35))
-                .foregroundColor(Colors.primaryDark)
         }
+        .padding(.horizontal, 20)
+        .padding(.top, 8)
+        .padding(.bottom, 12)
     }
 
     // MARK: - Event Name Section
     private var eventNameSection: some View {
-        VStack {
-            ZStack(alignment: .center) {
+        ZStack(alignment: .leading) {
+            // Match CreateCoveView styling
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.white.opacity(0.6))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.black.opacity(0.12), lineWidth: 1)
+                )
+
+            ZStack(alignment: .leading) {
                 if viewModel.eventName.isEmpty {
-                    Text("untitled event")
-                        .foregroundColor(.white)
-                        .font(.LibreBodoniBold(size: 22))
+                    Text("name your event")
+                        .foregroundColor(Color.black.opacity(0.35))
+                        .font(.LibreBodoniBold(size: 20))
+                        .padding(.horizontal, 14)
                 }
 
-                TextField("untitled event", text: $viewModel.eventName)
-                    .foregroundStyle(Color.white)
-                    .font(.LibreBodoniBold(size: 22))
-                    .multilineTextAlignment(.center)
+                TextField("name your event", text: $viewModel.eventName)
+                    .foregroundStyle(Colors.primaryDark)
+                    .font(.LibreBodoniBold(size: 20))
+                    .multilineTextAlignment(.leading)
                     .autocorrectionDisabled()
+                    .textInputAutocapitalization(.never)
                     .focused($isFocused)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 12)
             }
-            .padding(16)
         }
-        .background(Colors.primaryDark)
-        .cornerRadius(10)
+        .padding(.top, 8)
     }
 
-    // MARK: - Event Description Section
-    private var eventDescriptionSection: some View {
-        VStack(alignment: .leading) {
-            HStack {
-                Image(systemName: "text.alignleft")
-                    .font(.system(size: 16))
-                    .foregroundStyle(Color.white)
-                    .padding(.leading, 16)
-                
-                Text("description")
-                    .foregroundStyle(Color.white)
-                    .font(.LibreBodoniBold(size: 16))
-                    .padding(.leading, 8)
-                
-                Spacer()
-            }
-            .padding(.top, 12)
-            
-            if #available(iOS 16.0, *) {
-                TextField("add a description (optional)", text: $viewModel.eventDescription, axis: .vertical)
-                    .foregroundStyle(Color.white)
-                    .font(.LibreBodoni(size: 14))
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 12)
-                    .lineLimit(3...6)
-                    .autocorrectionDisabled()
+    // MARK: - Description Section
+    private var descriptionSection: some View {
+        ZStack(alignment: .topLeading) {
+            // Match CreateCoveView description styling
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.white.opacity(0.6))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.black.opacity(0.12), lineWidth: 1)
+                )
+
+            ZStack(alignment: .topLeading) {
+                if viewModel.descriptionText.isEmpty {
+                    Text("describe your event...")
+                        .foregroundColor(Color.black.opacity(0.35))
+                        .font(.LibreBodoni(size: 16))
+                        .padding(.top, 12)
+                        .padding(.leading, 14)
+                }
+                TextEditor(text: $viewModel.descriptionText)
+                    .foregroundStyle(Colors.primaryDark)
+                    .font(.LibreBodoni(size: 16))
+                    .scrollContentBackground(.hidden)
+                    .frame(minHeight: 96, maxHeight: 140)
                     .focused($isFocused)
-            } else {
-                TextField("add a description (optional)", text: $viewModel.eventDescription)
-                    .foregroundStyle(Color.white)
-                    .font(.LibreBodoni(size: 14))
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 12)
-                    .autocorrectionDisabled()
-                    .focused($isFocused)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 8)
             }
         }
-        .background(Colors.primaryDark)
-        .cornerRadius(10)
+        .padding(.top, 8)
     }
 
 // MARK: - Image Picker Section
@@ -209,25 +221,31 @@ extension CreateEventView {
             viewModel.showImagePicker = true
         } label: {
             ZStack {
+                // Background like CreateCoveView
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.white.opacity(0.6))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color.black.opacity(0.12), lineWidth: 1)
+                    )
+
                 if viewModel.eventImage == nil {
-                    Text("image")
+                    Text("choose a photo")
                         .font(.LibreBodoni(size: 16))
                         .foregroundColor(Colors.primaryDark)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    Image(uiImage: viewModel.eventImage ?? UIImage())
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: AppConstants.SystemSize.width-64, height: 250)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color.black.opacity(0.12), lineWidth: 1)
+                        )
                 }
-
-                Image(uiImage: viewModel.eventImage ?? UIImage())
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: AppConstants.SystemSize.width-64, height: 250)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
             }
             .frame(height: 250)
-            .background(Color.white)
-            .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .stroke(Color.black, lineWidth: 1)
-            )
         }
         .padding(.top, 16)
     }
@@ -243,33 +261,107 @@ extension CreateEventView {
 
     // MARK: - Location Section
     private var locationSection: some View {
-        Button {
-            viewModel.showLocationPicker = true
-        } label: {
-            HStack {
-                Image(systemName: "location")
-                    .font(.system(size: 20))
-                    .foregroundStyle(Color.white)
-                    .padding(.leading, 24)
-
-                Text("location")
-                    .foregroundStyle(Color.white)
-                    .font(.LibreBodoniBold(size: 16))
-                    .padding(.leading, 16)
-
-                Spacer()
-
-                Text(viewModel.location ?? "")
-                    .foregroundStyle(Color.white)
-                    .font(.LibreBodoniBold(size: 16))
-                    .lineLimit(2)
-                    .padding(.trailing, 24)
-            }
-            .frame(maxWidth: .infinity, minHeight: 46, maxHeight: 46, alignment: .leading)
-            .background(
+        VStack(spacing: 8) {
+            ZStack(alignment: .leading) {
                 RoundedRectangle(cornerRadius: 10)
                     .fill(Colors.primaryDark)
-            )
+                    .frame(maxWidth: .infinity, minHeight: 46, maxHeight: .infinity, alignment: .leading)
+
+                HStack(spacing: 0) {
+                    Image(systemName: "location")
+                        .font(.system(size: 20))
+                        .foregroundStyle(Color.white)
+                        .padding(.leading, 24)
+
+                    if showAddressInput {
+                        ZStack(alignment: .leading) {
+                            if searchAddress.isEmpty {
+                                Text("address")
+                                    .foregroundColor(Color.white)
+                                    .font(.LibreBodoniBold(size: 16))
+                            }
+                            TextField("", text: $searchAddress)
+                                .font(.LibreBodoniBold(size: 16))
+                                .foregroundColor(Color.white)
+                                .keyboardType(.alphabet)
+                                .focused($isAddressFocused)
+                                .onChange(of: searchAddress) { oldValue, newValue in
+                                    let trimmed = newValue.trimmingCharacters(in: .whitespaces)
+                                    searchAddress = trimmed
+                                    addressVM.searchQuery = trimmed
+                                    showAddressDropdown = !trimmed.isEmpty
+                                }
+                        }
+                        .padding(.leading, 16)
+                        .padding(.trailing, 16)
+                    } else {
+                        HStack {
+                            Text(viewModel.location?.isEmpty == false ? (viewModel.location ?? "") : "address")
+                                .foregroundStyle(Color.white)
+                                .font(.LibreBodoniBold(size: 16))
+                                .lineLimit(1)
+                                .truncationMode(.tail)
+                                .padding(.leading, 16)
+                            Spacer()
+                        }
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            withAnimation(.easeInOut(duration: 0.18)) {
+                                showAddressInput = true
+                                searchAddress = viewModel.location ?? ""
+                            }
+                            isAddressFocused = true
+                            showAddressDropdown = !searchAddress.isEmpty
+                        }
+                        .padding(.trailing, 16)
+                    }
+
+                    Spacer()
+                }
+            }
+            .buttonStyle(.plain)
+
+            if showAddressDropdown {
+                let resultsCount = min(addressVM.searchResults.count, 5)
+                VStack(spacing: 0) {
+                    ForEach(0..<resultsCount, id: \.self) { idx in
+                        let result = addressVM.searchResults[idx]
+                        Button {
+                            addressVM.selectLocation(completion: result) { location in
+                                viewModel.location = location
+                                searchAddress = ""
+                                showAddressDropdown = false
+                                showAddressInput = false
+                                isAddressFocused = false
+                            }
+                        } label: {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(result.title)
+                                        .font(.LibreBodoni(size: 16))
+                                        .foregroundColor(Colors.background)
+                                    if !result.subtitle.isEmpty {
+                                        Text(result.subtitle)
+                                            .font(.LeagueSpartan(size: 14))
+                                            .foregroundColor(Colors.background.opacity(0.8))
+                                    }
+                                }
+                                Spacer()
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
+                        }
+                        .buttonStyle(.plain)
+                        .background(Colors.primaryDark)
+
+                        if idx < resultsCount - 1 {
+                            Divider().background(Colors.background.opacity(0.15))
+                        }
+                    }
+                }
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 4)
+            }
         }
     }
 
@@ -278,85 +370,51 @@ extension CreateEventView {
         numberOfSpotsView
     }
 
-    // MARK: - Ticket Price Section
-    private var ticketPriceSection: some View {
-        HStack {
-            Image(systemName: "dollarsign.circle")
-                .font(.system(size: 20))
-                .foregroundStyle(Color.white)
-                .padding(.leading, 15)
-
-            HStack(spacing: 4) {
-                Text("$")
-                    .foregroundStyle(Color.white)
-                    .font(.LibreBodoniBold(size: 16))
-                
-                ZStack(alignment: .leading) {
-                    if viewModel.ticketPriceString.isEmpty {
-                        Text("0.00")
-                            .foregroundColor(.gray)
-                            .font(.LibreBodoniBold(size: 16))
-                    }
-
-                    TextField("", text: $viewModel.ticketPriceString)
-                        .foregroundStyle(Color.white)
+    // MARK: - Visibility Section
+    private var visibilitySection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 0) {
+                Button(action: { visibility = .membersOnly }) {
+                    Text("Members only")
                         .font(.LibreBodoniBold(size: 16))
-                        .autocorrectionDisabled()
-                        .keyboardType(.decimalPad)
-                        .focused($isFocused)
-                        .onChange(of: viewModel.ticketPriceString) { oldValue, newValue in
-                            let validatedInput = viewModel.validateTicketPriceInput(newValue)
-                            if validatedInput != newValue {
-                                viewModel.ticketPriceString = validatedInput
-                            }
-                        }
+                        .foregroundStyle(visibility == .membersOnly ? Colors.background : Colors.primaryDark)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .padding(.horizontal, 14)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(visibility == .membersOnly ? Colors.primaryDark : Colors.background)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .stroke(Color.black.opacity(0.12), lineWidth: 1)
+                            )
+                    )
                 }
-                .frame(minWidth: 60)
-            }
-            .padding(.leading, 6)
-            
-            Spacer()
-        }
-        .frame(height: 44)
-        .background(
-            RoundedRectangle(cornerRadius: 10)
-                .fill(Colors.primaryDark)
-        )
-    }
 
-    // MARK: - Payment Handle Section
-    private var paymentHandleSection: some View {
-        Group {
-            if !viewModel.ticketPriceString.isEmpty {
-                HStack {
-                    Image(systemName: "person.crop.circle")
-                        .font(.system(size: 20))
-                        .foregroundStyle(Color.white)
-                        .padding(.leading, 15)
-
-                    ZStack(alignment: .leading) {
-                        if viewModel.paymentHandle.isEmpty {
-                            Text("venmo handle (optional)")
-                                .foregroundColor(.gray)
-                                .font(.LibreBodoniBold(size: 16))
-                                .padding(.leading, 6)
-                        }
-
-                        TextField("", text: $viewModel.paymentHandle)
-                            .foregroundStyle(Color.white)
-                            .font(.LibreBodoniBold(size: 16))
-                            .padding(.leading, 6)
-                            .padding(.trailing, 24)
-                            .autocorrectionDisabled()
-                            .focused($isFocused)
-                    }
+                Button(action: { visibility = .discoverable }) {
+                    Text("Discoverable")
+                        .font(.LibreBodoniBold(size: 16))
+                        .foregroundStyle(visibility == .discoverable ? Colors.background : Colors.primaryDark)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .padding(.horizontal, 14)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(visibility == .discoverable ? Colors.primaryDark : Colors.background)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .stroke(Color.black.opacity(0.12), lineWidth: 1)
+                            )
+                    )
                 }
-                .frame(height: 44)
-                .background(
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(Colors.primaryDark)
-                )
             }
+            // Description below segmented buttons
+            Text(visibility == .membersOnly ? "Only members of this Cove can RSVP." : "Visible in Discover, all Cove users can RSVP.")
+                .font(.LibreBodoni(size: 12))
+                .foregroundColor(.gray)
+                .padding(.top, 6)
         }
     }
 
@@ -378,20 +436,20 @@ extension CreateEventView {
         } label: {
             if viewModel.isSubmitting {
                 ProgressView()
-                    .tint(.black)
+                    .tint(Colors.background)
                     .frame(maxWidth: .infinity, minHeight: 60, maxHeight: 60, alignment: .center)
                     .background(
                         RoundedRectangle(cornerRadius: 14)
-                            .fill(Color.white)
+                            .fill(Colors.primaryDark)
                     )
             } else {
                 Text("create")
-                    .foregroundStyle(!viewModel.isFormValid ? Color.gray : Color.black)
+                    .foregroundStyle(!viewModel.isFormValid ? Color.gray : Colors.background)
                     .font(.LibreBodoniBold(size: 16))
                     .frame(maxWidth: .infinity, minHeight: 60, maxHeight: 60, alignment: .center)
                     .background(
                         RoundedRectangle(cornerRadius: 14)
-                            .fill(!viewModel.isFormValid ? Color.gray.opacity(0.3) : Color.white)
+                            .fill(!viewModel.isFormValid ? Color.gray.opacity(0.3) : Colors.primaryDark)
                     )
             }
         }
@@ -410,17 +468,12 @@ extension CreateEventView {
                     .foregroundStyle(Color.white)
                     .padding(.leading, 24)
 
-                Text("set a date")
+                Text(viewModel.eventDate.formatted(date: .abbreviated, time: .omitted))
                     .font(.LibreBodoniBold(size: 16))
                     .foregroundStyle(Color.white)
                     .padding(.leading, 16)
 
                 Spacer()
-
-                Text(viewModel.eventDate.formatted(date: .abbreviated, time: .omitted))
-                    .font(.LibreBodoniBold(size: 16))
-                    .foregroundStyle(Color.white)
-                    .padding(.trailing, 24)
             }
             .frame(height: 44)
             .background(
@@ -441,17 +494,12 @@ extension CreateEventView {
                     .foregroundStyle(Color.white)
                     .padding(.leading, 24)
 
-                Text("time")
+                Text(viewModel.eventTime.formatted(date: .omitted, time: .shortened))
                     .font(.LibreBodoniBold(size: 16))
                     .foregroundStyle(Color.white)
                     .padding(.leading, 16)
 
                 Spacer()
-
-                Text(viewModel.eventTime.formatted(date: .omitted, time: .shortened))
-                    .font(.LibreBodoniBold(size: 16))
-                    .foregroundStyle(Color.white)
-                    .padding(.trailing, 24)
             }
             .frame(height: 44)
             .background(
@@ -472,7 +520,7 @@ extension CreateEventView {
             ZStack(alignment: .leading) {
                 if viewModel.numberOfSpots.isEmpty {
                     Text("number of spots")
-                        .foregroundColor(.gray)
+                        .foregroundColor(.white)
                         .font(.LibreBodoniBold(size: 16))
                         .padding(.leading, 6)
                 }
@@ -485,10 +533,11 @@ extension CreateEventView {
                     .autocorrectionDisabled()
                     .keyboardType(.numberPad)
                     .focused($isFocused)
-                    .onChange(of: viewModel.numberOfSpots) { oldValue, newValue in
-                        let validatedInput = viewModel.validateNumberOfSpotsInput(newValue)
-                        if validatedInput != newValue {
-                            viewModel.numberOfSpots = validatedInput
+                    .onChange(of: viewModel.numberOfSpots) { _, newValue in
+                        // Allow only digits; keep blank allowed
+                        let filtered = newValue.filter { $0.isNumber }
+                        if filtered != newValue {
+                            viewModel.numberOfSpots = filtered
                         }
                     }
             }
@@ -500,18 +549,7 @@ extension CreateEventView {
         )
     }
 
-    // MARK: - Keyboard Accessory
-    private var keyboardAccessoryView: some View {
-        HStack {
-            Spacer()
-            Button("Done") {
-                isFocused = false
-            }
-            .padding(.trailing, 16)
-            .padding(.vertical, 8)
-        }
-        .background(Color(.systemGray6))
-    }
+    // Keyboard accessory removed for cleaner UI
 }
 
 #Preview {

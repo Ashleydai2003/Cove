@@ -5,17 +5,18 @@
 //  Created by Ananya Agarwal
 
 import SwiftUI
+import UIKit
 import Kingfisher
 
 /// CoveView: Displays the feed for a specific cove, including cove details and events.
 struct CoveView: View {
     enum Tab: Int, CaseIterable {
-        case events, members, posts
+        case events, posts, members
         var title: String {
             switch self {
             case .events: return "events"
-            case .members: return "members"
             case .posts: return "posts"
+            case .members: return "members"
             }
         }
     }
@@ -25,12 +26,15 @@ struct CoveView: View {
     @EnvironmentObject var appController: AppController
     @Environment(\.dismiss) private var dismiss
     @State private var selectedTab: Tab = .events
+    @GestureState private var isHorizontalSwiping: Bool = false
+    @State private var headerOpacity: CGFloat = 1.0
+    @State private var showSettingsMenu: Bool = false
 
     // TODO: admin can update cove cover photo
 
     var body: some View {
         ZStack {
-            Colors.faf8f4.ignoresSafeArea()
+            Colors.background.ignoresSafeArea()
 
             if viewModel.isLoading && viewModel.events.isEmpty {
                 VStack(spacing: 16) {
@@ -42,68 +46,137 @@ struct CoveView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let cove = viewModel.cove {
-                VStack(spacing: 0) {
-                    // Fixed header (stationary, long press to refresh cove details - 5 hour cache)
-                    CoveHeaderView(cove: cove,
-                                 onBackTapped: { dismiss() },
-                                 isRefreshing: viewModel.isRefreshingCoveDetails,
-                                 onRefresh: {
-                        await withCheckedContinuation { continuation in
-                            viewModel.refreshCoveDetails()
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: {
-                                continuation.resume()
-                            })
-                        }
-                    })
-                    .background(Colors.faf8f4)
+                ScrollViewReader { proxy in
+                    ScrollView(showsIndicators: false) {
+                        LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
+                            // Top anchor for programmatic scrolling
+                            Color.clear.frame(height: 0).id("topAnchor")
 
-                    // Top Tabs
-                    PillTabBar(
-                        titles: Tab.allCases.map { $0.title },
-                        selectedIndex: Binding(
-                            get: { selectedTab.rawValue },
-                            set: { selectedTab = Tab(rawValue: $0) ?? .events }
-                        )
-                    )
-                    .padding(16)
+                            // Fading header
+                            CoveInfoHeaderView(
+                                cove: cove,
+                                onBackTapped: { dismiss() },
+                                isRefreshing: viewModel.isRefreshingCoveDetails,
+                                onRefresh: {
+                                    await withCheckedContinuation { continuation in
+                                        viewModel.refreshCoveDetails()
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                            continuation.resume()
+                                        }
+                                    }
+                                },
+                                onSettingsTapped: {
+                                    withAnimation(.easeInOut(duration: 0.18)) {
+                                        showSettingsMenu.toggle()
+                                    }
+                                }
+                            )
+                            .zIndex(showSettingsMenu ? 20000 : 0)
+                            .opacity(headerOpacity)
+                            .animation(.easeInOut(duration: 0.18), value: headerOpacity)
+                            .background(
+                                GeometryReader { geo in
+                                    Color.clear
+                                        .preference(
+                                            key: CoveHeaderOffsetPreferenceKey.self,
+                                            value: CoveHeaderOffset(
+                                                height: geo.size.height,
+                                                minY: geo.frame(in: .named("coveScroll")).minY
+                                            )
+                                        )
+                                }
+                            )
 
-                    // Tab Content
-                    ZStack {
-                        switch selectedTab {
-                        case .events:
-                            CoveEventsView(viewModel: viewModel) {
-                                // Refreshes events only - header stays fixed
-                                await withCheckedContinuation { continuation in
-                                    viewModel.refreshEvents()
-                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: {
-                                        continuation.resume()
-                                    })
-                                }
-                            }
-                        case .members:
-                            CoveMembersView(viewModel: viewModel) {
-                                // Refreshes members data
-                                await withCheckedContinuation { continuation in
-                                    viewModel.refreshMembers()
-                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: {
-                                        continuation.resume()
-                                    })
-                                }
-                            }
-                        case .posts:
-                            CovePostsView(viewModel: viewModel) {
-                                // Refreshes posts only - header stays fixed
-                                await withCheckedContinuation { continuation in
-                                    viewModel.refreshPosts()
-                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: {
-                                        continuation.resume()
-                                    })
+                            // Pinned tabs
+                            Section(
+                                header:
+                                    ZStack(alignment: .bottom) {
+                                        Colors.background.ignoresSafeArea(edges: .top)
+                                        CoveDetailTabs(selected: Binding(
+                                            get: { selectedTab },
+                                            set: { selectedTab = $0 }
+                                        ))
+                                        .padding(.horizontal, 30)
+                                        .padding(.top, 20)
+                                    }
+                                    .zIndex(1000)
+                            ) {
+                                Group {
+                                    switch selectedTab {
+                                    case .events:
+                                        eventsContent
+                                            .padding(.horizontal, 24)
+                                    case .posts:
+                                        postsContent
+                                            .padding(.horizontal, 24)
+                                    case .members:
+                                        membersContent
+                                            .padding(.horizontal, 24)
+                                    }
                                 }
                             }
                         }
                     }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .coordinateSpace(name: "coveScroll")
+                    .onPreferenceChange(CoveHeaderOffsetPreferenceKey.self) { data in
+                        let progress = min(max(-data.minY / max(data.height, 1), 0), 1)
+                        headerOpacity = 1 - progress
+                    }
+                    .refreshable {
+                        await withCheckedContinuation { continuation in
+                            switch selectedTab {
+                            case .events:
+                                viewModel.refreshEvents()
+                            case .posts:
+                                viewModel.refreshPosts()
+                            case .members:
+                                viewModel.refreshMembers()
+                            }
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                continuation.resume()
+                            }
+                        }
+                    }
                 }
+                .contentShape(Rectangle())
+                .simultaneousGesture(
+                    DragGesture(minimumDistance: 16)
+                        .updating($isHorizontalSwiping) { value, state, _ in
+                            let dx = value.translation.width
+                            let dy = value.translation.height
+                            if abs(dx) > abs(dy) && abs(dx) > 10 { state = true }
+                        }
+                        .onEnded { value in
+                            let dx = value.translation.width
+                            let dy = value.translation.height
+                            guard abs(dx) > abs(dy), abs(dx) > 30 else { return }
+                            if dx < 0 {
+                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                                withAnimation(.easeInOut(duration: 0.22)) {
+                                    switch selectedTab {
+                                    case .events: selectedTab = .posts
+                                    case .posts: selectedTab = .members
+                                    case .members: break
+                                    }
+                                }
+                            } else {
+                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                                withAnimation(.easeInOut(duration: 0.22)) {
+                                    switch selectedTab {
+                                    case .events: break
+                                    case .posts: selectedTab = .events
+                                    case .members: selectedTab = .posts
+                                    }
+                                }
+                            }
+                        }
+                )
+                .overlay(
+                    Color.clear
+                        .ignoresSafeArea()
+                        .allowsHitTesting(isHorizontalSwiping)
+                )
+                .background(Colors.background)
             } else if let error = viewModel.errorMessage {
                 VStack(spacing: 16) {
                     Image(systemName: "exclamationmark.circle")
@@ -123,7 +196,7 @@ struct CoveView: View {
                 Spacer()
                 HStack {
                     Spacer()
-                    FloatingActionView(coveId: coveId, onEventCreated: {
+                    FloatingActionView(coveId: coveId, coveName: viewModel.cove?.name, onEventCreated: {
                         // Refresh both events and posts when something is created
                         viewModel.refreshEvents()
                         viewModel.refreshPosts()
@@ -131,6 +204,29 @@ struct CoveView: View {
                         .padding(.trailing, 24)
                         .padding(.bottom, 30)
                 }
+            }
+
+            // Opaque top-safe-area overlay to prevent content peeking during bounce
+            GeometryReader { proxy in
+                Colors.background
+                    .frame(height: proxy.safeAreaInsets.top)
+                    .ignoresSafeArea(edges: .top)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            }
+            .allowsHitTesting(false)
+        }
+        .overlay(alignment: .topTrailing) {
+            if showSettingsMenu {
+                SettingsDropdownMenu(isAdmin: viewModel.isCurrentUserAdmin) {
+                    withAnimation(.easeInOut(duration: 0.18)) {
+                        showSettingsMenu = false
+                    }
+                }
+                .frame(width: UIScreen.main.bounds.width * 0.65)
+                .padding(.trailing, 8)
+                .offset(y: 40)
+                .transition(.opacity.combined(with: .move(edge: .top)))
+                .zIndex(100000)
             }
         }
         .navigationBarBackButtonHidden(true)
@@ -154,6 +250,290 @@ struct CoveView: View {
         } message: {
             Text(viewModel.errorMessage ?? "")
         }
+    }
+}
+
+// MARK: - Cove Detail Tabs
+private struct CoveDetailTabs: View {
+    @Binding var selected: CoveView.Tab
+    @Namespace private var underlineNamespace
+
+    var body: some View {
+        HStack {
+            Button(action: {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                withAnimation(.easeInOut(duration: 0.22)) { selected = .events }
+            }) {
+                VStack(spacing: 6) {
+                    Text("events")
+                        .font(.LibreBodoni(size: 16))
+                        .foregroundStyle(Colors.primaryDark)
+                    Group {
+                        if selected == .events {
+                            Capsule()
+                                .fill(Colors.primaryDark)
+                                .matchedGeometryEffect(id: "coveDetailUnderline", in: underlineNamespace)
+                        } else { Color.clear }
+                    }
+                    .frame(height: 1)
+                }
+            }
+
+            Spacer()
+
+            Button(action: {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                withAnimation(.easeInOut(duration: 0.22)) { selected = .posts }
+            }) {
+                VStack(spacing: 6) {
+                    Text("posts")
+                        .font(.LibreBodoni(size: 16))
+                        .foregroundStyle(Colors.primaryDark)
+                    Group {
+                        if selected == .posts {
+                            Capsule()
+                                .fill(Colors.primaryDark)
+                                .matchedGeometryEffect(id: "coveDetailUnderline", in: underlineNamespace)
+                        } else { Color.clear }
+                    }
+                    .frame(height: 1)
+                }
+            }
+
+            Spacer()
+
+            Button(action: {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                withAnimation(.easeInOut(duration: 0.22)) { selected = .members }
+            }) {
+                VStack(spacing: 6) {
+                    Text("members")
+                        .font(.LibreBodoni(size: 16))
+                        .foregroundStyle(Colors.primaryDark)
+                    Group {
+                        if selected == .members {
+                            Capsule()
+                                .fill(Colors.primaryDark)
+                                .matchedGeometryEffect(id: "coveDetailUnderline", in: underlineNamespace)
+                        } else { Color.clear }
+                    }
+                    .frame(height: 1)
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Header Fade Tracking
+private struct CoveHeaderOffset: Equatable {
+    let height: CGFloat
+    let minY: CGFloat
+}
+
+private struct CoveHeaderOffsetPreferenceKey: PreferenceKey {
+    static var defaultValue: CoveHeaderOffset = CoveHeaderOffset(height: 1, minY: 0)
+    static func reduce(value: inout CoveHeaderOffset, nextValue: () -> CoveHeaderOffset) {
+        value = nextValue()
+    }
+}
+
+// MARK: - Inline Tab Contents
+private extension CoveView {
+    var eventsContent: some View {
+        VStack(spacing: 5) {
+            ForEach(sortedEvents, id: \.id) { event in
+                EventSummaryView(event: event, type: .cove, disableNavigation: isHorizontalSwiping)
+                    .onAppear {
+                        DispatchQueue.main.async {
+                            viewModel.loadMoreEventsIfNeeded(currentEvent: event)
+                        }
+                    }
+            }
+            if viewModel.isRefreshingEvents || (viewModel.isLoading && !viewModel.events.isEmpty) {
+                HStack { Spacer(); ProgressView().tint(Colors.primaryDark); Spacer() }
+                    .padding(.vertical, 16)
+            }
+            if viewModel.events.isEmpty && !viewModel.isLoading && !viewModel.isRefreshingEvents {
+                VStack(spacing: 16) {
+                    Image(systemName: "sparkles").font(.system(size: 40)).foregroundColor(Colors.primaryDark)
+                    Text("no events yet – be the first to host!")
+                        .font(.LibreBodoni(size: 16))
+                        .foregroundColor(Colors.primaryDark)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.top, 100)
+            }
+            Spacer(minLength: 20)
+        }
+    }
+
+    var postsContent: some View {
+        VStack(spacing: 5) {
+            ForEach(viewModel.posts, id: \.id) { post in
+                PostSummaryView(post: post, type: .cove, viewModel: viewModel)
+                    .onAppear {
+                        DispatchQueue.main.async {
+                            viewModel.loadMorePostsIfNeeded(currentPost: post)
+                        }
+                    }
+            }
+            if viewModel.isRefreshingPosts || (viewModel.isLoading && !viewModel.posts.isEmpty) {
+                HStack { Spacer(); ProgressView().tint(Colors.primaryDark); Spacer() }
+                    .padding(.vertical, 16)
+            }
+            if viewModel.posts.isEmpty && !viewModel.isLoading && !viewModel.isRefreshingPosts {
+                VStack(spacing: 16) {
+                    Image(systemName: "sparkles").font(.system(size: 40)).foregroundColor(Colors.primaryDark)
+                    Text("no posts yet – be the first to share!")
+                        .font(.LibreBodoni(size: 16))
+                        .foregroundColor(Colors.primaryDark)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.top, 100)
+            }
+            Spacer(minLength: 20)
+        }
+    }
+
+    var membersContent: some View {
+        VStack(spacing: 16) {
+            if let cove = viewModel.cove {
+                HStack {
+                    Text("\(cove.stats.memberCount) members")
+                        .foregroundStyle(Colors.primaryDark)
+                        .font(.LibreBodoniBold(size: 18))
+                    Spacer()
+                    if viewModel.isCurrentUserAdmin {
+                        Button(action: { /* open invites elsewhere in full view */ }) {
+                            Image(systemName: "plus.circle.fill")
+                                .font(.system(size: 24))
+                                .foregroundColor(Colors.primaryDark)
+                        }
+                    }
+                }
+                .padding(.top, 16)
+            }
+
+            LazyVStack(spacing: 12) {
+                ForEach(viewModel.members) { member in
+                    NavigationLink(destination: FriendProfileView(userId: member.id, initialPhotoUrl: member.profilePhotoUrl)) {
+                        MemberRowView(
+                            member: member,
+                            currentUserId: appController.profileModel.userId,
+                            friendsViewModel: appController.friendsViewModel,
+                            mutualsViewModel: appController.mutualsViewModel,
+                            requestsViewModel: appController.requestsViewModel,
+                            onMessage: { }
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(isHorizontalSwiping)
+                    .onAppear { viewModel.loadMoreMembersIfNeeded(currentMember: member) }
+                }
+            }
+
+            if viewModel.isRefreshingMembers {
+                HStack { Spacer(); ProgressView().tint(Colors.primaryDark); Spacer() }
+                    .padding(.vertical, 16)
+            }
+
+            if viewModel.members.isEmpty && !viewModel.isRefreshingMembers {
+                VStack(spacing: 16) {
+                    Image(systemName: "person.3").font(.system(size: 40)).foregroundColor(Colors.primaryDark)
+                    Text("no members found")
+                        .font(.LibreBodoni(size: 16))
+                        .foregroundColor(.gray)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.top, 100)
+            }
+            Spacer(minLength: 20)
+        }
+    }
+
+    var sortedEvents: [CalendarEvent] {
+        let now = Date()
+        var upcoming: [(Date, CalendarEvent)] = []
+        var past: [(Date, CalendarEvent)] = []
+        for ev in viewModel.events {
+            let d = ev.eventDate
+            if d >= now { upcoming.append((d, ev)) } else { past.append((d, ev)) }
+        }
+        upcoming.sort { $0.0 < $1.0 }
+        past.sort { $0.0 > $1.0 }
+        return upcoming.map { $0.1 } + past.map { $0.1 }
+    }
+}
+
+// MARK: - Settings Dropdown Menu
+private struct SettingsDropdownMenu: View {
+    let isAdmin: Bool
+    let dismiss: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            if isAdmin {
+                MenuRow(title: "edit cove", systemImage: "pencil") { dismiss() }
+                Divider().background(Color.black.opacity(0.08))
+                MenuRow(title: "manage members", systemImage: "person.2") { dismiss() }
+                Divider().background(Color.black.opacity(0.08))
+                MenuRow(title: "share", systemImage: "square.and.arrow.up") { dismiss() }
+                Divider().background(Color.black.opacity(0.08))
+                MenuRow(title: "delete", textColor: .red, systemImage: "trash") { dismiss() }
+            } else {
+                MenuRow(title: "share", systemImage: "square.and.arrow.up") { dismiss() }
+                Divider().background(Color.black.opacity(0.08))
+                MenuRow(title: "leave cove", textColor: .red, systemImage: "rectangle.portrait.and.arrow.right") { dismiss() }
+            }
+        }
+        .padding(.vertical, 6)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Colors.background)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.black.opacity(0.12), lineWidth: 1)
+                )
+        )
+        .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 4)
+    }
+
+    private struct MenuRow: View {
+        let title: String
+        var textColor: Color = Colors.primaryDark
+        var systemImage: String? = nil
+        let action: () -> Void
+
+        var body: some View {
+            Button(action: action) {
+                HStack(spacing: 10) {
+                    if let systemImage {
+                        Image(systemName: systemImage)
+                            .font(.system(size: 16, weight: .regular))
+                            .foregroundStyle(textColor == .red ? .red : Colors.primaryDark)
+                    }
+                    Text(title)
+                        .font(.LibreBodoni(size: 16))
+                        .foregroundStyle(textColor)
+                    Spacer(minLength: 24)
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(PressHighlightStyle())
+        }
+    }
+}
+
+// Row press highlight style
+private struct PressHighlightStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .background(configuration.isPressed ? Color.black.opacity(0.06) : Color.clear)
     }
 }
 

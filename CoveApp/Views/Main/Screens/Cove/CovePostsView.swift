@@ -14,6 +14,7 @@ import Kingfisher
 struct CovePostsView: View {
     @ObservedObject var viewModel: CoveModel
     let onRefresh: () async -> Void
+    var disableNavigation: Bool = false
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {

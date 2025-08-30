@@ -30,7 +30,7 @@ struct InviteView: View {
                         .minimumScaleFactor(0.6)
                 }
                 .frame(maxHeight: .infinity, alignment: .center)
-                .padding(.horizontal, 32)
+                .padding(.horizontal, 20)
 
                 // Cove cover photo
                 Group {
@@ -39,7 +39,7 @@ struct InviteView: View {
                         KFImage(coverPhotoUrl)
                             .placeholder {
                                 Rectangle()
-                                    .fill(Color.white.opacity(0.9))
+                                    .fill(Colors.background.opacity(0.9))
                                     .frame(height: 192)
                                     .clipShape(RoundedRectangle(cornerRadius: 12))
                             }
@@ -69,6 +69,7 @@ struct InviteView: View {
                     }
                 }
                 .id("photo-\(invite.id)-\(invite.cove.coverPhotoUrl ?? "none")")  // Force refresh when photo URL changes
+                .padding(.horizontal, 20)
 
                 // Bottom section
                 VStack(spacing: 0) {
@@ -79,7 +80,7 @@ struct InviteView: View {
                         .multilineTextAlignment(.center)
                         .lineLimit(2)
                         .minimumScaleFactor(0.8)
-                        .padding(.horizontal, 32)
+                        .padding(.horizontal, 20)
                         .padding(.top, 24)
 
                     // Message section
@@ -96,7 +97,7 @@ struct InviteView: View {
                                 .lineLimit(4)
                                 .minimumScaleFactor(0.8)
                         }
-                        .padding(.horizontal, 32)
+                        .padding(.horizontal, 20)
                         .padding(.top, 20)
                     }
 
@@ -113,7 +114,7 @@ struct InviteView: View {
                                 .foregroundColor(Colors.primaryDark)
                                 .frame(maxWidth: .infinity)
                                 .frame(minHeight: 44)
-                                .background(Color.white)
+                                .background(Colors.background)
                                 .cornerRadius(22)
                         }
                         .buttonStyle(.plain)
@@ -135,7 +136,7 @@ struct InviteView: View {
                         }
                         .buttonStyle(.plain)
                     }
-                    .padding(.horizontal, 32)
+                    .padding(.horizontal, 20)
                     .padding(.bottom, 32)
                 }
                 .frame(maxHeight: .infinity, alignment: .top)

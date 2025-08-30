@@ -18,17 +18,12 @@ struct AlmaMaterView: View {
     @State private var showYearDropdown = false
     @State private var showList: Bool = false
     @FocusState private var isUniversityFocused: Bool
-    @State private var universities: [String] = ["Stanford University", "Stanford Graduate School of Business", "Stanford School of Medicine", "Stanford Law School", "Stanford Graduate School of Education"]
+    @State private var universities: [String] = AlmaMaterData.universities
 
     /// Error state
     @State private var showingError = false
 
-    // Generate years from 2000 to current year + 4
-    private var availableYears: [String] {
-        let currentYear = Calendar.current.component(.year, from: Date())
-        let maxYear = currentYear + 4
-        return Array(2000...maxYear).map { String($0) }.reversed()
-    }
+    private var availableYears: [String] { GradYearsData.years }
 
     var body: some View {
         ZStack {
@@ -77,11 +72,12 @@ struct AlmaMaterView: View {
                     .onChange(of: searchUniversity) { oldValue, newValue in
                                 let processedValue = newValue.lowercaseIfNotEmpty
                                 searchUniversity = processedValue
-                                // Only show dropdown if user is typing (length increased or changed but not empty)
-                                if !processedValue.isEmpty && processedValue != oldValue {
-                                    showUniversityDropdown = true
-                                } else if processedValue.isEmpty {
+                                if processedValue.isEmpty {
                                     showUniversityDropdown = false
+                                } else if AlmaMaterData.isValidUniversity(processedValue) {
+                                    showUniversityDropdown = false
+                                } else if processedValue != oldValue {
+                                    showUniversityDropdown = true
                                 }
                             }
                     }
@@ -110,11 +106,12 @@ struct AlmaMaterView: View {
                                 let filtered = newValue.filter { $0.isNumber }
                                 if filtered.count <= 4 {
                                     gradYear = filtered
-                                    // Only show dropdown if user is typing (value changed and not empty)
-                                    if !filtered.isEmpty && filtered != oldValue {
-                                        showYearDropdown = true
-                                    } else if filtered.isEmpty {
+                                    if filtered.isEmpty {
                                         showYearDropdown = false
+                                    } else if GradYearsData.isValidYear(filtered) {
+                                        showYearDropdown = false
+                                    } else if filtered != oldValue {
+                                        showYearDropdown = true
                                     }
                                 } else {
                                     gradYear = oldValue
@@ -267,20 +264,10 @@ struct AlmaMaterView: View {
     }
 
     var filteredUniversities: [String] {
-        if searchUniversity.isEmpty {
-            return universities
-        } else {
-            return universities.filter { $0.localizedCaseInsensitiveContains(searchUniversity) }
-        }
+        AlmaMaterData.filteredUniversities(searchQuery: searchUniversity)
     }
 
-    var filteredYears: [String] {
-        if gradYear.isEmpty {
-            return availableYears
-        } else {
-            return availableYears.filter { $0.hasPrefix(gradYear) }
-        }
-    }
+    var filteredYears: [String] { GradYearsData.filteredYears(prefix: gradYear) }
 }
 
 #Preview {

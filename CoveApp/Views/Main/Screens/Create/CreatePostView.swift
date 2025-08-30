@@ -10,6 +10,7 @@ import SwiftUI
 struct CreatePostView: View {
     // MARK: - Properties
     let coveId: String?
+    let coveName: String?
     @EnvironmentObject var appController: AppController
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel = NewPostModel()
@@ -19,50 +20,52 @@ struct CreatePostView: View {
     var onPostCreated: (() -> Void)? = nil
 
     // MARK: - Initializer
-    init(coveId: String? = nil, onPostCreated: (() -> Void)? = nil) {
+    init(coveId: String? = nil, coveName: String? = nil, onPostCreated: (() -> Void)? = nil) {
         self.coveId = coveId
+        self.coveName = coveName
         self.onPostCreated = onPostCreated
     }
 
     // MARK: - Body
     var body: some View {
-        ZStack {
-            Colors.faf8f4.ignoresSafeArea()
+        ZStack(alignment: .topLeading) {
+            Colors.background.ignoresSafeArea()
 
-            VStack {
-                HStack {
-                    Button("cancel") { dismiss() }
-                        .font(.LibreBodoni(size: 16))
-                        .foregroundColor(Colors.primaryDark)
-                    Spacer()
-                }
-                .padding(.horizontal, 32)
-                .padding(.top, 8)
+            // Close button (SF Symbols x)
+            Button(action: { if !viewModel.isSubmitting { dismiss() } }) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(viewModel.isSubmitting ? .gray : Colors.primaryDark)
+            }
+            .padding(.leading, 20)
+            .padding(.top, 18)
+            .disabled(viewModel.isSubmitting)
 
+            VStack(spacing: 16) {
                 headerView
 
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 8) {
                         postContentSection
-                        createButtonView
                     }
                     .padding(.horizontal, 32)
                 }
-
-                Spacer(minLength: 24)
             }
-            .padding(.top, 50)
-        }
-        .toolbar {
-            ToolbarItem(placement: .keyboard) {
-                keyboardAccessoryView
-            }
+            .padding(.top, 28)
         }
         .navigationBarBackButtonHidden()
         .onAppear {
             if let coveId = coveId {
                 viewModel.coveId = coveId
             }
+            // Auto-focus the editor shortly after sheet presentation
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                isFocused = true
+            }
+        }
+        .safeAreaInset(edge: .bottom) {
+            createButtonView
+                .background(Colors.background)
         }
         .alert("Error", isPresented: Binding(
             get: { viewModel.errorMessage != nil },
@@ -79,47 +82,55 @@ struct CreatePostView: View {
 extension CreatePostView {
     // MARK: - Header
     private var headerView: some View {
-        VStack {
-            HStack(alignment: .top) {
+        let target = (coveName ?? coveId) ?? "this cove"
+        return VStack(spacing: 8) {
+            HStack(spacing: 4) {
                 Spacer()
-
-                Image("post_logo")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 100, height: 100)
-                    .padding(.leading, -10)
-
+                Text("posting to")
+                    .font(.LibreBodoni(size: 18))
+                    .foregroundColor(.gray)
+                Text("\(target) ✏️")
+                    .font(.LibreBodoni(size: 18))
+                    .foregroundColor(Colors.primaryDark)
                 Spacer()
             }
-            .padding(.horizontal, 16)
-
-            Text("create a post")
-                .font(.Lugrasimo(size: 35))
-                .foregroundColor(Colors.primaryDark)
+            .padding(.top, 32)
         }
+        .frame(maxWidth: .infinity)
     }
 
     // MARK: - Post Content Section
     private var postContentSection: some View {
         VStack {
             ZStack(alignment: .topLeading) {
-                if viewModel.content.isEmpty {
-                    Text("share your thoughts...")
-                        .foregroundColor(.gray)
-                        .font(.LibreBodoniSemiBold(size: 16))
-                        .padding(.top, 8)
-                        .padding(.leading, 4)
-                }
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.white.opacity(0.6))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color.black.opacity(0.12), lineWidth: 1)
+                    )
 
-                TextEditor(text: $viewModel.content)
-                    .foregroundColor(.black)
-                    .font(.LibreBodoniSemiBold(size: 16))
-                    .scrollContentBackground(.hidden)
-                    .background(Color.clear)
-                    .frame(minHeight: 250)
-                    .focused($isFocused)
+                ZStack(alignment: .topLeading) {
+                    if viewModel.content.isEmpty {
+                        Text("share your thoughts...")
+                            .foregroundColor(Color.black.opacity(0.35))
+                            .font(.LibreBodoni(size: 16))
+                            .padding(.top, 12)
+                            .padding(.leading, 14)
+                    }
+
+                    TextEditor(text: $viewModel.content)
+                        .foregroundStyle(Colors.primaryDark)
+                        .font(.LibreBodoni(size: 16))
+                        .scrollContentBackground(.hidden)
+                        .frame(minHeight: 160, maxHeight: 220)
+                        .focused($isFocused)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 8)
+                }
             }
-            .padding(16)
+            .frame(maxWidth: .infinity, minHeight: 160, maxHeight: 230)
+            .padding(.top, 12)
             
             // Character counter
             HStack {
@@ -131,64 +142,51 @@ extension CreatePostView {
             .padding(.horizontal, 16)
             .padding(.top, 4)
         }
-        .background(Color.white)
-        .overlay(
-            RoundedRectangle(cornerRadius: 10)
-                .stroke(Color.black, lineWidth: 1)
-        )
+        .background(Colors.background)
     }
 
     // MARK: - Create Button
     private var createButtonView: some View {
-        Button {
-            viewModel.submitPost { success in
-                if success {
-                    // Refresh cove posts to show the new post
-                    if !viewModel.coveId.isEmpty {
-                        appController.refreshCoveAfterPostCreation(coveId: viewModel.coveId)
+        VStack {
+            Button {
+                isFocused = false
+                viewModel.submitPost { success in
+                    if success {
+                        if !viewModel.coveId.isEmpty {
+                            appController.refreshCoveAfterPostCreation(coveId: viewModel.coveId)
+                        }
+                        onPostCreated?()
+                        dismiss()
                     }
-                    onPostCreated?()
-                    dismiss()
+                }
+            } label: {
+                if viewModel.isSubmitting {
+                    ProgressView()
+                        .tint(Colors.background)
+                        .frame(maxWidth: .infinity, minHeight: 56, maxHeight: 56, alignment: .center)
+                        .background(
+                            RoundedRectangle(cornerRadius: 14)
+                                .fill(Colors.primaryDark)
+                        )
+                } else {
+                    Text("post")
+                        .foregroundStyle(!viewModel.isFormValid ? Color.gray : Colors.background)
+                        .font(.LibreBodoniBold(size: 16))
+                        .frame(maxWidth: .infinity, minHeight: 56, maxHeight: 56, alignment: .center)
+                        .background(
+                            RoundedRectangle(cornerRadius: 14)
+                                .fill(!viewModel.isFormValid ? Color.gray.opacity(0.3) : Colors.primaryDark)
+                        )
                 }
             }
-        } label: {
-            if viewModel.isSubmitting {
-                ProgressView()
-                    .tint(.black)
-                    .frame(maxWidth: .infinity, minHeight: 60, maxHeight: 60, alignment: .center)
-                    .background(
-                        RoundedRectangle(cornerRadius: 14)
-                            .fill(Color.white)
-                    )
-            } else {
-                Text("post")
-                    .foregroundStyle(!viewModel.isFormValid ? Color.gray : Color.black)
-                    .font(.LibreBodoniBold(size: 16))
-                    .frame(maxWidth: .infinity, minHeight: 60, maxHeight: 60, alignment: .center)
-                    .background(
-                        RoundedRectangle(cornerRadius: 14)
-                            .fill(!viewModel.isFormValid ? Color.gray.opacity(0.3) : Color.white)
-                    )
-            }
+            .disabled(!viewModel.isFormValid || viewModel.isSubmitting)
+            .padding(.horizontal, 24)
+            .padding(.top, 8)
+            .padding(.bottom, 12)
         }
-        .disabled(!viewModel.isFormValid || viewModel.isSubmitting)
-        .padding(.top, 40)
-    }
-
-    // MARK: - Keyboard Accessory
-    private var keyboardAccessoryView: some View {
-        HStack {
-            Spacer()
-            Button("Done") {
-                isFocused = false
-            }
-            .padding(.trailing, 16)
-            .padding(.vertical, 8)
-        }
-        .background(Color(.systemGray6))
     }
 }
 
 #Preview {
-    CreatePostView(coveId: nil)
+    CreatePostView(coveId: nil, coveName: nil)
 } 
