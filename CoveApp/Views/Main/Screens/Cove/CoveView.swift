@@ -71,20 +71,6 @@ struct CoveView: View {
                                     }
                                 }
                             )
-                            .overlay(alignment: .topTrailing) {
-                                if showSettingsMenu {
-                                    SettingsDropdownMenu(isAdmin: viewModel.isCurrentUserAdmin) {
-                                        withAnimation(.easeInOut(duration: 0.18)) {
-                                            showSettingsMenu = false
-                                        }
-                                    }
-                                    .frame(width: UIScreen.main.bounds.width * 0.65)
-                                    .padding(.trailing, 8)
-                                    .offset(y: 40)
-                                    .transition(.opacity.combined(with: .move(edge: .top)))
-                                    .zIndex(10000)
-                                }
-                            }
                             .zIndex(showSettingsMenu ? 20000 : 0)
                             .opacity(headerOpacity)
                             .animation(.easeInOut(duration: 0.18), value: headerOpacity)
@@ -228,6 +214,20 @@ struct CoveView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
             .allowsHitTesting(false)
+        }
+        .overlay(alignment: .topTrailing) {
+            if showSettingsMenu {
+                SettingsDropdownMenu(isAdmin: viewModel.isCurrentUserAdmin) {
+                    withAnimation(.easeInOut(duration: 0.18)) {
+                        showSettingsMenu = false
+                    }
+                }
+                .frame(width: UIScreen.main.bounds.width * 0.65)
+                .padding(.trailing, 8)
+                .offset(y: 40)
+                .transition(.opacity.combined(with: .move(edge: .top)))
+                .zIndex(100000)
+            }
         }
         .navigationBarBackButtonHidden(true)
         .onAppear {
