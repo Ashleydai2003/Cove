@@ -152,13 +152,13 @@ class Onboarding {
     // MARK: - Validation
     // Updated to reflect new backend requirements
     static func isOnboardingComplete() -> Bool {
-        // Required fields: name, birthdate, almaMater, gradYear
-        // Optional fields: hobbies, city, profilePic
+        // Core required fields: name, birthdate, university, city
+        // Optional fields: profilePic, hobbies (archived)
         
         let hasName = userName != nil && !userName!.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         let hasBirthdate = userBirthdate != nil
-        let hasAlmaMater = userAlmaMater != nil && !userAlmaMater!.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        let hasGradYear = userGradYear != nil && !userGradYear!.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let hasUniversity = userAlmaMater != nil && !userAlmaMater!.isEmpty
+        let hasCity = userCity != nil && !userCity!.isEmpty
         
         // Log what's missing for debugging
         if !hasName {
@@ -170,11 +170,11 @@ class Onboarding {
         if !hasAlmaMater {
             Log.error("Onboarding incomplete: Missing almaMater")
         }
-        if !hasGradYear {
-            Log.error("Onboarding incomplete: Missing gradYear")
+        if !hasCity {
+            Log.error("Onboarding incomplete: Missing city")
         }
         
-        return hasName && hasBirthdate && hasAlmaMater && hasGradYear
+        return hasName && hasBirthdate && hasUniversity && hasCity
     }
 
     /// Completes the onboarding process by updating the user's onboarding status
@@ -295,11 +295,19 @@ class Onboarding {
 
         // Create request parameters with mandatory fields first
         var parameters: [String: Any] = [
-            "name": name.trimmingCharacters(in: .whitespacesAndNewlines),
-            "birthdate": formattedDate,
-            "almaMater": almaMater.trimmingCharacters(in: .whitespacesAndNewlines),
-            "gradYear": gradYear.trimmingCharacters(in: .whitespacesAndNewlines)
+            "name": userName ?? "",
+            "birthdate": formattedDate
+            // Note: hobbies removed from onboarding flow
         ]
+
+        // Add required fields
+        if let almaMater = userAlmaMater, !almaMater.isEmpty {
+            parameters["almaMater"] = almaMater
+        }
+        
+        if let graduationYear = userGradYear, !graduationYear.isEmpty {
+            parameters["graduationYear"] = graduationYear
+        }
 
         // Add optional fields
         if !userHobbies.isEmpty {

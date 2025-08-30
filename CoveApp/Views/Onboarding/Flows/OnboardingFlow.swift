@@ -26,8 +26,6 @@ struct OnboardingFlow: View {
                         AlmaMaterView()
                     case .citySelection:
                         CitySelectionView()
-                    case .hobbies:
-                        HobbiesView()
                     case .profilePics:
                         ProfilePicView()
                     case .pluggingIn:

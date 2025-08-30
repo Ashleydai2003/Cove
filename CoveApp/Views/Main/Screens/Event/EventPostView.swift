@@ -338,7 +338,7 @@ struct EventPostView: View {
 
     var body: some View {
         ZStack {
-            Colors.faf8f4.ignoresSafeArea()
+            Colors.background.ignoresSafeArea()
 
             if viewModel.isLoading {
                 ProgressView()

@@ -13,6 +13,7 @@ enum EventSummaryType {
 struct EventSummaryView: View {
     let event: CalendarEvent
     var type: EventSummaryType = .feed // Default type
+    var disableNavigation: Bool = false
     @EnvironmentObject private var appController: AppController
     @State private var imageLoaded = false
 
@@ -194,6 +195,7 @@ struct EventSummaryView: View {
                 }
             }
         }
+        .disabled(disableNavigation)
         .padding(.vertical, 5)
 
     }

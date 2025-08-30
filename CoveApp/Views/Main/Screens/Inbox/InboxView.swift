@@ -8,7 +8,7 @@ struct InboxView: View {
 
     var body: some View {
         ZStack {
-            Colors.faf8f4
+            Colors.background
                 .ignoresSafeArea()
 
             VStack {
@@ -70,10 +70,6 @@ struct InboxView: View {
                         // Horizontal invites scroll view
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 16) {
-                                // Leading spacer for first card centering
-                                Color.clear
-                                    .frame(width: 50)
-
                                 ForEach(viewModel.invites, id: \.id) { invite in
                                     if invite.isOpened {
                                         // Show InviteView for opened invites
@@ -101,11 +97,8 @@ struct InboxView: View {
                                         .frame(width: 260, height: 200)
                                     }
                                 }
-
-                                // Trailing spacer for last card centering
-                                Color.clear
-                                    .frame(width: 50)
                             }
+                            .padding(.horizontal, max(0, (UIScreen.main.bounds.width - 300) / 2))
                             .padding(.vertical, 10)
                         }
                         .clipped()

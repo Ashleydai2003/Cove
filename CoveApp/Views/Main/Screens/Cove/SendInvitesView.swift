@@ -37,7 +37,7 @@ struct SendInvitesView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Colors.faf8f4.ignoresSafeArea()
+                Colors.background.ignoresSafeArea()
 
                 VStack(spacing: 0) {
                     ScrollView {
@@ -284,7 +284,7 @@ struct SendInviteButton: View {
             .disabled(!isFormValid || isLoading)
             .padding(.horizontal, 32)
             .padding(.vertical, 24)
-            .background(Colors.faf8f4)
+            .background(Colors.background)
         }
     }
 }

@@ -14,12 +14,13 @@ import Kingfisher
 struct CoveEventsView: View {
     @ObservedObject var viewModel: CoveModel
     let onRefresh: () async -> Void
+    var disableNavigation: Bool = false
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: 5) {
                 ForEach(sortedEvents, id: \.id) { event in
-                    EventSummaryView(event: event, type: .cove)
+                    EventSummaryView(event: event, type: .cove, disableNavigation: disableNavigation)
                         .onAppear {
                             DispatchQueue.main.async {
                                 viewModel.loadMoreEventsIfNeeded(currentEvent: event)

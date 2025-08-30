@@ -39,11 +39,11 @@ struct LoginView: View {
                 .padding(.bottom)
 
                 // Terms and privacy notice with interactive links
-                Text(attributedString)
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(Color.black)
-                    .padding([.horizontal, .vertical])
-                    .font(.LeagueSpartan(size: 15))
+                // Text(attributedString)
+                //     .multilineTextAlignment(.center)
+                //     .foregroundStyle(Color.black)
+                //     .padding([.horizontal, .vertical])
+                //     .font(.LeagueSpartan(size: 15))
             }
         }
     }
@@ -52,7 +52,7 @@ struct LoginView: View {
     /// Includes interactive links for Terms & Conditions and Privacy Policy
     // TODO: Add links to Terms and Privacy Policy
     var attributedString: AttributedString {
-        var string = AttributedString("By tapping 'Get Started' you agree to our Terms and Conditions. Learn how we process you data in our Privacy Policy.")
+        var string = AttributedString("By tapping 'Get Started' you agree to our Terms and Conditions. Learn how we process your data in our Privacy Policy.")
         string.foregroundColor = .black
 
         // Add underline and link styling to both interactive text elements
