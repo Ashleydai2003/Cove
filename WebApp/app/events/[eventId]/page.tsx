@@ -13,7 +13,6 @@ export default function EventPage() {
   
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
-  const [detailCardReady, setDetailCardReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -36,17 +35,13 @@ export default function EventPage() {
     fetchEvent();
   }, [eventId]);
 
-  if (loading || !detailCardReady) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-[#F5F0E6] flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#5E1C1D] mx-auto mb-6"></div>
-          <p className="font-libre-bodoni text-xl text-[#5E1C1D] mb-2">
-            {loading ? 'Loading event...' : 'Setting up your experience...'}
-          </p>
-          <p className="font-libre-bodoni text-sm text-[#8B8B8B]">
-            {loading ? 'Getting everything ready for you' : 'Checking authentication and RSVP status'}
-          </p>
+          <p className="font-libre-bodoni text-xl text-[#5E1C1D] mb-2">Loading event...</p>
+          <p className="font-libre-bodoni text-sm text-[#8B8B8B]">Getting everything ready for you</p>
         </div>
       </div>
     );
@@ -96,10 +91,7 @@ export default function EventPage() {
 
       {/* Event Content */}
       <div className="max-w-7xl mx-auto px-8 pb-16">
-        <EventDetailCard 
-          event={event} 
-          onReady={() => setDetailCardReady(true)}
-        />
+        <EventDetailCard event={event} />
       </div>
     </div>
   );
