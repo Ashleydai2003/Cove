@@ -35,8 +35,9 @@ struct EventSummaryView: View {
                             .placeholder {
                                 Rectangle()
                                     .fill(Color.gray.opacity(0.2))
-                                    .aspectRatio(16/10, contentMode: .fill)
+                                    .aspectRatio(16/10, contentMode: .fit)
                                     .frame(maxWidth: .infinity)
+                                    .clipped()
                                     .overlay(ProgressView().tint(.gray))
                                     .clipShape(RoundedRectangle(cornerRadius: 18))
                             }

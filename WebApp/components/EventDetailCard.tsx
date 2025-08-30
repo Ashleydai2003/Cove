@@ -30,48 +30,45 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [rsvpStatus, setRsvpStatus] = useState(event.rsvpStatus);
 
-  // Check authentication status on component mount
-  useEffect(() => {
-    // Clear the refreshing flag on mount
-    if (typeof window !== 'undefined') {
-      sessionStorage.removeItem('refreshing');
-    }
-    
-    const checkAuth = async () => {
-      try {
-        console.log('Checking authentication status...');
-        const { isAuthenticated, user } = await checkAuthStatus();
-        console.log('Auth check result:', { isAuthenticated, user: user ? 'user found' : 'no user' });
-        
-        setIsAuthenticated(isAuthenticated);
-        // Check if user has completed onboarding (not null/undefined and not true means completed)
-        setHasCompletedOnboarding(!!(isAuthenticated && user && !user.onboarding));
-        
-        // If authenticated and this is a client-side auth check, refresh the page to get authenticated data
-        if (isAuthenticated && typeof window !== 'undefined') {
-          // Only refresh if we're not already in the process of refreshing
-          if (!sessionStorage.getItem('refreshing')) {
-            sessionStorage.setItem('refreshing', 'true');
-            window.location.reload();
-          }
-        }
-      } catch (error) {
-        console.error('Auth check error:', error);
-        setIsAuthenticated(false);
-        setHasCompletedOnboarding(false);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+          // Check authentication status and fetch event data on component mount
+        useEffect(() => {
+            const checkAuthAndFetchEvent = async () => {
+                try {
+                    console.log('Checking authentication status...');
+                    const { isAuthenticated, user } = await checkAuthStatus();
+                    console.log('Auth check result:', { isAuthenticated, user: user ? 'user found' : 'no user' });
+                    
+                    setIsAuthenticated(isAuthenticated);
+                    setHasCompletedOnboarding(!!(isAuthenticated && user && !user.onboarding));
+                    
+                    // If authenticated, fetch event data to get RSVP status
+                    if (isAuthenticated) {
+                        try {
+                            console.log('Fetching event data for authenticated user...');
+                            const eventData = await apiClient.fetchEvent(event.id);
+                            console.log('Event data fetched:', eventData);
+                            
+                            // Update RSVP status from the fetched data
+                            if (eventData.rsvpStatus) {
+                                setRsvpStatus(eventData.rsvpStatus);
+                                console.log('Updated RSVP status:', eventData.rsvpStatus);
+                            }
+                        } catch (error) {
+                            console.error('Error fetching event data:', error);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Auth check error:', error);
+                    setIsAuthenticated(false);
+                    setHasCompletedOnboarding(false);
+                } finally {
+                    setIsLoading(false);
+                }
+            };
 
-    // Check auth immediately
-    checkAuth();
-    
-    // Also check auth again after a short delay to handle any timing issues
-    const timeoutId = setTimeout(checkAuth, 1000);
-    
-    return () => clearTimeout(timeoutId);
-  }, [event.id]);
+            // Check auth and fetch event data immediately
+            checkAuthAndFetchEvent();
+        }, [event.id]);
 
   const handleRSVP = async () => {
     // Check if user is authenticated and has completed onboarding
