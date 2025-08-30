@@ -1,6 +1,7 @@
 // Export all the routes 
 export { handleProfile, handleEditProfile } from './profile';
 export { handleLogin } from './logIn';
+export { handleAuthValidate } from './auth';
 export { handleTestDatabase } from './test-database';
 export { handleTestS3 } from './test-s3';
 export { handleOnboard } from './onboard';
