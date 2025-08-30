@@ -6,7 +6,7 @@ const SESSION_CONFIG = {
   maxAge: 60 * 60 * 24 * 7, // 7 days
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
-  sameSite: 'strict' as const,
+  sameSite: 'lax' as const, // Changed from 'strict' to 'lax' for better compatibility
   path: '/',
   domain: process.env.NODE_ENV === 'production' ? '.coveapp.co' : undefined,
 };

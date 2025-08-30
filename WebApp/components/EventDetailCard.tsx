@@ -33,7 +33,10 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        console.log('Checking authentication status...');
         const { isAuthenticated, user } = await checkAuthStatus();
+        console.log('Auth check result:', { isAuthenticated, user: user ? 'user found' : 'no user' });
+        
         setIsAuthenticated(isAuthenticated);
         // Check if user has completed onboarding (not null/undefined and not true means completed)
         setHasCompletedOnboarding(!!(isAuthenticated && user && !user.onboarding));
@@ -46,7 +49,13 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
       }
     };
 
+    // Check auth immediately
     checkAuth();
+    
+    // Also check auth again after a short delay to handle any timing issues
+    const timeoutId = setTimeout(checkAuth, 1000);
+    
+    return () => clearTimeout(timeoutId);
   }, []);
 
   const handleRSVP = async () => {
@@ -167,7 +176,7 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
             <h1 className="font-libre-bodoni text-4xl lg:text-5xl text-[#5E1C1D] leading-[0.9] mb-4">
               {title}
             </h1>
-            <p className="font-libre-bodoni text-sm text-[#8B8B8B]">{hostedByText}</p>
+            <p className="font-libre-bodoni text-sm text-[#5E1C1D] opacity-50">{hostedByText}</p>
           </div>
 
           <div className="space-y-6">
@@ -198,22 +207,31 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
              (event.memberCap !== null && event.memberCap !== undefined) ? (
               <div className="space-y-4">
                 {event.ticketPrice !== null && event.ticketPrice !== undefined && (
-                  <div className="flex items-center gap-3">
-                    <img src="/ticket.svg" alt="Ticket" className="w-5 h-5" />
-                    <span className="font-libre-bodoni text-base font-semibold text-[#2D2D2D]">
+                  <div className="flex items-center gap-4">
+                    <img src="/ticket.svg" alt="Ticket" className="w-8 h-8" />
+                    <span className="font-libre-bodoni text-lg font-semibold text-[#5E1C1D]">
                       ${event.ticketPrice.toFixed(2)} per person
                     </span>
                   </div>
                 )}
                 {event.memberCap !== null && event.memberCap !== undefined && (
-                  <div className="flex items-center gap-3">
-                    <img src="/capacity.svg" alt="Capacity" className="w-5 h-5" />
-                    <span className="font-libre-bodoni text-base font-semibold text-[#2D2D2D]">
+                  <div className="flex items-center gap-4">
+                    <img src="/capacity.svg" alt="Capacity" className="w-8 h-8" />
+                    <span className="font-libre-bodoni text-lg font-semibold text-[#5E1C1D]">
                       {event.goingCount !== undefined && event.goingCount !== null 
                         ? `${Math.max(0, event.memberCap - event.goingCount)}/${event.memberCap} spots left`
                         : `${event.memberCap} spots available`
                       }
                     </span>
+                  </div>
+                )}
+                
+                {/* Venmo Handle - Only show if authenticated and below price info */}
+                {canSeeVenmoHandle && (
+                  <div>
+                    <p className="font-libre-bodoni text-sm text-[#2D2D2D]">
+                      venmo @{event.paymentHandle}
+                    </p>
                   </div>
                 )}
               </div>
@@ -228,14 +246,7 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
               </div>
             )}
 
-            {/* RSVP Status Info - Only show if authenticated but not RSVP'd */}
-            {isAuthenticated && !canSeeFullDetails && (
-              <div className="space-y-4 max-w-md">
-                <div className="font-libre-bodoni text-sm text-[#8B8B8B]">
-                  RSVP to see guest list
-                </div>
-              </div>
-            )}
+
           </div>
         </div>
 
@@ -311,35 +322,28 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
             </div>
           ) : null}
 
-          {/* Venmo Handle - Only show if authenticated and below price info */}
-          {canSeeVenmoHandle && (
-            <div className="text-center">
-              <p className="font-libre-bodoni text-sm text-[#2D2D2D]">
-                venmo @{event.paymentHandle}
-              </p>
-            </div>
-          )}
+
 
           {/* RSVP button */}
           <div className="flex justify-center">
             {rsvpStatus === 'PENDING' ? (
               <button
                 disabled
-                className="px-16 py-3 bg-gray-200 text-gray-500 rounded-full font-libre-bodoni text-lg border border-gray-300 cursor-not-allowed"
+                className="px-16 py-3 bg-gray-200 text-gray-500 rounded-lg font-libre-bodoni text-lg border border-gray-300 cursor-not-allowed"
               >
                 pending approval...
               </button>
             ) : rsvpStatus === 'GOING' ? (
               <button
                 disabled
-                className="px-16 py-3 bg-[#F5F5F5] text-[#2D2D2D] rounded-full font-libre-bodoni text-lg border border-[#E5E5E5] cursor-not-allowed"
+                className="px-16 py-3 bg-[#F5F5F5] text-[#2D2D2D] rounded-lg font-libre-bodoni text-lg border border-[#E5E5E5] cursor-not-allowed"
               >
                 you're on the list!
               </button>
             ) : (
               <button
                 onClick={handleRSVP}
-                className="px-16 py-4 bg-[#5E1C1D] text-white rounded-full font-libre-bodoni text-xl font-medium hover:bg-[#4A1718] transition-colors shadow-lg"
+                className="px-16 py-4 bg-[#5E1C1D] text-white rounded-lg font-libre-bodoni text-xl font-medium hover:bg-[#4A1718] transition-colors shadow-lg"
               >
                 rsvp
               </button>

@@ -7,6 +7,7 @@ export async function GET(request: NextRequest) {
     const authToken = request.cookies.get('session-token')?.value;
 
     if (!authToken) {
+      console.log('No session token found in cookies');
       return NextResponse.json(
         { isAuthenticated: false },
         { status: 401 }
@@ -15,6 +16,7 @@ export async function GET(request: NextRequest) {
 
     // Validate token format
     if (!validateToken(authToken)) {
+      console.log('Invalid token format');
       const response = NextResponse.json(
         { isAuthenticated: false },
         { status: 401 }
@@ -33,12 +35,14 @@ export async function GET(request: NextRequest) {
 
     if (backendResponse.ok) {
       const data = await backendResponse.json();
+      console.log('Session validated successfully');
       return NextResponse.json({
         isAuthenticated: true,
         user: data.user,
       });
     } else {
       // Token is invalid, clear the cookie
+      console.log('Backend validation failed, clearing session');
       const response = NextResponse.json(
         { isAuthenticated: false },
         { status: 401 }

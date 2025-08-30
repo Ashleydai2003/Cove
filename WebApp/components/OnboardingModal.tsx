@@ -280,7 +280,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
                   placeholder="phone number"
-                  className="w-full px-0 py-3 border-0 border-b-2 border-gray-300 focus:border-[#5E1C1D] focus:outline-none text-lg font-libre-bodoni"
+                  className="w-full px-0 py-3 border-0 border-b-2 border-gray-300 focus:border-[#5E1C1D] focus:outline-none text-lg font-libre-bodoni bg-transparent"
                   required
                 />
               </div>
@@ -304,7 +304,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
                   value={otpCode}
                   onChange={(e) => setOtpCode(e.target.value)}
                   placeholder="verification code"
-                  className="w-full px-0 py-3 border-0 border-b-2 border-gray-300 focus:border-[#5E1C1D] focus:outline-none text-lg font-libre-bodoni"
+                  className="w-full px-0 py-3 border-0 border-b-2 border-gray-300 focus:border-[#5E1C1D] focus:outline-none text-lg font-libre-bodoni bg-transparent"
                   required
                 />
               </div>
@@ -338,7 +338,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
                   value={formData.name}
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                   placeholder="full name"
-                  className="w-full px-0 py-3 border-0 border-b-2 border-gray-300 focus:border-[#5E1C1D] focus:outline-none text-lg font-libre-bodoni"
+                  className="w-full px-0 py-3 border-0 border-b-2 border-gray-300 focus:border-[#5E1C1D] focus:outline-none text-lg font-libre-bodoni bg-transparent"
                   required
                 />
               </div>
@@ -348,7 +348,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
                   type="date"
                   value={formData.birthdate}
                   onChange={(e) => setFormData(prev => ({ ...prev, birthdate: e.target.value }))}
-                  className="w-full px-0 py-3 border-0 border-b-2 border-gray-300 focus:border-[#5E1C1D] focus:outline-none text-lg font-libre-bodoni"
+                  className="w-full px-0 py-3 border-0 border-b-2 border-gray-300 focus:border-[#5E1C1D] focus:outline-none text-lg font-libre-bodoni bg-transparent"
                   required
                 />
               </div>
@@ -359,7 +359,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
                   value={formData.almaMater}
                   onChange={(e) => setFormData(prev => ({ ...prev, almaMater: e.target.value }))}
                   placeholder="alma mater"
-                  className="w-full px-0 py-3 border-0 border-b-2 border-gray-300 focus:border-[#5E1C1D] focus:outline-none text-lg font-libre-bodoni"
+                  className="w-full px-0 py-3 border-b-2 border-gray-300 focus:border-[#5E1C1D] focus:outline-none text-lg font-libre-bodoni bg-transparent"
                   required
                 />
               </div>
@@ -370,7 +370,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
                   value={formData.gradYear}
                   onChange={(e) => setFormData(prev => ({ ...prev, gradYear: e.target.value }))}
                   placeholder="graduation year"
-                  className="w-full px-0 py-3 border-0 border-b-2 border-gray-300 focus:border-[#5E1C1D] focus:outline-none text-lg font-libre-bodoni"
+                  className="w-full px-0 py-3 border-0 border-b-2 border-gray-300 focus:border-[#5E1C1D] focus:outline-none text-lg font-libre-bodoni bg-transparent"
                   required
                 />
               </div>
