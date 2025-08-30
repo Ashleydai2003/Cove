@@ -44,6 +44,11 @@ struct OtpVerify {
                     // Make login request to backend
                     makeLoginRequest { success in
                         if success {
+                            // Navigate forward in the onboarding flow to user details
+                            Task { @MainActor in
+                                // Prefer forward push to maintain expected animation direction
+                                AppController.shared.path.append(.userDetails)
+                            }
                             completion(true)
                         } else {
                             AppController.shared.errorMessage = "Failed to login to backend"

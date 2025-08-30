@@ -48,7 +48,7 @@ struct AlmaMaterView: View {
                 .font(.LibreBodoniMedium(size: 40))
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            Text("find people from within your network, then others. (optional)")
+            Text("connect to your alumni network!")
                 .font(.LeagueSpartan(size: 15))
                 .foregroundColor(Colors.k0B0B0B)
                 .frame(maxWidth: .infinity, alignment: .leading)
