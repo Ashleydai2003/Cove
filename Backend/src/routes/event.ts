@@ -590,10 +590,24 @@ export const handleGetEvent = async (event: APIGatewayProxyEvent): Promise<APIGa
 
     // Determine user relationship without over-fetching
     const isHost = !!(userUid && eventData.hostId === userUid);
+    console.log('User relationship check:', { userUid, eventHostId: eventData.hostId, isHost });
+    
     const userRsvp = userUid ? await prisma.eventRSVP.findUnique({
       where: { eventId_userId: { eventId: eventData.id, userId: userUid } },
       select: { id: true, status: true, userId: true }
     }) : null;
+    
+    console.log('User RSVP lookup result:', { userUid, eventId: eventData.id, userRsvp });
+    
+    // Debug: Let's also check all RSVPs for this event to see what's in the database
+    if (userUid) {
+      const allRsvps = await prisma.eventRSVP.findMany({
+        where: { eventId: eventData.id },
+        select: { id: true, status: true, userId: true }
+      });
+      console.log('All RSVPs for this event:', allRsvps);
+      console.log('Looking for user ID:', userUid);
+    }
 
     // If entitled (host OR has GOING status), fetch attendee list and return full details
     // Note: Hosts always get full access to manage their events, regardless of RSVP status
@@ -701,6 +715,11 @@ export const handleGetEvent = async (event: APIGatewayProxyEvent): Promise<APIGa
     if (userUid) {
       limitedEvent.isHost = false;
       limitedEvent.rsvpStatus = userRsvp?.status || null;
+      console.log('Limited response for authenticated user:', { 
+        userUid, 
+        rsvpStatus: limitedEvent.rsvpStatus, 
+        userRsvp: userRsvp 
+      });
     }
 
     return {
