@@ -19,59 +19,41 @@ import RSVPSuccessModal from './RSVPSuccessModal';
 
 interface EventDetailCardProps {
   event: Event;
-  onReady?: () => void;
 }
 
-export function EventDetailCard({ event, onReady }: EventDetailCardProps) {
+export function EventDetailCard({ event }: EventDetailCardProps) {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showGuestList, setShowGuestList] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [rsvpStatus, setRsvpStatus] = useState<string | null>(null);
+  const [rsvpStatus, setRsvpStatus] = useState<string | null>(event.rsvpStatus ?? null);
   const [isRsvpLoading, setIsRsvpLoading] = useState(false);
 
-          // Check authentication status and fetch event data on component mount
-        useEffect(() => {
-            const checkAuthAndFetchEvent = async () => {
-                setIsLoading(true);
-                try {
-                    const { isAuthenticated, user } = await checkAuthStatus();
-                    
-                    setIsAuthenticated(isAuthenticated);
-                    setHasCompletedOnboarding(!!(isAuthenticated && user && !user.onboarding));
-                    
-                    // Always fetch fresh event data to get the most up-to-date RSVP status
-                    try {
-                        // Small delay to ensure authentication state is properly established
-                        if (isAuthenticated) {
-                            await new Promise(resolve => setTimeout(resolve, 100));
-                        }
-                        const eventData = await apiClient.fetchEvent(event.id);
-                        setRsvpStatus(eventData.rsvpStatus ?? null);
-                    } catch (error) {
-                        console.error('Error fetching event data:', error);
-                        // Fallback to server-side data only if we're not authenticated
-                        if (!isAuthenticated) {
-                            setRsvpStatus(event.rsvpStatus ?? null);
-                        }
-                    }
-                } catch (error) {
-                    setIsAuthenticated(false);
-                    setHasCompletedOnboarding(false);
-                    setRsvpStatus(event.rsvpStatus ?? null);
-                } finally {
-                    setIsLoading(false);
-                    // Notify parent component that we're ready
-                    if (onReady) {
-                        onReady();
-                    }
-                }
-            };
+  // Simple authentication check on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const { isAuthenticated, user } = await checkAuthStatus();
+        setIsAuthenticated(isAuthenticated);
+        setHasCompletedOnboarding(!!(isAuthenticated && user && !user.onboarding));
+        
+        // If authenticated, fetch fresh event data
+        if (isAuthenticated) {
+          try {
+            const eventData = await apiClient.fetchEvent(event.id);
+            setRsvpStatus(eventData.rsvpStatus ?? null);
+          } catch (error) {
+            console.error('Error fetching fresh event data:', error);
+          }
+        }
+      } catch (error) {
+        console.error('Error checking auth status:', error);
+      }
+    };
 
-            checkAuthAndFetchEvent();
-        }, [event.id, event.rsvpStatus]);
+    checkAuth();
+  }, [event.id]);
 
   const handleRSVP = async () => {
     // Check if user is authenticated and has completed onboarding
@@ -170,9 +152,6 @@ export function EventDetailCard({ event, onReady }: EventDetailCardProps) {
 
   const handleOnboardingComplete = async (userId: string) => {
     try {
-      // Force a complete refresh of authentication and event data
-      setIsLoading(true);
-      
       // Check authentication status again
       const { isAuthenticated, user } = await checkAuthStatus();
       setIsAuthenticated(isAuthenticated);
@@ -186,8 +165,6 @@ export function EventDetailCard({ event, onReady }: EventDetailCardProps) {
       // Fallback: update basic auth state
       setIsAuthenticated(true);
       setHasCompletedOnboarding(true);
-    } finally {
-      setIsLoading(false);
     }
     
     setShowOnboarding(false);
@@ -393,8 +370,8 @@ export function EventDetailCard({ event, onReady }: EventDetailCardProps) {
             )}
           </div>
 
-          {/* Login button - only show when not authenticated and not loading */}
-          {!isLoading && !isAuthenticated && (
+          {/* Login button - only show when not authenticated */}
+          {!isAuthenticated && (
             <div className="flex justify-center mt-4">
               <button
                 onClick={() => setShowOnboarding(true)}
