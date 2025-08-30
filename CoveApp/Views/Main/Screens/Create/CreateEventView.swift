@@ -61,6 +61,7 @@ struct CreateEventView: View {
                             dateTimeSection
                             locationSection
                                 .id("locationSection")
+                            ticketPriceSection
                             spotsSection
                             visibilitySection
                             // TODO: in the future we also want to have a privacy section
@@ -363,6 +364,43 @@ extension CreateEventView {
                 .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 4)
             }
         }
+    }
+
+    // MARK: - Ticket Price Section
+    private var ticketPriceSection: some View {
+        HStack(spacing: 0) {
+            Image(systemName: "dollarsign.circle")
+                .font(.system(size: 20))
+                .foregroundStyle(Color.white)
+                .padding(.leading, 24)
+
+            ZStack(alignment: .leading) {
+                if viewModel.ticketPriceString.isEmpty {
+                    Text("ticket price")
+                        .foregroundColor(Color.white)
+                        .font(.LibreBodoniBold(size: 16))
+                }
+
+                TextField("", text: $viewModel.ticketPriceString)
+                    .keyboardType(.decimalPad)
+                    .autocorrectionDisabled()
+                    .font(.LibreBodoniBold(size: 16))
+                    .foregroundColor(Color.white)
+                    .padding(.leading, 0)
+                    .onChange(of: viewModel.ticketPriceString) { _, newValue in
+                        viewModel.ticketPriceString = viewModel.validateTicketPriceInput(newValue)
+                    }
+            }
+            .padding(.leading, 16)
+            .padding(.trailing, 16)
+
+            Spacer()
+        }
+        .frame(height: 44)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Colors.primaryDark)
+        )
     }
 
     // MARK: - Number of Spots Section
