@@ -85,19 +85,24 @@ if (typeof window !== 'undefined') {
 
 export async function checkAuthStatus(): Promise<{ isAuthenticated: boolean; user?: User }> {
   try {
+    console.log('Checking auth status...');
     const response = await fetch('/api/auth/status', {
       method: 'GET',
       credentials: 'include', // Include cookies
     });
 
+    console.log('Auth status response:', { status: response.status, ok: response.ok });
+
     if (response.ok) {
       const data = await response.json();
+      console.log('Auth successful:', data);
       return {
         isAuthenticated: true,
         user: data.user,
       };
     } else if (response.status === 401) {
       // 401 is expected for unauthenticated users - don't log as error
+      console.log('User not authenticated (401 response)');
       return {
         isAuthenticated: false,
       };
