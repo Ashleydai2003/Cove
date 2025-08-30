@@ -112,7 +112,6 @@ struct TabBarView: View {
                 .foregroundColor(Color.gray.opacity(0.3)),
             alignment: .top
         )
-        .offset(y: 10)
     }
 }
 
