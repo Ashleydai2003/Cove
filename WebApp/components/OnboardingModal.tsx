@@ -67,6 +67,16 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
           });
           console.log('reCAPTCHA verifier created successfully');
           setRecaptchaVerifier(verifier);
+          
+          // Add a subtle animation to the container
+          const recaptchaContainer = document.getElementById('recaptcha-container');
+          if (recaptchaContainer) {
+            recaptchaContainer.style.opacity = '0';
+            setTimeout(() => {
+              recaptchaContainer.style.transition = 'opacity 0.3s ease-in-out';
+              recaptchaContainer.style.opacity = '1';
+            }, 100);
+          }
         } catch (error) {
           console.error('Failed to initialize reCAPTCHA:', error);
           setError('Failed to initialize verification. Please refresh the page.');
@@ -282,12 +292,25 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
                   required
                 />
               </div>
+              
+              {/* reCAPTCHA notice */}
+              <div className="text-xs text-gray-500 text-center px-2">
+                By continuing, you agree to our terms and will receive a verification code via SMS.
+              </div>
+              
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
               >
-                {isLoading ? 'Sending...' : 'Send Code'}
+                {isLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Sending Code...
+                  </>
+                ) : (
+                  'Send Verification Code'
+                )}
               </button>
             </form>
           )}
@@ -311,9 +334,16 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
               >
-                {isLoading ? 'Verifying...' : 'Verify Code'}
+                {isLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Verifying...
+                  </>
+                ) : (
+                  'Verify Code'
+                )}
               </button>
               <button
                 type="button"
@@ -421,7 +451,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
         </div>
         
         {/* reCAPTCHA container */}
-        <div id="recaptcha-container"></div>
+        <div id="recaptcha-container" className="flex justify-center mt-4 p-2 transform scale-90"></div>
       </div>
     </div>
   );
