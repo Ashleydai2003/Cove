@@ -32,6 +32,11 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
 
   // Check authentication status on component mount
   useEffect(() => {
+    // Clear the refreshing flag on mount
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('refreshing');
+    }
+    
     const checkAuth = async () => {
       try {
         console.log('Checking authentication status...');
@@ -42,14 +47,12 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
         // Check if user has completed onboarding (not null/undefined and not true means completed)
         setHasCompletedOnboarding(!!(isAuthenticated && user && !user.onboarding));
         
-        // If authenticated, fetch current event data to get updated RSVP status
-        if (isAuthenticated) {
-          try {
-            const eventData = await apiClient.fetchEvent(event.id);
-            setRsvpStatus(eventData.rsvpStatus);
-            console.log('Updated RSVP status:', eventData.rsvpStatus);
-          } catch (error) {
-            console.error('Error fetching updated event data:', error);
+        // If authenticated and this is a client-side auth check, refresh the page to get authenticated data
+        if (isAuthenticated && typeof window !== 'undefined') {
+          // Only refresh if we're not already in the process of refreshing
+          if (!sessionStorage.getItem('refreshing')) {
+            sessionStorage.setItem('refreshing', 'true');
+            window.location.reload();
           }
         }
       } catch (error) {
