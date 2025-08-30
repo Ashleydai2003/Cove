@@ -248,11 +248,11 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-[#F5F5F0] flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-[#F5F0E6] rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="relative p-6 border-b border-gray-200">
-          <h2 className="text-4xl font-libre-bodoni text-[#5E1C1D] text-center font-bold">
+        <div className="relative p-6">
+          <h2 className="text-6xl font-libre-bodoni text-[#5E1C1D] text-center font-bold">
             cove
           </h2>
           <button

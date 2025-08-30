@@ -42,7 +42,12 @@ class EventPostViewModel: ObservableObject {
         isUpdatingRSVP = true
         Log.debug("🔵 updateRSVP called with status: \(status)")
 
-        NetworkManager.shared.post(endpoint: "/update-event-rsvp", parameters: ["eventId": eventId, "status": status]) { [weak self] (result: Result<UpdateRSVPResponse, NetworkError>) in
+        // Use delete endpoint for NOT_GOING status
+        let endpoint = status == "NOT_GOING" ? "/remove-event-rsvp" : "/update-event-rsvp"
+        let parameters: [String: Any] = status == "NOT_GOING" ? ["eventId": eventId] : ["eventId": eventId, "status": status]
+
+        // Use generic response type that can handle both cases
+        NetworkManager.shared.post(endpoint: endpoint, parameters: parameters) { [weak self] (result: Result<GenericRSVPResponse, NetworkError>) in
             guard let self = self else { return }
 
             DispatchQueue.main.async {
@@ -51,7 +56,19 @@ class EventPostViewModel: ObservableObject {
                 switch result {
                 case .success(let response):
                     Log.debug("🔵 Backend RSVP Response: \(response)")
-                    Log.debug("🔵 Backend returned status: \(response.rsvp.status)")
+                    
+                    if status == "NOT_GOING" {
+                        Log.debug("🔵 RSVP removed successfully: \(response.message)")
+                        // Update local state immediately for better UX
+                        self.updateLocalRSVPStatus(status: "NOT_GOING")
+                    } else {
+                        if let rsvpData = response.rsvp {
+                            Log.debug("🔵 Backend returned status: \(rsvpData.status)")
+                        } else {
+                            Log.debug("🔵 No RSVP data in response")
+                        }
+                    }
+                    
                     completion(true)
                 case .failure(let error):
                     Log.debug("🔵 RSVP Error: \(error)")
@@ -275,6 +292,24 @@ struct UpdateRSVPResponse: Decodable {
     let message: String
     let rsvp: RSVPData
 
+    struct RSVPData: Decodable {
+        let id: String
+        let status: String
+        let eventId: String
+        let userId: String
+        let createdAt: String
+    }
+}
+
+struct DeleteRSVPResponse: Decodable {
+    let message: String
+}
+
+// Generic response type that can handle both update and delete responses
+struct GenericRSVPResponse: Decodable {
+    let message: String
+    let rsvp: RSVPData?
+    
     struct RSVPData: Decodable {
         let id: String
         let status: String
@@ -643,6 +678,8 @@ struct EventPostView: View {
                                 viewModel.updateRSVP(eventId: eventId, status: "NOT_GOING") { success in
                                     Log.debug("🔵 NOT_GOING response - Success: \(success)")
                                     if success {
+                                        // Update local state immediately
+                                        viewModel.updateLocalRSVPStatus(status: "NOT_GOING")
                                         // Refresh event details to get updated status
                                         viewModel.fetchEventDetails(eventId: eventId)
                                     }

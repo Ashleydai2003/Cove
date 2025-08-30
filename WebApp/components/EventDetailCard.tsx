@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Event } from '@/types/event';
 import { formatDate, formatTime } from '@/lib/utils';
-import { MapPin, Calendar, User, Ticket, Users } from 'lucide-react';
+import { MapPin, Calendar, User } from 'lucide-react';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
 
@@ -199,7 +199,7 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
               <div className="space-y-4">
                 {event.ticketPrice !== null && event.ticketPrice !== undefined && (
                   <div className="flex items-center gap-3">
-                    <Ticket size={20} className="text-[#2D2D2D]" />
+                    <img src="/ticket.svg" alt="Ticket" className="w-5 h-5" />
                     <span className="font-libre-bodoni text-base font-semibold text-[#2D2D2D]">
                       ${event.ticketPrice.toFixed(2)} per person
                     </span>
@@ -207,7 +207,7 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
                 )}
                 {event.memberCap !== null && event.memberCap !== undefined && (
                   <div className="flex items-center gap-3">
-                    <Users size={20} className="text-[#2D2D2D]" />
+                    <img src="/capacity.svg" alt="Capacity" className="w-5 h-5" />
                     <span className="font-libre-bodoni text-base font-semibold text-[#2D2D2D]">
                       {event.goingCount !== undefined && event.goingCount !== null 
                         ? `${Math.max(0, event.memberCap - event.goingCount)}/${event.memberCap} spots left`
@@ -242,7 +242,7 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
         {/* Right column: image + button */}
         <div className="space-y-6">
           {/* Image */}
-          <div className="relative w-full aspect-square rounded-2xl overflow-hidden">
+          <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden">
             {event.coverPhoto?.url ? (
               <Image
                 src={event.coverPhoto.url}
@@ -339,7 +339,7 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
             ) : (
               <button
                 onClick={handleRSVP}
-                className="px-16 py-3 bg-[#5E1C1D] text-white rounded-full font-libre-bodoni text-lg hover:bg-[#4A1718] transition-colors"
+                className="px-16 py-4 bg-[#5E1C1D] text-white rounded-full font-libre-bodoni text-xl font-medium hover:bg-[#4A1718] transition-colors shadow-lg"
               >
                 rsvp
               </button>
