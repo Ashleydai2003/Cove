@@ -57,7 +57,6 @@ struct TabBarView: View {
 
             // Cove Tab
             Button(action: { selectedTab = 3 }) {
-<<<<<<< HEAD
                 ZStack(alignment: .topTrailing) {
                     Image(selectedTab == 3 ? "cove_selected" : "cove_unselected")
                         .tabBarIcon(isSelected: selectedTab == 3, isMiddleButton: true)
@@ -70,11 +69,6 @@ struct TabBarView: View {
                             .offset(x: 6, y: -6)
                     }
                 }
-=======
-                Image(selectedTab == 3 ? "cove_selected" : "cove_unselected")
-                    .tabBarIcon(isSelected: selectedTab == 3, isMiddleButton: true)
-                    .animation(.none, value: selectedTab)
->>>>>>> 568699e726e7b9fa17d42b4a958b9f87fa6c0f5e
             }
             .frame(maxWidth: 40, maxHeight: 40)
 
