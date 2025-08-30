@@ -40,7 +40,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
 
   // Initialize reCAPTCHA verifier
   useEffect(() => {
-    if (typeof window !== 'undefined' && !recaptchaVerifier) {
+    if (typeof window !== 'undefined' && !recaptchaVerifier && isOpen) {
       // Wait for the modal to be open and DOM to be ready
       const initializeRecaptcha = () => {
         try {
@@ -55,6 +55,9 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
             return;
           }
           
+          // Clear any existing content
+          container.innerHTML = '';
+          
           const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
             'size': 'normal',
             'callback': () => {
@@ -68,38 +71,30 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
           });
           console.log('reCAPTCHA verifier created successfully');
           setRecaptchaVerifier(verifier);
-          
-          // Add a subtle animation to the container
-          const recaptchaContainer = document.getElementById('recaptcha-container');
-          if (recaptchaContainer) {
-            recaptchaContainer.style.opacity = '0';
-            setTimeout(() => {
-              recaptchaContainer.style.transition = 'opacity 0.3s ease-in-out';
-              recaptchaContainer.style.opacity = '1';
-            }, 100);
-          }
         } catch (error) {
           console.error('Failed to initialize reCAPTCHA:', error);
           setError('Failed to initialize verification. Please refresh the page.');
         }
       };
       
-      // Start initialization after modal is open
-      if (isOpen) {
-        initializeRecaptcha();
-      }
+      // Start initialization
+      initializeRecaptcha();
     }
     
     // Cleanup when modal closes
     return () => {
-      if (recaptchaVerifier && !isOpen) {
-        try {
-          recaptchaVerifier.clear();
-          setRecaptchaVerifier(null);
-          setRecaptchaCompleted(false);
-        } catch (error) {
-          console.log('Error clearing reCAPTCHA:', error);
+      if (!isOpen) {
+        if (recaptchaVerifier) {
+          try {
+            recaptchaVerifier.clear();
+          } catch (error) {
+            console.log('Error clearing reCAPTCHA:', error);
+          }
         }
+        setRecaptchaVerifier(null);
+        setRecaptchaCompleted(false);
+        setStep('phone');
+        setError('');
       }
     };
   }, [recaptchaVerifier, isOpen]);
@@ -110,29 +105,13 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
     setError('');
 
     try {
-      // Try to get or create reCAPTCHA verifier
-      let verifier = recaptchaVerifier;
-      if (!verifier) {
-        console.log('Creating reCAPTCHA verifier on-demand...');
-        try {
-          verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-            'size': 'normal',
-            'callback': () => {
-              console.log('reCAPTCHA callback executed');
-              setRecaptchaCompleted(true);
-            },
-            'expired-callback': () => {
-              console.log('reCAPTCHA expired');
-              setRecaptchaCompleted(false);
-            }
-          });
-          setRecaptchaVerifier(verifier);
-        } catch (error) {
-          console.error('Failed to create reCAPTCHA verifier:', error);
-          setError('Verification system not ready. Please refresh the page.');
-          return;
-        }
+      // Use existing reCAPTCHA verifier
+      if (!recaptchaVerifier) {
+        setError('Please complete the reCAPTCHA verification first.');
+        return;
       }
+      
+      let verifier = recaptchaVerifier;
 
       // Format phone number for Firebase (remove all non-digits and ensure it starts with +)
       let formattedPhone = phoneNumber.replace(/\D/g, ''); // Remove all non-digits
@@ -163,6 +142,8 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
       // Handle specific Firebase errors
       if (err.code === 'auth/captcha-check-failed') {
         setError('Domain not authorized. Please contact support or try from a different domain.');
+      } else if (err.code === 'auth/invalid-app-credential') {
+        setError('reCAPTCHA verification failed. Please refresh the page and try again.');
       } else if (err.code === 'auth/invalid-phone-number') {
         setError('Please enter a valid phone number.');
       } else if (err.code === 'auth/too-many-requests') {
@@ -267,16 +248,16 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-[#F5F5F0] flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-6">
-          <h2 className="text-2xl font-libre-bodoni text-[#5E1C1D]">
+        <div className="relative p-6 border-b border-gray-200">
+          <h2 className="text-4xl font-libre-bodoni text-[#5E1C1D] text-center font-bold">
             cove
           </h2>
           <button
             onClick={onClose}
-            className="w-8 h-8 bg-[#5E1C1D] rounded-full flex items-center justify-center text-white hover:bg-[#4A1718] transition-colors"
+            className="absolute top-4 right-4 w-8 h-8 bg-[#5E1C1D] rounded-full flex items-center justify-center text-white hover:bg-[#4A1718] transition-colors"
           >
             <X size={16} />
           </button>
@@ -307,7 +288,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-white text-[#2D2D2D] py-4 px-6 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-all font-medium text-lg"
+                className="w-full bg-white text-[#5E1C1D] py-4 px-6 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-all font-libre-bodoni text-lg font-medium"
               >
                 {isLoading ? 'Sending...' : 'send code'}
               </button>
@@ -330,7 +311,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-white text-[#2D2D2D] py-4 px-6 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-all font-medium text-lg"
+                className="w-full bg-white text-[#5E1C1D] py-4 px-6 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-all font-libre-bodoni text-lg font-medium"
               >
                 {isLoading ? 'Verifying...' : 'verify code'}
               </button>
@@ -397,7 +378,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-white text-[#2D2D2D] py-4 px-6 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-all font-medium text-lg"
+                className="w-full bg-white text-[#5E1C1D] py-4 px-6 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-all font-libre-bodoni text-lg font-medium"
               >
                 {isLoading ? 'Creating...' : "let's go"}
               </button>

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Event } from '@/types/event';
 import { formatDate, formatTime } from '@/lib/utils';
-import { MapPin, Calendar, User } from 'lucide-react';
+import { MapPin, Calendar, User, Ticket, Users } from 'lucide-react';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
 
@@ -107,7 +107,7 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
     try {
       console.log('Removing RSVP for event:', event.id);
       
-      const response = await fetch('/api/rsvp', {
+      const response = await fetch('/api/rsvp-remove', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -115,7 +115,6 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
         credentials: 'include', // Include cookies for authentication
         body: JSON.stringify({
           eventId: event.id,
-          status: 'NOT_GOING',
         }),
       });
 
@@ -165,16 +164,30 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
         {/* Left column: text */}
         <div className="space-y-8">
           <div>
-            <h1 className="font-libre-bodoni text-5xl lg:text-6xl text-[#5E1C1D] leading-[0.9] mb-4">
+            <h1 className="font-libre-bodoni text-4xl lg:text-5xl text-[#5E1C1D] leading-[0.9] mb-4">
               {title}
             </h1>
-            <p className="font-libre-bodoni text-base text-[#A8A8A8]">{hostedByText}</p>
+            <p className="font-libre-bodoni text-sm text-[#8B8B8B]">{hostedByText}</p>
           </div>
 
           <div className="space-y-6">
+            {/* Location or RSVP prompt */}
+            {canSeeFullDetails && event.location ? (
+              <div className="flex items-center space-x-2">
+                <MapPin size={16} className="text-[#8B8B8B]" />
+                <span className="font-libre-bodoni text-base text-[#2D2D2D]">
+                  {event.location}
+                </span>
+              </div>
+            ) : isAuthenticated && !canSeeFullDetails ? (
+              <div className="font-libre-bodoni text-sm text-[#8B8B8B]">
+                RSVP to see location
+              </div>
+            ) : null}
+
             <div>
-              <p className="font-libre-bodoni text-lg text-[#2D2D2D] font-medium">{dateStr}</p>
-              <p className="font-libre-bodoni text-base text-[#8B8B8B]">{timeStr.replace('AM','am').replace('PM','pm')}</p>
+              <p className="font-libre-bodoni text-lg font-semibold text-[#2D2D2D]">{dateStr}</p>
+              <p className="font-libre-bodoni text-sm text-[#8B8B8B]">{timeStr.replace('AM','am').replace('PM','pm')}</p>
             </div>
 
             {/* Divider */}
@@ -183,19 +196,19 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
             {/* Price and spots - only show if data exists */}
             {(event.ticketPrice !== null && event.ticketPrice !== undefined) || 
              (event.memberCap !== null && event.memberCap !== undefined) ? (
-              <div className="flex items-center gap-8">
+              <div className="space-y-4">
                 {event.ticketPrice !== null && event.ticketPrice !== undefined && (
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-6 bg-[#E8E8E8] rounded-sm"></div>
-                    <span className="font-libre-bodoni text-base text-[#2D2D2D]">
+                    <Ticket size={20} className="text-[#2D2D2D]" />
+                    <span className="font-libre-bodoni text-base font-semibold text-[#2D2D2D]">
                       ${event.ticketPrice.toFixed(2)} per person
                     </span>
                   </div>
                 )}
                 {event.memberCap !== null && event.memberCap !== undefined && (
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-6 bg-[#E8E8E8] rounded-sm"></div>
-                    <span className="font-libre-bodoni text-base text-[#2D2D2D]">
+                    <Users size={20} className="text-[#2D2D2D]" />
+                    <span className="font-libre-bodoni text-base font-semibold text-[#2D2D2D]">
                       {event.goingCount !== undefined && event.goingCount !== null 
                         ? `${Math.max(0, event.memberCap - event.goingCount)}/${event.memberCap} spots left`
                         : `${event.memberCap} spots available`
@@ -215,23 +228,11 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
               </div>
             )}
 
-            {/* Location - Only show if user can see full details */}
-            {canSeeFullDetails && event.location && (
-              <div className="space-y-4 max-w-md">
-                <div className="flex items-center space-x-2">
-                  <MapPin size={16} className="text-[#8B8B8B]" />
-                  <span className="font-libre-bodoni text-base text-[#2D2D2D]">
-                    {event.location}
-                  </span>
-                </div>
-              </div>
-            )}
-
             {/* RSVP Status Info - Only show if authenticated but not RSVP'd */}
             {isAuthenticated && !canSeeFullDetails && (
               <div className="space-y-4 max-w-md">
-                <div className="font-libre-bodoni text-base text-[#8B8B8B]">
-                  RSVP to see location and guest list
+                <div className="font-libre-bodoni text-sm text-[#8B8B8B]">
+                  RSVP to see guest list
                 </div>
               </div>
             )}
@@ -256,11 +257,11 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
             )}
           </div>
 
-          {/* Guest List Preview - Only show if user can see full details */}
-          {canSeeFullDetails && event.rsvps && event.rsvps.length > 0 && (
+          {/* Guest List Preview */}
+          {canSeeFullDetails && event.rsvps && event.rsvps.length > 0 ? (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <h3 className="font-libre-bodoni text-lg text-[#2D2D2D]">guest list</h3>
+                <h3 className="font-libre-bodoni text-base text-[#2D2D2D]">guest list</h3>
                 <button
                   onClick={() => setShowGuestList(true)}
                   className="text-[#5E1C1D] underline underline-offset-4 text-sm"
@@ -272,10 +273,10 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
               {/* Guest preview avatars */}
               <div className="flex items-center space-x-3">
                 <div className="flex -space-x-2">
-                  {event.rsvps.slice(0, 6).map((rsvp, index) => (
+                  {event.rsvps.slice(0, 5).map((rsvp, index) => (
                     <div
                       key={rsvp.id}
-                      className="w-12 h-12 rounded-full overflow-hidden border-2 border-white bg-gray-200"
+                      className="w-10 h-10 rounded-full overflow-hidden border-2 border-white bg-gray-200"
                     >
                       {rsvp.profilePhotoUrl ? (
                         <img
@@ -285,23 +286,32 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
                         />
                       ) : (
                         <div className="w-full h-full bg-gray-300 flex items-center justify-center">
-                          <User size={16} className="text-gray-500" />
+                          <User size={14} className="text-gray-500" />
                         </div>
                       )}
                     </div>
                   ))}
                 </div>
                 
-                {event.goingCount && event.goingCount > 6 && (
-                  <span className="font-libre-bodoni text-sm text-[#8B8B8B]">
-                    +{event.goingCount - 6} others going
+                {event.goingCount && event.goingCount > 5 && (
+                  <span className="font-libre-bodoni text-sm text-[#2D2D2D]">
+                    +{event.goingCount - 5} others going
                   </span>
                 )}
               </div>
             </div>
-          )}
+          ) : event.goingCount && event.goingCount > 0 ? (
+            <div className="text-center">
+              <span className="font-libre-bodoni text-sm text-[#2D2D2D]">
+                {event.goingCount} people going
+              </span>
+              <p className="font-libre-bodoni text-xs text-[#8B8B8B] mt-1">
+                RSVP to view guest list!
+              </p>
+            </div>
+          ) : null}
 
-          {/* Venmo Handle - Only show if authenticated */}
+          {/* Venmo Handle - Only show if authenticated and below price info */}
           {canSeeVenmoHandle && (
             <div className="text-center">
               <p className="font-libre-bodoni text-sm text-[#2D2D2D]">
@@ -321,15 +331,15 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
               </button>
             ) : rsvpStatus === 'GOING' ? (
               <button
-                onClick={handleRSVP}
-                className="px-16 py-3 bg-[#F5F5F5] text-[#2D2D2D] rounded-full font-libre-bodoni text-lg border border-[#E5E5E5] hover:bg-[#EEEEEE] transition-colors"
+                disabled
+                className="px-16 py-3 bg-[#F5F5F5] text-[#2D2D2D] rounded-full font-libre-bodoni text-lg border border-[#E5E5E5] cursor-not-allowed"
               >
-                can't make it...
+                you're on the list!
               </button>
             ) : (
               <button
                 onClick={handleRSVP}
-                className="px-16 py-3 bg-[#F5F5F5] text-[#2D2D2D] rounded-full font-libre-bodoni text-lg border border-[#E5E5E5] hover:bg-[#EEEEEE] transition-colors"
+                className="px-16 py-3 bg-[#5E1C1D] text-white rounded-full font-libre-bodoni text-lg hover:bg-[#4A1718] transition-colors"
               >
                 rsvp
               </button>

@@ -28,6 +28,7 @@ import {
   handleGetEvent,
   handleGetUserCoves,
   handleUpdateEventRSVP,
+  handleRemoveEventRSVP,
   handleGetRecommendedFriends,
   handleJoinCove,
   handleGetCalendarEvents,
@@ -122,6 +123,8 @@ export const handler = async (
         return handleGetUserCoves(event);
       case '/update-event-rsvp':
         return handleUpdateEventRSVP(event);
+      case '/remove-event-rsvp':
+        return handleRemoveEventRSVP(event);
       case '/recommended-friends':
         return handleGetRecommendedFriends(event);
       case '/join-cove':

@@ -1,15 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { clearSecureSession, validateToken } from '@/lib/session';
 
 export async function GET(request: NextRequest) {
   try {
     // Get auth token from cookie
-    const authToken = request.cookies.get('firebase-token')?.value;
+    const authToken = request.cookies.get('session-token')?.value;
 
     if (!authToken) {
       return NextResponse.json(
         { isAuthenticated: false },
         { status: 401 }
       );
+    }
+
+    // Validate token format
+    if (!validateToken(authToken)) {
+      const response = NextResponse.json(
+        { isAuthenticated: false },
+        { status: 401 }
+      );
+      clearSecureSession(response);
+      return response;
     }
 
     // Call the backend API to verify the token and get user info
@@ -32,7 +43,7 @@ export async function GET(request: NextRequest) {
         { isAuthenticated: false },
         { status: 401 }
       );
-              response.cookies.delete('firebase-token');
+      clearSecureSession(response);
       return response;
     }
   } catch (error) {
