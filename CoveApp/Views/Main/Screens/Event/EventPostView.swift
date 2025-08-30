@@ -365,6 +365,7 @@ struct EventPostView: View {
     @State private var showingDeleteAlert = false
     @State private var showingGuestList = false
     @State private var showingTicketConfirmation = false
+    @State private var showingShareSheet = false
 
     init(eventId: String, coveCoverPhoto: CoverPhoto? = nil) {
         self.eventId = eventId
@@ -420,6 +421,16 @@ struct EventPostView: View {
 
                             Spacer()
 
+                            // Add share button
+                            Button {
+                                    showingShareSheet = true
+                                } label: {
+                                    Image(systemName: "square.and.arrow.up")
+                                        .foregroundColor(Colors.primaryDark)
+                                        .font(.system(size: 20))
+                                }
+                                .padding(.top, 16)
+                            
                             // Add delete button if user is the host
                             if event.isHost == true {
                                 Button {
@@ -801,7 +812,22 @@ struct EventPostView: View {
                 }
             )
         }
+        .sheet(isPresented: $showingShareSheet) {
+            ShareSheet(activityItems: ["https://www.coveapp.co/events/\(eventId)"])
+        }
     }
+}
+
+// MARK: - Share Sheet
+struct ShareSheet: UIViewControllerRepresentable {
+    let activityItems: [Any]
+    
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        let controller = UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+        return controller
+    }
+    
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
 #Preview {
