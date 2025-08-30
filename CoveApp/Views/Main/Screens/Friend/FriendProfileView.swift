@@ -7,6 +7,7 @@ struct FriendProfileView: View {
     @StateObject private var viewModel = FriendProfileModel()
     @Environment(\.dismiss) private var dismiss
     @State private var displayPhotoURL: URL?
+    @State private var showDetails = false
 
     init(userId: String, initialPhotoUrl: URL? = nil) {
         self.userId = userId
@@ -62,18 +63,21 @@ struct FriendProfileView: View {
 
                             if !viewModel.locationName.isEmpty {
                                 HStack(spacing: 6) {
-                                    Image(systemName: "mappin.and.ellipse")
-                                        .foregroundColor(Colors.k6F6F73)
-                                    Text(viewModel.locationName)
-                                        .font(.LeagueSpartan(size: 14))
-                                        .foregroundColor(Colors.k6F6F73)
+                                    Image("locationIcon")
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fit)
+                                        .frame(width: 16, height: 16)
+                                        .foregroundColor(Colors.primaryDark)
+                                    Text(viewModel.locationName.lowercased())
+                                        .font(.LibreBodoni(size: 14))
+                                        .foregroundColor(Colors.primaryDark)
                                 }
                                 .frame(maxWidth: .infinity, alignment: .center)
                             }
 
                             if let bio = profile.bio, !bio.isEmpty {
                                 Text(bio)
-                                    .font(.LibreBodoni(size: 15))
+                                    .font(.LibreBodoni(size: 16))
                                     .foregroundColor(Colors.k6F6F73)
                                     .fixedSize(horizontal: false, vertical: true)
                                     .multilineTextAlignment(.center)
@@ -81,6 +85,82 @@ struct FriendProfileView: View {
                             }
                         }
                         .padding(.horizontal)
+
+                        // Combined row: Age, Location, Alma Mater with carrot (placeholders where needed)
+                        HStack(spacing: 16) {
+                            // Age (placeholder)
+                            Text("23")
+                                .font(.LibreBodoni(size: 18))
+                                .foregroundColor(Colors.primaryDark)
+
+                            // Location (if available)
+                            if !viewModel.locationName.isEmpty {
+                                HStack(spacing: 6) {
+                                    Image("locationIcon")
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fit)
+                                        .frame(width: 16, height: 16)
+                                        .foregroundColor(Colors.primaryDark)
+                                    Text(viewModel.locationName.lowercased())
+                                        .font(.LibreBodoni(size: 14))
+                                        .foregroundColor(Colors.primaryDark)
+                                }
+                            }
+
+                            // Alma mater + carrot
+                            HStack(spacing: 10) {
+                                Image("gradIcon")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(width: 16, height: 16)
+                                    .foregroundStyle(Colors.k6B6B6B)
+                                Text("stanford")
+                                    .font(.LibreBodoni(size: 14))
+                                    .foregroundColor(Colors.primaryDark)
+                                Button(action: {
+                                    withAnimation(.easeInOut(duration: 0.2)) {
+                                        showDetails.toggle()
+                                    }
+                                }) {
+                                    Image(systemName: showDetails ? "chevron.up" : "chevron.down")
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .foregroundColor(Colors.primaryDark)
+                                        .frame(width: 16, height: 16)
+                                        .contentShape(Rectangle())
+                                }
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .center)
+
+                        // Collapsible details row (status + work) with placeholders
+                        if showDetails {
+                            HStack(spacing: 16) {
+                                // Relationship Status
+                                HStack(spacing: 6) {
+                                    Image("relationshipIcon")
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fit)
+                                        .frame(width: 16, height: 16)
+                                    Text("single")
+                                        .font(.LibreBodoni(size: 14))
+                                        .foregroundColor(Colors.primaryDark)
+                                }
+
+                                // Work (job @ location)
+                                HStack(spacing: 6) {
+                                    Image("workIcon")
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fit)
+                                        .frame(width: 16, height: 16)
+                                        .foregroundStyle(Colors.k6B6B6B)
+                                    Text("swe @ google")
+                                        .font(.LibreBodoni(size: 15))
+                                        .foregroundColor(Colors.primaryDark)
+                                }
+                            }
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .transition(.opacity.combined(with: .move(edge: .top)))
+                        }
 
                         // Stats strip (centered)
                         if let s = profile.stats {
@@ -93,7 +173,16 @@ struct FriendProfileView: View {
                             .padding(.top, 4)
                         }
 
-                        // TODO: Mutual Events carousel can be inserted here when data is available
+                        // Second photo (if available) after interests, mirroring ProfileView layout
+                        if profile.photos.count > 1 {
+                            HStack { Spacer()
+                                KFImage(profile.photos[0].isProfilePic ? profile.photos[1].url : profile.photos[0].url)
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(maxWidth: UIScreen.main.bounds.width * 0.8)
+                                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                            Spacer() }
+                        }
 
                         // MARK: Hobbies / Interests
                         if !profile.interests.isEmpty {
