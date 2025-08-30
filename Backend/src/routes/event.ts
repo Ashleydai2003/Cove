@@ -537,11 +537,14 @@ export const handleGetEvent = async (event: APIGatewayProxyEvent): Promise<APIGa
     }
 
     // Optional authentication
+    console.log('Request cookies:', event.headers.cookie);
     const authAttempt = await authMiddleware(event);
     let userUid: string | null = null;
     if (!('statusCode' in authAttempt)) {
       userUid = authAttempt.user.uid;
       console.log('Authenticated user:', userUid);
+    } else {
+      console.log('Authentication failed or no auth token provided');
     }
 
     const eventId = event.queryStringParameters?.eventId;
@@ -712,6 +715,7 @@ export const handleGetEvent = async (event: APIGatewayProxyEvent): Promise<APIGa
       coverPhoto
     };
 
+    // Always include rsvpStatus for authenticated users
     if (userUid) {
       limitedEvent.isHost = false;
       limitedEvent.rsvpStatus = userRsvp?.status || null;
@@ -720,6 +724,9 @@ export const handleGetEvent = async (event: APIGatewayProxyEvent): Promise<APIGa
         rsvpStatus: limitedEvent.rsvpStatus, 
         userRsvp: userRsvp 
       });
+    } else {
+      // Unauthenticated users get null rsvpStatus
+      limitedEvent.rsvpStatus = null;
     }
 
     return {
@@ -852,6 +859,37 @@ export const handleUpdateEventRSVP = async (event: APIGatewayProxyEvent): Promis
         statusCode: 403,
         body: JSON.stringify({
           message: 'You must be a member of this cove to RSVP to its events'
+        })
+      };
+    }
+
+    // Check if user already has an RSVP for this event
+    const existingRSVP = await prisma.eventRSVP.findUnique({
+      where: {
+        eventId_userId: {
+          eventId: eventId,
+          userId: user.uid
+        }
+      }
+    });
+
+    // If user already has GOING or PENDING status, no action needed
+    if (existingRSVP && (existingRSVP.status === 'GOING' || existingRSVP.status === 'PENDING')) {
+      const statusMessage = existingRSVP.status === 'GOING' 
+        ? 'User is already going to this event'
+        : 'User already has a pending RSVP for this event';
+      
+      return {
+        statusCode: 200,
+        body: JSON.stringify({
+          message: statusMessage,
+          rsvp: {
+            id: existingRSVP.id,
+            status: existingRSVP.status,
+            eventId: existingRSVP.eventId,
+            userId: existingRSVP.userId,
+            createdAt: existingRSVP.createdAt
+          }
         })
       };
     }
@@ -1379,7 +1417,13 @@ export const handleGetEventMembers = async (event: APIGatewayProxyEvent): Promis
           select: { 
             id: true, 
             name: true, 
-            profilePhotoID: true 
+            profilePhotoID: true,
+            profile: {
+              select: {
+                almaMater: true,
+                gradYear: true
+              }
+            }
           } 
         }
       }
@@ -1404,7 +1448,9 @@ export const handleGetEventMembers = async (event: APIGatewayProxyEvent): Promis
           userId: member.user.id,
           userName: member.user.name,
           profilePhotoUrl,
-          joinedAt: member.createdAt
+          joinedAt: member.createdAt,
+          school: member.user.profile?.almaMater || null,
+          gradYear: member.user.profile?.gradYear || null
         };
       })
     );

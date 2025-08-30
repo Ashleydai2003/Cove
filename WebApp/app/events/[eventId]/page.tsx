@@ -39,8 +39,9 @@ export default function EventPage() {
     return (
       <div className="min-h-screen bg-[#F5F0E6] flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#5E1C1D] mx-auto mb-4"></div>
-          <p className="font-libre-bodoni text-[#5E1C1D]">Loading event...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#5E1C1D] mx-auto mb-6"></div>
+          <p className="font-libre-bodoni text-xl text-[#5E1C1D] mb-2">Loading event...</p>
+          <p className="font-libre-bodoni text-sm text-[#8B8B8B]">Getting everything ready for you</p>
         </div>
       </div>
     );

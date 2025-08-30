@@ -12,10 +12,12 @@ interface GuestListModalProps {
 
 interface Guest {
   id: string;
-  name: string;
-  profilePhoto?: {
-    url: string;
-  };
+  userId: string;
+  userName: string;
+  profilePhotoUrl: string | null;
+  joinedAt: string;
+  school: string | null;
+  gradYear: string | null;
 }
 
 export default function GuestListModal({ isOpen, onClose, eventId }: GuestListModalProps) {
@@ -56,36 +58,39 @@ export default function GuestListModal({ isOpen, onClose, eventId }: GuestListMo
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl max-w-md w-full max-h-[80vh] overflow-hidden">
+      <div className="bg-white rounded-2xl w-full max-w-lg h-[400px] sm:h-[450px] md:h-[500px] lg:h-[550px] overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-xl font-semibold text-gray-900">guest list</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <X size={24} />
-          </button>
+        <div className="flex items-center justify-between p-6">
+          <div className="flex-1"></div>
+          <h2 className="font-libre-bodoni text-xl text-[#5E1C1D] text-center flex-1">guest list</h2>
+          <div className="flex-1 flex justify-end">
+            <button
+              onClick={onClose}
+              className="w-8 h-8 rounded-full bg-[#5E1C1D] text-white flex items-center justify-center hover:bg-[#4A1718] transition-colors"
+            >
+              <X size={16} />
+            </button>
+          </div>
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[60vh]">
+        <div className="px-6 pb-6 overflow-y-auto h-[280px] sm:h-[330px] md:h-[380px] lg:h-[430px]">
           {loading && (
             <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading guests...</p>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#5E1C1D] mx-auto mb-4"></div>
+              <p className="font-libre-bodoni text-[#8B8B8B]">Loading guests...</p>
             </div>
           )}
 
           {error && (
             <div className="text-center py-8">
-              <p className="text-red-600">{error}</p>
+              <p className="font-libre-bodoni text-red-600">{error}</p>
             </div>
           )}
 
           {!loading && !error && guests.length === 0 && (
             <div className="text-center py-8">
-              <p className="text-gray-600">No guests yet</p>
+              <p className="font-libre-bodoni text-[#8B8B8B]">No guests yet</p>
             </div>
           )}
 
@@ -93,21 +98,26 @@ export default function GuestListModal({ isOpen, onClose, eventId }: GuestListMo
             <div className="space-y-4">
               {guests.map((guest) => (
                 <div key={guest.id} className="flex items-center space-x-4">
-                  <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
-                    {guest.profilePhoto?.url ? (
+                  <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-200 flex-shrink-0 border-2 border-white shadow-sm">
+                    {guest.profilePhotoUrl ? (
                       <img
-                        src={guest.profilePhoto.url}
-                        alt={guest.name}
+                        src={guest.profilePhotoUrl}
+                        alt={guest.userName}
                         className="w-full h-full object-cover"
                       />
                     ) : (
                       <div className="w-full h-full bg-gray-300 flex items-center justify-center">
-                        <User size={20} className="text-gray-500" />
+                        <User size={24} className="text-gray-500" />
                       </div>
                     )}
                   </div>
                   <div className="flex-1">
-                    <p className="text-gray-900 font-medium">{guest.name}</p>
+                    <p className="font-libre-bodoni text-[#2D2D2D] font-medium">{guest.userName}</p>
+                    {guest.school && guest.gradYear && (
+                      <p className="font-libre-bodoni text-sm text-[#8B8B8B] mt-1">
+                        {guest.school}'{guest.gradYear.slice(-2)}
+                      </p>
+                    )}
                   </div>
                 </div>
               ))}

@@ -8,7 +8,7 @@ const SESSION_CONFIG = {
   secure: process.env.NODE_ENV === 'production',
   sameSite: 'lax' as const, // Changed from 'strict' to 'lax' for better compatibility
   path: '/',
-  domain: undefined, // Remove domain restriction for now to debug the issue
+  domain: process.env.NODE_ENV === 'production' ? '.coveapp.co' : undefined,
 };
 
 // Rate limiting configuration

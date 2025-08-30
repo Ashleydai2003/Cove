@@ -38,6 +38,20 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
     hobbies: [] as string[]
   });
 
+  // Validation functions
+  const isGradYearValid = (year: string) => {
+    return /^\d{4}$/.test(year); // Exactly 4 digits
+  };
+
+  const isFormValid = () => {
+    return (
+      formData.name.trim() !== '' &&
+      formData.birthdate !== '' &&
+      formData.almaMater.trim() !== '' &&
+      isGradYearValid(formData.gradYear)
+    );
+  };
+
   // Initialize reCAPTCHA verifier
   useEffect(() => {
     if (typeof window !== 'undefined' && !recaptchaVerifier && isOpen) {
@@ -204,6 +218,13 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
 
   const handleOnboardingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate graduation year before submitting
+    if (!isGradYearValid(formData.gradYear)) {
+      setError('Please enter a valid graduation year');
+      return;
+    }
+    
     setIsLoading(true);
     setError('');
 
@@ -213,11 +234,11 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include', // Include cookies
         body: JSON.stringify({
-          name: formData.name,
+          name: formData.name.toLowerCase(),
           birthdate: formData.birthdate,
-          almaMater: formData.almaMater,
+          almaMater: formData.almaMater.toLowerCase(),
           gradYear: formData.gradYear,
-          hobbies: formData.hobbies
+          hobbies: formData.hobbies.map(hobby => hobby.toLowerCase())
         })
       });
 
@@ -336,7 +357,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
                 <input
                   type="text"
                   value={formData.name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value.toLowerCase() }))}
                   placeholder="full name"
                   className="w-full px-0 py-3 border-0 border-b-2 border-gray-300 focus:border-[#5E1C1D] focus:outline-none text-lg font-libre-bodoni bg-transparent"
                   required
@@ -357,7 +378,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
                 <input
                   type="text"
                   value={formData.almaMater}
-                  onChange={(e) => setFormData(prev => ({ ...prev, almaMater: e.target.value }))}
+                  onChange={(e) => setFormData(prev => ({ ...prev, almaMater: e.target.value.toLowerCase() }))}
                   placeholder="alma mater"
                   className="w-full px-0 py-3 border-b-2 border-gray-300 focus:border-[#5E1C1D] focus:outline-none text-lg font-libre-bodoni bg-transparent"
                   required
@@ -370,15 +391,28 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
                   value={formData.gradYear}
                   onChange={(e) => setFormData(prev => ({ ...prev, gradYear: e.target.value }))}
                   placeholder="graduation year"
-                  className="w-full px-0 py-3 border-0 border-b-2 border-gray-300 focus:border-[#5E1C1D] focus:outline-none text-lg font-libre-bodoni bg-transparent"
+                  className={`w-full px-0 py-3 border-0 border-b-2 focus:outline-none text-lg font-libre-bodoni bg-transparent ${
+                    formData.gradYear && !isGradYearValid(formData.gradYear) 
+                      ? 'border-red-500' 
+                      : formData.gradYear 
+                        ? 'border-green-500' 
+                        : 'border-gray-300 focus:border-[#5E1C1D]'
+                  }`}
                   required
                 />
+                {formData.gradYear && !isGradYearValid(formData.gradYear) && (
+                  <p className="text-red-500 text-sm mt-1">Please enter a valid 4-digit year (e.g., 2025)</p>
+                )}
               </div>
 
               <button
                 type="submit"
-                disabled={isLoading}
-                className="w-full bg-white text-[#5E1C1D] py-4 px-6 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-all font-libre-bodoni text-lg font-medium"
+                disabled={isLoading || !isFormValid()}
+                className={`w-full py-4 px-6 rounded-lg border border-gray-200 shadow-sm transition-all font-libre-bodoni text-lg font-medium ${
+                  isFormValid() && !isLoading
+                    ? 'bg-white text-[#5E1C1D] hover:shadow-md'
+                    : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                }`}
               >
                 {isLoading ? 'Creating...' : "let's go"}
               </button>
