@@ -142,6 +142,36 @@ export const handleOnboard = async (event: APIGatewayProxyEvent): Promise<APIGat
       gender
     } = JSON.parse(event.body);
 
+    // Step 6.5: Validate required fields
+    const requiredFields = [];
+    if (!name || name.trim() === '') requiredFields.push('name');
+    if (!birthdate) requiredFields.push('birthdate');
+    if (!almaMater || almaMater.trim() === '') requiredFields.push('almaMater');
+    if (!gradYear || gradYear.trim() === '') requiredFields.push('gradYear');
+
+    if (requiredFields.length > 0) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          message: `Missing required fields: ${requiredFields.join(', ')}`,
+          requiredFields: requiredFields
+        })
+      };
+    }
+
+    // Validate birthdate format
+    if (birthdate) {
+      const birthdateDate = new Date(birthdate);
+      if (isNaN(birthdateDate.getTime())) {
+        return {
+          statusCode: 400,
+          body: JSON.stringify({
+            message: 'Invalid birthdate format. Please provide a valid date.'
+          })
+        };
+      }
+    }
+
     // Step 6.5: Handle location data - either direct coordinates or city name
     let finalLatitude = latitude;
     let finalLongitude = longitude;

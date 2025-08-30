@@ -227,8 +227,8 @@ class AppController: ObservableObject {
             newModel.refreshEvents()
         }
 
-        // Also refresh the cove feed to ensure UI updates
-        coveFeed.refreshUserCoves()
+        // Note: Not calling coveFeed.refreshUserCoves() here to prevent race conditions
+        // The cove events refresh above is sufficient for the cove view
     }
 
     /**

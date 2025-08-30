@@ -16,6 +16,8 @@ struct CalendarEvent: Decodable, Identifiable, ContentComparable {
     let description: String?
     let date: String
     let location: String
+    let memberCap: Int?
+    let ticketPrice: Double?
     let coveId: String
     let coveName: String
     let coveCoverPhoto: CoverPhoto?
@@ -23,8 +25,74 @@ struct CalendarEvent: Decodable, Identifiable, ContentComparable {
     let hostName: String
     let rsvpStatus: String?
     let goingCount: Int
+    let pendingCount: Int?
     let createdAt: String
     let coverPhoto: CoverPhoto?
+
+    // Memberwise initializer to preserve existing call sites
+    init(
+        id: String,
+        name: String,
+        description: String?,
+        date: String,
+        location: String,
+        memberCap: Int? = nil,
+        ticketPrice: Double? = nil,
+        coveId: String,
+        coveName: String,
+        coveCoverPhoto: CoverPhoto?,
+        hostId: String,
+        hostName: String,
+        rsvpStatus: String?,
+        goingCount: Int,
+        pendingCount: Int? = nil,
+        createdAt: String,
+        coverPhoto: CoverPhoto?
+    ) {
+        self.id = id
+        self.name = name
+        self.description = description
+        self.date = date
+        self.location = location
+        self.memberCap = memberCap
+        self.ticketPrice = ticketPrice
+        self.coveId = coveId
+        self.coveName = coveName
+        self.coveCoverPhoto = coveCoverPhoto
+        self.hostId = hostId
+        self.hostName = hostName
+        self.rsvpStatus = rsvpStatus
+        self.goingCount = goingCount
+        self.pendingCount = pendingCount
+        self.createdAt = createdAt
+        self.coverPhoto = coverPhoto
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, description, date, location, memberCap, ticketPrice, coveId, coveName, coveCoverPhoto, hostId, hostName, rsvpStatus, goingCount, pendingCount, createdAt, coverPhoto
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try container.decode(String.self, forKey: .id)
+        self.name = try container.decode(String.self, forKey: .name)
+        self.description = try container.decodeIfPresent(String.self, forKey: .description)
+        self.date = try container.decode(String.self, forKey: .date)
+        // Provide frontend defaults when limited fields are omitted
+        self.location = try container.decodeIfPresent(String.self, forKey: .location) ?? "RSVP to see location"
+        self.memberCap = try container.decodeIfPresent(Int.self, forKey: .memberCap)
+        self.ticketPrice = try container.decodeIfPresent(Double.self, forKey: .ticketPrice)
+        self.coveId = try container.decodeIfPresent(String.self, forKey: .coveId) ?? ""
+        self.coveName = try container.decodeIfPresent(String.self, forKey: .coveName) ?? ""
+        self.coveCoverPhoto = try container.decodeIfPresent(CoverPhoto.self, forKey: .coveCoverPhoto)
+        self.hostId = try container.decodeIfPresent(String.self, forKey: .hostId) ?? ""
+        self.hostName = try container.decodeIfPresent(String.self, forKey: .hostName) ?? ""
+        self.rsvpStatus = try container.decodeIfPresent(String.self, forKey: .rsvpStatus)
+        self.goingCount = try container.decodeIfPresent(Int.self, forKey: .goingCount) ?? 0
+        self.pendingCount = try container.decodeIfPresent(Int.self, forKey: .pendingCount)
+        self.createdAt = try container.decodeIfPresent(String.self, forKey: .createdAt) ?? self.date
+        self.coverPhoto = try container.decodeIfPresent(CoverPhoto.self, forKey: .coverPhoto)
+    }
 
     /// Returns the event date as a Date object (or now if parsing fails)
     var eventDate: Date {
@@ -55,8 +123,11 @@ struct CalendarEvent: Decodable, Identifiable, ContentComparable {
                description != other.description ||
                date != other.date ||
                location != other.location ||
+               memberCap != other.memberCap ||
+               ticketPrice != other.ticketPrice ||
                rsvpStatus != other.rsvpStatus ||
                goingCount != other.goingCount ||
+               pendingCount != other.pendingCount ||
                hostName != other.hostName ||
                coveName != other.coveName
     }
@@ -68,14 +139,19 @@ struct Event: Decodable {
     let name: String
     let description: String?
     let date: String
-    let location: String
-    let coveId: String
+    let location: String?
+    let memberCap: Int?
+    let ticketPrice: Double?
+    let paymentHandle: String?
+    let coveId: String?
     let host: Host
     let cove: Cove
     let rsvpStatus: String?
-    let rsvps: [EventRSVP]
+    let goingCount: Int?
+    let pendingCount: Int?
+    let rsvps: [EventRSVP]?
     let coverPhoto: CoverPhoto?
-    let isHost: Bool
+    let isHost: Bool?
 
     var eventDate: Date {
         let inputFormatter = DateFormatter()
@@ -98,13 +174,13 @@ struct Event: Decodable {
     }
     /// Host info for the event
     struct Host: Decodable {
-        let id: String
+        let id: String?
         let name: String
     }
     /// Cove summary for the event
     struct Cove: Decodable {
-        let id: String
-        let name: String
+        let id: String?
+        let name: String?
         let coverPhoto: CoverPhoto?
     }
 }

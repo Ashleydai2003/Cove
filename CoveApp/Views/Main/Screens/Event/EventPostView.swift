@@ -27,9 +27,11 @@ class EventPostViewModel: ObservableObject {
 
                 switch result {
                 case .success(let response):
+                    Log.debug("🔵 fetchEventDetails - Backend returned rsvpStatus: \(response.event.rsvpStatus ?? "nil")")
                     self.event = response.event
                     completion?()
                 case .failure(let error):
+                    Log.debug("🔵 fetchEventDetails Error: \(error)")
                     self.errorMessage = error.localizedDescription
                 }
             }
@@ -38,6 +40,7 @@ class EventPostViewModel: ObservableObject {
 
     func updateRSVP(eventId: String, status: String, completion: @escaping (Bool) -> Void) {
         isUpdatingRSVP = true
+        Log.debug("🔵 updateRSVP called with status: \(status)")
 
         NetworkManager.shared.post(endpoint: "/update-event-rsvp", parameters: ["eventId": eventId, "status": status]) { [weak self] (result: Result<UpdateRSVPResponse, NetworkError>) in
             guard let self = self else { return }
@@ -46,9 +49,12 @@ class EventPostViewModel: ObservableObject {
                 self.isUpdatingRSVP = false
 
                 switch result {
-                case .success:
-                    () // No action needed
+                case .success(let response):
+                    Log.debug("🔵 Backend RSVP Response: \(response)")
+                    Log.debug("🔵 Backend returned status: \(response.rsvp.status)")
+                    completion(true)
                 case .failure(let error):
+                    Log.debug("🔵 RSVP Error: \(error)")
                     self.errorMessage = error.localizedDescription
                     completion(false)
                 }
@@ -83,31 +89,38 @@ class EventPostViewModel: ObservableObject {
         // Update the current user's RSVP status in the local event
         if let currentUserId = Auth.auth().currentUser?.uid {
             // Create a new RSVPs array with the updated status
-            var updatedRsvps = currentEvent.rsvps
+            var updatedRsvps: [EventRSVP] = currentEvent.rsvps ?? []
 
             // Find and update existing RSVP or add new one
             if let index = updatedRsvps.firstIndex(where: { $0.userId == currentUserId }) {
-                // Create a new RSVP with updated status
-                let updatedRSVP = EventRSVP(
-                    id: updatedRsvps[index].id,
-                    status: status,
-                    userId: currentUserId,
-                    userName: updatedRsvps[index].userName,
-                    profilePhotoUrl: updatedRsvps[index].profilePhotoUrl,
-                    createdAt: updatedRsvps[index].createdAt
-                )
-                updatedRsvps[index] = updatedRSVP
+                if status == "NOT_GOING" {
+                    // Remove RSVP entirely for NOT_GOING
+                    updatedRsvps.remove(at: index)
+                } else {
+                    // Create a new RSVP with updated status
+                    let updatedRSVP = EventRSVP(
+                        id: updatedRsvps[index].id,
+                        status: status,
+                        userId: currentUserId,
+                        userName: updatedRsvps[index].userName,
+                        profilePhotoUrl: updatedRsvps[index].profilePhotoUrl,
+                        createdAt: updatedRsvps[index].createdAt
+                    )
+                    updatedRsvps[index] = updatedRSVP
+                }
             } else {
-                // Add new RSVP for current user
-                let newRSVP = EventRSVP(
-                    id: UUID().uuidString, // Temporary ID
-                    status: status,
-                    userId: currentUserId,
-                    userName: "You", // Placeholder name
-                    profilePhotoUrl: nil,
-                    createdAt: ISO8601DateFormatter().string(from: Date())
-                )
-                updatedRsvps.append(newRSVP)
+                if status != "NOT_GOING" {
+                    // Add new RSVP for current user
+                    let newRSVP = EventRSVP(
+                        id: UUID().uuidString, // Temporary ID
+                        status: status,
+                        userId: currentUserId,
+                        userName: "You", // Placeholder name
+                        profilePhotoUrl: nil,
+                        createdAt: ISO8601DateFormatter().string(from: Date())
+                    )
+                    updatedRsvps.append(newRSVP)
+                }
             }
 
             // Create a new Event instance with updated RSVPs
@@ -117,10 +130,15 @@ class EventPostViewModel: ObservableObject {
                 description: currentEvent.description,
                 date: currentEvent.date,
                 location: currentEvent.location,
+                memberCap: currentEvent.memberCap,
+                ticketPrice: currentEvent.ticketPrice,
+                paymentHandle: currentEvent.paymentHandle,
                 coveId: currentEvent.coveId,
                 host: currentEvent.host,
                 cove: currentEvent.cove,
-                rsvpStatus: status,
+                rsvpStatus: status == "NOT_GOING" ? nil : status,
+                goingCount: currentEvent.goingCount,
+                pendingCount: currentEvent.pendingCount,
                 rsvps: updatedRsvps,
                 coverPhoto: currentEvent.coverPhoto,
                 isHost: currentEvent.isHost
@@ -128,6 +146,118 @@ class EventPostViewModel: ObservableObject {
 
             // Update the published event
             event = updatedEvent
+        }
+    }
+    
+    // MARK: - New Event Member Management Methods
+    
+    @Published var eventMembers: [EventMember] = []
+    @Published var pendingMembers: [PendingMember] = []
+    @Published var isLoadingMembers = false
+    @Published var isLoadingPending = false
+    @Published var hasMoreMembers = false
+    @Published var hasMorePending = false
+    @Published var membersCursor: String?
+    @Published var pendingCursor: String?
+    
+    /// Fetch approved event members (GOING status)
+    func fetchEventMembers(eventId: String, refresh: Bool = false, completion: (() -> Void)? = nil) {
+        if refresh {
+            eventMembers.removeAll()
+            membersCursor = nil
+            hasMoreMembers = false
+        }
+        
+        guard !isLoadingMembers else { return }
+        isLoadingMembers = true
+        
+        var parameters: [String: Any] = ["eventId": eventId]
+        if let cursor = membersCursor {
+            parameters["cursor"] = cursor
+        }
+        
+        NetworkManager.shared.get(endpoint: "/event-members", parameters: parameters) { [weak self] (result: Result<EventMembersResponse, NetworkError>) in
+            guard let self = self else { return }
+            
+            DispatchQueue.main.async {
+                self.isLoadingMembers = false
+                
+                switch result {
+                case .success(let response):
+                    if refresh {
+                        self.eventMembers = response.members
+                    } else {
+                        self.eventMembers.append(contentsOf: response.members)
+                    }
+                    self.hasMoreMembers = response.hasMore
+                    self.membersCursor = response.nextCursor
+                    completion?()
+                case .failure(let error):
+                    self.errorMessage = error.localizedDescription
+                    completion?()
+                }
+            }
+        }
+    }
+    
+    /// Fetch pending event members (host only)
+    func fetchPendingMembers(eventId: String, refresh: Bool = false, completion: (() -> Void)? = nil) {
+        if refresh {
+            pendingMembers.removeAll()
+            pendingCursor = nil
+            hasMorePending = false
+        }
+        
+        guard !isLoadingPending else { return }
+        isLoadingPending = true
+        
+        var parameters: [String: Any] = ["eventId": eventId]
+        if let cursor = pendingCursor {
+            parameters["cursor"] = cursor
+        }
+        
+        NetworkManager.shared.get(endpoint: "/pending-members", parameters: parameters) { [weak self] (result: Result<PendingMembersResponse, NetworkError>) in
+            guard let self = self else { return }
+            
+            DispatchQueue.main.async {
+                self.isLoadingPending = false
+                
+                switch result {
+                case .success(let response):
+                    if refresh {
+                        self.pendingMembers = response.pendingMembers
+                    } else {
+                        self.pendingMembers.append(contentsOf: response.pendingMembers)
+                    }
+                    self.hasMorePending = response.hasMore
+                    self.pendingCursor = response.nextCursor
+                    completion?()
+                case .failure(let error):
+                    self.errorMessage = error.localizedDescription
+                    completion?()
+                }
+            }
+        }
+    }
+    
+    /// Approve or decline an RSVP (host only)
+    func approveDeclineRSVP(rsvpId: String, action: String, completion: @escaping (Bool) -> Void) {
+        NetworkManager.shared.post(endpoint: "/approve-decline-rsvp", parameters: ["rsvpId": rsvpId, "action": action]) { [weak self] (result: Result<ApproveDeclineResponse, NetworkError>) in
+            guard let self = self else { return }
+            
+            DispatchQueue.main.async {
+                switch result {
+                case .success:
+                    // Remove the member from pending list if declined, or refresh if approved
+                    if action == "decline" {
+                        self.pendingMembers.removeAll { $0.id == rsvpId }
+                    }
+                    completion(true)
+                case .failure(let error):
+                    self.errorMessage = error.localizedDescription
+                    completion(false)
+                }
+            }
         }
     }
 }
@@ -154,6 +284,42 @@ struct UpdateRSVPResponse: Decodable {
     }
 }
 
+// MARK: - Event Member Management Models
+
+struct EventMember: Decodable, Identifiable {
+    let id: String
+    let userId: String
+    let userName: String
+    let profilePhotoUrl: URL?
+    let joinedAt: String
+}
+
+struct PendingMember: Decodable, Identifiable {
+    let id: String
+    let userId: String
+    let userName: String
+    let profilePhotoUrl: URL?
+    let requestedAt: String
+}
+
+struct EventMembersResponse: Decodable {
+    let members: [EventMember]
+    let hasMore: Bool
+    let nextCursor: String?
+}
+
+struct PendingMembersResponse: Decodable {
+    let pendingMembers: [PendingMember]
+    let hasMore: Bool
+    let nextCursor: String?
+}
+
+struct ApproveDeclineResponse: Decodable {
+    let message: String
+    let action: String
+    let rsvpId: String
+}
+
 // MARK: - Main View
 struct EventPostView: View {
     let eventId: String
@@ -162,7 +328,8 @@ struct EventPostView: View {
     @EnvironmentObject var appController: AppController
     @Environment(\.dismiss) private var dismiss
     @State private var showingDeleteAlert = false
-    @State private var currentRSVPStatus: String?
+    @State private var showingGuestList = false
+    @State private var showingTicketConfirmation = false
 
     init(eventId: String, coveCoverPhoto: CoverPhoto? = nil) {
         self.eventId = eventId
@@ -219,7 +386,7 @@ struct EventPostView: View {
                             Spacer()
 
                             // Add delete button if user is the host
-                            if event.isHost {
+                            if event.isHost == true {
                                 Button {
                                     showingDeleteAlert = true
                                 } label: {
@@ -266,7 +433,8 @@ struct EventPostView: View {
                                 .clipped()
                         }
 
-                        VStack(alignment: .leading) {
+                        VStack(alignment: .leading, spacing: 20) {
+                            // Date and Time
                             HStack {
                                 Text(event.formattedDate)
                                     .foregroundStyle(Color.black)
@@ -277,17 +445,19 @@ struct EventPostView: View {
                                     .font(.LibreBodoni(size: 18))
                             }
 
+                            // Location
                             HStack {
                                 Image("locationIcon")
                                     .resizable()
                                     .aspectRatio(contentMode: .fit)
                                     .frame(width: 15, height: 20)
 
-                                Text(event.location.isEmpty ? "TBD" : event.location)
+                                Text(event.location ?? "RSVP to see location")
                                     .foregroundStyle(Colors.primaryDark)
                                     .font(.LibreBodoniBold(size: 16))
                             }
 
+                            // Host information
                             HStack {
                                 Text("hosted by")
                                     .font(.LibreBodoni(size: 18))
@@ -296,6 +466,55 @@ struct EventPostView: View {
                                 .font(.LibreBodoni(size: 18))
                                 .foregroundColor(Colors.primaryDark)
                             }
+                            
+                            // Event details section (price, capacity, going count)
+                            VStack(alignment: .leading, spacing: 12) {
+                                // Ticket price display
+                                if let ticketPrice = event.ticketPrice {
+                                    HStack {
+                                        Image(systemName: "dollarsign.circle")
+                                            .foregroundColor(Colors.primaryDark)
+                                            .font(.system(size: 16))
+                                        Text("$\(String(format: "%.2f", ticketPrice))")
+                                            .font(.LibreBodoni(size: 16))
+                                            .foregroundColor(Colors.primaryDark)
+                                    }
+                                }
+                                
+                                // Payment handle display
+                                if let paymentHandle = event.paymentHandle, !paymentHandle.isEmpty {
+                                    HStack {
+                                        Spacer()
+                                            .frame(width: 24) // Indent to align with other content
+                                        Text("venmo @\(paymentHandle)")
+                                            .font(.LibreBodoni(size: 16))
+                                            .foregroundColor(Colors.primaryDark)
+                                        Spacer()
+                                    }
+                                }
+                                
+                                // Member cap and spots left display
+                                if let memberCap = event.memberCap, let goingCount = event.goingCount {
+                                    HStack {
+                                        Image(systemName: "person.2")
+                                            .foregroundColor(Colors.primaryDark)
+                                            .font(.system(size: 16))
+                                        let spotsLeft = max(0, memberCap - goingCount)
+                                        Text("\(goingCount)/\(memberCap) going • \(spotsLeft) spots left")
+                                            .font(.LibreBodoni(size: 16))
+                                            .foregroundColor(Colors.primaryDark)
+                                    }
+                                } else if let goingCount = event.goingCount {
+                                    HStack {
+                                        Image(systemName: "person.2")
+                                            .foregroundColor(Colors.primaryDark)
+                                            .font(.system(size: 16))
+                                        Text("\(goingCount) going")
+                                            .font(.LibreBodoni(size: 16))
+                                            .foregroundColor(Colors.primaryDark)
+                                    }
+                                }
+                            }
                         }
 
                         if let description = event.description {
@@ -303,112 +522,180 @@ struct EventPostView: View {
                                 .foregroundStyle(Colors.k292929)
                                 .font(.LibreBodoni(size: 18))
                                 .multilineTextAlignment(.leading)
+                                .padding(.top, 8)
                         }
 
-                        VStack(alignment: .leading) {
-                            Text("guest list")
-                                .font(.LibreBodoni(size: 18))
-                                .foregroundColor(Colors.primaryDark)
+                        // Subtle divider
+                        Rectangle()
+                            .fill(Color.gray.opacity(0.2))
+                            .frame(height: 1)
+                            .padding(.vertical, 8)
 
-                            // Filter RSVPs to only show "GOING" status
-                            let goingRsvps = event.rsvps.filter { $0.status == "GOING" }
-
-                            if goingRsvps.isEmpty {
-                                Text("no guests yet! send your invites!")
-                                    .font(.LibreBodoni(size: 14))
+                        VStack(alignment: .leading, spacing: 16) {
+                            HStack {
+                                Text("guest list")
+                                    .font(.LibreBodoni(size: 18))
                                     .foregroundColor(Colors.primaryDark)
-                            } else {
-                                HStack {
-                                    // Show up to 4 profile photos
-                                    ForEach(Array(goingRsvps.prefix(4).enumerated()), id: \.element.id) { index, rsvp in
-                                        if let profilePhotoUrl = rsvp.profilePhotoUrl {
-                                            KFImage(profilePhotoUrl)
-                                                .placeholder {
+                                
+                                Spacer()
+                                
+                                // Show pending count for hosts
+                                if event.isHost == true, let pendingCount = event.pendingCount, pendingCount > 0 {
+                                    Text("\(pendingCount) pending")
+                                        .font(.LibreBodoni(size: 14))
+                                        .foregroundColor(.orange)
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 4)
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 8)
+                                                .fill(Color.orange.opacity(0.1))
+                                        )
+                                }
+                            }
+
+                            if let rsvps = event.rsvps {
+                                // Filter RSVPs to only show "GOING" status
+                                let goingRsvps = rsvps.filter { $0.status == "GOING" }
+
+                                if goingRsvps.isEmpty {
+                                    Text("no guests yet! send your invites!")
+                                        .font(.LibreBodoni(size: 14))
+                                        .foregroundColor(Colors.primaryDark)
+                                        .padding(.leading, 4)
+                                } else {
+                                    Button(action: {
+                                        showingGuestList = true
+                                        // Load the full member list when opening
+                                        viewModel.fetchEventMembers(eventId: eventId, refresh: true)
+                                        // Load pending members if user is the host
+                                        if event.isHost == true {
+                                            viewModel.fetchPendingMembers(eventId: eventId, refresh: true)
+                                        }
+                                    }) {
+                                        HStack(spacing: 12) {
+                                            // Show up to 4 profile photos
+                                            ForEach(Array(goingRsvps.prefix(4).enumerated()), id: \.element.id) { index, rsvp in
+                                                if let profilePhotoUrl = rsvp.profilePhotoUrl {
+                                                    KFImage(profilePhotoUrl)
+                                                        .placeholder {
+                                                            Circle()
+                                                                .fill(Color.gray.opacity(0.2))
+                                                                .frame(width: 62, height: 62)
+                                                        }
+                                                        .onFailure { error in
+                                                            Log.debug("❌ Failed to load profile photo: \(error)")
+                                                        }
+                                                        .resizable()
+                                                        .scaleFactor(UIScreen.main.scale)
+                                                        .setProcessor(DownsamplingImageProcessor(size: CGSize(width: 62 * UIScreen.main.scale, height: 62 * UIScreen.main.scale)))
+                                                        .fade(duration: 0.2)
+                                                        .cacheOriginalImage()
+                                                        .cancelOnDisappear(true)
+                                                        .scaledToFill()
+                                                        .frame(width: 62, height: 62)
+                                                        .clipShape(Circle())
+                                                } else {
                                                     Circle()
                                                         .fill(Color.gray.opacity(0.2))
                                                         .frame(width: 62, height: 62)
+                                                        .overlay(
+                                                            Image(systemName: "person.fill")
+                                                                .foregroundColor(.gray)
+                                                                .font(.system(size: 25))
+                                                        )
                                                 }
-                                                .onFailure { error in
-                                                    Log.debug("❌ Failed to load profile photo: \(error)")
-                                                }
-                                                .resizable()
-                                                .scaleFactor(UIScreen.main.scale)
-                                                .setProcessor(DownsamplingImageProcessor(size: CGSize(width: 62 * UIScreen.main.scale, height: 62 * UIScreen.main.scale)))
-                                                .fade(duration: 0.2)
-                                                .cacheOriginalImage()
-                                                .cancelOnDisappear(true)
-                                                .scaledToFill()
-                                                .frame(width: 62, height: 62)
-                                                .clipShape(Circle())
-                                        } else {
-                                            Circle()
-                                                .fill(Color.gray.opacity(0.2))
-                                                .frame(width: 62, height: 62)
-                                                .overlay(
-                                                    Image(systemName: "person.fill")
-                                                        .foregroundColor(.gray)
-                                                        .font(.system(size: 25))
-                                                )
+                                            }
+
+                                            // Show "+X" if there are more than 4 people
+                                            if goingRsvps.count > 4 {
+                                                Text("+\(goingRsvps.count - 4)")
+                                                    .foregroundStyle(Colors.primaryDark)
+                                                    .font(.LibreBodoniBold(size: 10))
+                                                    .padding(.all, 8)
+                                                    .overlay {
+                                                        Circle()
+                                                            .stroke(Colors.primaryDark, lineWidth: 1.0)
+                                                    }
+                                            }
+                                            
+                                            Spacer()
                                         }
                                     }
-
-                                    // Show "+X" if there are more than 4 people
-                                    if goingRsvps.count > 4 {
-                                        Text("+\(goingRsvps.count - 4)")
-                                            .foregroundStyle(Colors.primaryDark)
-                                            .font(.LibreBodoniBold(size: 10))
-                                            .padding(.all, 8)
-                                            .overlay {
-                                                Circle()
-                                                    .stroke(Colors.primaryDark, lineWidth: 1.0)
-                                            }
-                                    }
-                                }
-                            }
-                        }
-
-                        // Single RSVP button with two states
-                            Button {
-                            let currentStatus = currentRSVPStatus ?? event.rsvpStatus
-                            if currentStatus == "GOING" {
-                                // User is going, change to not going
-                                currentRSVPStatus = "NOT_GOING"
-                                viewModel.updateRSVP(eventId: eventId, status: "NOT_GOING") { success in
-                                    if success {
-                                        // Update local event state to reflect RSVP change
-                                        viewModel.updateLocalRSVPStatus(status: "NOT_GOING")
-                                    }
+                                    .buttonStyle(PlainButtonStyle())
                                 }
                             } else {
-                                // User is not going or maybe, change to going
-                                currentRSVPStatus = "GOING"
-                                viewModel.updateRSVP(eventId: eventId, status: "GOING") { success in
+                                Text("RSVP to see guest list")
+                                    .font(.LibreBodoni(size: 14))
+                                    .foregroundColor(Colors.primaryDark)
+                                    .padding(.leading, 4)
+                            }
+                        }
+                        .padding(.top, 16)
+
+                        // Single RSVP button with three states
+                        Button {
+                            let currentStatus = event.rsvpStatus
+                            Log.debug("🔵 RSVP Button Clicked - Current Status: \(currentStatus ?? "nil")")
+                            
+                            if currentStatus == "GOING" {
+                                // User is going, change to not going
+                                Log.debug("🔵 Sending NOT_GOING to backend...")
+                                viewModel.updateRSVP(eventId: eventId, status: "NOT_GOING") { success in
+                                    Log.debug("🔵 NOT_GOING response - Success: \(success)")
                                     if success {
-                                        // Update local event state to reflect RSVP change
-                                        viewModel.updateLocalRSVPStatus(status: "GOING")
+                                        // Refresh event details to get updated status
+                                        viewModel.fetchEventDetails(eventId: eventId)
+                                    }
+                                }
+                            } else if currentStatus == "PENDING" {
+                                // User is pending - do nothing (button is static)
+                                Log.debug("🔵 PENDING button clicked - no action needed")
+                                           } else {
+                   // Check if this is a ticketed event and user is not the host
+                   if event.ticketPrice != nil, event.isHost != true {
+                       // Show ticket confirmation popup for non-hosts
+                       showingTicketConfirmation = true
+                   } else {
+                                    // No ticket price or user is host, proceed with RSVP
+                                    Log.debug("🔵 Sending PENDING to backend...")
+                                    viewModel.updateRSVP(eventId: eventId, status: "PENDING") { success in
+                                        Log.debug("🔵 PENDING response - Success: \(success)")
+                                        if success {
+                                            // Refresh event details to get updated status
+                                            viewModel.fetchEventDetails(eventId: eventId)
+                                        }
                                     }
                                 }
                             }
                             } label: {
-                            let currentStatus = currentRSVPStatus ?? event.rsvpStatus
+                            let currentStatus = event.rsvpStatus
                             let isGoing = currentStatus == "GOING"
+                            let isPending = currentStatus == "PENDING"
+                            
+                            let buttonText = isGoing ? "can't make it..." : (isPending ? "pending approval..." : "rsvp")
 
-                            Text(isGoing ? "can't make it..." : "rsvp")
-                                .foregroundStyle(isGoing ? Colors.primaryDark : .white)
+                            Text(buttonText)
+                                .foregroundStyle(isGoing ? Colors.primaryDark : (isPending ? .gray : .white))
                                 .font(.LibreBodoni(size: 25))
                                 .frame(maxWidth: .infinity)
-                                .padding(.vertical, 10)
+                                .padding(.vertical, 12)
                                     .background(
                                     RoundedRectangle(cornerRadius: 20)
-                                        .fill(isGoing ? Color.white : Colors.primaryDark)
+                                        .fill(isGoing ? Color.white : (isPending ? Color.gray.opacity(0.3) : Colors.primaryDark))
                                         .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 8)
                                     )
                             }
-                            .disabled(viewModel.isUpdatingRSVP)
+                            .onAppear {
+                                let currentStatus = event.rsvpStatus
+                                let buttonText = currentStatus == "GOING" ? "can't make it..." : (currentStatus == "PENDING" ? "pending approval..." : "rsvp")
+                                Log.debug("🔵 Button Text: \(buttonText) (Status: \(currentStatus ?? "nil"))")
+                            }
+                            .disabled(viewModel.isUpdatingRSVP || event.rsvpStatus == "PENDING")
+                            .padding(.top, 24)
 
-                        Spacer(minLength: 24)
+                        Spacer(minLength: 32)
                     }
-                    .padding(.horizontal, 50)
+                    .padding(.horizontal, 40)
                     .padding(.top, 10)
                 }
             } else if let error = viewModel.errorMessage {
@@ -427,11 +714,14 @@ struct EventPostView: View {
         }
         .navigationBarBackButtonHidden(true)
         .onAppear {
-            viewModel.fetchEventDetails(eventId: eventId) {
-                if let event = viewModel.event {
-                    currentRSVPStatus = event.rsvpStatus
-                }
-            }
+            viewModel.fetchEventDetails(eventId: eventId)
+        }
+        .navigationDestination(isPresented: $showingGuestList) {
+            EventGuestListView(
+                eventId: eventId,
+                viewModel: viewModel,
+                event: viewModel.event
+            )
         }
         .alert("Error", isPresented: Binding(
             get: { viewModel.errorMessage != nil },
@@ -452,6 +742,27 @@ struct EventPostView: View {
             }
         } message: {
             Text("Are you sure you want to delete this event? This action cannot be undone.")
+        }
+        .sheet(isPresented: $showingTicketConfirmation) {
+            TicketConfirmationView(
+                ticketPrice: Float(viewModel.event?.ticketPrice ?? 0),
+                paymentHandle: viewModel.event?.paymentHandle,
+                onConfirm: {
+                    // User confirmed they've paid, proceed with RSVP
+                    Log.debug("🔵 User confirmed payment, sending PENDING to backend...")
+                    viewModel.updateRSVP(eventId: eventId, status: "PENDING") { success in
+                        Log.debug("🔵 PENDING response - Success: \(success)")
+                        if success {
+                            // Refresh event details to get updated status
+                            viewModel.fetchEventDetails(eventId: eventId)
+                        }
+                    }
+                    showingTicketConfirmation = false
+                },
+                onDismiss: {
+                    showingTicketConfirmation = false
+                }
+            )
         }
     }
 }
