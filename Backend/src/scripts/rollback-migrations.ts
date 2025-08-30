@@ -42,9 +42,9 @@ async function rollbackMigrations() {
           console.log(`⚠️  ${migration} not found in migration history`);
         }
         
-      } catch (error) {
-        console.log(`⚠️  Could not rollback ${migration}:`, error.message);
-      }
+              } catch (error: any) {
+          console.log(`⚠️  Could not rollback ${migration}:`, error.message || error);
+        }
     }
     
     console.log('✅ Migration rollback completed!');
