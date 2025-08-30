@@ -812,8 +812,8 @@ export const handleUpdateEventRSVP = async (event: APIGatewayProxyEvent): Promis
       };
     }
 
-    // Check if user is a member of the cove
-    if (eventData.cove.members.length === 0) {
+    // Check if user is a member of the cove (only for private events)
+    if (!eventData.isPublic && eventData.cove.members.length === 0) {
       return {
         statusCode: 403,
         body: JSON.stringify({
