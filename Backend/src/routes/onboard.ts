@@ -245,7 +245,7 @@ export const handleOnboard = async (event: APIGatewayProxyEvent): Promise<APIGat
       latitude: finalLatitude,
       longitude: finalLongitude,
       almaMater,
-      gradYear,
+      gradYear: gradYear,
       job,
       workLocation,
       relationStatus,

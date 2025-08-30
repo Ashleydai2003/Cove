@@ -5,7 +5,13 @@ import { Event } from '@/types/event';
 import { formatDate, formatTime } from '@/lib/utils';
 import { MapPin, Calendar, User } from 'lucide-react';
 import Image from 'next/image';
-import OnboardingModal from './OnboardingModal';
+import dynamic from 'next/dynamic';
+
+// Dynamically import OnboardingModal to avoid Firebase initialization on page load
+const OnboardingModal = dynamic(() => import('./OnboardingModal'), {
+  ssr: false,
+  loading: () => <div>Loading...</div>
+});
 import { checkAuthStatus } from '@/lib/auth';
 import GuestListModal from './GuestListModal';
 
