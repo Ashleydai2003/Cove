@@ -56,15 +56,34 @@ enum PushRouter {
 
 enum RSVPService {
 	static func update(eventId: String, status: String) async {
-		guard let url = URL(string: "\(AppConstants.API.baseURL)/update-event-rsvp") else { return }
+		// Use delete endpoint for NOT_GOING status
+		let endpoint = status == "NOT_GOING" ? "/remove-event-rsvp" : "/update-event-rsvp"
+		guard let url = URL(string: "\(AppConstants.API.baseURL)\(endpoint)") else { return }
 		var req = URLRequest(url: url)
 		req.httpMethod = "POST"
 		req.setValue("application/json", forHTTPHeaderField: "Content-Type")
 		if let token = try? await FirebaseAuth.Auth.auth().currentUser?.getIDToken() {
 			req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
 		}
-		let body: [String: Any] = ["eventId": eventId, "status": status]
+		let body: [String: Any] = status == "NOT_GOING" ? ["eventId": eventId] : ["eventId": eventId, "status": status]
 		req.httpBody = try? JSONSerialization.data(withJSONObject: body)
-		_ = try? await URLSession.shared.data(for: req)
+		
+		// Make the request and handle response
+		do {
+			let (data, response) = try await URLSession.shared.data(for: req)
+			
+			// Check if the response is successful
+			if let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) {
+				// Try to decode the response to check for any errors
+				if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+				   let message = json["message"] as? String {
+					print("RSVP operation successful: \(message)")
+				}
+			} else {
+				print("RSVP operation failed with status: \((response as? HTTPURLResponse)?.statusCode ?? 0)")
+			}
+		} catch {
+			print("RSVP operation error: \(error)")
+		}
 	}
 } 
