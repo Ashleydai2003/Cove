@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Call the backend API to complete onboarding
-    const backendResponse = await fetch(`${process.env.API_BASE_URL}/onboard`, {
+    const backendResponse = await fetch(`${process.env.BACKEND_API_URL}/onboard`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
