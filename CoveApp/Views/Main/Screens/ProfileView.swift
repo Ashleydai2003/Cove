@@ -2117,16 +2117,7 @@ struct ProfileView: View {
             }
         }
         .navigationBarBackButtonHidden()
-        // Opaque top-safe-area overlay to prevent content peeking during bounce
-        .overlay(
-            GeometryReader { proxy in
-                Colors.background
-                    .frame(height: proxy.safeAreaInsets.top)
-                    .ignoresSafeArea(edges: .top)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            }
-            .allowsHitTesting(false)
-        )
+        // Removed top-safe-area overlay to eliminate extra padding above nav bar
         // Settings dropdown overlay that does not affect layout
         .overlay(alignment: .topTrailing) {
             if showSettingsMenu {
