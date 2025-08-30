@@ -5,6 +5,7 @@ import UIKit
 struct CoveBannerView: View {
     var onInbox: (() -> Void)? = nil
     var showBookmarkButton: Bool = false
+    @EnvironmentObject var appController: AppController
     @State private var showInvites = false
 
     var body: some View {
