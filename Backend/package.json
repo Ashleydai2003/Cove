@@ -13,9 +13,7 @@
     "prisma:migrate:deploy": "NODE_ENV=production ts-node src/scripts/migrate.ts",
     "prisma:reset:migrations": "NODE_ENV=production ts-node src/scripts/reset-migrations.ts",
     "prisma:rollback": "NODE_ENV=production ts-node src/scripts/rollback-migrations.ts",
-    "prisma:create-clean": "NODE_ENV=production ts-node src/scripts/create-clean-migration.ts",
-    "prisma:resolve-failed": "NODE_ENV=production ts-node src/scripts/resolve-failed-migration.ts",
-    "prisma:regenerate-client": "NODE_ENV=production ts-node src/scripts/regenerate-client.ts",
+
     "prisma:mark-latest-applied": "NODE_ENV=production ts-node src/scripts/mark-latest-applied.ts",
     "prisma:rollback:dev": "ts-node src/scripts/rollback-migrations-dev.ts",
     "prisma:studio": "dotenv -e env.development -- prisma studio",
