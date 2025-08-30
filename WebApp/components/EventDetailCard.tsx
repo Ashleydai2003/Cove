@@ -19,9 +19,10 @@ import RSVPSuccessModal from './RSVPSuccessModal';
 
 interface EventDetailCardProps {
   event: Event;
+  onReady?: () => void;
 }
 
-export function EventDetailCard({ event }: EventDetailCardProps) {
+export function EventDetailCard({ event, onReady }: EventDetailCardProps) {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showGuestList, setShowGuestList] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -62,6 +63,10 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
                     setRsvpStatus(event.rsvpStatus ?? null);
                 } finally {
                     setIsLoading(false);
+                    // Notify parent component that we're ready
+                    if (onReady) {
+                        onReady();
+                    }
                 }
             };
 
