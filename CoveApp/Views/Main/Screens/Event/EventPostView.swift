@@ -365,6 +365,7 @@ struct EventPostView: View {
     @State private var showingDeleteAlert = false
     @State private var showingGuestList = false
     @State private var showingTicketConfirmation = false
+    @State private var showingShareSheet = false
 
     init(eventId: String, coveCoverPhoto: CoverPhoto? = nil) {
         self.eventId = eventId
@@ -420,6 +421,16 @@ struct EventPostView: View {
 
                             Spacer()
 
+                            // Add share button
+                            Button {
+                                    showingShareSheet = true
+                                } label: {
+                                    Image(systemName: "square.and.arrow.up")
+                                        .foregroundColor(Colors.primaryDark)
+                                        .font(.system(size: 20))
+                                }
+                                .padding(.top, 16)
+                            
                             // Add delete button if user is the host
                             if event.isHost == true {
                                 Button {
@@ -801,6 +812,155 @@ struct EventPostView: View {
                 }
             )
         }
+        .sheet(isPresented: $showingShareSheet) {
+            ShareBottomSheet(eventId: eventId, eventName: viewModel.event?.name ?? "Event")
+        }
+    }
+}
+
+// MARK: - Share Bottom Sheet
+struct ShareBottomSheet: View {
+    let eventId: String
+    let eventName: String
+    @Environment(\.dismiss) private var dismiss
+    @State private var showingCopiedAlert = false
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // Handle bar
+            RoundedRectangle(cornerRadius: 2.5)
+                .fill(Color.gray.opacity(0.3))
+                .frame(width: 36, height: 5)
+                .padding(.top, 8)
+                .padding(.bottom, 16)
+            
+            // Header
+            HStack {
+                Text("Share Event")
+                    .font(.LibreBodoniBold(size: 20))
+                    .foregroundColor(Colors.primaryDark)
+                
+                Spacer()
+                
+                Button("Done") {
+                    dismiss()
+                }
+                .font(.LibreBodoni(size: 16))
+                .foregroundColor(Colors.primaryDark)
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 24)
+            
+            // Share options
+            VStack(spacing: 16) {
+                // Copy link option
+                Button {
+                    copyLinkToClipboard()
+                } label: {
+                    HStack {
+                        Image(systemName: "link")
+                            .font(.system(size: 20))
+                            .foregroundColor(Colors.primaryDark)
+                            .frame(width: 24)
+                        
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Copy Link")
+                                .font(.LibreBodoni(size: 16))
+                                .foregroundColor(Colors.primaryDark)
+                            Text("Share this event with friends")
+                                .font(.LibreBodoni(size: 12))
+                                .foregroundColor(.gray)
+                        }
+                        
+                        Spacer()
+                        
+                        Image(systemName: "doc.on.doc")
+                            .font(.system(size: 16))
+                            .foregroundColor(.gray)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 12)
+                    .background(Color.gray.opacity(0.05))
+                    .cornerRadius(12)
+                }
+                .buttonStyle(PlainButtonStyle())
+                
+                // System share option
+                Button {
+                    shareViaSystem()
+                } label: {
+                    HStack {
+                        Image(systemName: "square.and.arrow.up")
+                            .font(.system(size: 20))
+                            .foregroundColor(Colors.primaryDark)
+                            .frame(width: 24)
+                        
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("More Options")
+                                .font(.LibreBodoni(size: 16))
+                                .foregroundColor(Colors.primaryDark)
+                            Text("AirDrop, Messages, Mail, etc.")
+                                .font(.LibreBodoni(size: 12))
+                                .foregroundColor(.gray)
+                        }
+                        
+                        Spacer()
+                        
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 16))
+                            .foregroundColor(.gray)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 12)
+                    .background(Color.gray.opacity(0.05))
+                    .cornerRadius(12)
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+            .padding(.horizontal, 20)
+            
+            Spacer()
+        }
+        .background(Color.white)
+        .cornerRadius(20, corners: [.topLeft, .topRight])
+        .alert("Link Copied!", isPresented: $showingCopiedAlert) {
+            Button("OK") { }
+        } message: {
+            Text("Event link has been copied to your clipboard")
+        }
+    }
+    
+    private func copyLinkToClipboard() {
+        let eventUrl = "https://www.coveapp.co/events/\(eventId)"
+        UIPasteboard.general.string = eventUrl
+        showingCopiedAlert = true
+    }
+    
+    private func shareViaSystem() {
+        let eventUrl = "https://www.coveapp.co/events/\(eventId)"
+        let activityVC = UIActivityViewController(activityItems: [eventUrl], applicationActivities: nil)
+        
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let window = windowScene.windows.first {
+            window.rootViewController?.present(activityVC, animated: true)
+        }
+    }
+}
+
+// Extension for rounded corners
+extension View {
+    func cornerRadius(_ radius: CGFloat, corners: UIRectCorner) -> some View {
+        clipShape(RoundedCorner(radius: radius, corners: corners))
+    }
+}
+
+struct RoundedCorner: Shape {
+    var radius: CGFloat = .infinity
+    var corners: UIRectCorner = .allCorners
+
+    func path(in rect: CGRect) -> Path {
+        let path = UIBezierPath(roundedRect: rect, byRoundingCorners: corners, cornerRadii: CGSize(width: radius, height: radius))
+        return Path(path.cgPath)
     }
 }
 

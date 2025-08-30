@@ -348,7 +348,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
                   type="date"
                   value={formData.birthdate}
                   onChange={(e) => setFormData(prev => ({ ...prev, birthdate: e.target.value }))}
-                  className="w-full px-0 py-3 border-0 border-b-2 border-gray-300 focus:border-[#5E1C1D] focus:outline-none text-lg font-libre-bodoni bg-transparent"
+                  className="w-full px-0 py-3 border-0 border-b-2 border-gray-300 focus:border-[#5E1C1D] focus:outline-none text-lg font-libre-bodoni bg-transparent [&::-webkit-calendar-picker-indicator]:bg-[#5E1C1D] [&::-webkit-calendar-picker-indicator]:rounded [&::-webkit-calendar-picker-indicator]:p-1 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:hover:bg-[#4A1718] [&::-webkit-calendar-picker-indicator]:transition-colors"
                   required
                 />
               </div>
