@@ -202,7 +202,7 @@ struct ProfileHeader: View {
 
             // Headline bio centered below the name
             if isEditing {
-                TextField("Add your headline...", text: $bio, axis: .vertical)
+                TextField("add your headline...", text: $bio, axis: .vertical)
                     .font(.LibreBodoni(size: 16))
                     .foregroundStyle(Colors.k6F6F73)
                     .multilineTextAlignment(.center)
