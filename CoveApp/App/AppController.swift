@@ -15,8 +15,6 @@ enum OnboardingRoute: Hashable {
     case userDetails
     case birthdate
     case almaMater
-    case citySelection
-    case profilePics
     case pluggingIn
 }
 
