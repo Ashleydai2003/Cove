@@ -537,11 +537,14 @@ export const handleGetEvent = async (event: APIGatewayProxyEvent): Promise<APIGa
     }
 
     // Optional authentication
+    console.log('Request cookies:', event.headers.cookie);
     const authAttempt = await authMiddleware(event);
     let userUid: string | null = null;
     if (!('statusCode' in authAttempt)) {
       userUid = authAttempt.user.uid;
       console.log('Authenticated user:', userUid);
+    } else {
+      console.log('Authentication failed or no auth token provided');
     }
 
     const eventId = event.queryStringParameters?.eventId;
@@ -712,6 +715,7 @@ export const handleGetEvent = async (event: APIGatewayProxyEvent): Promise<APIGa
       coverPhoto
     };
 
+    // Always include rsvpStatus for authenticated users
     if (userUid) {
       limitedEvent.isHost = false;
       limitedEvent.rsvpStatus = userRsvp?.status || null;
@@ -720,6 +724,9 @@ export const handleGetEvent = async (event: APIGatewayProxyEvent): Promise<APIGa
         rsvpStatus: limitedEvent.rsvpStatus, 
         userRsvp: userRsvp 
       });
+    } else {
+      // Unauthenticated users get null rsvpStatus
+      limitedEvent.rsvpStatus = null;
     }
 
     return {
