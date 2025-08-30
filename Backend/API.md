@@ -163,18 +163,20 @@ Returns:
 Completes user onboarding by setting up their profile.
 
 Takes Data Parameters: 
-* name: String
-* birthdate: ISO 8601 string
-* hobbies: Array(userHobbies)
-* bio: String
+* name: String (required)
+* birthdate: ISO 8601 string (required)
+* almaMater: String (required)
+* gradYear: String (required)
+* hobbies: Array(userHobbies) (optional)
+* bio: String (optional)
 * latitude: Double (optional - will be geocoded from city if not provided)
 * longitude: Double (optional - will be geocoded from city if not provided)
 * city: String (optional - will be converted to coordinates if provided)
-* almaMater: String
-* job: String
-* workLocation: String
-* relationStatus: String
-* sexuality: String
+* job: String (optional)
+* workLocation: String (optional)
+* relationStatus: String (optional)
+* sexuality: String (optional)
+* gender: String (optional)
 
 Returns: 
 * message: string
