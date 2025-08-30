@@ -71,10 +71,10 @@ struct FriendsTabView: View {
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Colors.faf8f4)
+                .background(Colors.background)
             }
             .ignoresSafeArea(edges: .bottom)
-            .background(Colors.faf8f4)
+            .background(Colors.background)
             .navigationBarBackButtonHidden()
             .onAppear {
                 // Load requests if not already loaded

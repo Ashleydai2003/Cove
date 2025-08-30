@@ -10,7 +10,7 @@ struct AdminVerifyView: View {
     var body: some View {
         ZStack {
             // Off-white background
-            Colors.faf8f4
+            Colors.background
                 .ignoresSafeArea()
 
             VStack {

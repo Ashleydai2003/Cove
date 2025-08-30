@@ -128,7 +128,7 @@ export const handleOnboard = async (event: APIGatewayProxyEvent): Promise<APIGat
     const {
       name,
       birthdate,
-      hobbies,
+      hobbies = [], // Optional: defaults to empty array (archived from iOS onboarding)
       bio,
       latitude,
       longitude,
@@ -293,7 +293,7 @@ export const handleOnboard = async (event: APIGatewayProxyEvent): Promise<APIGat
         profile: {
           create: {
             birthdate: birthdate ? new Date(birthdate) : null,
-            interests: hobbies || [],
+            interests: hobbies, // Already defaults to [] in destructuring
             latitude: finalLatitude || null,
             longitude: finalLongitude || null,
             almaMater: almaMater || null,

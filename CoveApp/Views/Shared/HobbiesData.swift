@@ -58,10 +58,7 @@ struct HobbiesData {
                 HobbySubOption(name: "marathons", emoji: "🏃"),
                 HobbySubOption(name: "trail running", emoji: "🏃")
             ]),
-            HobbyButtonOption(name: "triathlon", emoji: "💪🏼", subOptions: [
-                HobbySubOption(name: "newbie", emoji: "💪🏼"),
-                HobbySubOption(name: "competitive", emoji: "💪🏼")
-            ]),
+            HobbyButtonOption(name: "triathlon", emoji: "💪🏼", subOptions: []),
             HobbyButtonOption(name: "cycling", emoji: "🚴‍♀️", subOptions: []),
             HobbyButtonOption(name: "pickleball", emoji: "🥎", subOptions: []),
             HobbyButtonOption(name: "soccer", emoji: "⚽️", subOptions: []),

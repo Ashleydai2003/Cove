@@ -28,10 +28,10 @@ struct HobbyPill: View {
         height: CGFloat = 36,
         cornerRadius: CGFloat = 12,
         selectedColor: Color = Colors.primaryDark,
-        unselectedColor: Color = .white,
+        unselectedColor: Color = Colors.hobbyBackground,
         selectedTextColor: Color = .white,
         unselectedTextColor: Color = .black,
-        font: Font = .LeagueSpartan(size: 14),
+        font: Font = .LibreBodoni(size: 14),
         action: @escaping () -> Void
     ) {
         self.text = text
@@ -57,6 +57,9 @@ struct HobbyPill: View {
                 Text(text.lowercased())
                     .lineLimit(1)
                     .truncationMode(.tail)
+                    .minimumScaleFactor(0.7)
+                    .allowsTightening(true)
+                    .layoutPriority(1)
             }
             .foregroundColor(isSelected ? selectedTextColor : unselectedTextColor)
             .font(font)
@@ -88,9 +91,9 @@ struct StaticHobbyPill: View {
         emoji: String? = nil,
         height: CGFloat = 36,
         cornerRadius: CGFloat = 12,
-        backgroundColor: Color = .white,
+        backgroundColor: Color = Colors.hobbyBackground,
         textColor: Color = Colors.k6F6F73,
-        font: Font = .LeagueSpartan(size: 14)
+        font: Font = .LibreBodoni(size: 14)
     ) {
         self.text = text
         self.emoji = emoji
@@ -110,6 +113,9 @@ struct StaticHobbyPill: View {
             Text(text.lowercased())
                 .lineLimit(1)
                 .truncationMode(.tail)
+                .minimumScaleFactor(0.7)
+                .allowsTightening(true)
+                .layoutPriority(1)
         }
         .foregroundColor(textColor)
         .font(font)
