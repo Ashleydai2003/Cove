@@ -36,59 +36,62 @@ struct FriendProfileView: View {
                         }
                         .padding(.horizontal)
 
-                        // MARK: Profile & Stats
-                        HStack(alignment: .top, spacing: 20) {
-                            // Profile image (120x120)
+                        // MARK: Profile & Stats (match ProfileView layout)
+                        HStack { Spacer()
                             let photoURL = displayPhotoURL ?? profile.photos.first(where: { $0.isProfilePic })?.url
                             if let url = photoURL {
                                 KFImage(url)
                                     .resizable()
                                     .scaledToFill()
-                                    .frame(width: 120, height: 120)
+                                    .frame(width: 170, height: 170)
                                     .clipShape(Circle())
                             } else {
                                 Image("default_user_pfp")
                                     .resizable()
                                     .scaledToFill()
-                                    .frame(width: 120, height: 120)
+                                    .frame(width: 170, height: 170)
                                     .clipShape(Circle())
                             }
+                        Spacer() }
 
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text(profile.name)
-                                    .font(.LibreBodoniBold(size: 32))
-                                    .foregroundColor(Colors.primaryDark)
+                        VStack(alignment: .center, spacing: 8) {
+                            Text(profile.name)
+                                .font(.LibreBodoniBold(size: 32))
+                                .foregroundColor(Colors.primaryDark)
+                                .frame(maxWidth: .infinity, alignment: .center)
 
-                                // Location
-                                if !viewModel.locationName.isEmpty {
-                                    HStack(spacing: 6) {
-                                        Image(systemName: "mappin.and.ellipse")
-                                            .foregroundColor(Colors.k6F6F73)
-                                        Text(viewModel.locationName)
-                                            .font(.LeagueSpartan(size: 14))
-                                            .foregroundColor(Colors.k6F6F73)
-                                    }
-                                }
-
-                                // Bio
-                                if let bio = profile.bio, !bio.isEmpty {
-                                    Text(bio)
-                                        .font(.LibreBodoni(size: 15))
+                            if !viewModel.locationName.isEmpty {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "mappin.and.ellipse")
                                         .foregroundColor(Colors.k6F6F73)
-                                        .fixedSize(horizontal: false, vertical: true)
+                                    Text(viewModel.locationName)
+                                        .font(.LeagueSpartan(size: 14))
+                                        .foregroundColor(Colors.k6F6F73)
                                 }
+                                .frame(maxWidth: .infinity, alignment: .center)
+                            }
 
-                                // Stats strip
-                                if let s = profile.stats {
-                                    HStack(spacing: 24) {
-                                        StatBlock(number: s.sharedFriendCount ?? 0, label: "mutuals")
-                                        StatBlock(number: s.sharedCoveCount ?? 0,   label: "coves")
-                                        StatBlock(number: s.sharedEventCount ?? 0, label: "events together")
-                                    }
-                                }
+                            if let bio = profile.bio, !bio.isEmpty {
+                                Text(bio)
+                                    .font(.LibreBodoni(size: 15))
+                                    .foregroundColor(Colors.k6F6F73)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                    .multilineTextAlignment(.center)
+                                    .frame(maxWidth: .infinity, alignment: .center)
                             }
                         }
                         .padding(.horizontal)
+
+                        // Stats strip (centered)
+                        if let s = profile.stats {
+                            HStack(spacing: 24) {
+                                StatBlock(number: s.sharedFriendCount ?? 0, label: "mutuals")
+                                StatBlock(number: s.sharedCoveCount ?? 0,   label: "shared coves")
+                                StatBlock(number: s.sharedEventCount ?? 0, label: "shared events")
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, 4)
+                        }
 
                         // TODO: Mutual Events carousel can be inserted here when data is available
 
