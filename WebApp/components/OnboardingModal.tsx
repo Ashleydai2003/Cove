@@ -221,7 +221,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
     
     // Validate graduation year before submitting
     if (!isGradYearValid(formData.gradYear)) {
-      setError('Please enter a valid 4-digit graduation year');
+      setError('Please enter a valid graduation year');
       return;
     }
     
