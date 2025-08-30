@@ -91,7 +91,10 @@ export default function EventPage() {
 
       {/* Event Content */}
       <div className="max-w-7xl mx-auto px-8 pb-16">
-        <EventDetailCard event={event} />
+        <EventDetailCard 
+          event={event} 
+          onEventUpdate={(updatedEvent) => setEvent(updatedEvent)}
+        />
       </div>
     </div>
   );
