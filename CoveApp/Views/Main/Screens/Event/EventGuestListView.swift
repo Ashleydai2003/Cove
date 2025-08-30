@@ -24,7 +24,9 @@ struct EventGuestListView: View {
                     Button {
                         dismiss()
                     } label: {
-                        Images.backArrow
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(Colors.primaryDark)
                     }
                     .padding(.top, 16)
                     
@@ -38,7 +40,8 @@ struct EventGuestListView: View {
                     Spacer()
                     
                     // Invisible spacer to center the title
-                    Images.backArrow
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 16, weight: .semibold))
                         .opacity(0)
                         .padding(.top, 16)
                 }
