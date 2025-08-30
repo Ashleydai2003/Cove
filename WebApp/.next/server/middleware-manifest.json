@@ -1,6 +1,48 @@
 {
   "version": 3,
   "middleware": {},
-  "functions": {},
+  "functions": {
+    "/events/[eventId]/opengraph-image/route": {
+      "files": [
+        "server/middleware-build-manifest.js",
+        "server/middleware-react-loadable-manifest.js",
+        "server/next-font-manifest.js",
+        "server/interception-route-rewrite-manifest.js",
+        "server/edge-runtime-webpack.js",
+        "server/app/events/[eventId]/opengraph-image/route.js"
+      ],
+      "name": "app/events/[eventId]/opengraph-image/route",
+      "page": "/events/[eventId]/opengraph-image/route",
+      "matchers": [
+        {
+          "regexp": "^/events/(?<eventId>[^/]+?)/opengraph\\-image$",
+          "originalSource": "/events/[eventId]/opengraph-image"
+        }
+      ],
+      "wasm": [
+        {
+          "name": "wasm_77d9faebf7af9e421806970ce10a58e9d83116d7",
+          "filePath": "server/edge-chunks/wasm_77d9faebf7af9e421806970ce10a58e9d83116d7.wasm"
+        },
+        {
+          "name": "wasm_ef4866ecae192fd87727067cf2c0c0cf9fb8b020",
+          "filePath": "server/edge-chunks/wasm_ef4866ecae192fd87727067cf2c0c0cf9fb8b020.wasm"
+        }
+      ],
+      "assets": [
+        {
+          "name": "noto-sans-v27-latin-regular.5dda3fca77107598.ttf",
+          "filePath": "server/edge-chunks/asset_noto-sans-v27-latin-regular.5dda3fca77107598.ttf"
+        }
+      ],
+      "env": {
+        "__NEXT_BUILD_ID": "fG5mpozyWKATkTbTyWQ8l",
+        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "NQRUfwcnF+q7tM6QqO0uiXpvaAM/HlZJr0HyOLv+G0c=",
+        "__NEXT_PREVIEW_MODE_ID": "22a8fca9e11b7473400b52e09d0ff499",
+        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "e610c51f15f407004f45d0827e8925cc2bdb0be1d278664e88355ca9cca498d7",
+        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "7d7b179753675e85a923dddc96c83c285d0558d97fcb75efa16d7603977b3e09"
+      }
+    }
+  },
   "sortedMiddleware": []
 }
