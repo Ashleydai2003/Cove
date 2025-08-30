@@ -31,10 +31,11 @@ export interface Event {
   location: string;
   memberCap?: number | null;
   ticketPrice?: number | null;
+  paymentHandle?: string | null;
   coveId: string;
   host: Host;
   cove: Cove;
-  rsvpStatus?: 'GOING' | 'MAYBE' | 'NOT_GOING' | null;
+  rsvpStatus?: 'GOING' | 'MAYBE' | 'NOT_GOING' | 'PENDING' | null;
   goingCount?: number;
   rsvps?: EventRSVP[];
   coverPhoto?: CoverPhoto;
