@@ -102,7 +102,9 @@ struct UserPhoneNumberView: View {
                     Button {
                         appController.path.removeLast()
                     } label: {
-                        Images.backArrow
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(Colors.primaryDark)
                     }
                     Spacer()
                 }

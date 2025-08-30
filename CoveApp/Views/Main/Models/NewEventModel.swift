@@ -5,6 +5,7 @@
 //  Created by Assistant
 
 import SwiftUI
+import UIKit
 import Foundation
 import FirebaseAuth
 
@@ -26,6 +27,7 @@ class NewEventModel: ObservableObject {
     @Published var coveId: String = ""
     @Published var isSubmitting = false
     @Published var errorMessage: String?
+    @Published var isPublic: Bool = false
 
     // Sheet States
     @Published var showImagePicker: Bool = false
@@ -83,6 +85,7 @@ class NewEventModel: ObservableObject {
         coveId = ""
         isSubmitting = false
         errorMessage = nil
+        isPublic = false
         showImagePicker = false
         showLocationPicker = false
         showDatePicker = false
@@ -118,18 +121,18 @@ class NewEventModel: ObservableObject {
             ticketPrice = price
         }
 
-        // Build parameters with optional cover photo
+        // Build parameters with optional fields
         var params: [String: Any] = [
             "name": eventName,
-            "description": descriptionText,
             "date": finalDate,
             "location": location,
-            "coveId": coveId
+            "coveId": coveId,
+            "isPublic": isPublic
         ]
 
         // Add optional fields if they have values
-        if !eventDescription.isEmpty {
-            params["description"] = eventDescription
+        if !descriptionText.isEmpty {
+            params["description"] = descriptionText
         }
         
         if let memberCap = memberCap {
