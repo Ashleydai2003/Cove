@@ -467,7 +467,7 @@ export const handleGetCoveEvents = async (event: APIGatewayProxyEvent): Promise<
           coveCoverPhoto: coveCoverPhoto,
           hostId: ev.hostId,
           hostName: ev.hostedBy.name,
-          rsvpStatus: rsvpStatus || 'NOT_GOING',
+          rsvpStatus: rsvpStatus || null,
           goingCount: goingCount,
           createdAt: ev.createdAt,
           coverPhoto: coverPhoto
@@ -776,11 +776,11 @@ export const handleUpdateEventRSVP = async (event: APIGatewayProxyEvent): Promis
     }
 
     // Validate RSVP status
-    if (!['GOING', 'PENDING', 'NOT_GOING'].includes(status)) {
+    if (!['GOING', 'PENDING'].includes(status)) {
       return {
         statusCode: 400,
         body: JSON.stringify({
-          message: 'Invalid RSVP status. Must be one of: GOING, PENDING, NOT_GOING'
+          message: 'Invalid RSVP status. Must be one of: GOING, PENDING'
         })
       };
     }
@@ -825,60 +825,30 @@ export const handleUpdateEventRSVP = async (event: APIGatewayProxyEvent): Promis
     // When a user RSVPs, they start with PENDING status (awaiting host approval)
     // Exception: Hosts can automatically approve themselves to GOING status
     const isHost = eventData.hostId === user.uid;
-    const finalStatus = status === 'NOT_GOING' 
-      ? status 
-      : (isHost ? 'GOING' : 'PENDING');
+    const finalStatus = isHost ? 'GOING' : 'PENDING';
     
     // Update or create RSVP using upsert
     let rsvp: any = null;
     let rsvpResponse: any = null;
     
-    if (finalStatus === 'NOT_GOING') {
-      // Find existing RSVP (if any) so we can return a normalized response
-      const existing = await prisma.eventRSVP.findUnique({
-        where: { eventId_userId: { eventId, userId: user.uid } },
-        select: { id: true, eventId: true, userId: true, createdAt: true }
-      });
-
-      // Remove RSVP entirely when user selects NOT_GOING
-      await prisma.eventRSVP.deleteMany({
-        where: { eventId, userId: user.uid }
-      });
-
-      // Return normalized RSVP object to keep response shape stable for clients
-      rsvpResponse = existing ? {
-        id: existing.id,
-        status: 'NOT_GOING',
-        eventId: existing.eventId,
-        userId: existing.userId,
-        createdAt: existing.createdAt
-      } : {
-        id: `${eventId}:${user.uid}`,
-        status: 'NOT_GOING',
-        eventId,
-        userId: user.uid,
-        createdAt: new Date()
-      };
-    } else {
-      // Upsert for GOING or PENDING
-      rsvp = await prisma.eventRSVP.upsert({
-        where: {
-          eventId_userId: {
-            eventId: eventId,
-            userId: user.uid
-          }
-        },
-        update: { status: finalStatus },
-        create: { eventId, userId: user.uid, status: finalStatus }
-      });
-      rsvpResponse = {
-        id: rsvp.id,
-        status: rsvp.status,
-        eventId: rsvp.eventId,
-        userId: rsvp.userId,
-        createdAt: rsvp.createdAt
-      };
-    }
+    // Upsert for GOING or PENDING
+    rsvp = await prisma.eventRSVP.upsert({
+      where: {
+        eventId_userId: {
+          eventId: eventId,
+          userId: user.uid
+        }
+      },
+      update: { status: finalStatus },
+      create: { eventId, userId: user.uid, status: finalStatus }
+    });
+    rsvpResponse = {
+      id: rsvp.id,
+      status: rsvp.status,
+      eventId: rsvp.eventId,
+      userId: rsvp.userId,
+      createdAt: rsvp.createdAt
+    };
 
     // Best-effort notify event host about RSVP update
     try {
@@ -891,7 +861,7 @@ export const handleUpdateEventRSVP = async (event: APIGatewayProxyEvent): Promis
         if (hostToken) {
           const rsvperName = rsvper?.name || 'Someone';
           const eventName = eventDataFull.name;
-          const statusText = status === 'GOING' ? 'going' : status === 'PENDING' ? 'maybe' : 'not going';
+          const statusText = status === 'GOING' ? 'going' : 'pending';
           if (process.env.NODE_ENV === 'production') {
             await admin.messaging().send({
               token: hostToken,
@@ -918,7 +888,7 @@ export const handleUpdateEventRSVP = async (event: APIGatewayProxyEvent): Promis
     return {
       statusCode: 200,
       body: JSON.stringify({
-        message: status === 'NOT_GOING' ? 'RSVP removed successfully' : 'RSVP status updated successfully',
+        message: 'RSVP status updated successfully',
         rsvp: rsvpResponse
       })
     };
