@@ -41,6 +41,17 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
         setIsAuthenticated(isAuthenticated);
         // Check if user has completed onboarding (not null/undefined and not true means completed)
         setHasCompletedOnboarding(!!(isAuthenticated && user && !user.onboarding));
+        
+        // If authenticated, fetch current event data to get updated RSVP status
+        if (isAuthenticated) {
+          try {
+            const eventData = await apiClient.fetchEvent(event.id);
+            setRsvpStatus(eventData.rsvpStatus);
+            console.log('Updated RSVP status:', eventData.rsvpStatus);
+          } catch (error) {
+            console.error('Error fetching updated event data:', error);
+          }
+        }
       } catch (error) {
         console.error('Auth check error:', error);
         setIsAuthenticated(false);
@@ -57,7 +68,7 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
     const timeoutId = setTimeout(checkAuth, 1000);
     
     return () => clearTimeout(timeoutId);
-  }, []);
+  }, [event.id]);
 
   const handleRSVP = async () => {
     // Check if user is authenticated and has completed onboarding
@@ -73,11 +84,23 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
     }
   };
 
-  // Check if user can see full event details (RSVP'd or host)
-  const canSeeFullDetails = rsvpStatus === 'GOING' || event.isHost;
+  // Check if user can see full event details (RSVP'd, pending, or host)
+  const canSeeFullDetails = rsvpStatus === 'GOING' || rsvpStatus === 'PENDING' || event.isHost;
 
   // Check if user can see Venmo handle (authenticated and completed onboarding)
   const canSeeVenmoHandle = isAuthenticated && hasCompletedOnboarding && event.paymentHandle;
+
+  // Debug logging for state changes
+  useEffect(() => {
+    console.log('State update:', {
+      rsvpStatus,
+      isAuthenticated,
+      hasCompletedOnboarding,
+      canSeeFullDetails,
+      canSeeVenmoHandle,
+      eventHost: event.isHost
+    });
+  }, [rsvpStatus, isAuthenticated, hasCompletedOnboarding, canSeeFullDetails, canSeeVenmoHandle, event.isHost]);
 
   const performRSVP = async () => {
     try {

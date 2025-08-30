@@ -109,8 +109,9 @@ struct EventView: View {
                         .placeholder {
                             Rectangle()
                                 .fill(Color.gray.opacity(0.2))
-                                .aspectRatio(16/9, contentMode: .fill)
+                                .aspectRatio(16/9, contentMode: .fit)
                                 .frame(maxWidth: .infinity, maxHeight: 192)
+                                .clipped()
                                 .overlay(ProgressView().tint(.gray))
                                 .clipShape(RoundedRectangle(cornerRadius: 12))
                         }
@@ -120,8 +121,9 @@ struct EventView: View {
                         .fade(duration: 0.2)
                         .cacheOriginalImage()
                         .loadDiskFileSynchronously()
-                        .aspectRatio(16/9, contentMode: .fill)
+                        .aspectRatio(16/9, contentMode: .fit)
                         .frame(maxWidth: .infinity, maxHeight: 192)
+                        .clipped()
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
 
