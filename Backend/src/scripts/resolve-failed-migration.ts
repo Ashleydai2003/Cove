@@ -12,22 +12,26 @@ async function resolveFailedMigration() {
     console.log('Initializing database connection...');
     await initializeDatabase();
     
-    // List of migrations to rollback
-    const migrationsToRollback = [
-      '20250830002305_remove_notgoing',
-      '20250830010114_clean_baseline'
-    ];
+    // Resolve the specific failed migration
+    const failedMigration = '20250830021337_update_rsvp_enum';
     
-    for (const migration of migrationsToRollback) {
-      try {
-        console.log(`Resolving ${migration}...`);
-        execSync(`npx prisma migrate resolve --schema prisma/schema.prisma --rolled-back ${migration}`, { 
-          stdio: 'inherit' 
-        });
-        console.log(`✅ ${migration} resolved successfully!`);
-      } catch (error: any) {
-        console.log(`⚠️  Could not resolve ${migration}:`, error.message || error);
-      }
+    try {
+      console.log(`Resolving ${failedMigration}...`);
+      execSync(`npx prisma migrate resolve --applied ${failedMigration}`, { 
+        stdio: 'inherit' 
+      });
+      console.log(`✅ ${failedMigration} resolved successfully!`);
+    } catch (error: any) {
+      console.log(`⚠️  Could not resolve ${failedMigration}:`, error.message || error);
+    }
+    
+    // Now try to apply migrations
+    try {
+      console.log('📋 Applying migrations...');
+      execSync('npx prisma migrate deploy', { stdio: 'inherit' });
+      console.log('✅ Migrations applied successfully!');
+    } catch (error: any) {
+      console.log(`⚠️  Could not apply migrations:`, error.message || error);
     }
     
     // Check final status
@@ -41,9 +45,7 @@ async function resolveFailedMigration() {
       console.log('Could not get final status');
     }
     
-    console.log('📝 Next steps:');
-    console.log('1. Create a new clean migration: npx prisma migrate dev --name clean_baseline');
-    console.log('2. Commit and push the changes');
+    console.log('🎉 Migration resolution process completed!');
     
   } catch (error: any) {
     console.error('❌ Failed to resolve migration:', error.message);
