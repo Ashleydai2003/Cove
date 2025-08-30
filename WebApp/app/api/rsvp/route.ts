@@ -33,42 +33,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify authentication and check onboarding status
-    console.log('Calling backend profile endpoint...');
-    console.log('Backend URL:', process.env.BACKEND_API_URL);
-    
-    const authResponse = await fetch(`${process.env.BACKEND_API_URL}/profile`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${authToken}`,
-      },
-    });
-
-    console.log('Auth response status:', authResponse.status);
-    console.log('Auth response headers:', Object.fromEntries(authResponse.headers.entries()));
-
-    if (!authResponse.ok) {
-      const authErrorText = await authResponse.text();
-      console.log('Auth error response:', authErrorText);
-      return NextResponse.json(
-        { message: 'Authentication required' },
-        { status: 401 }
-      );
-    }
-
-    const authData = await authResponse.json();
-    console.log('Auth data received:', authData);
-    const user = authData.user;
-
-    // Check if user has completed onboarding
-    console.log('User onboarding status:', user.onboarding);
-    if (user.onboarding) {
-      console.log('User has not completed onboarding');
-      return NextResponse.json(
-        { message: 'You must complete your profile before RSVPing to events' },
-        { status: 403 }
-      );
-    }
+        // Authentication is handled by the backend via the auth token
+    // The backend will return 401 if the token is invalid
 
     // Call the backend API to update RSVP
     console.log('Calling backend RSVP update endpoint...');
@@ -118,8 +84,17 @@ export async function POST(request: NextRequest) {
     console.error('Error message:', error instanceof Error ? error.message : error);
     console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     console.error('Full error object:', error);
+    
+    // Return more detailed error information
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : 'No stack trace';
+    
     return NextResponse.json(
-      { message: 'Internal server error' },
+      { 
+        message: 'Internal server error',
+        error: errorMessage,
+        stack: process.env.NODE_ENV === 'development' ? errorStack : undefined
+      },
       { status: 500 }
     );
   }
