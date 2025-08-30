@@ -42,10 +42,31 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
   // Initialize reCAPTCHA verifier
   useEffect(() => {
     if (typeof window !== 'undefined' && !recaptchaVerifier) {
-      const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        'size': 'invisible',
-      });
-      setRecaptchaVerifier(verifier);
+      // Wait a bit for the DOM to be ready
+      const timer = setTimeout(() => {
+        try {
+          console.log('Initializing reCAPTCHA verifier...');
+          
+          // Check if the container exists
+          const container = document.getElementById('recaptcha-container');
+          if (!container) {
+            console.error('reCAPTCHA container not found');
+            setError('Verification system not ready. Please refresh the page.');
+            return;
+          }
+          
+          const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+            'size': 'invisible',
+          });
+          console.log('reCAPTCHA verifier created successfully');
+          setRecaptchaVerifier(verifier);
+        } catch (error) {
+          console.error('Failed to initialize reCAPTCHA:', error);
+          setError('Failed to initialize verification. Please refresh the page.');
+        }
+      }, 100);
+      
+      return () => clearTimeout(timer);
     }
   }, [recaptchaVerifier]);
 
@@ -60,8 +81,26 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
         return;
       }
 
+      // Format phone number for Firebase (remove all non-digits and ensure it starts with +)
+      let formattedPhone = phoneNumber.replace(/\D/g, ''); // Remove all non-digits
+      
+      // If it doesn't start with +, add +1 for US numbers
+      if (!formattedPhone.startsWith('+')) {
+        // If it's 10 digits, assume US number
+        if (formattedPhone.length === 10) {
+          formattedPhone = '+1' + formattedPhone;
+        } else if (formattedPhone.length === 11 && formattedPhone.startsWith('1')) {
+          formattedPhone = '+' + formattedPhone;
+        } else {
+          setError('Please enter a valid US phone number');
+          return;
+        }
+      }
+
+      console.log('Sending OTP to:', formattedPhone);
+
       // Send OTP using Firebase
-      const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, recaptchaVerifier);
+      const confirmationResult = await signInWithPhoneNumber(auth, formattedPhone, recaptchaVerifier);
       setVerificationId(confirmationResult.verificationId);
       setStep('otp');
     } catch (err: any) {
