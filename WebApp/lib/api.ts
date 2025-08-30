@@ -17,6 +17,7 @@ class ApiClient {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Include cookies for authentication
         // Browser caching
         cache: 'force-cache',
       });
