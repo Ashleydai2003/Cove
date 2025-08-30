@@ -216,7 +216,7 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
       {/* Two-column layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-start">
         {/* Left column: text */}
-        <div className="space-y-8 max-h-[80vh] overflow-y-auto pr-4">
+        <div className="space-y-8 pr-4">
           <div>
             <h1 className="font-libre-bodoni text-4xl lg:text-5xl text-[#5E1C1D] leading-[0.9] mb-4">
               {title}
