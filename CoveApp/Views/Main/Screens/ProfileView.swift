@@ -2092,35 +2092,7 @@ struct ProfileView: View {
                                     onImageChange: { editingExtraImages[1] = $0 }
                                 )
 
-                                // Logout button shown only when NOT editing
-                                if !isEditing {
-                                    Button(action: handleLogout) {
-                                        HStack {
-                                            if isLoggingOut {
-                                                ProgressView()
-                                                    .scaleEffect(0.8)
-                                                    .tint(.white)
-                                                Text("logging out...")
-                                                    .font(.LibreBodoni(size: 16))
-                                                    .foregroundColor(.white)
-                                            } else {
-                                                Text("log out")
-                                                    .font(.LibreBodoni(size: 16))
-                                                    .foregroundColor(.white)
-                                            }
-                                        }
-                                        .padding(.horizontal, 40)
-                                        .padding(.vertical, 12)
-                                        .background(
-                                            RoundedRectangle(cornerRadius: 10)
-                                                .fill(isLoggingOut ? Colors.primaryDark.opacity(0.8) : Colors.primaryDark)
-                                        )
-                                    }
-                                    .disabled(isLoggingOut)
-                                    .scaleEffect(isLoggingOut ? 0.95 : 1.0)
-                                    .animation(.easeInOut(duration: 0.2), value: isLoggingOut)
-                                    .padding(.top, 20)
-                                }
+                                // Removed inline logout button; logout is available via gear menu only
                             }
                             .padding(.vertical, 20)
                         }
