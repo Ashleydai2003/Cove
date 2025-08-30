@@ -13,6 +13,7 @@ const OnboardingModal = dynamic(() => import('./OnboardingModal'), {
   loading: () => <div>Loading...</div>
 });
 import { checkAuthStatus } from '@/lib/auth';
+import { apiClient } from '@/lib/api';
 import GuestListModal from './GuestListModal';
 import RSVPSuccessModal from './RSVPSuccessModal';
 
@@ -143,12 +144,29 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
     }
   };
 
-  const handleOnboardingComplete = (userId: string) => {
-    setIsAuthenticated(true);
-    setHasCompletedOnboarding(true);
+  const handleOnboardingComplete = async (userId: string) => {
+    // Refresh authentication status and event data
+    try {
+      console.log('Onboarding completed, refreshing authentication status...');
+      
+      // Check authentication status again
+      const { isAuthenticated, user } = await checkAuthStatus();
+      setIsAuthenticated(isAuthenticated);
+      setHasCompletedOnboarding(!!(isAuthenticated && user && !user.onboarding));
+      
+      // Refresh event data to get updated RSVP status and other details
+      const eventData = await apiClient.fetchEvent(event.id);
+      setRsvpStatus(eventData.rsvpStatus);
+      
+      console.log('Page refreshed after login');
+    } catch (error) {
+      console.error('Error refreshing after login:', error);
+      // Fallback: just update the basic auth state
+      setIsAuthenticated(true);
+      setHasCompletedOnboarding(true);
+    }
+    
     setShowOnboarding(false);
-    // Automatically perform the RSVP action
-    performRSVP();
   };
 
   const title = event.name || 'Untitled Event';
@@ -349,6 +367,18 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
               </button>
             )}
           </div>
+
+          {/* Login button - only show when not authenticated */}
+          {!isAuthenticated && (
+            <div className="flex justify-center mt-4">
+              <button
+                onClick={() => setShowOnboarding(true)}
+                className="font-libre-bodoni text-[#5E1C1D] underline underline-offset-4 hover:text-[#4A1718] transition-colors"
+              >
+                login
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
