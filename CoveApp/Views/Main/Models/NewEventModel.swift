@@ -5,6 +5,7 @@
 //  Created by Assistant
 
 import SwiftUI
+import UIKit
 import Foundation
 import FirebaseAuth
 
@@ -118,18 +119,17 @@ class NewEventModel: ObservableObject {
             ticketPrice = price
         }
 
-        // Build parameters with optional cover photo
+        // Build parameters with optional fields
         var params: [String: Any] = [
             "name": eventName,
-            "description": descriptionText,
             "date": finalDate,
             "location": location,
             "coveId": coveId
         ]
 
         // Add optional fields if they have values
-        if !eventDescription.isEmpty {
-            params["description"] = eventDescription
+        if !descriptionText.isEmpty {
+            params["description"] = descriptionText
         }
         
         if let memberCap = memberCap {
