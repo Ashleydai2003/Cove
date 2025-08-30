@@ -813,153 +813,24 @@ struct EventPostView: View {
             )
         }
         .sheet(isPresented: $showingShareSheet) {
-            CompactShareSheet(eventUrl: "https://www.coveapp.co/events/\(eventId)")
+            ShareSheet(activityItems: ["https://www.coveapp.co/events/\(eventId)"])
         }
     }
 }
 
-// MARK: - Compact Share Sheet
-struct CompactShareSheet: View {
-    let eventUrl: String
-    @Environment(\.dismiss) private var dismiss
-    @State private var showingCopiedAlert = false
+// MARK: - Share Sheet
+struct ShareSheet: UIViewControllerRepresentable {
+    let activityItems: [Any]
     
-    var body: some View {
-        VStack(spacing: 0) {
-            // Handle bar
-            RoundedRectangle(cornerRadius: 2.5)
-                .fill(Color.gray.opacity(0.3))
-                .frame(width: 36, height: 5)
-                .padding(.top, 8)
-                .padding(.bottom, 16)
-            
-            VStack(spacing: 20) {
-                Text("Share Event")
-                    .font(.LibreBodoniBold(size: 20))
-                    .foregroundColor(Colors.primaryDark)
-                
-                // Event URL display
-                VStack(spacing: 8) {
-                    Text("Event Link")
-                        .font(.LibreBodoni(size: 14))
-                        .foregroundColor(.gray)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    
-                    HStack {
-                        Text(eventUrl)
-                            .font(.LibreBodoni(size: 14))
-                            .foregroundColor(.black)
-                            .lineLimit(1)
-                            .truncationMode(.middle)
-                        
-                        Spacer()
-                        
-                        Button("Copy") {
-                            UIPasteboard.general.string = eventUrl
-                            showingCopiedAlert = true
-                            
-                            // Hide alert after 2 seconds
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                                showingCopiedAlert = false
-                            }
-                        }
-                        .font(.LibreBodoni(size: 14))
-                        .foregroundColor(Colors.primaryDark)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(Colors.primaryDark.opacity(0.1))
-                        )
-                    }
-                    .padding(12)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(Color.gray.opacity(0.1))
-                    )
-                }
-                
-                // Native share button
-                Button {
-                    let activityVC = UIActivityViewController(activityItems: [eventUrl], applicationActivities: nil)
-                    
-                    if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                       let window = windowScene.windows.first {
-                        window.rootViewController?.present(activityVC, animated: true)
-                    }
-                    
-                    dismiss()
-                } label: {
-                    HStack {
-                        Image(systemName: "square.and.arrow.up")
-                            .font(.system(size: 16))
-                        Text("Share via...")
-                            .font(.LibreBodoni(size: 16))
-                    }
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(Colors.primaryDark)
-                    )
-                }
-                
-                // Cancel button
-                Button("Cancel") {
-                    dismiss()
-                }
-                .font(.LibreBodoni(size: 16))
-                .foregroundColor(.gray)
-                .padding(.top, 8)
-            }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 32)
-            
-            Spacer()
-        }
-        .background(Color.white)
-        .cornerRadius(16, corners: [.topLeft, .topRight])
-        .overlay(
-            // Copied alert
-            VStack {
-                if showingCopiedAlert {
-                    Text("Copied to clipboard!")
-                        .font(.LibreBodoni(size: 14))
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(Color.green)
-                        )
-                        .transition(.opacity)
-                        .animation(.easeInOut(duration: 0.2), value: showingCopiedAlert)
-                }
-                Spacer()
-            }
-            .padding(.top, 60)
-        )
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        let controller = UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+        return controller
     }
-}
-
-// Extension for rounded corners
-extension View {
-    func cornerRadius(_ radius: CGFloat, corners: UIRectCorner) -> some View {
-        clipShape(RoundedCorner(radius: radius, corners: corners))
-    }
-}
-
-struct RoundedCorner: Shape {
-    var radius: CGFloat = .infinity
-    var corners: UIRectCorner = .allCorners
-
-    func path(in rect: CGRect) -> Path {
-        let path = UIBezierPath(roundedRect: rect, byRoundingCorners: corners, cornerRadii: CGSize(width: radius, height: radius))
-        return Path(path.cgPath)
-    }
+    
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
 #Preview {
     EventPostView(eventId: "cmb77a64d000ijs086d8sifig", coveCoverPhoto: nil)
 }
+
