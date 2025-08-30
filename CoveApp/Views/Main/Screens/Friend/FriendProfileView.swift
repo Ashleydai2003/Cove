@@ -82,14 +82,14 @@ struct FriendProfileView: View {
                                 .foregroundColor(Colors.primaryDark)
 
                             // Location (if available)
-                            if !viewModel.locationName.isEmpty {
+                            Group {
                                 HStack(spacing: 6) {
                                     Image("locationIcon")
                                         .resizable()
                                         .aspectRatio(contentMode: .fit)
                                         .frame(width: 16, height: 16)
                                         .foregroundColor(Colors.primaryDark)
-                                    Text(viewModel.locationName.lowercased())
+                                    Text(viewModel.locationName.isEmpty ? "" : viewModel.locationName.lowercased())
                                         .font(.LibreBodoni(size: 14))
                                         .foregroundColor(Colors.primaryDark)
                                 }
@@ -119,7 +119,7 @@ struct FriendProfileView: View {
                             }
                         }
                         .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.top, 20)
+                        .padding(.top, 24)
 
                         // Collapsible details row (status + work) with placeholders
                         if showDetails {
