@@ -62,6 +62,7 @@ struct CreateEventView: View {
                             locationSection
                                 .id("locationSection")
                             ticketPriceSection
+                            paymentHandleSection
                             spotsSection
                             visibilitySection
                             // TODO: in the future we also want to have a privacy section
@@ -149,6 +150,49 @@ extension CreateEventView {
         .padding(.horizontal, 20)
         .padding(.top, 8)
         .padding(.bottom, 12)
+    }
+
+    // MARK: - Payment Handle Section
+    private var paymentHandleSection: some View {
+        HStack(spacing: 0) {
+            Image(systemName: "at")
+                .font(.system(size: 20))
+                .foregroundStyle(Color.white)
+                .padding(.leading, 24)
+
+            ZStack(alignment: .leading) {
+                if viewModel.paymentHandle.isEmpty {
+                    Text("venmo handle")
+                        .foregroundColor(Color.white)
+                        .font(.LibreBodoniBold(size: 16))
+                }
+
+                TextField("", text: $viewModel.paymentHandle)
+                    .keyboardType(.default)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.never)
+                    .font(.LibreBodoniBold(size: 16))
+                    .foregroundColor(Color.white)
+                    .padding(.leading, 0)
+                    .onChange(of: viewModel.paymentHandle) { _, newValue in
+                        // Normalize: strip whitespace and leading '@'
+                        var trimmed = newValue.replacingOccurrences(of: " ", with: "")
+                        if trimmed.hasPrefix("@") {
+                            trimmed.removeFirst()
+                        }
+                        viewModel.paymentHandle = trimmed
+                    }
+            }
+            .padding(.leading, 16)
+            .padding(.trailing, 16)
+
+            Spacer()
+        }
+        .frame(height: 44)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Colors.primaryDark)
+        )
     }
 
     // MARK: - Event Name Section
