@@ -276,8 +276,8 @@ class Onboarding {
             parameters["almaMater"] = almaMater
         }
         
-        if let graduationYear = userGradYear, !graduationYear.isEmpty {
-            parameters["graduationYear"] = graduationYear
+        if let gradYear = userGradYear, !gradYear.isEmpty {
+            parameters["gradYear"] = gradYear
         }
 
         // Add optional fields
