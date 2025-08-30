@@ -69,9 +69,11 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
       setShowOnboarding(true);
     } else {
       // User is authenticated and has completed onboarding, proceed with RSVP
-      if (rsvpStatus === 'GOING') {
-        await performRSVPRemoval();
+      if (rsvpStatus === 'GOING' || rsvpStatus === 'PENDING') {
+        // User is already going or pending, no action needed (button should be disabled)
+        return;
       } else {
+        // User has no RSVP status, add RSVP
         await performRSVP();
       }
     }
