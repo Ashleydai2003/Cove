@@ -15,7 +15,7 @@ struct LocationSearchView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                Colors.faf8f4.ignoresSafeArea()
+                Colors.background.ignoresSafeArea()
 
                 VStack(spacing: 0) {
                     // Custom header
@@ -102,18 +102,18 @@ struct LocationSearchView: View {
                                 }
                                 .padding(.vertical, 12)
                                 .padding(.horizontal, 16)
-                                .background(Colors.faf8f4) // Same as background
+                                .background(Colors.background) // Same as background
                                 .cornerRadius(12)
                             }
                             .buttonStyle(.plain)
-                            .listRowBackground(Colors.faf8f4) // Same as background
+                            .listRowBackground(Colors.background) // Same as background
                             .listRowSeparator(.hidden)
                             .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
                         }
                     }
                     .listStyle(.plain)
                     .scrollContentBackground(.hidden)
-                    .background(Colors.faf8f4)
+                    .background(Colors.background)
                 }
             }
         }

@@ -20,16 +20,22 @@ struct HobbyButton: View {
             HStack(spacing: 8) {
                 Text(emoji)
                     .font(.system(size: 16))
+                    .fixedSize()
 
                 Text(text)
-                    .font(.LeagueSpartan(size: 14))
+                    .font(.LibreBodoni(size: 14))
                     .foregroundColor(isSelected ? .white : Colors.primaryDark)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .minimumScaleFactor(0.7)
+                    .allowsTightening(true)
+                    .layoutPriority(1)
 
                 Spacer()
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
-            .background(isSelected ? Colors.primaryDark : Colors.primaryLight)
+            .background(isSelected ? Colors.primaryDark : Colors.hobbyBackground)
             .cornerRadius(25)
             .overlay(
                 RoundedRectangle(cornerRadius: 25)

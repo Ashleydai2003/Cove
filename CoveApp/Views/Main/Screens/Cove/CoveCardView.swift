@@ -3,6 +3,7 @@ import Kingfisher
 
 struct CoveCardView: View {
     let cove: Cove
+    var disableNavigation: Bool = false
     @EnvironmentObject var appController: AppController
 
     var body: some View {
@@ -57,6 +58,7 @@ struct CoveCardView: View {
             .padding(.horizontal, 20)
             .background(Color.clear)
         }
+        .disabled(disableNavigation)
         .onAppear {
             appController.coveFeed.preloadCoveDetails(for: cove.id)
         }

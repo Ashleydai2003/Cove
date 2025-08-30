@@ -1,12 +1,11 @@
 import SwiftUI
+import UIKit
 
 // Uses AlertBannerView for messaging placeholder
 struct CoveBannerView: View {
     var onInbox: (() -> Void)? = nil
-    var onPaperPlane: (() -> Void)? = nil
+    var showBookmarkButton: Bool = false
     @State private var showInvites = false
-    @State private var showMessageBanner = false
-    @EnvironmentObject var appController: AppController
 
     var body: some View {
         HStack(alignment: .center) {
@@ -15,7 +14,19 @@ struct CoveBannerView: View {
                 .foregroundColor(Colors.primaryDark)
             Spacer()
             HStack(spacing: 18) {
+                if showBookmarkButton {
+                    Button(action: {
+                        // placeholder for future bookmark action
+                    }) {
+                        Image(systemName: "bookmark")
+                            .resizable()
+                            .frame(width: 20, height: 26)
+                            .foregroundColor(Colors.primaryDark)
+                    }
+                }
+
                 Button(action: {
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                     showInvites = true
                     onInbox?()
                 }) {
@@ -33,28 +44,16 @@ struct CoveBannerView: View {
                     }
                 }
                 .buttonStyle(PlainButtonStyle())
-
-                Button(action: {
-                    onPaperPlane?()
-                    withAnimation { showMessageBanner = true }
-                }) {
-                    Image(systemName: "paperplane")
-                        .resizable()
-                        .frame(width: 26, height: 26)
-                        .foregroundColor(Colors.primaryDark)
-                }
             }
         }
         .padding(.horizontal, 30)
-        .padding(.top, 24)
+        .padding(.top, 12)
         .padding(.bottom, 8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Colors.background)
         .sheet(isPresented: $showInvites) {
             InboxView()
         }
-        .overlay(
-            AlertBannerView(message: "direct messaging coming soon!", isVisible: $showMessageBanner)
-                .animation(.easeInOut, value: showMessageBanner)
-        )
     }
 }
 
