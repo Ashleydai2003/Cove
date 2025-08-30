@@ -163,9 +163,10 @@ struct FriendProfileView: View {
                         }
 
                         // Second photo (if available) after interests, mirroring ProfileView layout
-                        if profile.photos.count > 1 {
+                        let extraPhotos = profile.photos.filter { !$0.isProfilePic }
+                        if let secondPhoto = extraPhotos.first {
                             HStack { Spacer()
-                                KFImage(profile.photos[0].isProfilePic ? profile.photos[1].url : profile.photos[0].url)
+                                KFImage(secondPhoto.url)
                                     .resizable()
                                     .scaledToFill()
                                     .frame(maxWidth: UIScreen.main.bounds.width * 0.8)
