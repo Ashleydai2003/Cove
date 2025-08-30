@@ -25,8 +25,8 @@ export async function GET(request: NextRequest) {
       return response;
     }
 
-    // Call the backend API to verify the token and get user info
-    const backendResponse = await fetch(`${process.env.BACKEND_API_URL}/profile`, {
+    // Call the backend API to verify the token
+    const backendResponse = await fetch(`${process.env.BACKEND_API_URL}/auth-validate`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${authToken}`,
