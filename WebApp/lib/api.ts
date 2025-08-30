@@ -10,7 +10,8 @@ class ApiClient {
 
   async fetchEvent(eventId: string): Promise<Event> {
     try {
-      const url = `${this.baseUrl}/event?eventId=${encodeURIComponent(eventId)}`;
+      // Use the web app's API route instead of calling backend directly
+      const url = `/api/event?eventId=${encodeURIComponent(eventId)}`;
       
       const response = await fetch(url, {
         method: 'GET',
@@ -18,8 +19,8 @@ class ApiClient {
           'Content-Type': 'application/json',
         },
         credentials: 'include', // Include cookies for authentication
-        // Browser caching
-        cache: 'force-cache',
+        // Don't cache authenticated requests
+        cache: 'no-store',
       });
 
       if (!response.ok) {
@@ -55,7 +56,26 @@ export const apiClient = new ApiClient();
 // Utility function for server-side data fetching
 export async function getEventData(eventId: string): Promise<Event | null> {
   try {
-    return await apiClient.fetchEvent(eventId);
+    // For server-side rendering, we need to call the backend directly
+    // since we don't have access to cookies in SSR context
+    const url = `${process.env.BACKEND_API_URL}/event?eventId=${encodeURIComponent(eventId)}`;
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      // Server-side requests don't include cookies, so we get unauthenticated response
+      cache: 'force-cache',
+    });
+
+    if (!response.ok) {
+      console.error(`Failed to fetch event ${eventId}: ${response.status}`);
+      return null;
+    }
+
+    const data: EventResponse = await response.json();
+    return data.event;
   } catch (error) {
     console.error(`Failed to fetch event ${eventId}:`, error);
     return null;

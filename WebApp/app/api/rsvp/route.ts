@@ -2,18 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('=== RSVP API START ===');
-    console.log('Request headers:', Object.fromEntries(request.headers.entries()));
-    console.log('Request cookies:', request.cookies.getAll());
-    
     const body = await request.json();
-    console.log('Request body:', body);
-    
     const { eventId, status } = body;
-    console.log('Extracted data:', { eventId, status });
 
     if (!eventId || !status) {
-      console.log('Missing required fields:', { eventId, status });
       return NextResponse.json(
         { message: 'Event ID and status are required' },
         { status: 400 }
@@ -22,79 +14,38 @@ export async function POST(request: NextRequest) {
 
     // Get auth token from cookie
     const authToken = request.cookies.get('session-token')?.value;
-    console.log('Auth token present:', !!authToken);
-    console.log('Auth token length:', authToken?.length || 0);
 
     if (!authToken) {
-      console.log('No auth token found in cookies');
       return NextResponse.json(
         { message: 'Authentication required' },
         { status: 401 }
       );
     }
 
-        // Authentication is handled by the backend via the auth token
-    // The backend will return 401 if the token is invalid
-
     // Call the backend API to update RSVP
-    console.log('Calling backend RSVP update endpoint...');
-    const rsvpRequestBody = {
-      eventId,
-      status,
-    };
-    console.log('RSVP request body:', rsvpRequestBody);
-    
     const backendResponse = await fetch(`${process.env.BACKEND_API_URL}/update-event-rsvp`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${authToken}`,
       },
-      body: JSON.stringify(rsvpRequestBody),
+      body: JSON.stringify({ eventId, status }),
     });
 
-    console.log('Backend RSVP response status:', backendResponse.status);
-    console.log('Backend RSVP response headers:', Object.fromEntries(backendResponse.headers.entries()));
-
-    const responseText = await backendResponse.text();
-    console.log('Backend RSVP response text:', responseText);
-
-    let data;
-    try {
-      data = JSON.parse(responseText);
-      console.log('Backend RSVP response data:', data);
-    } catch (parseError) {
-      console.log('Failed to parse backend response as JSON:', parseError);
-      data = { message: 'Invalid response from backend' };
-    }
-
+    const data = await backendResponse.json().catch(() => ({ message: 'Invalid response from backend' }));
+    
     if (backendResponse.ok) {
-      console.log('RSVP successful, returning data');
       return NextResponse.json(data);
     } else {
-      console.log('RSVP failed, returning error');
       return NextResponse.json(
         { message: data.message || 'Failed to update RSVP' },
         { status: backendResponse.status }
       );
     }
   } catch (error) {
-    console.error('=== RSVP API ERROR ===');
-    console.error('Error type:', typeof error);
-    console.error('Error message:', error instanceof Error ? error.message : error);
-    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
-    console.error('Full error object:', error);
-    
-    // Return more detailed error information
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    const errorStack = error instanceof Error ? error.stack : 'No stack trace';
-    
+    console.error('RSVP API error:', error);
     return NextResponse.json(
-      { 
-        message: 'Internal server error',
-        error: errorMessage,
-        stack: process.env.NODE_ENV === 'development' ? errorStack : undefined
-      },
+      { message: 'Internal server error' },
       { status: 500 }
     );
   }

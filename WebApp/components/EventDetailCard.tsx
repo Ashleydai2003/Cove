@@ -28,49 +28,38 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [rsvpStatus, setRsvpStatus] = useState<string | null>(event.rsvpStatus || null);
+  const [rsvpStatus, setRsvpStatus] = useState<string | null>(null);
 
           // Check authentication status and fetch event data on component mount
         useEffect(() => {
             const checkAuthAndFetchEvent = async () => {
                 try {
-                    console.log('Checking authentication status...');
                     const { isAuthenticated, user } = await checkAuthStatus();
-                    console.log('Auth check result:', { isAuthenticated, user: user ? 'user found' : 'no user' });
                     
                     setIsAuthenticated(isAuthenticated);
                     setHasCompletedOnboarding(!!(isAuthenticated && user && !user.onboarding));
                     
-                    // If authenticated, fetch event data to get RSVP status
+                    // Fetch fresh event data to get the most up-to-date RSVP status
                     if (isAuthenticated) {
                         try {
-                            console.log('Fetching event data for authenticated user...');
                             const eventData = await apiClient.fetchEvent(event.id);
-                            console.log('Event data fetched:', eventData);
-                            
-                            // Update RSVP status from the fetched data
-                            const newRsvpStatus = eventData.rsvpStatus ?? null;
-                            setRsvpStatus(newRsvpStatus);
-                            console.log('Updated RSVP status:', newRsvpStatus);
+                            setRsvpStatus(eventData.rsvpStatus ?? null);
                         } catch (error) {
                             console.error('Error fetching event data:', error);
+                            setRsvpStatus(event.rsvpStatus ?? null);
                         }
+                    } else {
+                        setRsvpStatus(event.rsvpStatus ?? null);
                     }
                 } catch (error) {
-                    // Don't log 401 errors as they're expected for unauthenticated users
-                    if (error instanceof Error && error.message.includes('401')) {
-                        console.log('User not authenticated (expected for new visitors)');
-                    } else {
-                        console.error('Auth check error:', error);
-                    }
                     setIsAuthenticated(false);
                     setHasCompletedOnboarding(false);
+                    setRsvpStatus(event.rsvpStatus ?? null);
                 } finally {
                     setIsLoading(false);
                 }
             };
 
-            // Check auth and fetch event data immediately
             checkAuthAndFetchEvent();
         }, [event.id]);
 
@@ -94,44 +83,35 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
   // Check if user can see Venmo handle (authenticated and completed onboarding)
   const canSeeVenmoHandle = isAuthenticated && hasCompletedOnboarding && event.paymentHandle;
 
-  // Debug logging for state changes
-  useEffect(() => {
-    console.log('State update:', {
-      rsvpStatus,
-      isAuthenticated,
-      hasCompletedOnboarding,
-      canSeeFullDetails,
-      canSeeVenmoHandle,
-      eventHost: event.isHost
-    });
-  }, [rsvpStatus, isAuthenticated, hasCompletedOnboarding, canSeeFullDetails, canSeeVenmoHandle, event.isHost]);
+
 
   const performRSVP = async () => {
     try {
-      console.log('Attempting RSVP for event:', event.id);
-      console.log('User authenticated:', isAuthenticated);
-      
       const response = await fetch('/api/rsvp', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include', // Include cookies for authentication
+        credentials: 'include',
         body: JSON.stringify({
           eventId: event.id,
           status: 'PENDING',
         }),
       });
 
-      console.log('RSVP response status:', response.status);
-
       if (response.ok) {
-        // Update local RSVP status and show success modal
         setRsvpStatus('PENDING');
         setShowSuccessModal(true);
+        
+        // Refresh event data to ensure we have the latest state
+        try {
+          const eventData = await apiClient.fetchEvent(event.id);
+          setRsvpStatus(eventData.rsvpStatus ?? null);
+        } catch (refreshError) {
+          console.error('Error refreshing event data after RSVP:', refreshError);
+        }
       } else {
         const data = await response.json();
-        console.log('RSVP error response:', data);
         alert(data.message || 'Failed to RSVP');
       }
     } catch (error) {
@@ -142,27 +122,29 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
 
   const performRSVPRemoval = async () => {
     try {
-      console.log('Removing RSVP for event:', event.id);
-      
       const response = await fetch('/api/rsvp-remove', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include', // Include cookies for authentication
+        credentials: 'include',
         body: JSON.stringify({
           eventId: event.id,
         }),
       });
 
-      console.log('RSVP removal response status:', response.status);
-
       if (response.ok) {
-        // Update local RSVP status
         setRsvpStatus(null);
+        
+        // Refresh event data to ensure we have the latest state
+        try {
+          const eventData = await apiClient.fetchEvent(event.id);
+          setRsvpStatus(eventData.rsvpStatus ?? null);
+        } catch (refreshError) {
+          console.error('Error refreshing event data after RSVP removal:', refreshError);
+        }
       } else {
         const data = await response.json();
-        console.log('RSVP removal error response:', data);
         alert(data.message || 'Failed to remove RSVP');
       }
     } catch (error) {
@@ -172,23 +154,18 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
   };
 
   const handleOnboardingComplete = async (userId: string) => {
-    // Refresh authentication status and event data
     try {
-      console.log('Onboarding completed, refreshing authentication status...');
-      
       // Check authentication status again
       const { isAuthenticated, user } = await checkAuthStatus();
       setIsAuthenticated(isAuthenticated);
       setHasCompletedOnboarding(!!(isAuthenticated && user && !user.onboarding));
       
-      // Refresh event data to get updated RSVP status and other details
+      // Refresh event data to get updated RSVP status
       const eventData = await apiClient.fetchEvent(event.id);
       setRsvpStatus(eventData.rsvpStatus ?? null);
-      
-      console.log('Page refreshed after login');
     } catch (error) {
       console.error('Error refreshing after login:', error);
-      // Fallback: just update the basic auth state
+      // Fallback: update basic auth state
       setIsAuthenticated(true);
       setHasCompletedOnboarding(true);
     }
