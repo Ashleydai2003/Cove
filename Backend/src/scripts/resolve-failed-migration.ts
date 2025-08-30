@@ -12,15 +12,23 @@ async function resolveFailedMigration() {
     console.log('Initializing database connection...');
     await initializeDatabase();
     
-    // Resolve the specific failed migration
-    const failedMigration = '20250830002305_remove_notgoing';
+    // List of migrations to rollback
+    const migrationsToRollback = [
+      '20250830002305_remove_notgoing',
+      '20250830010114_clean_baseline'
+    ];
     
-    console.log(`Resolving ${failedMigration}...`);
-    execSync(`npx prisma migrate resolve --schema prisma/schema.prisma --rolled-back ${failedMigration}`, { 
-      stdio: 'inherit' 
-    });
-    
-    console.log(`✅ ${failedMigration} resolved successfully!`);
+    for (const migration of migrationsToRollback) {
+      try {
+        console.log(`Resolving ${migration}...`);
+        execSync(`npx prisma migrate resolve --schema prisma/schema.prisma --rolled-back ${migration}`, { 
+          stdio: 'inherit' 
+        });
+        console.log(`✅ ${migration} resolved successfully!`);
+      } catch (error: any) {
+        console.log(`⚠️  Could not resolve ${migration}:`, error.message || error);
+      }
+    }
     
     // Check final status
     try {

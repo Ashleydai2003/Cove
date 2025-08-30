@@ -16,7 +16,4 @@ ALTER TABLE "EventRSVP" ALTER COLUMN "status" SET DEFAULT 'PENDING';
 COMMIT;
 
 -- AlterTable
-ALTER TABLE "Event" ADD COLUMN     "paymentHandle" TEXT;
-
--- AlterTable
 ALTER TABLE "EventRSVP" ALTER COLUMN "status" SET DEFAULT 'PENDING';
