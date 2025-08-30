@@ -595,7 +595,7 @@ export const handleGetEvent = async (event: APIGatewayProxyEvent): Promise<APIGa
       select: { id: true, status: true, userId: true }
     }) : null;
 
-    // If entitled (host OR has GOING status), fetch attendee list (first 5 only) and return full details
+    // If entitled (host OR has GOING status), fetch attendee list and return full details
     // Note: Hosts always get full access to manage their events, regardless of RSVP status
     const hasGoingRsvp = userRsvp && userRsvp.status === 'GOING';
     if (isHost || hasGoingRsvp) {
