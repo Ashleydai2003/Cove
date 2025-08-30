@@ -162,17 +162,7 @@ struct FriendProfileView: View {
                             .padding(.top, 4)
                         }
 
-                        // Second photo (if available) after interests, mirroring ProfileView layout
-                        let extraPhotos = profile.photos.filter { !$0.isProfilePic }
-                        if let secondPhoto = extraPhotos.first {
-                            HStack { Spacer()
-                                KFImage(secondPhoto.url)
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(maxWidth: UIScreen.main.bounds.width * 0.8)
-                                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                            Spacer() }
-                        }
+                        // Removed extra photo for now (show only profile picture at top)
 
                         // MARK: Hobbies / Interests
                         if !profile.interests.isEmpty {
