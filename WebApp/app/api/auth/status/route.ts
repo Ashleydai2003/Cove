@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Call the backend API to verify the token
-    const backendResponse = await fetch(`${process.env.BACKEND_API_URL}/auth-validate`, {
+    const backendResponse = await fetch(`${process.env.BACKEND_API_URL}/profile`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${authToken}`,
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
       console.log('Session validated successfully');
       return NextResponse.json({
         isAuthenticated: true,
-        user: data.user,
+        user: data.profile,
       });
     } else {
       // Token is invalid, clear the cookie
