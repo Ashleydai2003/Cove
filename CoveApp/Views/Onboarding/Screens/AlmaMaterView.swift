@@ -47,12 +47,12 @@ struct AlmaMaterView: View {
                 VStack(alignment: .leading, spacing: 10) {
             Text("what is your alma \nmater?")
                 .foregroundStyle(Colors.primaryDark)
-                .font(.LibreBodoniMedium(size: 40))
+                .font(.LibreBodoni(size: 40))
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             Text("connect to your alumni network!")
                 .font(.LeagueSpartan(size: 15))
-                .foregroundColor(Colors.k0B0B0B)
+                .foregroundStyle(Colors.primaryDark)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .padding(.top, 40)
@@ -63,12 +63,12 @@ struct AlmaMaterView: View {
                         if searchUniversity.isEmpty {
                             Text("search universities...")
                                 .foregroundColor(Colors.k656566)
-                                .font(.LeagueSpartan(size: 30))
+                                .font(.LibreCaslon(size: 25))
                         }
 
                 TextField("", text: $searchUniversity)
-                    .font(.LeagueSpartan(size: 30))
-                    .foregroundStyle(Colors.k060505)
+                    .font(.LibreCaslon(size: 25))
+                    .foregroundStyle(Color.black)
                     .keyboardType(.alphabet)
                             .focused($isUniversityFocused)
                     .onChange(of: searchUniversity) { oldValue, newValue in
@@ -86,9 +86,9 @@ struct AlmaMaterView: View {
 
                 Divider()
                     .frame(height: 2)
-                    .background(Colors.k060505)
+                    .background(Color.black.opacity(0.58))
             }
-                .padding(.top, 30)
+                .padding(.top, 40)
 
                 // Graduation year input section
                 VStack(spacing: 8) {
@@ -96,12 +96,12 @@ struct AlmaMaterView: View {
                         if gradYear.isEmpty {
                             Text("graduation year...")
                                 .foregroundColor(Colors.k656566)
-                                .font(.LeagueSpartan(size: 30))
+                                .font(.LibreCaslon(size: 25))
                         }
 
                         TextField("", text: $gradYear)
-                            .font(.LeagueSpartan(size: 30))
-                            .foregroundStyle(Colors.k060505)
+                            .font(.LibreCaslon(size: 25))
+                            .foregroundStyle(Color.black)
                             .keyboardType(.numberPad)
                             .onChange(of: gradYear) { oldValue, newValue in
                                 // Only allow numeric input and limit to 4 digits
@@ -123,7 +123,7 @@ struct AlmaMaterView: View {
 
                     Divider()
                         .frame(height: 2)
-                        .background(Colors.k060505)
+                        .background(Color.black.opacity(0.58))
                 }
                 .padding(.top, 20)
 
@@ -248,9 +248,10 @@ struct AlmaMaterView: View {
             }
             .disabled(searchUniversity.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
                       gradYear.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            .padding(.bottom, 20)
+            .padding(.bottom, 40)
         }
-        .padding(.horizontal, 32)
+        .padding(.horizontal, 20)
+        .safeAreaPadding()
         }
         .navigationBarBackButtonHidden()
         .onAppear {
