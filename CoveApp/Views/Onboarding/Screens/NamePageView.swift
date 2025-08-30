@@ -26,6 +26,19 @@ struct NamePageView: View {
             // Main content container
             OnboardingBackgroundView()
             VStack {
+                // Back button
+                HStack {
+                    Button {
+                        appController.path.removeLast()
+                    } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(Colors.primaryDark)
+                    }
+                    Spacer()
+                }
+                .padding(.top, 10)
+
                 // MARK: - Header Section
                 VStack(alignment: .leading) {
                     Text("what's your \nname?")
@@ -73,31 +86,23 @@ struct NamePageView: View {
 
                 Spacer()
 
-                // MARK: - Navigation Helper
-                HStack {
-                    Spacer()
-                    Images.nextArrow
-                        .resizable()
-                        .frame(width: 52, height: 52)
-                        .padding(.init(top: 0, leading: 0, bottom: 60, trailing: 20))
-                        .opacity((firstName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || lastName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) ? 0.5 : 1.0)
-                        .onTapGesture {
-                            // MARK: - Validate names
-                            let trimmedFirstName = firstName.trimmingCharacters(in: .whitespacesAndNewlines)
-                            let trimmedLastName = lastName.trimmingCharacters(in: .whitespacesAndNewlines)
-                            
-                            if trimmedFirstName.isEmpty || trimmedLastName.isEmpty {
-                                appController.errorMessage = "Please enter both your first and last name"
-                                showingError = true
-                                return
-                            }
-                            
-                            // TODO: Strip whitespace from first and last name
-                            // TODO: Maybe make a dedicated struct for onboarding functions
-                            Onboarding.storeName(firstName: trimmedFirstName, lastName: trimmedLastName)
-                            appController.path.append(.birthdate)
-                        }
+                // MARK: - Next Button
+                SignOnButton(text: "next") {
+                    let trimmedFirstName = firstName.trimmingCharacters(in: .whitespacesAndNewlines)
+                    let trimmedLastName = lastName.trimmingCharacters(in: .whitespacesAndNewlines)
+
+                    if trimmedFirstName.isEmpty || trimmedLastName.isEmpty {
+                        appController.errorMessage = "Please enter both your first and last name"
+                        showingError = true
+                        return
+                    }
+
+                    Onboarding.storeName(firstName: trimmedFirstName, lastName: trimmedLastName)
+                    appController.path.append(.birthdate)
                 }
+                .disabled(firstName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+                          lastName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .padding(.bottom, 40)
             }
             .padding(.horizontal, 20)
             .safeAreaPadding()

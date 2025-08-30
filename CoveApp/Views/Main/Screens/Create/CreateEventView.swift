@@ -61,6 +61,8 @@ struct CreateEventView: View {
                             dateTimeSection
                             locationSection
                                 .id("locationSection")
+                            ticketPriceSection
+                            paymentHandleSection
                             spotsSection
                             visibilitySection
                             // TODO: in the future we also want to have a privacy section
@@ -148,6 +150,49 @@ extension CreateEventView {
         .padding(.horizontal, 20)
         .padding(.top, 8)
         .padding(.bottom, 12)
+    }
+
+    // MARK: - Payment Handle Section
+    private var paymentHandleSection: some View {
+        HStack(spacing: 0) {
+            Image(systemName: "at")
+                .font(.system(size: 20))
+                .foregroundStyle(Color.white)
+                .padding(.leading, 24)
+
+            ZStack(alignment: .leading) {
+                if viewModel.paymentHandle.isEmpty {
+                    Text("venmo handle")
+                        .foregroundColor(Color.white)
+                        .font(.LibreBodoniBold(size: 16))
+                }
+
+                TextField("", text: $viewModel.paymentHandle)
+                    .keyboardType(.default)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.never)
+                    .font(.LibreBodoniBold(size: 16))
+                    .foregroundColor(Color.white)
+                    .padding(.leading, 0)
+                    .onChange(of: viewModel.paymentHandle) { _, newValue in
+                        // Normalize: strip whitespace and leading '@'
+                        var trimmed = newValue.replacingOccurrences(of: " ", with: "")
+                        if trimmed.hasPrefix("@") {
+                            trimmed.removeFirst()
+                        }
+                        viewModel.paymentHandle = trimmed
+                    }
+            }
+            .padding(.leading, 16)
+            .padding(.trailing, 16)
+
+            Spacer()
+        }
+        .frame(height: 44)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Colors.primaryDark)
+        )
     }
 
     // MARK: - Event Name Section
@@ -365,6 +410,43 @@ extension CreateEventView {
         }
     }
 
+    // MARK: - Ticket Price Section
+    private var ticketPriceSection: some View {
+        HStack(spacing: 0) {
+            Image(systemName: "dollarsign.circle")
+                .font(.system(size: 20))
+                .foregroundStyle(Color.white)
+                .padding(.leading, 24)
+
+            ZStack(alignment: .leading) {
+                if viewModel.ticketPriceString.isEmpty {
+                    Text("ticket price")
+                        .foregroundColor(Color.white)
+                        .font(.LibreBodoniBold(size: 16))
+                }
+
+                TextField("", text: $viewModel.ticketPriceString)
+                    .keyboardType(.decimalPad)
+                    .autocorrectionDisabled()
+                    .font(.LibreBodoniBold(size: 16))
+                    .foregroundColor(Color.white)
+                    .padding(.leading, 0)
+                    .onChange(of: viewModel.ticketPriceString) { _, newValue in
+                        viewModel.ticketPriceString = viewModel.validateTicketPriceInput(newValue)
+                    }
+            }
+            .padding(.leading, 16)
+            .padding(.trailing, 16)
+
+            Spacer()
+        }
+        .frame(height: 44)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Colors.primaryDark)
+        )
+    }
+
     // MARK: - Number of Spots Section
     private var spotsSection: some View {
         numberOfSpotsView
@@ -374,7 +456,10 @@ extension CreateEventView {
     private var visibilitySection: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 0) {
-                Button(action: { visibility = .membersOnly }) {
+                Button(action: { 
+                    visibility = .membersOnly
+                    viewModel.isPublic = false
+                }) {
                     Text("Members only")
                         .font(.LibreBodoniBold(size: 16))
                         .foregroundStyle(visibility == .membersOnly ? Colors.background : Colors.primaryDark)
@@ -392,7 +477,10 @@ extension CreateEventView {
                     )
                 }
 
-                Button(action: { visibility = .discoverable }) {
+                Button(action: { 
+                    visibility = .discoverable
+                    viewModel.isPublic = true
+                }) {
                     Text("Discoverable")
                         .font(.LibreBodoniBold(size: 16))
                         .foregroundStyle(visibility == .discoverable ? Colors.background : Colors.primaryDark)

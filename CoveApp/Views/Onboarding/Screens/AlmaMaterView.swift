@@ -35,7 +35,9 @@ struct AlmaMaterView: View {
                 Button {
                     appController.path.removeLast()
                 } label: {
-                    Images.backArrow
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(Colors.primaryDark)
                 }
                 Spacer()
             }
@@ -45,12 +47,12 @@ struct AlmaMaterView: View {
                 VStack(alignment: .leading, spacing: 10) {
             Text("what is your alma \nmater?")
                 .foregroundStyle(Colors.primaryDark)
-                .font(.LibreBodoniMedium(size: 40))
+                .font(.LibreBodoni(size: 40))
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            Text("find people from within your network, then others. (optional)")
+            Text("connect to your alumni network!")
                 .font(.LeagueSpartan(size: 15))
-                .foregroundColor(Colors.k0B0B0B)
+                .foregroundStyle(Colors.primaryDark)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .padding(.top, 40)
@@ -61,12 +63,12 @@ struct AlmaMaterView: View {
                         if searchUniversity.isEmpty {
                             Text("search universities...")
                                 .foregroundColor(Colors.k656566)
-                                .font(.LeagueSpartan(size: 30))
+                                .font(.LibreCaslon(size: 25))
                         }
 
                 TextField("", text: $searchUniversity)
-                    .font(.LeagueSpartan(size: 30))
-                    .foregroundStyle(Colors.k060505)
+                    .font(.LibreCaslon(size: 25))
+                    .foregroundStyle(Color.black)
                     .keyboardType(.alphabet)
                             .focused($isUniversityFocused)
                     .onChange(of: searchUniversity) { oldValue, newValue in
@@ -84,9 +86,9 @@ struct AlmaMaterView: View {
 
                 Divider()
                     .frame(height: 2)
-                    .background(Colors.k060505)
+                    .background(Color.black.opacity(0.58))
             }
-                .padding(.top, 30)
+                .padding(.top, 40)
 
                 // Graduation year input section
                 VStack(spacing: 8) {
@@ -94,12 +96,12 @@ struct AlmaMaterView: View {
                         if gradYear.isEmpty {
                             Text("graduation year...")
                                 .foregroundColor(Colors.k656566)
-                                .font(.LeagueSpartan(size: 30))
+                                .font(.LibreCaslon(size: 25))
                         }
 
                         TextField("", text: $gradYear)
-                            .font(.LeagueSpartan(size: 30))
-                            .foregroundStyle(Colors.k060505)
+                            .font(.LibreCaslon(size: 25))
+                            .foregroundStyle(Color.black)
                             .keyboardType(.numberPad)
                             .onChange(of: gradYear) { oldValue, newValue in
                                 // Only allow numeric input and limit to 4 digits
@@ -121,7 +123,7 @@ struct AlmaMaterView: View {
 
                     Divider()
                         .frame(height: 2)
-                        .background(Colors.k060505)
+                        .background(Color.black.opacity(0.58))
                 }
                 .padding(.top, 20)
 
@@ -130,7 +132,7 @@ struct AlmaMaterView: View {
                     VStack(spacing: 0) {
                         ScrollView(.vertical, showsIndicators: false) {
                             VStack(spacing: 0) {
-                        ForEach(filteredUniversities, id: \.self) { university in
+                        ForEach(Array(filteredUniversities.prefix(3)), id: \.self) { university in
                             Button {
                                 searchUniversity = university
                                         DispatchQueue.main.async {
@@ -147,7 +149,7 @@ struct AlmaMaterView: View {
                                     }
                                     .background(Color.clear)
 
-                                    if university != filteredUniversities.last {
+                                    if university != Array(filteredUniversities.prefix(3)).last {
                                         Divider()
                                             .background(Colors.k060505.opacity(0.2))
                             }
@@ -157,7 +159,7 @@ struct AlmaMaterView: View {
                     }
                     .background(Colors.primaryLight)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .frame(height: min(CGFloat(filteredUniversities.count * 44), 200))
+                    .frame(height: min(CGFloat(min(filteredUniversities.count, 3) * 44), 132))
                     .padding(.top, 10)
                     .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 5)
                 }
@@ -167,7 +169,7 @@ struct AlmaMaterView: View {
                     VStack(spacing: 0) {
                         ScrollView(.vertical, showsIndicators: false) {
                             VStack(spacing: 0) {
-                                ForEach(filteredYears, id: \.self) { year in
+                                ForEach(Array(filteredYears.prefix(3)), id: \.self) { year in
                                     Button {
                                         gradYear = year
                                         DispatchQueue.main.async {
@@ -184,7 +186,7 @@ struct AlmaMaterView: View {
                                     }
                                     .background(Color.clear)
 
-                                    if year != filteredYears.last {
+                                    if year != Array(filteredYears.prefix(3)).last {
                                         Divider()
                                             .background(Colors.k060505.opacity(0.2))
                                     }
@@ -194,7 +196,7 @@ struct AlmaMaterView: View {
                     }
                     .background(Colors.primaryLight)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .frame(height: min(CGFloat(filteredYears.count * 44), 200))
+                    .frame(height: min(CGFloat(min(filteredYears.count, 3) * 44), 132))
                     .padding(.top, 10)
                     .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 5)
             }
@@ -202,53 +204,54 @@ struct AlmaMaterView: View {
             Spacer()
 
                 // Continue button
-            HStack {
-                Spacer()
-                    Images.nextArrow
-                    .resizable()
-                    .frame(width: 52, height: 52)
-                    .padding(.bottom, 20)
-                    .opacity((searchUniversity.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || gradYear.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) ? 0.5 : 1.0)
-                    .onTapGesture {
-                        // MARK: - Validate university and graduation year
-                        let trimmedUniversity = searchUniversity.trimmingCharacters(in: .whitespacesAndNewlines)
-                        let trimmedYear = gradYear.trimmingCharacters(in: .whitespacesAndNewlines)
-                        
-                        if trimmedUniversity.isEmpty {
-                            appController.errorMessage = "Please enter your university"
-                            showingError = true
-                            return
-                        }
-                        
-                        if trimmedYear.isEmpty {
-                            appController.errorMessage = "Please enter your graduation year"
-                            showingError = true
-                            return
-                        }
-                        
-                        // Validate graduation year is a reasonable year
-                        if let yearInt = Int(trimmedYear) {
-                            let currentYear = Calendar.current.component(.year, from: Date())
-                            if yearInt < 1950 || yearInt > currentYear + 4 {
-                                appController.errorMessage = "Please enter a valid graduation year"
-                                showingError = true
-                                return
-                            }
-                        } else {
-                            appController.errorMessage = "Please enter a valid graduation year"
-                            showingError = true
-                            return
-                        }
-                        
-                            // MARK: - Store alma mater and grad year
-                        // TODO: can consider using university IDs instead of names
-                        Onboarding.storeAlmaMater(almaMater: trimmedUniversity)
-                        Onboarding.storeGradYear(gradYear: trimmedYear)
-                        appController.path.append(.citySelection)
+            SignOnButton(text: "next") {
+                let trimmedUniversity = searchUniversity.trimmingCharacters(in: .whitespacesAndNewlines)
+                let trimmedYear = gradYear.trimmingCharacters(in: .whitespacesAndNewlines)
+
+                if trimmedUniversity.isEmpty {
+                    appController.errorMessage = "Please enter your university"
+                    showingError = true
+                    return
+                }
+
+                if trimmedYear.isEmpty {
+                    appController.errorMessage = "Please enter your graduation year"
+                    showingError = true
+                    return
+                }
+
+                if let yearInt = Int(trimmedYear) {
+                    let currentYear = Calendar.current.component(.year, from: Date())
+                    if yearInt < 1950 || yearInt > currentYear + 4 {
+                        appController.errorMessage = "Please enter a valid graduation year"
+                        showingError = true
+                        return
                     }
+                } else {
+                    appController.errorMessage = "Please enter a valid graduation year"
+                    showingError = true
+                    return
+                }
+
+                Onboarding.storeAlmaMater(almaMater: trimmedUniversity)
+                Onboarding.storeGradYear(gradYear: trimmedYear)
+                // Complete onboarding directly now that city/profile are removed
+                Onboarding.completeOnboarding { success in
+                    DispatchQueue.main.async {
+                        if success {
+                            appController.path = [.pluggingIn]
+                        } else {
+                            showingError = true
+                        }
+                    }
+                }
             }
+            .disabled(searchUniversity.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+                      gradYear.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            .padding(.bottom, 40)
         }
-        .padding(.horizontal, 32)
+        .padding(.horizontal, 20)
+        .safeAreaPadding()
         }
         .navigationBarBackButtonHidden()
         .onAppear {
