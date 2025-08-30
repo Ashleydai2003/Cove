@@ -29,27 +29,32 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [rsvpStatus, setRsvpStatus] = useState<string | null>(null);
+  const [isRsvpLoading, setIsRsvpLoading] = useState(false);
 
           // Check authentication status and fetch event data on component mount
         useEffect(() => {
             const checkAuthAndFetchEvent = async () => {
+                setIsLoading(true);
                 try {
                     const { isAuthenticated, user } = await checkAuthStatus();
                     
                     setIsAuthenticated(isAuthenticated);
                     setHasCompletedOnboarding(!!(isAuthenticated && user && !user.onboarding));
                     
-                    // Fetch fresh event data to get the most up-to-date RSVP status
-                    if (isAuthenticated) {
-                        try {
-                            const eventData = await apiClient.fetchEvent(event.id);
-                            setRsvpStatus(eventData.rsvpStatus ?? null);
-                        } catch (error) {
-                            console.error('Error fetching event data:', error);
+                    // Always fetch fresh event data to get the most up-to-date RSVP status
+                    try {
+                        // Small delay to ensure authentication state is properly established
+                        if (isAuthenticated) {
+                            await new Promise(resolve => setTimeout(resolve, 100));
+                        }
+                        const eventData = await apiClient.fetchEvent(event.id);
+                        setRsvpStatus(eventData.rsvpStatus ?? null);
+                    } catch (error) {
+                        console.error('Error fetching event data:', error);
+                        // Fallback to server-side data only if we're not authenticated
+                        if (!isAuthenticated) {
                             setRsvpStatus(event.rsvpStatus ?? null);
                         }
-                    } else {
-                        setRsvpStatus(event.rsvpStatus ?? null);
                     }
                 } catch (error) {
                     setIsAuthenticated(false);
@@ -61,7 +66,7 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
             };
 
             checkAuthAndFetchEvent();
-        }, [event.id]);
+        }, [event.id, event.rsvpStatus]);
 
   const handleRSVP = async () => {
     // Check if user is authenticated and has completed onboarding
@@ -88,6 +93,7 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
 
 
   const performRSVP = async () => {
+    setIsRsvpLoading(true);
     try {
       const response = await fetch('/api/rsvp', {
         method: 'POST',
@@ -119,6 +125,8 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
     } catch (error) {
       console.error('RSVP error:', error);
       alert('Failed to RSVP. Please try again.');
+    } finally {
+      setIsRsvpLoading(false);
     }
   };
 
@@ -157,6 +165,9 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
 
   const handleOnboardingComplete = async (userId: string) => {
     try {
+      // Force a complete refresh of authentication and event data
+      setIsLoading(true);
+      
       // Check authentication status again
       const { isAuthenticated, user } = await checkAuthStatus();
       setIsAuthenticated(isAuthenticated);
@@ -170,6 +181,8 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
       // Fallback: update basic auth state
       setIsAuthenticated(true);
       setHasCompletedOnboarding(true);
+    } finally {
+      setIsLoading(false);
     }
     
     setShowOnboarding(false);
@@ -367,9 +380,10 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
             ) : (
               <button
                 onClick={handleRSVP}
-                className="px-24 py-3 bg-[#5E1C1D] text-white rounded-lg font-libre-bodoni text-xl font-medium hover:bg-[#4A1718] transition-colors shadow-lg"
+                disabled={isRsvpLoading}
+                className="px-24 py-3 bg-[#5E1C1D] text-white rounded-lg font-libre-bodoni text-xl font-medium hover:bg-[#4A1718] transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                rsvp
+                {isRsvpLoading ? 'rsvping...' : 'rsvp'}
               </button>
             )}
           </div>
