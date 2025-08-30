@@ -7,11 +7,11 @@ export async function POST(request: NextRequest) {
     const clientIP = request.headers.get('x-forwarded-for') || 
                     request.headers.get('x-real-ip') || 
                     'unknown';
-    const rateLimit = checkRateLimit(`login:${clientIP}`);
+    const rateLimit = checkRateLimit(`refresh:${clientIP}`);
     
     if (!rateLimit.allowed) {
       return NextResponse.json(
-        { message: 'Too many login attempts. Please try again later.' },
+        { message: 'Too many refresh attempts. Please try again later.' },
         { status: 429 }
       );
     }
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Call the backend API with the Firebase ID token
+    // Call the backend API to validate the new token
     const backendResponse = await fetch(`${process.env.BACKEND_API_URL}/login`, {
       method: 'POST',
       headers: {
@@ -42,24 +42,21 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    const data = await backendResponse.json();
-
     if (backendResponse.ok) {
-      // Set authentication cookie
-      const response = NextResponse.json(data);
+      // Update the session cookie with the new token
+      const response = NextResponse.json({ success: true });
       
-      // Set secure session cookie
       setSecureSession(response, idToken);
 
       return response;
     } else {
       return NextResponse.json(
-        { message: data.message || 'Backend authentication failed' },
-        { status: backendResponse.status }
+        { message: 'Token validation failed' },
+        { status: 401 }
       );
     }
   } catch (error) {
-    console.error('Backend login API error:', error);
+    console.error('Token refresh error:', error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

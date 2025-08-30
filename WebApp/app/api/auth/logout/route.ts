@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { clearSecureSession } from '@/lib/session';
 
 export async function POST(request: NextRequest) {
   try {
@@ -7,8 +8,8 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     );
 
-    // Clear the auth token cookie
-    response.cookies.delete('firebase-token');
+    // Clear the session token cookie securely
+    clearSecureSession(response);
 
     return response;
   } catch (error) {

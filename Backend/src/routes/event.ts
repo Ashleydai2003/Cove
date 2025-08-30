@@ -926,6 +926,169 @@ export const handleUpdateEventRSVP = async (event: APIGatewayProxyEvent): Promis
   }
 };
 
+// Remove RSVP (when user cancels their RSVP)
+export const handleRemoveEventRSVP = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+  try {
+    console.log('=== BACKEND RSVP REMOVAL START ===');
+    console.log('Request method:', event.httpMethod);
+    console.log('Request path:', event.path);
+    console.log('Request headers:', event.headers);
+    console.log('Request body:', event.body);
+    
+    // Validate request method - only POST is allowed
+    if (event.httpMethod !== 'POST') {
+      console.log('Invalid method:', event.httpMethod);
+      return {
+        statusCode: 405,
+        body: JSON.stringify({
+          message: 'Method not allowed. Only POST requests are accepted for removing RSVP.'
+        })
+      };
+    }
+
+    // Authenticate the request using Firebase
+    const authResult = await authMiddleware(event);
+    
+    // If auth failed, return the error response
+    if ('statusCode' in authResult) {
+      return authResult;
+    }
+
+    // Get the authenticated user's info from Firebase
+    const user = authResult.user;
+    console.log('Authenticated user:', user.uid);
+
+    // Parse and validate request body
+    if (!event.body) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          message: 'Request body is required'
+        })
+      };
+    }
+
+    // Extract required fields from request body
+    console.log('Parsing request body...');
+    const { eventId } = JSON.parse(event.body);
+    console.log('Extracted fields:', { eventId });
+
+    // Validate required fields
+    if (!eventId) {
+      console.log('Missing required fields:', { eventId });
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          message: 'Event ID is required'
+        })
+      };
+    }
+
+    // Initialize database connection
+    console.log('Initializing database connection...');
+    const prisma = await initializeDatabase();
+    console.log('Database connection initialized');
+
+    // Check if the RSVP exists
+    console.log('Looking up existing RSVP...');
+    const existingRSVP = await prisma.eventRSVP.findUnique({
+      where: {
+        eventId_userId: {
+          eventId: eventId,
+          userId: user.uid
+        }
+      }
+    });
+
+    if (!existingRSVP) {
+      console.log('No RSVP found to remove');
+      return {
+        statusCode: 404,
+        body: JSON.stringify({
+          message: 'No RSVP found for this event'
+        })
+      };
+    }
+
+    // Delete the RSVP
+    console.log('Deleting RSVP...');
+    await prisma.eventRSVP.delete({
+      where: {
+        eventId_userId: {
+          eventId: eventId,
+          userId: user.uid
+        }
+      }
+    });
+
+    console.log('RSVP removed successfully');
+
+    // Best-effort notify event host about RSVP removal
+    try {
+      const [eventDataFull, rsvper] = await Promise.all([
+        prisma.event.findUnique({ 
+          where: { id: eventId }, 
+          select: { 
+            hostId: true, 
+            name: true, 
+            coveId: true, 
+            hostedBy: { select: { fcmToken: true } } 
+          } 
+        }),
+        prisma.user.findUnique({ where: { id: user.uid }, select: { name: true } })
+      ]);
+      
+      if (eventDataFull && eventDataFull.hostId !== user.uid) {
+        const hostToken = eventDataFull.hostedBy?.fcmToken;
+        if (hostToken) {
+          const rsvperName = rsvper?.name || 'Someone';
+          const eventName = eventDataFull.name;
+          
+          if (process.env.NODE_ENV === 'production') {
+            await admin.messaging().send({
+              token: hostToken,
+              notification: {
+                title: `📅 Attendance update for "${eventName}"`,
+                body: `${rsvperName} can no longer make it`
+              },
+              data: {
+                type: 'event_rsvp_removed',
+                eventId: eventId,
+                coveId: eventDataFull.coveId
+              }
+            });
+          } else {
+            console.log('Skipping push notification in non-production (event rsvp removal)');
+          }
+        }
+      }
+    } catch (notifyErr) {
+      console.error('RSVP removal notify error:', notifyErr);
+    }
+
+    // Return success response
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        message: 'RSVP removed successfully'
+      })
+    };
+  } catch (error) {
+    console.error('=== BACKEND RSVP REMOVAL ERROR ===');
+    console.error('Error type:', typeof error);
+    console.error('Error message:', error instanceof Error ? error.message : error);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    console.error('Full error object:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        message: 'Error processing RSVP removal request',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      })
+    };
+  }
+};
+
 // TODO: In the future, consider handling MAYBE responses as well for a more comprehensive calendar view
 // Get events that the user has RSVP'd "GOING" to OR is hosting (for calendar view)
 // This endpoint handles retrieving events the user has committed to attend or is hosting with the following requirements:
