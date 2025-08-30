@@ -50,7 +50,7 @@ struct HomeCalendarView: View {
     // Filter events to only show those where user has RSVP'd
     private var rsvpdEvents: [CalendarEvent] {
         calendarFeed.events.filter { event in
-            event.rsvpStatus == "GOING" || event.rsvpStatus == "MAYBE" || isUserHosting(event)
+            event.rsvpStatus == "GOING" || isUserHosting(event)
         }
     }
 
