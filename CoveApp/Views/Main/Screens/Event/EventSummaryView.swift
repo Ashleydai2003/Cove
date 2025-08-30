@@ -49,15 +49,17 @@ struct EventSummaryView: View {
                             .fade(duration: 0.2)
                             .cacheOriginalImage()
                             .loadDiskFileSynchronously()
-                            .aspectRatio(16/10, contentMode: .fill)
+                            .aspectRatio(16/10, contentMode: .fit)
                             .frame(maxWidth: .infinity)
+                            .clipped()
                             .clipShape(RoundedRectangle(cornerRadius: 18))
                     } else {
                         // Default event image
                         Image("default_event2")
                             .resizable()
-                            .aspectRatio(16/10, contentMode: .fill)
+                            .aspectRatio(16/10, contentMode: .fit)
                             .frame(maxWidth: .infinity)
+                            .clipped()
                             .clipShape(RoundedRectangle(cornerRadius: 18))
                             .onAppear {
                                 // For default images, set imageLoaded to true immediately
