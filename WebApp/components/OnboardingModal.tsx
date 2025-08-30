@@ -56,7 +56,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
           }
           
           const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-            'size': 'normal',
+            'size': 'invisible',
             'callback': () => {
               console.log('reCAPTCHA callback executed');
               setRecaptchaCompleted(true);
@@ -97,6 +97,12 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
           recaptchaVerifier.clear();
           setRecaptchaVerifier(null);
           setRecaptchaCompleted(false);
+          
+          // Remove the reCAPTCHA container to prevent errors
+          const container = document.getElementById('recaptcha-container');
+          if (container) {
+            container.innerHTML = '';
+          }
         } catch (error) {
           console.log('Error clearing reCAPTCHA:', error);
         }
@@ -116,7 +122,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
         console.log('Creating reCAPTCHA verifier on-demand...');
         try {
           verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-            'size': 'normal',
+            'size': 'invisible',
             'callback': () => {
               console.log('reCAPTCHA callback executed');
               setRecaptchaCompleted(true);
@@ -160,7 +166,17 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
       setStep('otp');
     } catch (err: any) {
       console.error('Firebase phone auth error:', err);
-      setError(err.message || 'Failed to send OTP. Please try again.');
+      
+      // Handle specific Firebase errors
+      if (err.code === 'auth/captcha-check-failed') {
+        setError('Domain not authorized. Please contact support or try from a different domain.');
+      } else if (err.code === 'auth/invalid-phone-number') {
+        setError('Please enter a valid phone number.');
+      } else if (err.code === 'auth/too-many-requests') {
+        setError('Too many attempts. Please try again later.');
+      } else {
+        setError(err.message || 'Failed to send OTP. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
