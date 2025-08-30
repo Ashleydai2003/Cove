@@ -24,6 +24,32 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Verify authentication and check onboarding status
+    const authResponse = await fetch(`${process.env.BACKEND_API_URL}/profile`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${authToken}`,
+      },
+    });
+
+    if (!authResponse.ok) {
+      return NextResponse.json(
+        { message: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    const authData = await authResponse.json();
+    const user = authData.user;
+
+    // Check if user has completed onboarding
+    if (user.onboarding) {
+      return NextResponse.json(
+        { message: 'You must complete your profile before RSVPing to events' },
+        { status: 403 }
+      );
+    }
+
     // Call the backend API to update RSVP
     const backendResponse = await fetch(`${process.env.BACKEND_API_URL}/update-event-rsvp`, {
       method: 'POST',

@@ -25,6 +25,7 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
   const [showGuestList, setShowGuestList] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [rsvpStatus, setRsvpStatus] = useState(event.rsvpStatus);
 
@@ -32,11 +33,14 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const { isAuthenticated } = await checkAuthStatus();
+        const { isAuthenticated, user } = await checkAuthStatus();
         setIsAuthenticated(isAuthenticated);
+        // Check if user has completed onboarding (not null/undefined and not true means completed)
+        setHasCompletedOnboarding(!!(isAuthenticated && user && !user.onboarding));
       } catch (error) {
         console.error('Auth check error:', error);
         setIsAuthenticated(false);
+        setHasCompletedOnboarding(false);
       } finally {
         setIsLoading(false);
       }
@@ -46,11 +50,11 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
   }, []);
 
   const handleRSVP = async () => {
-    // Check if user is authenticated
-    if (!isAuthenticated) {
+    // Check if user is authenticated and has completed onboarding
+    if (!isAuthenticated || !hasCompletedOnboarding) {
       setShowOnboarding(true);
     } else {
-      // User is authenticated, proceed with RSVP
+      // User is authenticated and has completed onboarding, proceed with RSVP
       if (rsvpStatus === 'GOING') {
         await performRSVPRemoval();
       } else {
@@ -62,8 +66,8 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
   // Check if user can see full event details (RSVP'd or host)
   const canSeeFullDetails = rsvpStatus === 'GOING' || event.isHost;
 
-  // Check if user can see Venmo handle (authenticated)
-  const canSeeVenmoHandle = isAuthenticated && event.paymentHandle;
+  // Check if user can see Venmo handle (authenticated and completed onboarding)
+  const canSeeVenmoHandle = isAuthenticated && hasCompletedOnboarding && event.paymentHandle;
 
   const performRSVP = async () => {
     try {
@@ -133,6 +137,7 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
 
   const handleOnboardingComplete = (userId: string) => {
     setIsAuthenticated(true);
+    setHasCompletedOnboarding(true);
     setShowOnboarding(false);
     // Automatically perform the RSVP action
     performRSVP();
