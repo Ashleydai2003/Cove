@@ -833,3 +833,4 @@ struct ShareSheet: UIViewControllerRepresentable {
 #Preview {
     EventPostView(eventId: "cmb77a64d000ijs086d8sifig", coveCoverPhoto: nil)
 }
+
