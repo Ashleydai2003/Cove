@@ -24,9 +24,8 @@ model DummyTest {
 
 // Prisma Enum for RSVPs 
 enum RSVPStatus {
-  GOING      // Approved by host
-  PENDING    // Awaiting host approval
-  NOT_GOING  // User declined or host declined
+  GOING    // Approved by host
+  PENDING  // Awaiting host approval
 }
 
 enum MemberRole {
