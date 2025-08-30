@@ -79,7 +79,9 @@ struct BirthdateView: View {
                     Button {
                         appController.path.removeLast()
                     } label: {
-                        Images.backArrow
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(Colors.primaryDark)
                     }
                     Spacer()
                 }
@@ -166,6 +168,13 @@ Text("only your age will be displayed on your profile")
                 .padding(.top, 50)
 
                 Spacer()
+
+                // Next button (keep auto-advance on full input)
+                SignOnButton(text: "next") {
+                    validateBirthdate()
+                }
+                .disabled(!isBirthdateComplete)
+                .padding(.bottom, 40)
 
             }
             .padding(.horizontal, 20)

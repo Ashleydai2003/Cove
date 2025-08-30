@@ -35,7 +35,9 @@ struct AlmaMaterView: View {
                 Button {
                     appController.path.removeLast()
                 } label: {
-                    Images.backArrow
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(Colors.primaryDark)
                 }
                 Spacer()
             }
@@ -130,7 +132,7 @@ struct AlmaMaterView: View {
                     VStack(spacing: 0) {
                         ScrollView(.vertical, showsIndicators: false) {
                             VStack(spacing: 0) {
-                        ForEach(filteredUniversities, id: \.self) { university in
+                        ForEach(Array(filteredUniversities.prefix(3)), id: \.self) { university in
                             Button {
                                 searchUniversity = university
                                         DispatchQueue.main.async {
@@ -147,7 +149,7 @@ struct AlmaMaterView: View {
                                     }
                                     .background(Color.clear)
 
-                                    if university != filteredUniversities.last {
+                                    if university != Array(filteredUniversities.prefix(3)).last {
                                         Divider()
                                             .background(Colors.k060505.opacity(0.2))
                             }
@@ -157,7 +159,7 @@ struct AlmaMaterView: View {
                     }
                     .background(Colors.primaryLight)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .frame(height: min(CGFloat(filteredUniversities.count * 44), 200))
+                    .frame(height: min(CGFloat(min(filteredUniversities.count, 3) * 44), 132))
                     .padding(.top, 10)
                     .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 5)
                 }
@@ -167,7 +169,7 @@ struct AlmaMaterView: View {
                     VStack(spacing: 0) {
                         ScrollView(.vertical, showsIndicators: false) {
                             VStack(spacing: 0) {
-                                ForEach(filteredYears, id: \.self) { year in
+                                ForEach(Array(filteredYears.prefix(3)), id: \.self) { year in
                                     Button {
                                         gradYear = year
                                         DispatchQueue.main.async {
@@ -184,7 +186,7 @@ struct AlmaMaterView: View {
                                     }
                                     .background(Color.clear)
 
-                                    if year != filteredYears.last {
+                                    if year != Array(filteredYears.prefix(3)).last {
                                         Divider()
                                             .background(Colors.k060505.opacity(0.2))
                                     }
@@ -194,7 +196,7 @@ struct AlmaMaterView: View {
                     }
                     .background(Colors.primaryLight)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .frame(height: min(CGFloat(filteredYears.count * 44), 200))
+                    .frame(height: min(CGFloat(min(filteredYears.count, 3) * 44), 132))
                     .padding(.top, 10)
                     .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 5)
             }

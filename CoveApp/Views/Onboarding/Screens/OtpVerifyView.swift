@@ -131,7 +131,9 @@ struct OtpVerifyView: View {
                             // Navigate back (UserPhoneNumberView will auto-send again)
                             appController.path.removeLast()
                         } label: {
-                            Images.backArrow
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundStyle(Colors.primaryDark)
                         }
                         Spacer()
                     }

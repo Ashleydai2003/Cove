@@ -26,6 +26,19 @@ struct NamePageView: View {
             // Main content container
             OnboardingBackgroundView()
             VStack {
+                // Back button
+                HStack {
+                    Button {
+                        appController.path.removeLast()
+                    } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(Colors.primaryDark)
+                    }
+                    Spacer()
+                }
+                .padding(.top, 10)
+
                 // MARK: - Header Section
                 VStack(alignment: .leading) {
                     Text("what's your \nname?")
