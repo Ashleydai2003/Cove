@@ -28,7 +28,7 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [rsvpStatus, setRsvpStatus] = useState(event.rsvpStatus);
+  const [rsvpStatus, setRsvpStatus] = useState<string | null>(event.rsvpStatus || null);
 
           // Check authentication status and fetch event data on component mount
         useEffect(() => {
@@ -49,16 +49,20 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
                             console.log('Event data fetched:', eventData);
                             
                             // Update RSVP status from the fetched data
-                            if (eventData.rsvpStatus) {
-                                setRsvpStatus(eventData.rsvpStatus);
-                                console.log('Updated RSVP status:', eventData.rsvpStatus);
-                            }
+                            const newRsvpStatus = eventData.rsvpStatus ?? null;
+                            setRsvpStatus(newRsvpStatus);
+                            console.log('Updated RSVP status:', newRsvpStatus);
                         } catch (error) {
                             console.error('Error fetching event data:', error);
                         }
                     }
                 } catch (error) {
-                    console.error('Auth check error:', error);
+                    // Don't log 401 errors as they're expected for unauthenticated users
+                    if (error instanceof Error && error.message.includes('401')) {
+                        console.log('User not authenticated (expected for new visitors)');
+                    } else {
+                        console.error('Auth check error:', error);
+                    }
                     setIsAuthenticated(false);
                     setHasCompletedOnboarding(false);
                 } finally {
