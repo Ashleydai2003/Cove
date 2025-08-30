@@ -8,6 +8,7 @@ import {
   handleProfile,
   handleEditProfile,
   handleLogin,
+  handleAuthValidate,
   handleTestDatabase,
   handleTestS3,
   handleOnboard,
@@ -79,6 +80,9 @@ export const handler = async (
         break;
       case '/login':
         response = await handleLogin(event);
+        break;
+      case '/auth-validate':
+        response = await handleAuthValidate(event);
         break;
       case '/test-database':
         return handleTestDatabase(event);
