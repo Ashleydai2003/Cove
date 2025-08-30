@@ -16,7 +16,7 @@ export interface Cove {
 
 export interface EventRSVP {
   id: string;
-  status: 'GOING' | 'MAYBE' | 'NOT_GOING';
+  status: 'GOING' | 'NOT_GOING' | 'PENDING';
   userId: string;
   userName: string;
   profilePhotoUrl?: string | null;
@@ -35,7 +35,7 @@ export interface Event {
   coveId: string;
   host: Host;
   cove: Cove;
-  rsvpStatus?: 'GOING' | 'MAYBE' | 'NOT_GOING' | 'PENDING' | null;
+  rsvpStatus?: 'GOING' | 'NOT_GOING' | 'PENDING' | null;
   goingCount?: number;
   rsvps?: EventRSVP[];
   coverPhoto?: CoverPhoto;

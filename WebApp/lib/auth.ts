@@ -96,13 +96,21 @@ export async function checkAuthStatus(): Promise<{ isAuthenticated: boolean; use
         isAuthenticated: true,
         user: data.user,
       };
+    } else if (response.status === 401) {
+      // 401 is expected for unauthenticated users - don't log as error
+      return {
+        isAuthenticated: false,
+      };
     } else {
+      // Log other errors (500, 403, etc.)
+      console.error('Auth check failed with status:', response.status);
       return {
         isAuthenticated: false,
       };
     }
   } catch (error) {
-    console.error('Auth check error:', error);
+    // Network errors or other exceptions
+    console.error('Auth check network error:', error);
     return {
       isAuthenticated: false,
     };
