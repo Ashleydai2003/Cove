@@ -978,7 +978,7 @@ private struct LocationHalfSheet: View {
                     VStack(spacing: 0) {
                         ScrollView(.vertical, showsIndicators: false) {
                             VStack(spacing: 0) {
-                                ForEach(filteredCities, id: \.self) { city in
+                                ForEach(Array(filteredCities.prefix(3)), id: \.self) { city in
                                     Button {
                                         searchCity = city.lowercased()
                                         DispatchQueue.main.async { showCityDropdown = false }
@@ -992,7 +992,7 @@ private struct LocationHalfSheet: View {
                                             .padding(.vertical, 12)
                                     }
                                     .background(Color.clear)
-                                    if city != filteredCities.last {
+                                    if city != Array(filteredCities.prefix(3)).last {
                                         Divider().background(Colors.k060505.opacity(0.2))
                                     }
                                 }
@@ -1001,7 +1001,7 @@ private struct LocationHalfSheet: View {
                     }
                     .background(Colors.primaryLight)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .frame(height: min(CGFloat(filteredCities.count * 48), 320))
+                    .frame(height: min(CGFloat(min(filteredCities.count, 3) * 48), 320))
                     .padding(.horizontal, 24)
                     .padding(.top, 12)
                     .shadow(color: .black.opacity(0.08), radius: 10, x: 0, y: 5)
@@ -1125,7 +1125,7 @@ private struct AlmaMaterHalfSheet: View {
                     VStack(spacing: 0) {
                         ScrollView(.vertical, showsIndicators: false) {
                             VStack(spacing: 0) {
-                                ForEach(filteredUniversities, id: \.self) { item in
+                                ForEach(Array(filteredUniversities.prefix(3)), id: \.self) { item in
                                     Button {
                                         university = item.lowercased()
                                         DispatchQueue.main.async { showUniversityDropdown = false }
@@ -1139,7 +1139,7 @@ private struct AlmaMaterHalfSheet: View {
                                             .padding(.vertical, 12)
                                     }
                                     .background(Color.clear)
-                                    if item != filteredUniversities.last {
+                                    if item != Array(filteredUniversities.prefix(3)).last {
                                         Divider().background(Colors.k060505.opacity(0.2))
                                     }
                                 }
@@ -1148,7 +1148,7 @@ private struct AlmaMaterHalfSheet: View {
                     }
                     .background(Colors.primaryLight)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .frame(height: min(CGFloat(filteredUniversities.count * 48), 320))
+                    .frame(height: min(CGFloat(min(filteredUniversities.count, 3) * 48), 320))
                     .padding(.horizontal, 24)
                     .padding(.top, 12)
                     .shadow(color: .black.opacity(0.08), radius: 10, x: 0, y: 5)
@@ -1192,7 +1192,7 @@ private struct AlmaMaterHalfSheet: View {
                     VStack(spacing: 0) {
                         ScrollView(.vertical, showsIndicators: false) {
                             VStack(spacing: 0) {
-                                ForEach(filteredYears, id: \.self) { year in
+                                ForEach(Array(filteredYears.prefix(3)), id: \.self) { year in
                                     Button {
                                         gradYear = year
                                         DispatchQueue.main.async { showYearDropdown = false }
@@ -1206,7 +1206,7 @@ private struct AlmaMaterHalfSheet: View {
                                             .padding(.vertical, 12)
                                     }
                                     .background(Color.clear)
-                                    if year != filteredYears.last {
+                                    if year != Array(filteredYears.prefix(3)).last {
                                         Divider().background(Colors.k060505.opacity(0.2))
                                     }
                                 }
@@ -1215,7 +1215,7 @@ private struct AlmaMaterHalfSheet: View {
                     }
                     .background(Colors.primaryLight)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .frame(height: min(CGFloat(filteredYears.count * 48), 320))
+                    .frame(height: min(CGFloat(min(filteredYears.count, 3) * 48), 320))
                     .padding(.horizontal, 24)
                     .padding(.top, 12)
                     .shadow(color: .black.opacity(0.08), radius: 10, x: 0, y: 5)
@@ -1350,6 +1350,222 @@ private struct GenderHalfSheet: View {
         }
         .onAppear {
             selected = initialGender.lowercased()
+        }
+    }
+}
+
+// MARK: - Status Half Sheet (three-button style like gender)
+private struct StatusHalfSheet: View {
+    let initialStatus: String
+    let onSaved: (String) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var selected: String = ""
+    private let options: [String] = ["single", "taken", "it's complicated"]
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            Colors.background.ignoresSafeArea()
+
+            // Close button
+            Button(action: { dismiss() }) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(Colors.primaryDark)
+            }
+            .padding(.leading, 20)
+            .padding(.top, 18)
+
+            VStack(spacing: 16) {
+                // Icon + Title
+                VStack(spacing: 10) {
+                    Image("relationshipIcon")
+                        .renderingMode(.template)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 30, height: 30)
+                        .foregroundColor(Colors.primaryDark)
+                    Text("status")
+                        .font(.LibreBodoni(size: 22))
+                        .foregroundColor(Colors.primaryDark)
+                }
+
+                Spacer(minLength: 8)
+
+                VStack(spacing: 12) {
+                    ForEach(options, id: \.self) { opt in
+                        Button(action: { selected = opt }) {
+                            HStack {
+                                Text(opt)
+                                    .font(.LeagueSpartan(size: 20))
+                                    .foregroundColor(Colors.primaryDark)
+                                Spacer()
+                                if selected == opt {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundStyle(Colors.primaryDark)
+                                } else {
+                                    Image(systemName: "circle")
+                                        .foregroundStyle(Colors.k6F6F73)
+                                }
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Colors.hobbyBackground)
+                            )
+                        }
+                    }
+                }
+                .padding(.horizontal, 24)
+
+                Spacer(minLength: 16)
+            }
+            .padding(.top, 20)
+        }
+        .safeAreaInset(edge: .bottom) {
+            VStack {
+                Button {
+                    guard !selected.isEmpty else { return }
+                    onSaved(selected)
+                    dismiss()
+                } label: {
+                    Text("save")
+                        .foregroundStyle(selected.isEmpty ? Color.gray : Colors.background)
+                        .font(.LibreBodoniBold(size: 16))
+                        .frame(maxWidth: .infinity, minHeight: 56, maxHeight: 56, alignment: .center)
+                        .background(
+                            RoundedRectangle(cornerRadius: 14)
+                                .fill(selected.isEmpty ? Color.gray.opacity(0.3) : Colors.primaryDark)
+                        )
+                }
+                .disabled(selected.isEmpty)
+                .padding(.horizontal, 24)
+                .padding(.top, 8)
+                .padding(.bottom, 12)
+            }
+            .background(Colors.background)
+        }
+        .onAppear {
+            selected = initialStatus.lowercased()
+        }
+    }
+}
+
+// MARK: - Work Half Sheet (workplace + job title)
+private struct WorkHalfSheet: View {
+    let initialWorkplace: String
+    let initialJobTitle: String
+    let onSaved: (String, String) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var workplace: String = ""
+    @State private var jobTitle: String = ""
+    @FocusState private var isJobTitleFocused: Bool
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            Colors.background.ignoresSafeArea()
+
+            // Close button
+            Button(action: { dismiss() }) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(Colors.primaryDark)
+            }
+            .padding(.leading, 20)
+            .padding(.top, 18)
+
+            VStack(spacing: 22) {
+                // Icon + Title
+                VStack(spacing: 10) {
+                    Image("workIcon")
+                        .renderingMode(.template)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 30, height: 30)
+                        .foregroundColor(Colors.primaryDark)
+                    Text("work")
+                        .font(.LibreBodoni(size: 22))
+                        .foregroundColor(Colors.primaryDark)
+                }
+
+                Spacer(minLength: 8)
+
+                // Job title input (moved to top)
+                VStack(spacing: 14) {
+                    ZStack(alignment: .leading) {
+                        if jobTitle.isEmpty {
+                            Text("job title...")
+                                .foregroundColor(Colors.k656566)
+                                .font(.LeagueSpartan(size: 30))
+                        }
+                        TextField("", text: $jobTitle)
+                            .font(.LeagueSpartan(size: 30))
+                            .foregroundStyle(Colors.k060505)
+                            .keyboardType(.alphabet)
+                            .focused($isJobTitleFocused)
+                            .onChange(of: jobTitle) { _, newValue in
+                                jobTitle = newValue.lowercased()
+                            }
+                    }
+                    Divider()
+                        .frame(height: 2)
+                        .background(Colors.k060505)
+                }
+                .padding(.horizontal, 24)
+
+                // Workplace input (moved below)
+                VStack(spacing: 14) {
+                    ZStack(alignment: .leading) {
+                        if workplace.isEmpty {
+                            Text("workplace...")
+                                .foregroundColor(Colors.k656566)
+                                .font(.LeagueSpartan(size: 30))
+                        }
+                        TextField("", text: $workplace)
+                            .font(.LeagueSpartan(size: 30))
+                            .foregroundStyle(Colors.k060505)
+                            .keyboardType(.alphabet)
+                            .onChange(of: workplace) { _, newValue in
+                                workplace = newValue.lowercased()
+                            }
+                    }
+                    Divider()
+                        .frame(height: 2)
+                        .background(Colors.k060505)
+                }
+                .padding(.horizontal, 24)
+
+                Spacer(minLength: 16)
+            }
+            .padding(.top, 20)
+        }
+        .safeAreaInset(edge: .bottom) {
+            VStack {
+                Button {
+                    onSaved(workplace, jobTitle)
+                    dismiss()
+                } label: {
+                    Text("save")
+                        .foregroundStyle(Colors.background)
+                        .font(.LibreBodoniBold(size: 16))
+                        .frame(maxWidth: .infinity, minHeight: 56, maxHeight: 56, alignment: .center)
+                        .background(
+                            RoundedRectangle(cornerRadius: 14)
+                                .fill(Colors.primaryDark)
+                        )
+                }
+                .padding(.horizontal, 24)
+                .padding(.top, 8)
+                .padding(.bottom, 12)
+            }
+            .background(Colors.background)
+        }
+        .onAppear {
+            workplace = initialWorkplace.lowercased()
+            jobTitle = initialJobTitle.lowercased()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) { isJobTitleFocused = true }
         }
     }
 }
@@ -1583,12 +1799,14 @@ struct ProfileView: View {
     @EnvironmentObject var appController: AppController
     @State private var isEditing = false
     @State private var showingLocationSheet = false
+    @State private var showingWorkSheet = false
     @State private var isSaving = false
     @State private var isLoggingOut = false
     @State private var showSettingsMenu = false
     @State private var navigationPath = NavigationPath()
     @State private var showingAlmaMaterSheet = false
     @State private var showingGenderSheet = false
+    @State private var showingStatusSheet = false
 
     // Local editing state
     @State private var editingName: String = ""
@@ -1718,8 +1936,8 @@ struct ProfileView: View {
                                         onLocationTap: { showingLocationSheet = true },
                                         onAlmaMaterTap: { showingAlmaMaterSheet = true },
                                         onGenderTap: { showingGenderSheet = true },
-                                        onWorkTap: { navigationPath.append(EditDestination.work) },
-                                        onStatusTap: { navigationPath.append(EditDestination.status) }
+                                        onWorkTap: { showingWorkSheet = true },
+                                        onStatusTap: { showingStatusSheet = true }
                                     )
                                     .padding(.top, 6)
                                 }
@@ -1845,6 +2063,18 @@ struct ProfileView: View {
             .presentationDetents([.large])
             .presentationDragIndicator(.hidden)
         }
+        .sheet(isPresented: $showingWorkSheet) {
+            WorkHalfSheet(
+                initialWorkplace: editingWorkLocation,
+                initialJobTitle: editingJob,
+                onSaved: { workplace, title in
+                    editingWorkLocation = workplace
+                    editingJob = title
+                }
+            )
+            .presentationDetents([.medium])
+            .presentationDragIndicator(.hidden)
+        }
         .sheet(isPresented: $showingAlmaMaterSheet) {
             AlmaMaterHalfSheet(
                 initialUniversity: editingAlmaMater,
@@ -1862,6 +2092,16 @@ struct ProfileView: View {
                 initialGender: editingGender,
                 onSaved: { gender in
                     editingGender = gender
+                }
+            )
+            .presentationDetents([.medium])
+            .presentationDragIndicator(.hidden)
+        }
+        .sheet(isPresented: $showingStatusSheet) {
+            StatusHalfSheet(
+                initialStatus: editingRelationStatus,
+                onSaved: { status in
+                    editingRelationStatus = status
                 }
             )
             .presentationDetents([.medium])
