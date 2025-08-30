@@ -57,7 +57,13 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
           }
           
           const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-            'size': 'invisible',
+            'size': 'normal',
+            'callback': () => {
+              console.log('reCAPTCHA callback executed');
+            },
+            'expired-callback': () => {
+              console.log('reCAPTCHA expired');
+            }
           });
           console.log('reCAPTCHA verifier created successfully');
           setRecaptchaVerifier(verifier);
@@ -98,7 +104,13 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
         console.log('Creating reCAPTCHA verifier on-demand...');
         try {
           verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-            'size': 'invisible',
+            'size': 'normal',
+            'callback': () => {
+              console.log('reCAPTCHA callback executed');
+            },
+            'expired-callback': () => {
+              console.log('reCAPTCHA expired');
+            }
           });
           setRecaptchaVerifier(verifier);
         } catch (error) {
@@ -125,6 +137,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
       }
 
       console.log('Sending OTP to:', formattedPhone);
+      console.log('Current domain:', window.location.hostname);
 
       // Send OTP using Firebase
       const confirmationResult = await signInWithPhoneNumber(auth, formattedPhone, verifier);
