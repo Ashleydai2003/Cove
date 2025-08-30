@@ -19,15 +19,15 @@ import RSVPSuccessModal from './RSVPSuccessModal';
 
 interface EventDetailCardProps {
   event: Event;
-  onEventUpdate?: (updatedEvent: Event) => void;
 }
 
-export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) {
+export function EventDetailCard({ event }: EventDetailCardProps) {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showGuestList, setShowGuestList] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
+  const [currentEvent, setCurrentEvent] = useState<Event>(event);
   const [rsvpStatus, setRsvpStatus] = useState<string | null>(event.rsvpStatus ?? null);
   const [isRsvpLoading, setIsRsvpLoading] = useState(false);
 
@@ -43,6 +43,7 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
         if (isAuthenticated) {
           try {
             const eventData = await apiClient.fetchEvent(event.id);
+            setCurrentEvent(eventData);
             setRsvpStatus(eventData.rsvpStatus ?? null);
           } catch (error) {
             console.error('Error fetching fresh event data:', error);
@@ -54,7 +55,7 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
     };
 
     checkAuth();
-  }, [event.id]);
+      }, [currentEvent.id]);
 
   const handleRSVP = async () => {
     // Check if user is authenticated and has completed onboarding
@@ -73,10 +74,10 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
   };
 
   // Check if user can see full event details (RSVP'd, pending, or host)
-  const canSeeFullDetails = rsvpStatus === 'GOING' || rsvpStatus === 'PENDING' || event.isHost;
+  const canSeeFullDetails = rsvpStatus === 'GOING' || rsvpStatus === 'PENDING' || currentEvent.isHost;
 
   // Check if user can see Venmo handle (authenticated and completed onboarding)
-  const canSeeVenmoHandle = isAuthenticated && hasCompletedOnboarding && event.paymentHandle;
+  const canSeeVenmoHandle = isAuthenticated && hasCompletedOnboarding && currentEvent.paymentHandle;
 
 
 
@@ -90,7 +91,7 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
         },
         credentials: 'include',
         body: JSON.stringify({
-          eventId: event.id,
+          eventId: currentEvent.id,
           status: 'PENDING',
         }),
       });
@@ -101,12 +102,9 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
         
         // Refresh event data to ensure we have the latest state
         try {
-          const eventData = await apiClient.fetchEvent(event.id);
+          const eventData = await apiClient.fetchEvent(currentEvent.id);
+          setCurrentEvent(eventData);
           setRsvpStatus(eventData.rsvpStatus ?? null);
-          // Update parent component with fresh event data
-          if (onEventUpdate) {
-            onEventUpdate(eventData);
-          }
         } catch (refreshError) {
           console.error('Error refreshing event data after RSVP:', refreshError);
         }
@@ -131,7 +129,7 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
         },
         credentials: 'include',
         body: JSON.stringify({
-          eventId: event.id,
+          eventId: currentEvent.id,
         }),
       });
 
@@ -140,12 +138,9 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
         
         // Refresh event data to ensure we have the latest state
         try {
-          const eventData = await apiClient.fetchEvent(event.id);
+          const eventData = await apiClient.fetchEvent(currentEvent.id);
+          setCurrentEvent(eventData);
           setRsvpStatus(eventData.rsvpStatus ?? null);
-          // Update parent component with fresh event data
-          if (onEventUpdate) {
-            onEventUpdate(eventData);
-          }
         } catch (refreshError) {
           console.error('Error refreshing event data after RSVP removal:', refreshError);
         }
@@ -167,12 +162,9 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
       setHasCompletedOnboarding(!!(isAuthenticated && user && !user.onboarding));
       
       // Refresh event data to get updated RSVP status
-      const eventData = await apiClient.fetchEvent(event.id);
+      const eventData = await apiClient.fetchEvent(currentEvent.id);
+      setCurrentEvent(eventData);
       setRsvpStatus(eventData.rsvpStatus ?? null);
-      // Update parent component with fresh event data
-      if (onEventUpdate) {
-        onEventUpdate(eventData);
-      }
     } catch (error) {
       console.error('Error refreshing after login:', error);
       // Fallback: update basic auth state
@@ -183,11 +175,11 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
     setShowOnboarding(false);
   };
 
-  const title = event.name || 'Untitled Event';
-  const hostName = event.host?.name || '';
-  const dateStr = formatDate(event.date);
-  const timeStr = formatTime(event.date);
-  const coveName = event.cove?.name || '';
+  const title = currentEvent.name || 'Untitled Event';
+  const hostName = currentEvent.host?.name || '';
+  const dateStr = formatDate(currentEvent.date);
+  const timeStr = formatTime(currentEvent.date);
+  const coveName = currentEvent.cove?.name || '';
 
   // Create the hosted by text in the format "hosted by [host] @ [cove]"
   const hostedByText = hostName && coveName 
@@ -213,11 +205,11 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
 
           <div className="space-y-6">
             {/* Location or RSVP prompt */}
-            {canSeeFullDetails && event.location ? (
+            {canSeeFullDetails && currentEvent.location ? (
               <div className="flex items-center space-x-2">
                 <MapPin size={16} className="text-[#8B8B8B]" />
                 <span className="font-libre-bodoni text-base text-[#2D2D2D]">
-                  {event.location}
+                  {currentEvent.location}
                 </span>
               </div>
             ) : isAuthenticated && !canSeeFullDetails ? (
@@ -235,24 +227,24 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
             <div className="h-px w-full bg-[#E5E5E5]"></div>
 
             {/* Price and spots - only show if data exists */}
-            {(event.ticketPrice !== null && event.ticketPrice !== undefined) || 
-             (event.memberCap !== null && event.memberCap !== undefined) ? (
+            {(currentEvent.ticketPrice !== null && currentEvent.ticketPrice !== undefined) || 
+             (currentEvent.memberCap !== null && currentEvent.memberCap !== undefined) ? (
               <div className="space-y-4">
-                {event.ticketPrice !== null && event.ticketPrice !== undefined && (
+                {currentEvent.ticketPrice !== null && currentEvent.ticketPrice !== undefined && (
                   <div className="flex items-center gap-4">
                     <img src="/ticket.svg" alt="Ticket" className="w-8 h-8" />
                     <span className="font-libre-bodoni text-lg font-semibold text-[#5E1C1D]">
-                      ${event.ticketPrice.toFixed(2)} per person
+                      ${currentEvent.ticketPrice.toFixed(2)} per person
                     </span>
                   </div>
                 )}
-                {event.memberCap !== null && event.memberCap !== undefined && (
+                {currentEvent.memberCap !== null && currentEvent.memberCap !== undefined && (
                   <div className="flex items-center gap-4">
                     <img src="/capacity.svg" alt="Capacity" className="w-8 h-8" />
                     <span className="font-libre-bodoni text-lg font-semibold text-[#5E1C1D]">
-                      {event.goingCount !== undefined && event.goingCount !== null 
-                        ? `${Math.max(0, event.memberCap - event.goingCount)}/${event.memberCap} spots left`
-                        : `${event.memberCap} spots available`
+                      {currentEvent.goingCount !== undefined && currentEvent.goingCount !== null 
+                        ? `${Math.max(0, currentEvent.memberCap - currentEvent.goingCount)}/${currentEvent.memberCap} spots left`
+                        : `${currentEvent.memberCap} spots available`
                       }
                     </span>
                   </div>
@@ -262,7 +254,7 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
                 {canSeeVenmoHandle && (
                   <div>
                     <p className="font-libre-bodoni text-sm text-[#2D2D2D]">
-                      venmo @{event.paymentHandle}
+                      venmo @{currentEvent.paymentHandle}
                     </p>
                   </div>
                 )}
@@ -270,10 +262,10 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
             ) : null}
 
             {/* Description */}
-            {event.description && (
+            {currentEvent.description && (
               <div className="space-y-4 max-w-md">
                 <div className="font-libre-bodoni text-base text-[#2D2D2D] leading-relaxed whitespace-pre-wrap">
-                  {event.description}
+                  {currentEvent.description}
                 </div>
               </div>
             )}
@@ -286,9 +278,9 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
         <div className="space-y-6">
           {/* Image */}
           <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden">
-            {event.coverPhoto?.url ? (
+            {currentEvent.coverPhoto?.url ? (
               <Image
-                src={event.coverPhoto.url}
+                src={currentEvent.coverPhoto.url}
                 alt={title}
                 fill
                 className="object-cover"
@@ -301,7 +293,7 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
           </div>
 
           {/* Guest List Preview */}
-          {canSeeFullDetails && event.rsvps && event.rsvps.length > 0 ? (
+          {canSeeFullDetails && currentEvent.rsvps && currentEvent.rsvps.length > 0 ? (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="font-libre-bodoni text-base text-[#2D2D2D]">guest list</h3>
@@ -316,7 +308,7 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
               {/* Guest preview avatars */}
               <div className="flex items-center space-x-3">
                 <div className="flex -space-x-2">
-                  {event.rsvps.slice(0, 5).map((rsvp, index) => (
+                  {currentEvent.rsvps.slice(0, 5).map((rsvp, index) => (
                     <div
                       key={rsvp.id}
                       className="w-10 h-10 rounded-full overflow-hidden border-2 border-white bg-gray-200"
@@ -336,17 +328,17 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
                   ))}
                 </div>
                 
-                {event.goingCount && event.goingCount > 5 && (
+                {currentEvent.goingCount && currentEvent.goingCount > 5 && (
                   <span className="font-libre-bodoni text-sm text-[#2D2D2D]">
-                    +{event.goingCount - 5} others going
+                    +{currentEvent.goingCount - 5} others going
                   </span>
                 )}
               </div>
             </div>
-          ) : event.goingCount && event.goingCount > 0 ? (
+          ) : currentEvent.goingCount && currentEvent.goingCount > 0 ? (
             <div className="text-center">
               <span className="font-libre-bodoni text-sm text-[#2D2D2D]">
-                {event.goingCount} people going
+                {currentEvent.goingCount} people going
               </span>
               <p className="font-libre-bodoni text-xs text-[#8B8B8B] mt-1">
                 RSVP to view guest list!
@@ -409,14 +401,14 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
       <GuestListModal
         isOpen={showGuestList}
         onClose={() => setShowGuestList(false)}
-        eventId={event.id}
+        eventId={currentEvent.id}
       />
 
       {/* RSVP Success Modal */}
       <RSVPSuccessModal
         isOpen={showSuccessModal}
         onClose={() => setShowSuccessModal(false)}
-        eventName={event.name}
+        eventName={currentEvent.name}
       />
     </div>
   );
