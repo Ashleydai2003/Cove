@@ -61,19 +61,7 @@ struct FriendProfileView: View {
                                 .foregroundColor(Colors.primaryDark)
                                 .frame(maxWidth: .infinity, alignment: .center)
 
-                            if !viewModel.locationName.isEmpty {
-                                HStack(spacing: 6) {
-                                    Image("locationIcon")
-                                        .resizable()
-                                        .aspectRatio(contentMode: .fit)
-                                        .frame(width: 16, height: 16)
-                                        .foregroundColor(Colors.primaryDark)
-                                    Text(viewModel.locationName.lowercased())
-                                        .font(.LibreBodoni(size: 14))
-                                        .foregroundColor(Colors.primaryDark)
-                                }
-                                .frame(maxWidth: .infinity, alignment: .center)
-                            }
+                            // Location under name removed to match ProfileView; location will appear in combined row below
 
                             if let bio = profile.bio, !bio.isEmpty {
                                 Text(bio)
@@ -131,6 +119,7 @@ struct FriendProfileView: View {
                             }
                         }
                         .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(.top, 12)
 
                         // Collapsible details row (status + work) with placeholders
                         if showDetails {
@@ -279,10 +268,10 @@ private struct StatBlock: View {
     let number: Int
     let label: String
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .center, spacing: 2) {
             Text("\(number)")
                 .font(.LibreBodoniBold(size: 20))
-                .foregroundColor(.black)
+                .foregroundColor(Colors.primaryDark)
             Text(label)
                 .font(.LibreBodoni(size: 14))
                 .foregroundColor(Colors.k6F6F73)
