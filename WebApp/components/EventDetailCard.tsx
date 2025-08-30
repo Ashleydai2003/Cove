@@ -183,7 +183,7 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
       
       // Refresh event data to get updated RSVP status and other details
       const eventData = await apiClient.fetchEvent(event.id);
-      setRsvpStatus(eventData.rsvpStatus);
+      setRsvpStatus(eventData.rsvpStatus ?? null);
       
       console.log('Page refreshed after login');
     } catch (error) {
