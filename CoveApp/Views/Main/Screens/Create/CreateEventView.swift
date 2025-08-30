@@ -456,7 +456,10 @@ extension CreateEventView {
     private var visibilitySection: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 0) {
-                Button(action: { visibility = .membersOnly }) {
+                Button(action: { 
+                    visibility = .membersOnly
+                    viewModel.isPublic = false
+                }) {
                     Text("Members only")
                         .font(.LibreBodoniBold(size: 16))
                         .foregroundStyle(visibility == .membersOnly ? Colors.background : Colors.primaryDark)
@@ -474,7 +477,10 @@ extension CreateEventView {
                     )
                 }
 
-                Button(action: { visibility = .discoverable }) {
+                Button(action: { 
+                    visibility = .discoverable
+                    viewModel.isPublic = true
+                }) {
                     Text("Discoverable")
                         .font(.LibreBodoniBold(size: 16))
                         .foregroundStyle(visibility == .discoverable ? Colors.background : Colors.primaryDark)

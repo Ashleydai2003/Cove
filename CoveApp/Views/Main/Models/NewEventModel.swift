@@ -27,6 +27,7 @@ class NewEventModel: ObservableObject {
     @Published var coveId: String = ""
     @Published var isSubmitting = false
     @Published var errorMessage: String?
+    @Published var isPublic: Bool = false
 
     // Sheet States
     @Published var showImagePicker: Bool = false
@@ -84,6 +85,7 @@ class NewEventModel: ObservableObject {
         coveId = ""
         isSubmitting = false
         errorMessage = nil
+        isPublic = false
         showImagePicker = false
         showLocationPicker = false
         showDatePicker = false
@@ -124,7 +126,8 @@ class NewEventModel: ObservableObject {
             "name": eventName,
             "date": finalDate,
             "location": location,
-            "coveId": coveId
+            "coveId": coveId,
+            "isPublic": isPublic
         ]
 
         // Add optional fields if they have values
