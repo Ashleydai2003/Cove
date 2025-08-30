@@ -150,16 +150,15 @@ class Onboarding {
     }
 
     // MARK: - Validation
-    // Updated to reflect current onboarding requirements
+    // Updated to reflect new backend requirements
     static func isOnboardingComplete() -> Bool {
-        // Core required fields: name, birthdate, university, city, hobbies
-        // Optional fields: profilePic
+        // Required fields: name, birthdate, almaMater, gradYear
+        // Optional fields: hobbies, city, profilePic
         
-        let hasName = userName != nil
+        let hasName = userName != nil && !userName!.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         let hasBirthdate = userBirthdate != nil
-        let hasUniversity = userAlmaMater != nil && !userAlmaMater!.isEmpty
-        let hasCity = userCity != nil && !userCity!.isEmpty
-        let hasHobbies = !userHobbies.isEmpty
+        let hasAlmaMater = userAlmaMater != nil && !userAlmaMater!.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let hasGradYear = userGradYear != nil && !userGradYear!.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         
         // Log what's missing for debugging
         if !hasName {
@@ -168,17 +167,14 @@ class Onboarding {
         if !hasBirthdate {
             Log.error("Onboarding incomplete: Missing birthdate")
         }
-        if !hasUniversity {
-            Log.error("Onboarding incomplete: Missing university")
+        if !hasAlmaMater {
+            Log.error("Onboarding incomplete: Missing almaMater")
         }
-        if !hasCity {
-            Log.error("Onboarding incomplete: Missing city")
-        }
-        if !hasHobbies {
-            Log.error("Onboarding incomplete: Missing hobbies (count: \(userHobbies.count))")
+        if !hasGradYear {
+            Log.error("Onboarding incomplete: Missing gradYear")
         }
         
-        return hasName && hasBirthdate && hasUniversity && hasCity && hasHobbies
+        return hasName && hasBirthdate && hasAlmaMater && hasGradYear
     }
 
     /// Completes the onboarding process by updating the user's onboarding status
@@ -282,33 +278,36 @@ class Onboarding {
     }
 
     private static func makeOnboardingCompleteRequest(completion: @escaping (Bool) -> Void) {
-        // Format date to ISO 8601
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd"
-        let formattedDate = userBirthdate.map { dateFormatter.string(from: $0) } ?? ""
+        // Validate required fields before making the request
+        guard let name = userName, !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              let birthdate = userBirthdate,
+              let almaMater = userAlmaMater, !almaMater.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              let gradYear = userGradYear, !gradYear.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            Log.error("Missing required fields for onboarding")
+            completion(false)
+            return
+        }
 
-        // Create request parameters with current onboarding data
+        // Format date to ISO 8601
+        let dateFormatter = ISO8601DateFormatter()
+        dateFormatter.formatOptions = [.withFullDate]
+        let formattedDate = dateFormatter.string(from: birthdate)
+
+        // Create request parameters with mandatory fields first
         var parameters: [String: Any] = [
-            "name": userName ?? "",
+            "name": name.trimmingCharacters(in: .whitespacesAndNewlines),
             "birthdate": formattedDate,
-            "hobbies": Array(userHobbies)  // Convert Set to Array for JSON serialization
+            "almaMater": almaMater.trimmingCharacters(in: .whitespacesAndNewlines),
+            "gradYear": gradYear.trimmingCharacters(in: .whitespacesAndNewlines)
         ]
 
-        // Add required fields
-        if let almaMater = userAlmaMater, !almaMater.isEmpty {
-            parameters["almaMater"] = almaMater
-        }
-        
-        if let graduationYear = userGradYear, !graduationYear.isEmpty {
-            parameters["graduationYear"] = graduationYear
+        // Add optional fields
+        if !userHobbies.isEmpty {
+            parameters["hobbies"] = Array(userHobbies)
         }
 
-        if let gradYear = userGradYear, !gradYear.isEmpty {
-            parameters["gradYear"] = gradYear
-        }
-
-        if let city = userCity, !city.isEmpty {
-            parameters["city"] = city
+        if let city = userCity, !city.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            parameters["city"] = city.trimmingCharacters(in: .whitespacesAndNewlines)
         }
 
         NetworkManager.shared.post(
