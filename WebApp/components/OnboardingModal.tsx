@@ -27,6 +27,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
   const [error, setError] = useState('');
   const [verificationId, setVerificationId] = useState<string | null>(null);
   const [recaptchaVerifier, setRecaptchaVerifier] = useState<RecaptchaVerifier | null>(null);
+  const [recaptchaCompleted, setRecaptchaCompleted] = useState(false);
 
   // Onboarding form data
   const [formData, setFormData] = useState({
@@ -34,9 +35,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
     birthdate: '',
     almaMater: '',
     gradYear: '',
-    hobbies: [] as string[],
-    bio: '',
-    city: ''
+    hobbies: [] as string[]
   });
 
   // Initialize reCAPTCHA verifier
@@ -60,9 +59,11 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
             'size': 'normal',
             'callback': () => {
               console.log('reCAPTCHA callback executed');
+              setRecaptchaCompleted(true);
             },
             'expired-callback': () => {
               console.log('reCAPTCHA expired');
+              setRecaptchaCompleted(false);
             }
           });
           console.log('reCAPTCHA verifier created successfully');
@@ -95,6 +96,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
         try {
           recaptchaVerifier.clear();
           setRecaptchaVerifier(null);
+          setRecaptchaCompleted(false);
         } catch (error) {
           console.log('Error clearing reCAPTCHA:', error);
         }
@@ -117,9 +119,11 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
             'size': 'normal',
             'callback': () => {
               console.log('reCAPTCHA callback executed');
+              setRecaptchaCompleted(true);
             },
             'expired-callback': () => {
               console.log('reCAPTCHA expired');
+              setRecaptchaCompleted(false);
             }
           });
           setRecaptchaVerifier(verifier);
@@ -152,6 +156,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
       // Send OTP using Firebase
       const confirmationResult = await signInWithPhoneNumber(auth, formattedPhone, verifier);
       setVerificationId(confirmationResult.verificationId);
+      setRecaptchaCompleted(true); // Hide reCAPTCHA after successful phone verification
       setStep('otp');
     } catch (err: any) {
       console.error('Firebase phone auth error:', err);
@@ -222,9 +227,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
           birthdate: formData.birthdate,
           almaMater: formData.almaMater,
           gradYear: formData.gradYear,
-          hobbies: formData.hobbies,
-          bio: formData.bio,
-          city: formData.city
+          hobbies: formData.hobbies
         })
       });
 
@@ -258,20 +261,20 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-xl font-semibold text-gray-900">
-            {originalAction ? `Join Cove to ${originalAction}` : 'Join Cove'}
+        <div className="flex items-center justify-between p-6">
+          <h2 className="text-2xl font-libre-bodoni text-[#5E1C1D]">
+            cove
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="w-8 h-8 bg-[#5E1C1D] rounded-full flex items-center justify-center text-white hover:bg-[#4A1718] transition-colors"
           >
-            <X size={24} />
+            <X size={16} />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-6">
+        <div className="px-6 pb-6">
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
               {error}
@@ -280,180 +283,119 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
 
           {/* Phone Number Step */}
           {step === 'phone' && (
-            <form onSubmit={handlePhoneSubmit} className="space-y-4">
+            <form onSubmit={handlePhoneSubmit} className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Phone Number
-                </label>
                 <input
                   type="tel"
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
-                  placeholder="(555) 123-4567"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="phone number"
+                  className="w-full px-0 py-3 border-0 border-b-2 border-gray-300 focus:border-[#5E1C1D] focus:outline-none text-lg font-libre-bodoni"
                   required
                 />
-              </div>
-              
-              {/* reCAPTCHA notice */}
-              <div className="text-xs text-gray-500 text-center px-2">
-                By continuing, you agree to our terms and will receive a verification code via SMS.
               </div>
               
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+                className="w-full bg-white text-[#2D2D2D] py-4 px-6 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-all font-medium text-lg"
               >
-                {isLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Sending Code...
-                  </>
-                ) : (
-                  'Send Verification Code'
-                )}
+                {isLoading ? 'Sending...' : 'send code'}
               </button>
             </form>
           )}
 
           {/* OTP Step */}
           {step === 'otp' && (
-            <form onSubmit={handleOtpSubmit} className="space-y-4">
+            <form onSubmit={handleOtpSubmit} className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Enter the code sent to {phoneNumber}
-                </label>
                 <input
                   type="text"
                   value={otpCode}
                   onChange={(e) => setOtpCode(e.target.value)}
-                  placeholder="123456"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="verification code"
+                  className="w-full px-0 py-3 border-0 border-b-2 border-gray-300 focus:border-[#5E1C1D] focus:outline-none text-lg font-libre-bodoni"
                   required
                 />
               </div>
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+                className="w-full bg-white text-[#2D2D2D] py-4 px-6 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-all font-medium text-lg"
               >
-                {isLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Verifying...
-                  </>
-                ) : (
-                  'Verify Code'
-                )}
+                {isLoading ? 'Verifying...' : 'verify code'}
               </button>
               <button
                 type="button"
                 onClick={() => setStep('phone')}
-                className="w-full text-blue-600 hover:text-blue-700 text-sm"
+                className="w-full text-[#5E1C1D] hover:text-[#4A1718] text-sm"
               >
-                Back to phone number
+                back to phone number
               </button>
             </form>
           )}
 
           {/* Onboarding Step */}
           {step === 'onboarding' && (
-            <form onSubmit={handleOnboardingSubmit} className="space-y-4">
+            <form onSubmit={handleOnboardingSubmit} className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Full Name *
-                </label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="John Doe"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="full name"
+                  className="w-full px-0 py-3 border-0 border-b-2 border-gray-300 focus:border-[#5E1C1D] focus:outline-none text-lg font-libre-bodoni"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Birth Date *
-                </label>
                 <input
                   type="date"
                   value={formData.birthdate}
                   onChange={(e) => setFormData(prev => ({ ...prev, birthdate: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-0 py-3 border-0 border-b-2 border-gray-300 focus:border-[#5E1C1D] focus:outline-none text-lg font-libre-bodoni"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  University *
-                </label>
                 <input
                   type="text"
                   value={formData.almaMater}
                   onChange={(e) => setFormData(prev => ({ ...prev, almaMater: e.target.value }))}
-                  placeholder="Stanford University"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="alma mater"
+                  className="w-full px-0 py-3 border-0 border-b-2 border-gray-300 focus:border-[#5E1C1D] focus:outline-none text-lg font-libre-bodoni"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Graduation Year *
-                </label>
                 <input
                   type="text"
                   value={formData.gradYear}
                   onChange={(e) => setFormData(prev => ({ ...prev, gradYear: e.target.value }))}
-                  placeholder="2024"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="graduation year"
+                  className="w-full px-0 py-3 border-0 border-b-2 border-gray-300 focus:border-[#5E1C1D] focus:outline-none text-lg font-libre-bodoni"
                   required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  City
-                </label>
-                <input
-                  type="text"
-                  value={formData.city}
-                  onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
-                  placeholder="San Francisco"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Bio
-                </label>
-                <textarea
-                  value={formData.bio}
-                  onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
-                  placeholder="Tell us about yourself..."
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="w-full bg-white text-[#2D2D2D] py-4 px-6 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-all font-medium text-lg"
               >
-                {isLoading ? 'Creating Account...' : "Let's go"}
+                {isLoading ? 'Creating...' : "let's go"}
               </button>
             </form>
           )}
         </div>
         
         {/* reCAPTCHA container */}
-        <div id="recaptcha-container" className="flex justify-center mt-4 p-2 transform scale-90"></div>
+        {!recaptchaCompleted && (
+          <div id="recaptcha-container" className="flex justify-center mt-4 p-2 transform scale-90"></div>
+        )}
       </div>
     </div>
   );

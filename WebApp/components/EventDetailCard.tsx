@@ -14,6 +14,7 @@ const OnboardingModal = dynamic(() => import('./OnboardingModal'), {
 });
 import { checkAuthStatus } from '@/lib/auth';
 import GuestListModal from './GuestListModal';
+import RSVPSuccessModal from './RSVPSuccessModal';
 
 interface EventDetailCardProps {
   event: Event;
@@ -22,8 +23,10 @@ interface EventDetailCardProps {
 export function EventDetailCard({ event }: EventDetailCardProps) {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showGuestList, setShowGuestList] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [rsvpStatus, setRsvpStatus] = useState(event.rsvpStatus);
 
   // Check authentication status on component mount
   useEffect(() => {
@@ -48,12 +51,16 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
       setShowOnboarding(true);
     } else {
       // User is authenticated, proceed with RSVP
-      await performRSVP();
+      if (rsvpStatus === 'GOING') {
+        await performRSVPRemoval();
+      } else {
+        await performRSVP();
+      }
     }
   };
 
   // Check if user can see full event details (RSVP'd or host)
-  const canSeeFullDetails = event.rsvpStatus === 'GOING' || event.isHost;
+  const canSeeFullDetails = rsvpStatus === 'GOING' || event.isHost;
 
   // Check if user can see Venmo handle (authenticated)
   const canSeeVenmoHandle = isAuthenticated && event.paymentHandle;
@@ -78,8 +85,9 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
       console.log('RSVP response status:', response.status);
 
       if (response.ok) {
-        // Show success message or update UI
-        alert('RSVP successful!');
+        // Update local RSVP status and show success modal
+        setRsvpStatus('PENDING');
+        setShowSuccessModal(true);
       } else {
         const data = await response.json();
         console.log('RSVP error response:', data);
@@ -88,6 +96,38 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
     } catch (error) {
       console.error('RSVP error:', error);
       alert('Failed to RSVP. Please try again.');
+    }
+  };
+
+  const performRSVPRemoval = async () => {
+    try {
+      console.log('Removing RSVP for event:', event.id);
+      
+      const response = await fetch('/api/rsvp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Include cookies for authentication
+        body: JSON.stringify({
+          eventId: event.id,
+          status: 'NOT_GOING',
+        }),
+      });
+
+      console.log('RSVP removal response status:', response.status);
+
+      if (response.ok) {
+        // Update local RSVP status
+        setRsvpStatus(null);
+      } else {
+        const data = await response.json();
+        console.log('RSVP removal error response:', data);
+        alert(data.message || 'Failed to remove RSVP');
+      }
+    } catch (error) {
+      console.error('RSVP removal error:', error);
+      alert('Failed to remove RSVP. Please try again.');
     }
   };
 
@@ -267,12 +307,28 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
 
           {/* RSVP button */}
           <div className="flex justify-center">
-            <button
-              onClick={handleRSVP}
-              className="px-16 py-3 bg-[#F5F5F5] text-[#2D2D2D] rounded-full font-libre-bodoni text-lg border border-[#E5E5E5] hover:bg-[#EEEEEE] transition-colors"
-            >
-              rsvp
-            </button>
+            {rsvpStatus === 'PENDING' ? (
+              <button
+                disabled
+                className="px-16 py-3 bg-gray-200 text-gray-500 rounded-full font-libre-bodoni text-lg border border-gray-300 cursor-not-allowed"
+              >
+                pending approval...
+              </button>
+            ) : rsvpStatus === 'GOING' ? (
+              <button
+                onClick={handleRSVP}
+                className="px-16 py-3 bg-[#F5F5F5] text-[#2D2D2D] rounded-full font-libre-bodoni text-lg border border-[#E5E5E5] hover:bg-[#EEEEEE] transition-colors"
+              >
+                can't make it...
+              </button>
+            ) : (
+              <button
+                onClick={handleRSVP}
+                className="px-16 py-3 bg-[#F5F5F5] text-[#2D2D2D] rounded-full font-libre-bodoni text-lg border border-[#E5E5E5] hover:bg-[#EEEEEE] transition-colors"
+              >
+                rsvp
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -290,6 +346,13 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
         isOpen={showGuestList}
         onClose={() => setShowGuestList(false)}
         eventId={event.id}
+      />
+
+      {/* RSVP Success Modal */}
+      <RSVPSuccessModal
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        eventName={event.name}
       />
     </div>
   );
