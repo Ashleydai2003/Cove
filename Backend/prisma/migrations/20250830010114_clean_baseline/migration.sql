@@ -1,7 +1,7 @@
 /*
   Warnings:
 
-  - The values [NOT_GOING] on the enum `RSVPStatus` will be removed. If these variants are still used in the database, this will fail.
+  - The values [MAYBE,NOT_GOING] on the enum `RSVPStatus` will be removed. If these variants are still used in the database, this will fail.
 
 */
 -- AlterEnum
@@ -14,3 +14,9 @@ ALTER TYPE "RSVPStatus_new" RENAME TO "RSVPStatus";
 DROP TYPE "RSVPStatus_old";
 ALTER TABLE "EventRSVP" ALTER COLUMN "status" SET DEFAULT 'PENDING';
 COMMIT;
+
+-- AlterTable
+ALTER TABLE "Event" ADD COLUMN     "paymentHandle" TEXT;
+
+-- AlterTable
+ALTER TABLE "EventRSVP" ALTER COLUMN "status" SET DEFAULT 'PENDING';

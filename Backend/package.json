@@ -14,6 +14,7 @@
     "prisma:reset:migrations": "NODE_ENV=production ts-node src/scripts/reset-migrations.ts",
     "prisma:rollback": "NODE_ENV=production ts-node src/scripts/rollback-migrations.ts",
     "prisma:create-clean": "NODE_ENV=production ts-node src/scripts/create-clean-migration.ts",
+    "prisma:rollback:dev": "ts-node src/scripts/rollback-migrations-dev.ts",
     "prisma:studio": "dotenv -e env.development -- prisma studio",
     "prisma:reset": "dotenv -e env.development -- prisma migrate reset",
     "db:start": "docker-compose up -d",

@@ -1,2 +1,0 @@
--- AlterEnum
-ALTER TYPE "RSVPStatus" ADD VALUE 'NOT_GOING';
