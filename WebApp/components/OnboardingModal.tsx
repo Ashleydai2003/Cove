@@ -1,7 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
+import { auth } from '../lib/firebase';
+import { 
+  PhoneAuthProvider, 
+  signInWithCredential, 
+  RecaptchaVerifier,
+  signInWithPhoneNumber 
+} from 'firebase/auth';
 
 interface OnboardingModalProps {
   isOpen: boolean;
@@ -18,6 +25,8 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
   const [otpCode, setOtpCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [verificationId, setVerificationId] = useState<string | null>(null);
+  const [recaptchaVerifier, setRecaptchaVerifier] = useState<RecaptchaVerifier | null>(null);
 
   // Onboarding form data
   const [formData, setFormData] = useState({
@@ -30,26 +39,34 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
     city: ''
   });
 
+  // Initialize reCAPTCHA verifier
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !recaptchaVerifier) {
+      const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        'size': 'invisible',
+      });
+      setRecaptchaVerifier(verifier);
+    }
+  }, [recaptchaVerifier]);
+
   const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
 
     try {
-      const response = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: phoneNumber })
-      });
-
-      if (response.ok) {
-        setStep('otp');
-      } else {
-        const data = await response.json();
-        setError(data.message || 'Failed to send OTP');
+      if (!recaptchaVerifier) {
+        setError('reCAPTCHA not initialized. Please refresh the page.');
+        return;
       }
-    } catch (err) {
-      setError('Network error. Please try again.');
+
+      // Send OTP using Firebase
+      const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, recaptchaVerifier);
+      setVerificationId(confirmationResult.verificationId);
+      setStep('otp');
+    } catch (err: any) {
+      console.error('Firebase phone auth error:', err);
+      setError(err.message || 'Failed to send OTP. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -61,26 +78,40 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
     setError('');
 
     try {
-      const response = await fetch('/api/verify-otp', {
+      if (!verificationId) {
+        setError('Verification ID not found. Please try sending the code again.');
+        return;
+      }
+
+      // Verify OTP using Firebase
+      const credential = PhoneAuthProvider.credential(verificationId, otpCode);
+      const userCredential = await signInWithCredential(auth, credential);
+      
+      // Get the Firebase ID token
+      const idToken = await userCredential.user.getIdToken();
+      
+      // Call backend login with the ID token
+      const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: phoneNumber, otp: otpCode })
+        body: JSON.stringify({ idToken })
       });
 
       if (response.ok) {
         const data = await response.json();
-        if (data.onboarding) {
+        if (data.user?.onboarding) {
           setStep('onboarding');
         } else {
           // User already completed onboarding, complete the original action
-          onComplete(data.userId);
+          onComplete(data.user?.uid || '');
         }
       } else {
         const data = await response.json();
-        setError(data.message || 'Invalid OTP');
+        setError(data.message || 'Backend authentication failed');
       }
-    } catch (err) {
-      setError('Network error. Please try again.');
+    } catch (err: any) {
+      console.error('OTP verification error:', err);
+      setError(err.message || 'Invalid OTP. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -309,6 +340,9 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
             </form>
           )}
         </div>
+        
+        {/* reCAPTCHA container */}
+        <div id="recaptcha-container"></div>
       </div>
     </div>
   );

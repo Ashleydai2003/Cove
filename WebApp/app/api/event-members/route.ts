@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Call the backend API to get event members
-    const backendResponse = await fetch(`${process.env.API_BASE_URL}/event-members?eventId=${eventId}`, {
+    const backendResponse = await fetch(`${process.env.BACKEND_API_URL}/event-members?eventId=${eventId}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${authToken}`,
