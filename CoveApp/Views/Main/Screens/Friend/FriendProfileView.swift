@@ -119,7 +119,7 @@ struct FriendProfileView: View {
                             }
                         }
                         .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.top, 12)
+                        .padding(.top, 20)
 
                         // Collapsible details row (status + work) with placeholders
                         if showDetails {
@@ -154,9 +154,9 @@ struct FriendProfileView: View {
                         // Stats strip (centered)
                         if let s = profile.stats {
                             HStack(spacing: 24) {
-                                StatBlock(number: s.sharedFriendCount ?? 0, label: "mutuals")
-                                StatBlock(number: s.sharedCoveCount ?? 0,   label: "shared coves")
-                                StatBlock(number: s.sharedEventCount ?? 0, label: "shared events")
+                                StatBlock(number: s.sharedFriendCount ?? 0, topLabel: "mutual", bottomLabel: "friends")
+                                StatBlock(number: s.sharedCoveCount ?? 0,   topLabel: "shared", bottomLabel: "coves")
+                                StatBlock(number: s.sharedEventCount ?? 0, topLabel: "shared", bottomLabel: "events")
                             }
                             .frame(maxWidth: .infinity)
                             .padding(.top, 4)
@@ -266,15 +266,20 @@ private struct StatChip: View {
 
 private struct StatBlock: View {
     let number: Int
-    let label: String
+    let topLabel: String
+    let bottomLabel: String
     var body: some View {
         VStack(alignment: .center, spacing: 2) {
             Text("\(number)")
-                .font(.LibreBodoniBold(size: 20))
+                .font(.LibreBodoniSemiBold(size: 18))
                 .foregroundColor(Colors.primaryDark)
-            Text(label)
-                .font(.LibreBodoni(size: 14))
-                .foregroundColor(Colors.k6F6F73)
+            VStack(spacing: 0) {
+                Text(topLabel)
+                Text(bottomLabel)
+            }
+            .font(.LibreBodoni(size: 13))
+            .foregroundColor(Colors.k6F6F73)
+            .multilineTextAlignment(.center)
         }
     }
 }
