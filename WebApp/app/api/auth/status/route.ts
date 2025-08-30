@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Call the backend API to verify the token and get user info
-    const backendResponse = await fetch(`${process.env.API_BASE_URL}/profile`, {
+    const backendResponse = await fetch(`${process.env.BACKEND_API_URL}/profile`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${authToken}`,

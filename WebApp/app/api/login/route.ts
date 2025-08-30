@@ -11,25 +11,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Call the backend API to send OTP
-    const backendResponse = await fetch(`${process.env.API_BASE_URL}/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ phone }),
+    // For the webapp, we'll return success immediately
+    // The actual OTP sending will be handled by Firebase on the frontend
+    // This endpoint is just for compatibility with the existing frontend code
+    return NextResponse.json({
+      message: 'Phone number received. Please check your phone for the verification code.',
+      phone: phone
     });
-
-    const data = await backendResponse.json();
-
-    if (backendResponse.ok) {
-      return NextResponse.json(data);
-    } else {
-      return NextResponse.json(
-        { message: data.message || 'Failed to send OTP' },
-        { status: backendResponse.status }
-      );
-    }
   } catch (error) {
     console.error('Login API error:', error);
     return NextResponse.json(

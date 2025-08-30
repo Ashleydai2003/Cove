@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Call the backend API to update RSVP
-    const backendResponse = await fetch(`${process.env.API_BASE_URL}/update-event-rsvp`, {
+    const backendResponse = await fetch(`${process.env.BACKEND_API_URL}/update-event-rsvp`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
