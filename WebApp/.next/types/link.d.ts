@@ -30,15 +30,15 @@ declare namespace __next_route_internal_types__ {
 
   type StaticRoutes = 
     | `/api/auth/login`
-    | `/api/event-members`
     | `/api/auth/logout`
-    | `/api/login`
     | `/api/notion`
+    | `/api/login`
+    | `/api/verify-otp`
     | `/api/onboard`
     | `/api/rsvp`
-    | `/api/verify-otp`
-    | `/`
     | `/api/auth/status`
+    | `/`
+    | `/api/event-members`
   type DynamicRoutes<T extends string = string> = 
     | `/events/${SafeSlug<T>}`
 
