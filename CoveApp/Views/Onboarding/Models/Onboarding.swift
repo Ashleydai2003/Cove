@@ -92,7 +92,7 @@ class Onboarding {
         }
     }
 
-    // MARK: - Image Storage
+    // MARK: - Image Storage (archived from onboarding)
     static func storeProfilePic(_ image: UIImage) {
         profilePic = image
     }
@@ -152,12 +152,13 @@ class Onboarding {
     // MARK: - Validation
     // Updated to reflect new backend requirements
     static func isOnboardingComplete() -> Bool {
-        // Core required fields: name, birthdate, university, city
+        // Core required fields: name, birthdate, university, graduation year
         // Optional fields: profilePic, hobbies (archived)
         
         let hasName = userName != nil && !userName!.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         let hasBirthdate = userBirthdate != nil
-        let hasAlmaMater = userAlmaMater != nil && !userAlmaMater!.isEmpty
+        let hasAlmaMater = userAlmaMater != nil && !userAlmaMater!.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let hasGradYear = userGradYear != nil && !userGradYear!.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         
         // Log what's missing for debugging
         if !hasName {
@@ -169,8 +170,11 @@ class Onboarding {
         if !hasAlmaMater {
             Log.error("Onboarding incomplete: Missing almaMater")
         }
+        if !hasGradYear {
+            Log.error("Onboarding incomplete: Missing gradYear")
+        }
         
-        return hasName && hasBirthdate && hasAlmaMater
+        return hasName && hasBirthdate && hasAlmaMater && hasGradYear
     }
 
     /// Completes the onboarding process by updating the user's onboarding status
@@ -178,48 +182,19 @@ class Onboarding {
     static func completeOnboarding(completion: @escaping (Bool) -> Void) {
         // Check if onboarding is complete with necessary data
         if isOnboardingComplete() {
-            // Step 1: Upload profile picture if it exists
-            if let profileImage = profilePic {
-                uploadProfilePicture(profileImage) { uploadSuccess in
-                    if uploadSuccess {
-                        // Step 2: Send friend requests
-                        sendPendingFriendRequests { friendRequestSuccess in
-                            if friendRequestSuccess {
-                                // Step 3: Update onboarding status
-                                makeOnboardingCompleteRequest { onboardingSuccess in
-                                    if onboardingSuccess {
-                                        // Clear data after successful completion
-                                        clearPendingFriendRequests()
-                                        completion(true)
-                                    } else {
-                                        completion(false)
-                                    }
-                                }
-                            } else {
-                                completion(false)
-                            }
+            // Skip profile image uploads in onboarding. Proceed to friend requests + finalize.
+            sendPendingFriendRequests { friendRequestSuccess in
+                if friendRequestSuccess {
+                    makeOnboardingCompleteRequest { onboardingSuccess in
+                        if onboardingSuccess {
+                            clearPendingFriendRequests()
+                            completion(true)
+                        } else {
+                            completion(false)
                         }
-                    } else {
-                        completion(false)
                     }
-                }
-            } else {
-                // No profile picture to upload, proceed with friend requests
-                sendPendingFriendRequests { friendRequestSuccess in
-                    if friendRequestSuccess {
-                        // Update onboarding status
-                        makeOnboardingCompleteRequest { onboardingSuccess in
-                            if onboardingSuccess {
-                                // Clear data after successful completion
-                                clearPendingFriendRequests()
-                                completion(true)
-                            } else {
-                                completion(false)
-                            }
-                        }
-                    } else {
-                        completion(false)
-                    }
+                } else {
+                    completion(false)
                 }
             }
         } else {
