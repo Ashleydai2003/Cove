@@ -149,30 +149,4 @@
 input[type="date"] {
   font-family: 'Libre Bodoni', serif;
   color: #2D2D2D;
-}
-
-input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(1) brightness(0) saturate(100%) hue-rotate(0deg);
-  background-color: #5E1C1D;
-  border-radius: 4px;
-  padding: 4px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-input[type="date"]::-webkit-calendar-picker-indicator:hover {
-  background-color: #4A1718;
-}
-
-/* Firefox date input styling */
-input[type="date"]::-moz-calendar-picker-indicator {
-  background-color: #5E1C1D;
-  border-radius: 4px;
-  padding: 4px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-input[type="date"]::-moz-calendar-picker-indicator:hover {
-  background-color: #4A1718;
 } 
