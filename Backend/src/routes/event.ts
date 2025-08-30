@@ -730,8 +730,15 @@ export const handleGetEvent = async (event: APIGatewayProxyEvent): Promise<APIGa
 // 4. When user RSVPs, they get PENDING status and host can approve to GOING
 export const handleUpdateEventRSVP = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
+    console.log('=== BACKEND RSVP UPDATE START ===');
+    console.log('Request method:', event.httpMethod);
+    console.log('Request path:', event.path);
+    console.log('Request headers:', event.headers);
+    console.log('Request body:', event.body);
+    
     // Validate request method - only POST is allowed
     if (event.httpMethod !== 'POST') {
+      console.log('Invalid method:', event.httpMethod);
       return {
         statusCode: 405,
         body: JSON.stringify({
@@ -763,10 +770,13 @@ export const handleUpdateEventRSVP = async (event: APIGatewayProxyEvent): Promis
     }
 
     // Extract required fields from request body
+    console.log('Parsing request body...');
     const { eventId, status } = JSON.parse(event.body);
+    console.log('Extracted fields:', { eventId, status });
 
     // Validate required fields
     if (!eventId || !status) {
+      console.log('Missing required fields:', { eventId, status });
       return {
         statusCode: 400,
         body: JSON.stringify({
@@ -786,9 +796,12 @@ export const handleUpdateEventRSVP = async (event: APIGatewayProxyEvent): Promis
     }
 
     // Initialize database connection
+    console.log('Initializing database connection...');
     const prisma = await initializeDatabase();
+    console.log('Database connection initialized');
 
     // Check if user is a member of the event's cove
+    console.log('Looking up event:', eventId);
     const eventData = await prisma.event.findUnique({
       where: { id: eventId },
       include: {
@@ -801,9 +814,11 @@ export const handleUpdateEventRSVP = async (event: APIGatewayProxyEvent): Promis
         }
       }
     });
+    console.log('Event data found:', !!eventData);
 
     // Check if event exists
     if (!eventData) {
+      console.log('Event not found:', eventId);
       return {
         statusCode: 404,
         body: JSON.stringify({
@@ -826,11 +841,13 @@ export const handleUpdateEventRSVP = async (event: APIGatewayProxyEvent): Promis
     // Exception: Hosts can automatically approve themselves to GOING status
     const isHost = eventData.hostId === user.uid;
     const finalStatus = isHost ? 'GOING' : 'PENDING';
+    console.log('RSVP details:', { isHost, finalStatus, eventHostId: eventData.hostId, userId: user.uid });
     
     // Update or create RSVP using upsert
     let rsvp: any = null;
     let rsvpResponse: any = null;
     
+    console.log('Performing RSVP upsert...');
     // Upsert for GOING or PENDING
     rsvp = await prisma.eventRSVP.upsert({
       where: {
@@ -842,13 +859,14 @@ export const handleUpdateEventRSVP = async (event: APIGatewayProxyEvent): Promis
       update: { status: finalStatus },
       create: { eventId, userId: user.uid, status: finalStatus }
     });
-    rsvpResponse = {
-      id: rsvp.id,
-      status: rsvp.status,
-      eventId: rsvp.eventId,
-      userId: rsvp.userId,
-      createdAt: rsvp.createdAt
-    };
+          rsvpResponse = {
+        id: rsvp.id,
+        status: rsvp.status,
+        eventId: rsvp.eventId,
+        userId: rsvp.userId,
+        createdAt: rsvp.createdAt
+      };
+      console.log('RSVP upsert successful:', rsvpResponse);
 
     // Best-effort notify event host about RSVP update
     try {
@@ -893,7 +911,11 @@ export const handleUpdateEventRSVP = async (event: APIGatewayProxyEvent): Promis
       })
     };
   } catch (error) {
-    console.error('Update RSVP route error:', error);
+    console.error('=== BACKEND RSVP UPDATE ERROR ===');
+    console.error('Error type:', typeof error);
+    console.error('Error message:', error instanceof Error ? error.message : error);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    console.error('Full error object:', error);
     return {
       statusCode: 500,
       body: JSON.stringify({
