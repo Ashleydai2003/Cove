@@ -863,6 +863,37 @@ export const handleUpdateEventRSVP = async (event: APIGatewayProxyEvent): Promis
       };
     }
 
+    // Check if user already has an RSVP for this event
+    const existingRSVP = await prisma.eventRSVP.findUnique({
+      where: {
+        eventId_userId: {
+          eventId: eventId,
+          userId: user.uid
+        }
+      }
+    });
+
+    // If user already has GOING or PENDING status, no action needed
+    if (existingRSVP && (existingRSVP.status === 'GOING' || existingRSVP.status === 'PENDING')) {
+      const statusMessage = existingRSVP.status === 'GOING' 
+        ? 'User is already going to this event'
+        : 'User already has a pending RSVP for this event';
+      
+      return {
+        statusCode: 200,
+        body: JSON.stringify({
+          message: statusMessage,
+          rsvp: {
+            id: existingRSVP.id,
+            status: existingRSVP.status,
+            eventId: existingRSVP.eventId,
+            userId: existingRSVP.userId,
+            createdAt: existingRSVP.createdAt
+          }
+        })
+      };
+    }
+
     // When a user RSVPs, they start with PENDING status (awaiting host approval)
     // Exception: Hosts can automatically approve themselves to GOING status
     const isHost = eventData.hostId === user.uid;
@@ -1386,7 +1417,13 @@ export const handleGetEventMembers = async (event: APIGatewayProxyEvent): Promis
           select: { 
             id: true, 
             name: true, 
-            profilePhotoID: true 
+            profilePhotoID: true,
+            profile: {
+              select: {
+                almaMater: true,
+                gradYear: true
+              }
+            }
           } 
         }
       }
@@ -1411,7 +1448,9 @@ export const handleGetEventMembers = async (event: APIGatewayProxyEvent): Promis
           userId: member.user.id,
           userName: member.user.name,
           profilePhotoUrl,
-          joinedAt: member.createdAt
+          joinedAt: member.createdAt,
+          school: member.user.profile?.almaMater || null,
+          gradYear: member.user.profile?.gradYear || null
         };
       })
     );
