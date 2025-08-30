@@ -60,22 +60,29 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
 
   const performRSVP = async () => {
     try {
+      console.log('Attempting RSVP for event:', event.id);
+      console.log('User authenticated:', isAuthenticated);
+      
       const response = await fetch('/api/rsvp', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Include cookies for authentication
         body: JSON.stringify({
           eventId: event.id,
           status: 'PENDING',
         }),
       });
 
+      console.log('RSVP response status:', response.status);
+
       if (response.ok) {
         // Show success message or update UI
         alert('RSVP successful!');
       } else {
         const data = await response.json();
+        console.log('RSVP error response:', data);
         alert(data.message || 'Failed to RSVP');
       }
     } catch (error) {

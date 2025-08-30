@@ -183,6 +183,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // Include cookies
         body: JSON.stringify({ idToken })
       });
 
@@ -215,6 +216,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
       const response = await fetch('/api/onboard', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // Include cookies
         body: JSON.stringify({
           name: formData.name,
           birthdate: formData.birthdate,
