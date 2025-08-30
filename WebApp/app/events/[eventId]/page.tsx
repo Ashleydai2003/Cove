@@ -22,10 +22,7 @@ export default function EventPage() {
       try {
         setLoading(true);
         setError(null);
-        console.log('Fetching event with ID:', eventId);
-        console.log('API URL:', process.env.NEXT_PUBLIC_API_URL);
         const eventData = await apiClient.fetchEvent(eventId);
-        console.log('Event data received:', eventData);
         setEvent(eventData);
       } catch (err) {
         console.error('Error fetching event:', err);
@@ -44,8 +41,6 @@ export default function EventPage() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#5E1C1D] mx-auto mb-4"></div>
           <p className="font-libre-bodoni text-[#5E1C1D]">Loading event...</p>
-          <p className="text-sm text-gray-500 mt-2">Event ID: {eventId}</p>
-          <p className="text-sm text-gray-500">API URL: {process.env.NEXT_PUBLIC_API_URL || 'Not set'}</p>
         </div>
       </div>
     );

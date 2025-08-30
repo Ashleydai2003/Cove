@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get auth token from cookie
-    const authToken = request.cookies.get('firebase-token')?.value;
+    const authToken = request.cookies.get('session-token')?.value;
 
     if (!authToken) {
       return NextResponse.json(

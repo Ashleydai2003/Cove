@@ -2,20 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('=== RSVP API START ===');
+    console.log('=== RSVP REMOVAL API START ===');
     console.log('Request headers:', Object.fromEntries(request.headers.entries()));
     console.log('Request cookies:', request.cookies.getAll());
     
     const body = await request.json();
     console.log('Request body:', body);
     
-    const { eventId, status } = body;
-    console.log('Extracted data:', { eventId, status });
-
-    if (!eventId || !status) {
-      console.log('Missing required fields:', { eventId, status });
+    const { eventId } = body;
+    console.log('Extracted data:', { eventId });
+    
+    if (!eventId) {
+      console.log('Missing required fields:', { eventId });
       return NextResponse.json(
-        { message: 'Event ID and status are required' },
+        { message: 'Event ID is required' },
         { status: 400 }
       );
     }
@@ -23,7 +23,6 @@ export async function POST(request: NextRequest) {
     // Get auth token from cookie
     const authToken = request.cookies.get('session-token')?.value;
     console.log('Auth token present:', !!authToken);
-    console.log('Auth token length:', authToken?.length || 0);
 
     if (!authToken) {
       console.log('No auth token found in cookies');
@@ -33,18 +32,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-        // Authentication is handled by the backend via the auth token
-    // The backend will return 401 if the token is invalid
-
-    // Call the backend API to update RSVP
-    console.log('Calling backend RSVP update endpoint...');
+    // Call the backend API to remove RSVP
+    console.log('Calling backend RSVP removal endpoint...');
     const rsvpRequestBody = {
       eventId,
-      status,
     };
-    console.log('RSVP request body:', rsvpRequestBody);
+    console.log('RSVP removal request body:', rsvpRequestBody);
     
-    const backendResponse = await fetch(`${process.env.BACKEND_API_URL}/update-event-rsvp`, {
+    const backendResponse = await fetch(`${process.env.BACKEND_API_URL}/remove-event-rsvp`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -53,33 +48,33 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify(rsvpRequestBody),
     });
 
-    console.log('Backend RSVP response status:', backendResponse.status);
-    console.log('Backend RSVP response headers:', Object.fromEntries(backendResponse.headers.entries()));
-
+    console.log('Backend RSVP removal response status:', backendResponse.status);
+    console.log('Backend RSVP removal response headers:', Object.fromEntries(backendResponse.headers.entries()));
+    
     const responseText = await backendResponse.text();
-    console.log('Backend RSVP response text:', responseText);
+    console.log('Backend RSVP removal response text:', responseText);
 
     let data;
     try {
       data = JSON.parse(responseText);
-      console.log('Backend RSVP response data:', data);
+      console.log('Backend RSVP removal response data:', data);
     } catch (parseError) {
       console.log('Failed to parse backend response as JSON:', parseError);
       data = { message: 'Invalid response from backend' };
     }
-
+    
     if (backendResponse.ok) {
-      console.log('RSVP successful, returning data');
+      console.log('RSVP removal successful, returning data');
       return NextResponse.json(data);
     } else {
-      console.log('RSVP failed, returning error');
+      console.log('RSVP removal failed, returning error');
       return NextResponse.json(
-        { message: data.message || 'Failed to update RSVP' },
+        { message: data.message || 'Failed to remove RSVP' },
         { status: backendResponse.status }
       );
     }
   } catch (error) {
-    console.error('=== RSVP API ERROR ===');
+    console.error('=== RSVP REMOVAL API ERROR ===');
     console.error('Error type:', typeof error);
     console.error('Error message:', error instanceof Error ? error.message : error);
     console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
