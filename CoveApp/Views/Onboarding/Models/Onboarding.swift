@@ -157,7 +157,7 @@ class Onboarding {
         
         let hasName = userName != nil && !userName!.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         let hasBirthdate = userBirthdate != nil
-        let hasUniversity = userAlmaMater != nil && !userAlmaMater!.isEmpty
+        let hasAlmaMater = userAlmaMater != nil && !userAlmaMater!.isEmpty
         let hasCity = userCity != nil && !userCity!.isEmpty
         
         // Log what's missing for debugging
@@ -174,7 +174,7 @@ class Onboarding {
             Log.error("Onboarding incomplete: Missing city")
         }
         
-        return hasName && hasBirthdate && hasUniversity && hasCity
+        return hasName && hasBirthdate && hasAlmaMater && hasCity
     }
 
     /// Completes the onboarding process by updating the user's onboarding status

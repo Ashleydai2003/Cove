@@ -23,6 +23,8 @@ enum Colors {
     // Legacy cream tone alias (map to background for consistency)
     static let f5f0e6 = Color(hex: "F5F0E6")
     static let f3f3f3 = Color(hex: "F3F3F3")
+    // Alias used in some legacy views
+    static let faf8f4 = Color(hex: "FAF8F4")
 
     static let k0B0B0B = Color(hex: "0B0B0B")
     static let k0F100F = Color(hex: "0F100F")
