@@ -213,7 +213,7 @@ struct GuestListTab: View {
     }
 }
 
-// backend POST /create-event currently doesn’t consume “isPublic”—- Guest Row View
+// MARK: - Guest Row View
 struct GuestRowView: View {
     let member: GuestMember
     let onAction: ((GuestMember, String) -> Void)?
