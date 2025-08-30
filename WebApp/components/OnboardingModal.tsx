@@ -218,6 +218,13 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
 
   const handleOnboardingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate graduation year before submitting
+    if (!isGradYearValid(formData.gradYear)) {
+      setError('Please enter a valid graduation year');
+      return;
+    }
+    
     setIsLoading(true);
     setError('');
 
