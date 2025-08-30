@@ -55,6 +55,7 @@ export const handleCreateEvent = async (request: APIGatewayProxyEvent): Promise<
       memberCap,
       ticketPrice,
       paymentHandle,
+      isPublic,
       coverPhoto,
       coveId 
     } = JSON.parse(request.body);
@@ -84,6 +85,16 @@ export const handleCreateEvent = async (request: APIGatewayProxyEvent): Promise<
         statusCode: 400,
         body: JSON.stringify({
           message: 'Ticket price must be a non-negative number if provided'
+        })
+      };
+    }
+
+    // Validate isPublic if provided
+    if (isPublic !== undefined && typeof isPublic !== 'boolean') {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          message: 'isPublic must be a boolean if provided'
         })
       };
     }
@@ -134,6 +145,7 @@ export const handleCreateEvent = async (request: APIGatewayProxyEvent): Promise<
         memberCap: memberCap || null,
         ticketPrice: ticketPrice || null,
         paymentHandle: paymentHandle || null,
+        isPublic: isPublic === true,
         coveId,
         hostId: user.uid,
       }
@@ -198,6 +210,7 @@ export const handleCreateEvent = async (request: APIGatewayProxyEvent): Promise<
           memberCap: newEvent.memberCap,
           ticketPrice: newEvent.ticketPrice,
           paymentHandle: newEvent.paymentHandle,
+          isPublic: newEvent.isPublic,
           coveId: newEvent.coveId,
           createdAt: newEvent.createdAt
         }
