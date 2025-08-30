@@ -116,6 +116,7 @@ export const handleOnboard = async (event: APIGatewayProxyEvent): Promise<APIGat
     }
 
     // Step 6: Parse request body
+    console.log('Request body:', event.body);
     if (!event.body) {
       return {
         statusCode: 400,
@@ -125,6 +126,9 @@ export const handleOnboard = async (event: APIGatewayProxyEvent): Promise<APIGat
       };
     }
 
+    const parsedBody = JSON.parse(event.body);
+    console.log('Parsed body:', parsedBody);
+    
     const {
       name,
       birthdate,
@@ -140,9 +144,10 @@ export const handleOnboard = async (event: APIGatewayProxyEvent): Promise<APIGat
       relationStatus,
       sexuality,
       gender
-    } = JSON.parse(event.body);
+    } = parsedBody;
 
     // Step 6.5: Validate required fields
+    console.log('Validating fields:', { name, birthdate, almaMater, gradYear });
     const requiredFields = [];
     if (!name || name.trim() === '') requiredFields.push('name');
     if (!birthdate) requiredFields.push('birthdate');
@@ -150,6 +155,7 @@ export const handleOnboard = async (event: APIGatewayProxyEvent): Promise<APIGat
     if (!gradYear || gradYear.trim() === '') requiredFields.push('gradYear');
 
     if (requiredFields.length > 0) {
+      console.log('Missing required fields:', requiredFields);
       return {
         statusCode: 400,
         body: JSON.stringify({
