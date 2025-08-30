@@ -554,21 +554,10 @@ struct EventPostView: View {
                             }
 
                             if let rsvps = event.rsvps {
-                                // Entitlement: host, GOING, or cove admin
-                                let coveIdForAdmin = event.cove.id ?? ""
-                                let isCoveAdmin = (!coveIdForAdmin.isEmpty && (
-                                    (appController.coveFeed.coveModels[coveIdForAdmin]?.isCurrentUserAdmin ?? false) ||
-                                    (appController.profileModel.adminCove == coveIdForAdmin)
-                                ))
-                                let isEntitled = (event.isHost == true) || (event.rsvpStatus == "GOING") || isCoveAdmin
+                                // Filter RSVPs to only show "GOING" status
                                 let goingRsvps = rsvps.filter { $0.status == "GOING" }
 
-                                if !isEntitled {
-                                    Text("RSVP to see guest list")
-                                        .font(.LibreBodoni(size: 14))
-                                        .foregroundColor(Colors.primaryDark)
-                                        .padding(.leading, 4)
-                                } else if goingRsvps.isEmpty {
+                                if goingRsvps.isEmpty {
                                     Text("no guests yet! send your invites!")
                                         .font(.LibreBodoni(size: 14))
                                         .foregroundColor(Colors.primaryDark)
