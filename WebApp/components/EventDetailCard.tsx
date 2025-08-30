@@ -189,7 +189,7 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
       {/* Two-column layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-start">
         {/* Left column: text */}
-        <div className="space-y-8">
+        <div className="space-y-8 max-h-[80vh] overflow-y-auto pr-4">
           <div>
             <h1 className="font-libre-bodoni text-4xl lg:text-5xl text-[#5E1C1D] leading-[0.9] mb-4">
               {title}
@@ -361,15 +361,15 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
             ) : (
               <button
                 onClick={handleRSVP}
-                className="px-16 py-4 bg-[#5E1C1D] text-white rounded-lg font-libre-bodoni text-xl font-medium hover:bg-[#4A1718] transition-colors shadow-lg"
+                className="px-24 py-3 bg-[#5E1C1D] text-white rounded-lg font-libre-bodoni text-xl font-medium hover:bg-[#4A1718] transition-colors shadow-lg"
               >
                 rsvp
               </button>
             )}
           </div>
 
-          {/* Login button - only show when not authenticated */}
-          {!isAuthenticated && (
+          {/* Login button - only show when not authenticated and not loading */}
+          {!isLoading && !isAuthenticated && (
             <div className="flex justify-center mt-4">
               <button
                 onClick={() => setShowOnboarding(true)}
