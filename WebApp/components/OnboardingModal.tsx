@@ -42,16 +42,17 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
   // Initialize reCAPTCHA verifier
   useEffect(() => {
     if (typeof window !== 'undefined' && !recaptchaVerifier) {
-      // Wait a bit for the DOM to be ready
-      const timer = setTimeout(() => {
+      // Wait for the modal to be open and DOM to be ready
+      const initializeRecaptcha = () => {
         try {
           console.log('Initializing reCAPTCHA verifier...');
           
           // Check if the container exists
           const container = document.getElementById('recaptcha-container');
           if (!container) {
-            console.error('reCAPTCHA container not found');
-            setError('Verification system not ready. Please refresh the page.');
+            console.log('reCAPTCHA container not found, retrying...');
+            // Retry after a short delay
+            setTimeout(initializeRecaptcha, 200);
             return;
           }
           
@@ -64,11 +65,26 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
           console.error('Failed to initialize reCAPTCHA:', error);
           setError('Failed to initialize verification. Please refresh the page.');
         }
-      }, 100);
+      };
       
-      return () => clearTimeout(timer);
+      // Start initialization after modal is open
+      if (isOpen) {
+        initializeRecaptcha();
+      }
     }
-  }, [recaptchaVerifier]);
+    
+    // Cleanup when modal closes
+    return () => {
+      if (recaptchaVerifier && !isOpen) {
+        try {
+          recaptchaVerifier.clear();
+          setRecaptchaVerifier(null);
+        } catch (error) {
+          console.log('Error clearing reCAPTCHA:', error);
+        }
+      }
+    };
+  }, [recaptchaVerifier, isOpen]);
 
   const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,9 +92,20 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
     setError('');
 
     try {
-      if (!recaptchaVerifier) {
-        setError('reCAPTCHA not initialized. Please refresh the page.');
-        return;
+      // Try to get or create reCAPTCHA verifier
+      let verifier = recaptchaVerifier;
+      if (!verifier) {
+        console.log('Creating reCAPTCHA verifier on-demand...');
+        try {
+          verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+            'size': 'invisible',
+          });
+          setRecaptchaVerifier(verifier);
+        } catch (error) {
+          console.error('Failed to create reCAPTCHA verifier:', error);
+          setError('Verification system not ready. Please refresh the page.');
+          return;
+        }
       }
 
       // Format phone number for Firebase (remove all non-digits and ensure it starts with +)
@@ -100,7 +127,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
       console.log('Sending OTP to:', formattedPhone);
 
       // Send OTP using Firebase
-      const confirmationResult = await signInWithPhoneNumber(auth, formattedPhone, recaptchaVerifier);
+      const confirmationResult = await signInWithPhoneNumber(auth, formattedPhone, verifier);
       setVerificationId(confirmationResult.verificationId);
       setStep('otp');
     } catch (err: any) {
