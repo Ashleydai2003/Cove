@@ -570,7 +570,7 @@ struct InterestsSection: View {
     let interests: [String]
     let isEditing: Bool
     let onInterestsChange: ([String]) -> Void
-    @State private var showingHobbiesSheet = false
+    let onEditInterests: () -> Void
 
     let columns = [
         GridItem(.flexible(), spacing: 12),
@@ -621,22 +621,13 @@ struct InterestsSection: View {
                             textColor: Colors.primaryDark
                         )
                         .onTapGesture { @MainActor in
-                            showingHobbiesSheet = true
+                            onEditInterests()
                         }
                     }
                 }
             }
         }
         .padding()
-        .sheet(isPresented: $showingHobbiesSheet) {
-            HobbiesSelectionView(
-                selectedHobbies: Set(interests),
-                onHobbiesSelected: { selectedHobbies in
-                    onInterestsChange(Array(selectedHobbies))
-                    showingHobbiesSheet = false
-                }
-            )
-        }
     }
 }
 
@@ -1452,6 +1443,141 @@ private struct StatusHalfSheet: View {
     }
 }
 
+// MARK: - Hobbies Full Sheet (consistent styling)
+private struct HobbiesHalfSheet: View {
+    let initialSelection: Set<String>
+    let onSaved: (Set<String>) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var currentSelection: Set<String>
+    @State private var expandedButtons: Set<String> = []
+
+    init(initialSelection: Set<String>, onSaved: @escaping (Set<String>) -> Void) {
+        self.initialSelection = initialSelection
+        self.onSaved = onSaved
+        self._currentSelection = State(initialValue: initialSelection)
+    }
+
+    private let hobbyDataSections: [HobbySection] = HobbiesData.hobbyDataSections
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            Colors.background.ignoresSafeArea()
+
+            // Close button
+            Button(action: { dismiss() }) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(Colors.primaryDark)
+            }
+            .padding(.leading, 20)
+            .padding(.top, 18)
+
+            VStack(spacing: 16) {
+                // Title
+                VStack(spacing: 10) {
+                    Text("interests")
+                        .font(.LibreBodoni(size: 22))
+                        .foregroundColor(Colors.primaryDark)
+                }
+
+                Spacer(minLength: 8)
+
+                // Sections with expandable buttons
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 0) {
+                        ForEach(Array(hobbyDataSections.enumerated()), id: \.offset) { sectionIndex, section in
+                            let sectionName = section.name
+                            let sectionEmoji = section.emoji
+                            let sectionButtons = section.buttons
+
+                            HStack {
+                                Text("\(sectionEmoji) \(sectionName)")
+                                    .font(.LeagueSpartan(size: 18))
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(Colors.primaryDark)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                Spacer()
+                            }
+                            .padding(.top, sectionIndex == 0 ? 0 : 20)
+                            .padding(.bottom, 8)
+                            .padding(.horizontal, 32)
+
+                            let sectionButtonData = HobbiesData.getSectionButtonsToShow(for: sectionName, buttons: sectionButtons, expandedButtons: expandedButtons)
+
+                            LazyVGrid(columns: [
+                                GridItem(.flexible(), spacing: 12),
+                                GridItem(.flexible(), spacing: 12)
+                            ], spacing: 12) {
+                                ForEach(sectionButtonData, id: \.id) { buttonData in
+                                    HobbyButton(
+                                        text: buttonData.text,
+                                        emoji: buttonData.emoji,
+                                        isSelected: currentSelection.contains(buttonData.text),
+                                        borderWidth: buttonData.isTopLevel ? 2 : 1
+                                    ) {
+                                        handleHobbyButtonTap(buttonData: buttonData)
+                                    }
+                                }
+                            }
+                            .padding(.horizontal, 32)
+                        }
+                    }
+                    .padding(.top, 20)
+                }
+
+                Spacer(minLength: 16)
+            }
+            .padding(.top, 20)
+        }
+        .safeAreaInset(edge: .bottom) {
+            VStack {
+                Button {
+                    onSaved(currentSelection)
+                    dismiss()
+                } label: {
+                    Text("save")
+                        .foregroundStyle(Colors.background)
+                        .font(.LibreBodoniBold(size: 16))
+                        .frame(maxWidth: .infinity, minHeight: 56, maxHeight: 56, alignment: .center)
+                        .background(
+                            RoundedRectangle(cornerRadius: 14)
+                                .fill(Colors.primaryDark)
+                        )
+                }
+                .padding(.horizontal, 24)
+                .padding(.top, 8)
+                .padding(.bottom, 12)
+            }
+            .background(Colors.background)
+        }
+    }
+
+    // MARK: - Selection handler
+    private func handleHobbyButtonTap(buttonData: HobbiesData.ButtonData) {
+        if buttonData.isTopLevel {
+            withAnimation(.easeInOut(duration: 0.3)) {
+                if expandedButtons.contains(buttonData.text) {
+                    expandedButtons.remove(buttonData.text)
+                } else {
+                    expandedButtons.insert(buttonData.text)
+                }
+            }
+            if currentSelection.contains(buttonData.text) {
+                currentSelection.remove(buttonData.text)
+            } else {
+                currentSelection.insert(buttonData.text)
+            }
+        } else {
+            if currentSelection.contains(buttonData.text) {
+                currentSelection.remove(buttonData.text)
+            } else {
+                currentSelection.insert(buttonData.text)
+            }
+        }
+    }
+}
+
 // MARK: - Work Half Sheet (workplace + job title)
 private struct WorkHalfSheet: View {
     let initialWorkplace: String
@@ -1807,6 +1933,7 @@ struct ProfileView: View {
     @State private var showingAlmaMaterSheet = false
     @State private var showingGenderSheet = false
     @State private var showingStatusSheet = false
+    @State private var showingHobbiesSheet = false
 
     // Local editing state
     @State private var editingName: String = ""
@@ -1954,7 +2081,8 @@ struct ProfileView: View {
                                 InterestsSection(
                                     interests: isEditing ? editingInterests : appController.profileModel.interests,
                                     isEditing: isEditing,
-                                    onInterestsChange: { editingInterests = $0 }
+                                    onInterestsChange: { editingInterests = $0 },
+                                    onEditInterests: { showingHobbiesSheet = true }
                                 )
 
                                 ExtraPhotoView(
@@ -2105,6 +2233,16 @@ struct ProfileView: View {
                 }
             )
             .presentationDetents([.medium])
+            .presentationDragIndicator(.hidden)
+        }
+        .sheet(isPresented: $showingHobbiesSheet) {
+            HobbiesHalfSheet(
+                initialSelection: Set(editingInterests),
+                onSaved: { selection in
+                    editingInterests = Array(selection)
+                }
+            )
+            .presentationDetents([.large])
             .presentationDragIndicator(.hidden)
         }
         .task {
