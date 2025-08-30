@@ -124,36 +124,27 @@ struct CitySelectionView: View {
                 Spacer()
 
                 // Continue button
-                HStack {
-                    Spacer()
-                    Images.nextArrow
-                        .resizable()
-                        .frame(width: 52, height: 52)
-                        .padding(.bottom, 20)
-                        .opacity(searchCity.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0.5 : 1.0)
-                        .onTapGesture {
-                            // MARK: - Validate city selection
-                            let trimmedCity = searchCity.trimmingCharacters(in: .whitespacesAndNewlines)
-                            
-                            if trimmedCity.isEmpty {
-                                appController.errorMessage = "Please select a city"
-                                showingError = true
-                                return
-                            }
-                            
-                            // Validate that the city is in our list
-                            let isValidCity = cities.contains { $0.localizedCaseInsensitiveContains(trimmedCity) }
-                            if !isValidCity {
-                                appController.errorMessage = "Please select a valid city from the list"
-                                showingError = true
-                                return
-                            }
-                            
-                            // MARK: - Store city
-                            Onboarding.storeCity(city: trimmedCity)
-                            appController.path.append(.profilePics)
-                        }
+                SignOnButton(text: "next") {
+                    let trimmedCity = searchCity.trimmingCharacters(in: .whitespacesAndNewlines)
+
+                    if trimmedCity.isEmpty {
+                        appController.errorMessage = "Please select a city"
+                        showingError = true
+                        return
+                    }
+
+                    let isValidCity = cities.contains { $0.localizedCaseInsensitiveContains(trimmedCity) }
+                    if !isValidCity {
+                        appController.errorMessage = "Please select a valid city from the list"
+                        showingError = true
+                        return
+                    }
+
+                    Onboarding.storeCity(city: trimmedCity)
+                    appController.path.append(.profilePics)
                 }
+                .disabled(searchCity.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .padding(.bottom, 20)
             }
             .padding(.horizontal, 32)
         }

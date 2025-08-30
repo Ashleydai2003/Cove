@@ -114,23 +114,17 @@ struct ProfilePicView: View {
                     Spacer()
 
                     // Continue button
-                    HStack {
-                        Spacer()
-                        if isCompletingOnboarding {
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle())
-                                .scaleEffect(1.2)
-                                .frame(width: 52, height: 52)
-                                .padding(.trailing, 20)
-                        } else {
-                            Images.nextArrow
-                                .resizable()
-                                .frame(width: 52, height: 52)
-                                .padding(.trailing, 20)
-                                .onTapGesture {
-                                    completeOnboarding()
-                                }
+                    if isCompletingOnboarding {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle())
+                            .scaleEffect(1.2)
+                            .frame(height: 52)
+                            .padding(.horizontal, 20)
+                    } else {
+                        SignOnButton(text: "next") {
+                            completeOnboarding()
                         }
+                        .padding(.horizontal, 20)
                     }
                 }
                 .safeAreaPadding()

@@ -202,51 +202,42 @@ struct AlmaMaterView: View {
             Spacer()
 
                 // Continue button
-            HStack {
-                Spacer()
-                    Images.nextArrow
-                    .resizable()
-                    .frame(width: 52, height: 52)
-                    .padding(.bottom, 20)
-                    .opacity((searchUniversity.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || gradYear.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) ? 0.5 : 1.0)
-                    .onTapGesture {
-                        // MARK: - Validate university and graduation year
-                        let trimmedUniversity = searchUniversity.trimmingCharacters(in: .whitespacesAndNewlines)
-                        let trimmedYear = gradYear.trimmingCharacters(in: .whitespacesAndNewlines)
-                        
-                        if trimmedUniversity.isEmpty {
-                            appController.errorMessage = "Please enter your university"
-                            showingError = true
-                            return
-                        }
-                        
-                        if trimmedYear.isEmpty {
-                            appController.errorMessage = "Please enter your graduation year"
-                            showingError = true
-                            return
-                        }
-                        
-                        // Validate graduation year is a reasonable year
-                        if let yearInt = Int(trimmedYear) {
-                            let currentYear = Calendar.current.component(.year, from: Date())
-                            if yearInt < 1950 || yearInt > currentYear + 4 {
-                                appController.errorMessage = "Please enter a valid graduation year"
-                                showingError = true
-                                return
-                            }
-                        } else {
-                            appController.errorMessage = "Please enter a valid graduation year"
-                            showingError = true
-                            return
-                        }
-                        
-                            // MARK: - Store alma mater and grad year
-                        // TODO: can consider using university IDs instead of names
-                        Onboarding.storeAlmaMater(almaMater: trimmedUniversity)
-                        Onboarding.storeGradYear(gradYear: trimmedYear)
-                        appController.path.append(.citySelection)
+            SignOnButton(text: "next") {
+                let trimmedUniversity = searchUniversity.trimmingCharacters(in: .whitespacesAndNewlines)
+                let trimmedYear = gradYear.trimmingCharacters(in: .whitespacesAndNewlines)
+
+                if trimmedUniversity.isEmpty {
+                    appController.errorMessage = "Please enter your university"
+                    showingError = true
+                    return
+                }
+
+                if trimmedYear.isEmpty {
+                    appController.errorMessage = "Please enter your graduation year"
+                    showingError = true
+                    return
+                }
+
+                if let yearInt = Int(trimmedYear) {
+                    let currentYear = Calendar.current.component(.year, from: Date())
+                    if yearInt < 1950 || yearInt > currentYear + 4 {
+                        appController.errorMessage = "Please enter a valid graduation year"
+                        showingError = true
+                        return
                     }
+                } else {
+                    appController.errorMessage = "Please enter a valid graduation year"
+                    showingError = true
+                    return
+                }
+
+                Onboarding.storeAlmaMater(almaMater: trimmedUniversity)
+                Onboarding.storeGradYear(gradYear: trimmedYear)
+                appController.path.append(.citySelection)
             }
+            .disabled(searchUniversity.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+                      gradYear.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            .padding(.bottom, 20)
         }
         .padding(.horizontal, 32)
         }
