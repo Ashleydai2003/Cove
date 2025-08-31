@@ -182,7 +182,7 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
   const dateStr = formatDate(event.date);
   const timeStr = formatTime(event.date);
   const coveName = event.cove?.name || '';
-  const displayGoingCount = (event.goingCount ?? 0) + 32;
+  const displayGoingCount = (event.goingCount ?? 0) + 24;
 
   // Create the hosted by text in the format "hosted by [host] @ [cove]"
   const hostedByText = hostName && coveName 
