@@ -4,11 +4,12 @@ import './globals.css';
 import { SessionProvider } from '@/components/SessionProvider';
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://coveapp.co'),
   title: {
     template: '%s | Cove',
-    default: 'Cove - Connect Through Events',
+    default: 'cove - events for alumni',
   },
-  description: 'Discover and attend events in your community through Cove.',
+  description: 'your city, unlocked.',
   keywords: ['events', 'community', 'social', 'meetups'],
   authors: [{ name: 'Cove Team' }],
   viewport: 'width=device-width, initial-scale=1',
@@ -16,13 +17,15 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     siteName: 'Cove',
-    title: 'Cove - Connect Through Events',
-    description: 'Discover and attend events in your community through Cove.',
+    title: 'cove - events for alumni',
+    description: 'your city, unlocked',
+    images: ['/cove-logo.png'],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Cove - Connect Through Events',
-    description: 'Discover and attend events in your community through Cove.',
+    title: 'cove - events for alumni',
+    description: 'your city, unlocked',
+    images: ['/cove-logo.png'],
   },
 };
 
