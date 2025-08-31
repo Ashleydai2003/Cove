@@ -182,11 +182,6 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
   const dateStr = formatDate(event.date);
   const timeStr = formatTime(event.date);
   const coveName = event.cove?.name || '';
-  const memberCapValue = typeof event.memberCap === 'number' ? event.memberCap : undefined;
-  const displayGoingCount = (event.goingCount ?? 0) + 32;
-  const cappedGoingCount = memberCapValue !== undefined
-    ? Math.min(displayGoingCount, memberCapValue)
-    : displayGoingCount;
 
   // Create the hosted by text in the format "hosted by [host] @ [cove]"
   const hostedByText = hostName && coveName 
@@ -249,7 +244,10 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
                   <div className="flex items-center gap-4">
                     <img src="/capacity.svg" alt="Capacity" className="w-8 h-8" />
                     <span className="font-libre-bodoni text-lg font-semibold text-[#5E1C1D]">
-                      {`${Math.max(0, event.memberCap - displayGoingCount)}/${event.memberCap} spots left`}
+                      {event.goingCount !== undefined && event.goingCount !== null 
+                        ? `${Math.max(0, event.memberCap - event.goingCount + 32)}/${event.memberCap} spots left`
+                        : `${event.memberCap} spots available`
+                      }
                     </span>
                   </div>
                 )}
@@ -332,17 +330,17 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
                   ))}
                 </div>
                 
-                {cappedGoingCount > 5 && (
+                {event.goingCount && event.goingCount > 5 && (
                   <span className="font-libre-bodoni text-sm text-[#2D2D2D]">
-                    +{cappedGoingCount - 5} others going
+                    +{event.goingCount - 5} others going
                   </span>
                 )}
               </div>
             </div>
-          ) : cappedGoingCount > 0 ? (
+          ) : event.goingCount && event.goingCount > 0 ? (
             <div className="text-center">
               <span className="font-libre-bodoni text-sm text-[#2D2D2D]">
-                {cappedGoingCount} people going
+                {event.goingCount} people going
               </span>
               <p className="font-libre-bodoni text-xs text-[#8B8B8B] mt-1">
                 RSVP to view guest list!

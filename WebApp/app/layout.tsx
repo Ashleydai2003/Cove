@@ -4,7 +4,6 @@ import './globals.css';
 import { SessionProvider } from '@/components/SessionProvider';
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://coveapp.co'),
   title: {
     template: '%s | Cove',
     default: 'cove - events for young alumni',
