@@ -182,6 +182,7 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
   const dateStr = formatDate(event.date);
   const timeStr = formatTime(event.date);
   const coveName = event.cove?.name || '';
+  const displayGoingCount = (event.goingCount ?? 0) + 32;
 
   // Create the hosted by text in the format "hosted by [host] @ [cove]"
   const hostedByText = hostName && coveName 
@@ -244,8 +245,8 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
                   <div className="flex items-center gap-4">
                     <img src="/capacity.svg" alt="Capacity" className="w-8 h-8" />
                     <span className="font-libre-bodoni text-lg font-semibold text-[#5E1C1D]">
-                      {event.goingCount !== undefined && event.goingCount !== null 
-                        ? `${Math.max(0, event.memberCap - event.goingCount + 32)}/${event.memberCap} spots left`
+                      {displayGoingCount !== undefined && displayGoingCount !== null 
+                        ? `${Math.max(0, event.memberCap - displayGoingCount)}/${event.memberCap} spots left`
                         : `${event.memberCap} spots available`
                       }
                     </span>
@@ -330,17 +331,17 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
                   ))}
                 </div>
                 
-                {event.goingCount && event.goingCount > 5 && (
+                {displayGoingCount > 5 && (
                   <span className="font-libre-bodoni text-sm text-[#2D2D2D]">
-                    +{event.goingCount - 5} others going
+                    +{displayGoingCount - 5} others going
                   </span>
                 )}
               </div>
             </div>
-          ) : event.goingCount && event.goingCount > 0 ? (
+          ) : displayGoingCount > 0 ? (
             <div className="text-center">
               <span className="font-libre-bodoni text-sm text-[#2D2D2D]">
-                {event.goingCount} people going
+                {displayGoingCount} people going
               </span>
               <p className="font-libre-bodoni text-xs text-[#8B8B8B] mt-1">
                 RSVP to view guest list!
