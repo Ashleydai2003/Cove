@@ -1,3 +1,4 @@
+// Note: keep this page server-rendered for metadata to be available to crawlers
 'use client';
 
 import { useState, useEffect } from 'react';
