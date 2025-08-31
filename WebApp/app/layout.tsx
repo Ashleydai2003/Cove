@@ -4,6 +4,8 @@ import './globals.css';
 import { SessionProvider } from '@/components/SessionProvider';
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://www.coveapp.co'),
+  themeColor: '#5E1C1D',
   title: {
     template: '%s | Cove',
     default: 'Cove - Connect Through Events',
@@ -18,11 +20,13 @@ export const metadata: Metadata = {
     siteName: 'Cove',
     title: 'Cove - Connect Through Events',
     description: 'Discover and attend events in your community through Cove.',
+    images: [{ url: '/cove-logo.png', width: 1200, height: 630, alt: 'Cove logo' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Cove - Connect Through Events',
     description: 'Discover and attend events in your community through Cove.',
+    images: ['/cove-logo.png'],
   },
 };
 
