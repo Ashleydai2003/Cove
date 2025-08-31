@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://coveapp.co'),
   title: {
     template: '%s | Cove',
-    default: 'cove - events for alumni',
+    default: 'cove - events for young alumni',
   },
   description: 'your city, unlocked.',
   keywords: ['events', 'community', 'social', 'meetups'],
@@ -17,13 +17,13 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     siteName: 'Cove',
-    title: 'cove - events for alumni',
+    title: 'cove - events for young alumni',
     description: 'your city, unlocked',
     images: ['/cove-logo.png'],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'cove - events for alumni',
+    title: 'cove - events for young alumni',
     description: 'your city, unlocked',
     images: ['/cove-logo.png'],
   },
