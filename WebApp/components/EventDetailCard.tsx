@@ -245,7 +245,7 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
                     <img src="/capacity.svg" alt="Capacity" className="w-8 h-8" />
                     <span className="font-libre-bodoni text-lg font-semibold text-[#5E1C1D]">
                       {event.goingCount !== undefined && event.goingCount !== null 
-                        ? `${Math.max(0, event.memberCap - event.goingCount)}/${event.memberCap} spots left`
+                        ? `${Math.max(0, event.memberCap - event.goingCount + 32)}/${event.memberCap} spots left`
                         : `${event.memberCap} spots available`
                       }
                     </span>
