@@ -4,6 +4,7 @@ import './globals.css';
 import { SessionProvider } from '@/components/SessionProvider';
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://www.coveapp.co'),
   title: {
     template: '%s | Cove',
     default: 'cove - events for young alumni',
@@ -16,9 +17,17 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     siteName: 'Cove',
+    url: 'https://www.coveapp.co',
     title: 'cove - events for young alumni',
     description: 'your city, unlocked',
-    images: ['/cove-logo.png'],
+    images: [
+      {
+        url: '/cove-logo.png',
+        width: 1200,
+        height: 630,
+        alt: 'Cove logo'
+      }
+    ],
   },
   twitter: {
     card: 'summary_large_image',
