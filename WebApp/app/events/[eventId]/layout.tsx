@@ -7,10 +7,13 @@ type Params = { params: { eventId: string } };
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const url = `https://www.coveapp.co/events/${params.eventId}`;
 
-  // Fetch event server-side to build rich metadata
   const event = await getEventData(params.eventId);
   const eventName = event?.name || 'event';
-  const coverUrl = event?.coverPhoto?.url || '/cove-logo.png';
+  const rawCoverUrl = event?.coverPhoto?.url || '/cove-logo.png';
+  const coverUrl = rawCoverUrl.startsWith('http')
+    ? rawCoverUrl
+    : `https://www.coveapp.co${rawCoverUrl}`;
+
   const title = `RSVP to ${eventName}`;
   const description = 'cove - events for young alumni';
 
@@ -23,12 +26,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
       siteName: 'Cove',
       title,
       description,
-      images: [
-        {
-          url: coverUrl,
-          alt: eventName
-        }
-      ]
+      images: [{ url: coverUrl, alt: eventName }]
     },
     twitter: {
       card: 'summary_large_image',
@@ -42,5 +40,3 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 export default function EventLayout({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
-
-
