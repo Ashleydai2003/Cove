@@ -37,13 +37,19 @@ export async function POST(request: Request) {
       },
       // Map form fields to Notion database columns
       properties: {
-        // Name field (title type in Notion)
-        Name: {
+        // First name as title property
+        First: {
           title: [
             {
-              text: {
-                content: `${body.firstName} ${body.lastName}`
-              }
+              text: { content: body.firstName }
+            }
+          ]
+        },
+        // Last name as rich text (separate column)
+        Last: {
+          rich_text: [
+            {
+              text: { content: body.lastName }
             }
           ]
         },
@@ -70,6 +76,12 @@ export async function POST(request: Request) {
               }
             }
           ]
+        },
+        // Timestamp field (date type in Notion)
+        Timestamp: {
+          date: {
+            start: new Date().toISOString()
+          }
         }
       }
     });
