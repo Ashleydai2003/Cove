@@ -68,7 +68,7 @@ export async function POST(request: Request) {
           ]
         },
         // Alma Mater field (rich text type in Notion)
-        'Alma Mater': {
+        'AlmaMater': {
           rich_text: [
             {
               text: {
