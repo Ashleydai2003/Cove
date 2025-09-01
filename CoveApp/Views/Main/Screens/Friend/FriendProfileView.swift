@@ -38,51 +38,49 @@ struct FriendProfileView: View {
                         .padding(.horizontal)
 
                         // MARK: Profile & Stats (match ProfileView layout)
-                        HStack { Spacer()
-                            let photoURL = displayPhotoURL ?? profile.photos.first(where: { $0.isProfilePic })?.url
-                            if let url = photoURL {
-                                KFImage(url)
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(width: 170, height: 170)
-                                    .clipShape(Circle())
-                            } else {
-                                Image("default_user_pfp")
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(width: 170, height: 170)
-                                    .clipShape(Circle())
-                            }
-                        Spacer() }
+                        VStack(spacing: 8) {
+                            // Profile photo
+                            HStack { Spacer()
+                                let photoURL = displayPhotoURL ?? profile.photos.first(where: { $0.isProfilePic })?.url
+                                if let url = photoURL {
+                                    KFImage(url)
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(width: 170, height: 170)
+                                        .clipShape(Circle())
+                                } else {
+                                    Image("default_user_pfp")
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(width: 170, height: 170)
+                                        .clipShape(Circle())
+                                }
+                            Spacer() }
 
-                        VStack(alignment: .center, spacing: 8) {
-                            Text(profile.name)
-                                .font(.LibreBodoniBold(size: 32))
-                                .foregroundColor(Colors.primaryDark)
-                                .frame(maxWidth: .infinity, alignment: .center)
-
-                            // Location under name removed to match ProfileView; location will appear in combined row below
-
-                            if let bio = profile.bio, !bio.isEmpty {
-                                Text(bio)
-                                    .font(.LibreBodoni(size: 16))
-                                    .foregroundColor(Colors.k6F6F73)
-                                    .fixedSize(horizontal: false, vertical: true)
-                                    .multilineTextAlignment(.center)
+                            // Name + bio
+                            VStack(alignment: .center, spacing: 8) {
+                                Text(profile.name)
+                                    .font(.LibreBodoniBold(size: 32))
+                                    .foregroundColor(Colors.primaryDark)
                                     .frame(maxWidth: .infinity, alignment: .center)
+
+                                if let bio = profile.bio, !bio.isEmpty {
+                                    Text(bio)
+                                        .font(.LibreBodoni(size: 16))
+                                        .foregroundColor(Colors.k6F6F73)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                        .multilineTextAlignment(.center)
+                                        .frame(maxWidth: .infinity, alignment: .center)
+                                }
                             }
-                        }
-                        .padding(.horizontal)
+                            .padding(.horizontal)
 
-                        // Combined row: Age, Location, Alma Mater with carrot (placeholders where needed)
-                        HStack(spacing: 16) {
-                            // Age (placeholder)
-                            Text("23")
-                                .font(.LibreBodoni(size: 18))
-                                .foregroundColor(Colors.primaryDark)
+                            // Combined row: Age, Location, Alma Mater with carrot
+                            HStack(spacing: 16) {
+                                Text("23")
+                                    .font(.LibreBodoni(size: 18))
+                                    .foregroundColor(Colors.primaryDark)
 
-                            // Location (if available)
-                            Group {
                                 HStack(spacing: 6) {
                                     Image("locationIcon")
                                         .resizable()
@@ -93,73 +91,67 @@ struct FriendProfileView: View {
                                         .font(.LibreBodoni(size: 14))
                                         .foregroundColor(Colors.primaryDark)
                                 }
-                            }
 
-                            // Alma mater + carrot
-                            HStack(spacing: 10) {
-                                Image("gradIcon")
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fit)
-                                    .frame(width: 16, height: 16)
-                                    .foregroundStyle(Colors.k6B6B6B)
-                                Text("stanford")
-                                    .font(.LibreBodoni(size: 14))
-                                    .foregroundColor(Colors.primaryDark)
-                                Button(action: {
-                                    withAnimation(.easeInOut(duration: 0.2)) {
-                                        showDetails.toggle()
-                                    }
-                                }) {
-                                    Image(systemName: showDetails ? "chevron.up" : "chevron.down")
-                                        .font(.system(size: 12, weight: .semibold))
-                                        .foregroundColor(Colors.primaryDark)
-                                        .frame(width: 16, height: 16)
-                                        .contentShape(Rectangle())
-                                }
-                            }
-                        }
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.top, 24)
-
-                        // Collapsible details row (status + work) with placeholders
-                        if showDetails {
-                            HStack(spacing: 16) {
-                                // Relationship Status
-                                HStack(spacing: 6) {
-                                    Image("relationshipIcon")
-                                        .resizable()
-                                        .aspectRatio(contentMode: .fit)
-                                        .frame(width: 16, height: 16)
-                                    Text("single")
-                                        .font(.LibreBodoni(size: 14))
-                                        .foregroundColor(Colors.primaryDark)
-                                }
-
-                                // Work (job @ location)
-                                HStack(spacing: 6) {
-                                    Image("workIcon")
+                                HStack(spacing: 10) {
+                                    Image("gradIcon")
                                         .resizable()
                                         .aspectRatio(contentMode: .fit)
                                         .frame(width: 16, height: 16)
                                         .foregroundStyle(Colors.k6B6B6B)
-                                    Text("swe @ google")
-                                        .font(.LibreBodoni(size: 15))
+                                    Text("stanford")
+                                        .font(.LibreBodoni(size: 14))
                                         .foregroundColor(Colors.primaryDark)
+                                    Button(action: {
+                                        withAnimation(.easeInOut(duration: 0.2)) { showDetails.toggle() }
+                                    }) {
+                                        Image(systemName: showDetails ? "chevron.up" : "chevron.down")
+                                            .font(.system(size: 12, weight: .semibold))
+                                            .foregroundColor(Colors.primaryDark)
+                                            .frame(width: 16, height: 16)
+                                            .contentShape(Rectangle())
+                                    }
                                 }
                             }
                             .frame(maxWidth: .infinity, alignment: .center)
-                            .transition(.opacity.combined(with: .move(edge: .top)))
-                        }
 
-                        // Stats strip (centered)
-                        if let s = profile.stats {
-                            HStack(spacing: 24) {
-                                StatBlock(number: s.sharedFriendCount ?? 0, topLabel: "mutual", bottomLabel: "friends")
-                                StatBlock(number: s.sharedCoveCount ?? 0,   topLabel: "shared", bottomLabel: "coves")
-                                StatBlock(number: s.sharedEventCount ?? 0, topLabel: "shared", bottomLabel: "events")
+                            // Collapsible details row (status + work)
+                            if showDetails {
+                                HStack(spacing: 16) {
+                                    HStack(spacing: 6) {
+                                        Image("relationshipIcon")
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fit)
+                                            .frame(width: 16, height: 16)
+                                        Text("single")
+                                            .font(.LibreBodoni(size: 14))
+                                            .foregroundColor(Colors.primaryDark)
+                                    }
+
+                                    HStack(spacing: 6) {
+                                        Image("workIcon")
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fit)
+                                            .frame(width: 16, height: 16)
+                                            .foregroundStyle(Colors.k6B6B6B)
+                                        Text("swe @ google")
+                                            .font(.LibreBodoni(size: 15))
+                                            .foregroundColor(Colors.primaryDark)
+                                    }
+                                }
+                                .frame(maxWidth: .infinity, alignment: .center)
+                                .transition(.opacity.combined(with: .move(edge: .top)))
                             }
-                            .frame(maxWidth: .infinity)
-                            .padding(.top, 4)
+
+                            // Stats strip (centered)
+                            if let s = profile.stats {
+                                HStack(spacing: 24) {
+                                    StatBlock(number: s.sharedFriendCount ?? 0, topLabel: "mutual", bottomLabel: "friends")
+                                    StatBlock(number: s.sharedCoveCount ?? 0,   topLabel: "shared", bottomLabel: "coves")
+                                    StatBlock(number: s.sharedEventCount ?? 0, topLabel: "shared", bottomLabel: "events")
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.top, 4)
+                            }
                         }
 
                         // Removed extra photo for now (show only profile picture at top)
