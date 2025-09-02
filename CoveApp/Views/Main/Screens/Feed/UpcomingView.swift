@@ -237,7 +237,7 @@ struct UpcomingView: View {
                         coverPhoto: event.coverPhoto
                     )
                     EventSummaryView(event: calendarEvent, type: .feed, disableNavigation: isHorizontalSwiping)
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, 24)
                         .onAppear {
                             loadMoreIfNeeded(at: idx)
                         }
@@ -258,7 +258,7 @@ struct UpcomingView: View {
                     // Provide a CoveModel so like toggles can be executed
                     let model = appController.coveFeed.getOrCreateCoveModel(for: covePost.coveId)
                     FeedPostSummaryView(post: covePost, viewModel: model)
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, 24)
                         .onAppear {
                             loadMoreIfNeeded(at: idx)
                         }
@@ -524,7 +524,7 @@ private struct FeedItemsListView: View {
                         coverPhoto: event.coverPhoto
                     )
                     EventSummaryView(event: calendarEvent, type: .feed)
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, 24)
                         .onAppear {
                             loadMoreIfNeeded(at: idx)
                         }
@@ -543,7 +543,7 @@ private struct FeedItemsListView: View {
                         createdAt: post.createdAt
                     )
                     FeedPostSummaryView(post: covePost)
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, 24)
                     .onAppear {
                         loadMoreIfNeeded(at: idx)
                         }
