@@ -26,16 +26,13 @@ struct FriendProfileView: View {
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 24) {
 
-                        // MARK: Header (back)
-                        HStack {
-                            Button { dismiss() } label: {
-                                Image(systemName: "chevron.left")
-                                    .font(.system(size: 16, weight: .semibold))
-                                    .foregroundStyle(Colors.primaryDark)
-                            }
-                            Spacer()
-                        }
-                        .padding(.horizontal)
+                        // MARK: Header (standardized)
+                        TopIconBar(
+                            showBackArrow: true,
+                            showGear: false,
+                            onBackTapped: { dismiss() },
+                            onGearTapped: {}
+                        )
 
                         // MARK: Profile & Stats (match ProfileView layout)
                         VStack(spacing: 8) {
@@ -73,7 +70,7 @@ struct FriendProfileView: View {
                                         .frame(maxWidth: .infinity, alignment: .center)
                                 }
                             }
-                            .padding(.horizontal)
+                            .padding(.horizontal, 24)
 
                             // Combined row: Age, Location, Alma Mater with carrot
                             HStack(spacing: 16) {
@@ -172,7 +169,7 @@ struct FriendProfileView: View {
                                     }
                                 }
                             }
-                            .padding(.horizontal)
+                            .padding(.horizontal, 24)
                             .padding(.top, 12)
                         }
 
@@ -181,7 +178,7 @@ struct FriendProfileView: View {
                             headerActionButton
                             Spacer()
                         }
-                        .padding(.horizontal)
+                        .padding(.horizontal, 24)
 
                     }
                     .padding(.vertical, 20)

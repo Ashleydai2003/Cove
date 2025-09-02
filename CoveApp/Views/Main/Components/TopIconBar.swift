@@ -8,30 +8,41 @@ import SwiftUI
 /// A reusable top bar with a left back chevron and a right gear icon.
 /// - Matches spacing and hit-target sizing used in Cove screens.
 struct TopIconBar: View {
+    var showBackArrow: Bool = true
+    var showGear: Bool = true
     let onBackTapped: () -> Void
     let onGearTapped: () -> Void
 
     var body: some View {
         HStack {
-            Button(action: { onBackTapped() }) {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(Colors.primaryDark)
-                    .frame(width: 44, height: 44)
-                    .contentShape(Rectangle())
+            if showBackArrow {
+                Button(action: { onBackTapped() }) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(Colors.primaryDark)
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .padding(.leading, 8)
+            } else {
+                // Keep layout consistent even without back arrow
+                Color.clear.frame(width: 44).padding(.leading, 8)
             }
-            .padding(.leading, 8)
 
             Spacer()
 
-            Button(action: { onGearTapped() }) {
-                Image(systemName: "gearshape")
-                    .font(.system(size: 16, weight: .semibold))
-                    .frame(width: 44, height: 44)
-                    .contentShape(Rectangle())
+            if showGear {
+                Button(action: { onGearTapped() }) {
+                    Image(systemName: "gearshape")
+                        .font(.system(size: 16, weight: .semibold))
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(TintOnPressIconStyle())
+                .padding(.trailing, 8)
+            } else {
+                Color.clear.frame(width: 44).padding(.trailing, 8)
             }
-            .buttonStyle(TintOnPressIconStyle())
-            .padding(.trailing, 8)
         }
     }
 }

@@ -18,7 +18,7 @@ struct CoveInfoHeaderView: View {
 
     var body: some View {
         VStack(spacing: 6) {
-            TopIconBar(onBackTapped: onBackTapped, onGearTapped: onSettingsTapped)
+            TopIconBar(showBackArrow: true, showGear: true, onBackTapped: onBackTapped, onGearTapped: onSettingsTapped)
 
             // Image or spinner
             Group {

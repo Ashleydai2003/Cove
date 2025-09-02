@@ -1967,44 +1967,39 @@ struct ProfileView: View {
                     } else {
                         ScrollView(.vertical, showsIndicators: false) {
                             VStack(spacing: 20) {
-                                // Top row gear/checkmark, matching Cove header placement
-                                ZStack(alignment: .topTrailing) {
-                                    HStack {
-                                        Spacer()
-                                        if isSaving {
-                                            ProgressView()
-                                                .tint(Colors.primaryDark)
-                                                .frame(width: 44, height: 44)
-                                        } else if isEditing {
-                                            Button(action: {
-                                                Log.debug("Save button tapped! isEditing: \(isEditing)")
-                                                isSaving = true
-                                                saveChanges { success in
-                                                    DispatchQueue.main.async {
-                                                        isSaving = false
-                                                        if success { isEditing = false }
-                                                    }
+                                // Standardized top icon bar (no back arrow on profile)
+                                TopIconBar(
+                                    showBackArrow: false,
+                                    showGear: !(isEditing || isSaving),
+                                    onBackTapped: {},
+                                    onGearTapped: {
+                                        withAnimation(.easeInOut(duration: 0.18)) { showSettingsMenu.toggle() }
+                                    }
+                                )
+                                .overlay(alignment: .topTrailing) {
+                                    if isSaving {
+                                        ProgressView()
+                                            .tint(Colors.primaryDark)
+                                            .frame(width: 44, height: 44)
+                                    } else if isEditing {
+                                        Button(action: {
+                                            Log.debug("Save button tapped! isEditing: \(isEditing)")
+                                            isSaving = true
+                                            saveChanges { success in
+                                                DispatchQueue.main.async {
+                                                    isSaving = false
+                                                    if success { isEditing = false }
                                                 }
-                                            }) {
-                                                Image(systemName: "checkmark")
-                                                    .font(.system(size: 16, weight: .semibold))
-                                                    .frame(width: 44, height: 44)
-                                                    .contentShape(Rectangle())
                                             }
-                                            .foregroundStyle(Colors.primaryDark)
-                                            .disabled(isSaving)
-                                        } else {
-                                            Button(action: {
-                                                withAnimation(.easeInOut(duration: 0.18)) { showSettingsMenu.toggle() }
-                                            }) {
-                                                Image(systemName: "gearshape")
-                                                    .font(.system(size: 16, weight: .semibold))
-                                                    .frame(width: 44, height: 44)
-                                                    .contentShape(Rectangle())
-                                            }
-                                            .foregroundStyle(Colors.primaryDark)
-                                            .padding(.trailing, 8)
+                                        }) {
+                                            Image(systemName: "checkmark")
+                                                .font(.system(size: 16, weight: .semibold))
+                                                .frame(width: 44, height: 44)
+                                                .contentShape(Rectangle())
                                         }
+                                        .foregroundStyle(Colors.primaryDark)
+                                        .disabled(isSaving)
+                                        .padding(.trailing, 8)
                                     }
                                 }
 
@@ -2099,7 +2094,7 @@ struct ProfileView: View {
                         }
                     }
                 }
-                .padding(.horizontal, 20)
+                .padding(.horizontal, 24)
             }
         }
         .navigationDestination(for: EditDestination.self) { destination in

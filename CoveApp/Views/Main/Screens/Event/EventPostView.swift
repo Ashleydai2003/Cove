@@ -383,6 +383,8 @@ struct EventPostView: View {
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 0) {
                         TopIconBar(
+                            showBackArrow: true,
+                            showGear: true,
                             onBackTapped: { dismiss() },
                             onGearTapped: {
                                 withAnimation(.easeInOut(duration: 0.18)) { showSettingsMenu.toggle() }
