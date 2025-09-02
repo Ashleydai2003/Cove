@@ -16,12 +16,15 @@ struct UpcomingView: View {
     @State private var headerOpacity: CGFloat = 1.0
     @GestureState private var isHorizontalSwiping: Bool = false
 
-    init() {
+    @Binding var navigationPath: NavigationPath
+
+    init(navigationPath: Binding<NavigationPath>) {
         self._upcomingFeed = ObservedObject(wrappedValue: AppController.shared.upcomingFeed)
+        self._navigationPath = navigationPath
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigationPath) {
             ZStack {
                 Colors.background.ignoresSafeArea()
 
@@ -234,7 +237,7 @@ struct UpcomingView: View {
                         coverPhoto: event.coverPhoto
                     )
                     EventSummaryView(event: calendarEvent, type: .feed, disableNavigation: isHorizontalSwiping)
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, 24)
                         .onAppear {
                             loadMoreIfNeeded(at: idx)
                         }
@@ -255,7 +258,7 @@ struct UpcomingView: View {
                     // Provide a CoveModel so like toggles can be executed
                     let model = appController.coveFeed.getOrCreateCoveModel(for: covePost.coveId)
                     FeedPostSummaryView(post: covePost, viewModel: model)
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, 24)
                         .onAppear {
                             loadMoreIfNeeded(at: idx)
                         }
@@ -521,7 +524,7 @@ private struct FeedItemsListView: View {
                         coverPhoto: event.coverPhoto
                     )
                     EventSummaryView(event: calendarEvent, type: .feed)
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, 24)
                         .onAppear {
                             loadMoreIfNeeded(at: idx)
                         }
@@ -540,7 +543,7 @@ private struct FeedItemsListView: View {
                         createdAt: post.createdAt
                     )
                     FeedPostSummaryView(post: covePost)
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, 24)
                     .onAppear {
                         loadMoreIfNeeded(at: idx)
                         }
@@ -576,7 +579,7 @@ private struct LoadingIndicatorView: View {
 // MARK: - Preview
 struct UpcomingView_Previews: PreviewProvider {
     static var previews: some View {
-        UpcomingView()
+        UpcomingView(navigationPath: .constant(NavigationPath()))
             .environmentObject(AppController.shared)
     }
 }
