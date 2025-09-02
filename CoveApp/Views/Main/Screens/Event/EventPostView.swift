@@ -382,32 +382,12 @@ struct EventPostView: View {
             } else if let event = viewModel.event {
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 0) {
-                        // Header row matching CoveView: left chevron, right gear
-                        HStack {
-                            Button {
-                                dismiss()
-                            } label: {
-                                Image(systemName: "chevron.left")
-                                    .font(.system(size: 16, weight: .semibold))
-                                    .foregroundStyle(Colors.primaryDark)
-                                    .frame(width: 44, height: 44)
-                                    .contentShape(Rectangle())
-                            }
-                            .padding(.leading, 8)
-
-                            Spacer()
-
-                            Button {
+                        TopIconBar(
+                            onBackTapped: { dismiss() },
+                            onGearTapped: {
                                 withAnimation(.easeInOut(duration: 0.18)) { showSettingsMenu.toggle() }
-                            } label: {
-                                Image(systemName: "gearshape")
-                                    .font(.system(size: 16, weight: .semibold))
-                                    .frame(width: 44, height: 44)
-                                    .contentShape(Rectangle())
                             }
-                            .buttonStyle(TintOnPressIconStyle())
-                            .padding(.trailing, 8)
-                        }
+                        )
                     }
 
                     VStack(alignment: .leading, spacing: 24) {

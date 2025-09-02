@@ -18,26 +18,7 @@ struct CoveInfoHeaderView: View {
 
     var body: some View {
         VStack(spacing: 6) {
-            // Back button row
-            HStack {
-                Button(action: { onBackTapped() }) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(Colors.primaryDark)
-                        .frame(width: 44, height: 44)
-                        .contentShape(Rectangle())
-                }
-                .padding(.leading, 8)
-                Spacer()
-                Button(action: { onSettingsTapped() }) {
-                    Image(systemName: "gearshape")
-                        .font(.system(size: 16, weight: .semibold))
-                        .frame(width: 44, height: 44)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(TintOnPressIconStyle())
-                .padding(.trailing, 8)
-            }
+            TopIconBar(onBackTapped: onBackTapped, onGearTapped: onSettingsTapped)
 
             // Image or spinner
             Group {
