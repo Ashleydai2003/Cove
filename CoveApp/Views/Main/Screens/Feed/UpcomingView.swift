@@ -16,12 +16,15 @@ struct UpcomingView: View {
     @State private var headerOpacity: CGFloat = 1.0
     @GestureState private var isHorizontalSwiping: Bool = false
 
-    init() {
+    @Binding var navigationPath: NavigationPath
+
+    init(navigationPath: Binding<NavigationPath>) {
         self._upcomingFeed = ObservedObject(wrappedValue: AppController.shared.upcomingFeed)
+        self._navigationPath = navigationPath
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigationPath) {
             ZStack {
                 Colors.background.ignoresSafeArea()
 
@@ -576,7 +579,7 @@ private struct LoadingIndicatorView: View {
 // MARK: - Preview
 struct UpcomingView_Previews: PreviewProvider {
     static var previews: some View {
-        UpcomingView()
+        UpcomingView(navigationPath: .constant(NavigationPath()))
             .environmentObject(AppController.shared)
     }
 }

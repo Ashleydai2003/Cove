@@ -1922,6 +1922,7 @@ struct ExtraPhotoView: View {
 
 @MainActor
 struct ProfileView: View {
+    @Binding var navigationPath: NavigationPath
     @EnvironmentObject var appController: AppController
     @State private var isEditing = false
     @State private var showingLocationSheet = false
@@ -1929,7 +1930,7 @@ struct ProfileView: View {
     @State private var isSaving = false
     @State private var isLoggingOut = false
     @State private var showSettingsMenu = false
-    @State private var navigationPath = NavigationPath()
+    
     @State private var showingAlmaMaterSheet = false
     @State private var showingGenderSheet = false
     @State private var showingStatusSheet = false
@@ -2408,7 +2409,7 @@ struct ProfileView: View {
 }
 
 #Preview {
-    ProfileView()
+    ProfileView(navigationPath: .constant(NavigationPath()))
         .environmentObject(AppController.shared)
 }
 

@@ -7,11 +7,12 @@ import SwiftUI
 import FirebaseAuth
 
 struct CalendarView: View {
+    @Binding var navigationPath: NavigationPath
     @EnvironmentObject private var appController: AppController
     @ObservedObject private var calendarFeed: CalendarFeed = AppController.shared.calendarFeed
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigationPath) {
             ZStack {
                 Colors.background.ignoresSafeArea()
 
@@ -213,7 +214,7 @@ private struct CalendarEmptyStateView: View {
 }
 
 #Preview {
-    CalendarView()
+    CalendarView(navigationPath: .constant(NavigationPath()))
         .environmentObject(AppController.shared)
 }
 
