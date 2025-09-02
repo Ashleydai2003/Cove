@@ -386,7 +386,9 @@ struct EventPostView: View {
                             Button {
                                 dismiss()
                             } label: {
-                                Images.backArrow
+                                Image(systemName: "chevron.left")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundStyle(Colors.primaryDark)
                             }
                             .padding(.top, 16)
 
