@@ -365,8 +365,10 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
               </div>
 
               <div>
+                <div className="font-libre-bodoni text-sm text-[#8B8B8B] mb-1">birthdate</div>
                 <input
                   type="date"
+                  autoComplete="off"
                   value={formData.birthdate}
                   onChange={(e) => setFormData(prev => ({ ...prev, birthdate: e.target.value }))}
                   className="w-full px-0 py-3 border-0 border-b-2 border-gray-300 focus:border-[#5E1C1D] focus:outline-none text-lg font-libre-bodoni bg-transparent"
