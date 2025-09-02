@@ -367,6 +367,11 @@ struct EventPostView: View {
     @State private var showingTicketConfirmation = false
     @State private var showingShareSheet = false
     @State private var showSettingsMenu = false
+    @State private var isEditing = false
+    @State private var editingEventName: String = ""
+    @State private var editingDescription: String = ""
+    @State private var editingImage: UIImage?
+    @State private var showImagePicker = false
 
     init(eventId: String, coveCoverPhoto: CoverPhoto? = nil) {
         self.eventId = eventId
@@ -384,48 +389,99 @@ struct EventPostView: View {
                     VStack(spacing: 0) {
                         TopIconBar(
                             showBackArrow: true,
-                            showGear: true,
+                            showGear: !isEditing,
                             onBackTapped: { dismiss() },
                             onGearTapped: {
                                 withAnimation(.easeInOut(duration: 0.18)) { showSettingsMenu.toggle() }
                             }
                         )
+                        .overlay(alignment: .topTrailing) {
+                            if isEditing {
+                                Button(action: {
+                                    // Save handler will be implemented later
+                                }) {
+                                    Image(systemName: "checkmark")
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .frame(width: 44, height: 44)
+                                        .contentShape(Rectangle())
+                                }
+                                .foregroundStyle(Colors.primaryDark)
+                                .padding(.trailing, 8)
+                            }
+                        }
                     }
 
                     VStack(alignment: .leading, spacing: 24) {
 
-                        Text(event.name.isEmpty ? "Untitled" : event.name)
-                            .foregroundStyle(Colors.primaryDark)
-                            .font(.LibreBodoniBold(size: 26))
-                            .frame(maxWidth: .infinity, alignment: .center)
-                            .multilineTextAlignment(.center)
-
-                        if let urlString = event.coverPhoto?.url, let url = URL(string: urlString) {
-                            KFImage(url)
-                                .placeholder {
+                        if isEditing {
+                            TextField("Untitled", text: $editingEventName)
+                                .foregroundStyle(Colors.primaryDark)
+                                .font(.LibreBodoniBold(size: 26))
+                                .frame(maxWidth: .infinity, alignment: .center)
+                                .multilineTextAlignment(.center)
+                                .textFieldStyle(PlainTextFieldStyle())
+                                .padding(.vertical, 4)
+                                .overlay(
                                     Rectangle()
-                                        .fill(Color.gray.opacity(0.2))
-                                        .frame(height: 192)
-                                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                                        .frame(height: 1)
+                                        .foregroundColor(Colors.primaryDark.opacity(0.3))
+                                        .offset(y: 20)
+                                )
+                                .onAppear {
+                                    editingEventName = event.name
                                 }
-                                .onSuccess { result in
-                                }
-                                .resizable()
-                                .fade(duration: 0.2)
-                                .cacheOriginalImage()
-                                .cancelOnDisappear(true)
-                                .aspectRatio(contentMode: .fill)
-                                .clipShape(RoundedRectangle(cornerRadius: 10))
-                                .frame(height: 192)
-                                .clipped()
                         } else {
-                            // Default event image
-                            Image("default_event2")
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                                .frame(height: 192)
-                                .clipShape(RoundedRectangle(cornerRadius: 10))
-                                .clipped()
+                            Text(event.name.isEmpty ? "Untitled" : event.name)
+                                .foregroundStyle(Colors.primaryDark)
+                                .font(.LibreBodoniBold(size: 26))
+                                .frame(maxWidth: .infinity, alignment: .center)
+                                .multilineTextAlignment(.center)
+                        }
+
+                        ZStack {
+                            if let image = editingImage, isEditing {
+                                Image(uiImage: image)
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                                    .frame(height: 192)
+                                    .clipped()
+                            } else if let urlString = event.coverPhoto?.url, let url = URL(string: urlString) {
+                                KFImage(url)
+                                    .placeholder {
+                                        Rectangle()
+                                            .fill(Color.gray.opacity(0.2))
+                                            .frame(height: 192)
+                                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                                    }
+                                    .resizable()
+                                    .fade(duration: 0.2)
+                                    .cacheOriginalImage()
+                                    .cancelOnDisappear(true)
+                                    .aspectRatio(contentMode: .fill)
+                                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                                    .frame(height: 192)
+                                    .clipped()
+                            } else {
+                                Image("default_event2")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                                    .frame(height: 192)
+                                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                                    .clipped()
+                            }
+
+                            if isEditing {
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(Color.black.opacity(0.3))
+                                    .frame(height: 192)
+                                Text("change photo")
+                                    .font(.LibreBodoni(size: 16))
+                                    .foregroundColor(.white)
+                            }
+                        }
+                        .onTapGesture {
+                            if isEditing { showImagePicker = true }
                         }
 
                         VStack(alignment: .leading, spacing: 20) {
@@ -512,7 +568,24 @@ struct EventPostView: View {
                             }
                         }
 
-                        if let description = event.description {
+                        if isEditing {
+                            ZStack(alignment: .topLeading) {
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(Colors.hobbyBackground)
+                                TextEditor(text: $editingDescription)
+                                    .foregroundStyle(Colors.k292929)
+                                    .font(.LibreBodoni(size: 16))
+                                    .scrollContentBackground(.hidden)
+                                    .frame(minHeight: 96, maxHeight: .infinity)
+                                    .padding(10)
+                                    .onAppear { editingDescription = event.description ?? "" }
+                            }
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .stroke(Color.black.opacity(0.12), lineWidth: 1)
+                            )
+                            .padding(.top, 8)
+                        } else if let description = event.description {
                             Text(description)
                                 .foregroundStyle(Colors.k292929)
                                 .font(.LibreBodoni(size: 18))
@@ -723,7 +796,11 @@ struct EventPostView: View {
                     },
                     onEdit: {
                         withAnimation(.easeInOut(duration: 0.18)) { showSettingsMenu = false }
-                        // Edit not implemented yet
+                        if viewModel.event?.isHost == true {
+                            isEditing = true
+                            editingEventName = viewModel.event?.name ?? ""
+                            editingDescription = viewModel.event?.description ?? ""
+                        }
                     },
                     dismiss: {
                         withAnimation(.easeInOut(duration: 0.18)) { showSettingsMenu = false }

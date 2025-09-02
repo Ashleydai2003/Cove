@@ -51,6 +51,7 @@ import {
   handleGetEventMembers,
   handleGetPendingMembers,
   handleApproveDeclineRSVP,
+  handleEditEvent,
 } from './routes';
 
 export const handler = async (
@@ -120,6 +121,8 @@ export const handler = async (
         return handleDeleteUser(event);
       case '/delete-event':
         return handleDeleteEvent(event);
+      case '/edit-event':
+        return handleEditEvent(event);
       case '/event':
         response = await handleGetEvent(event);
         break;

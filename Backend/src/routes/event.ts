@@ -1146,6 +1146,138 @@ export const handleRemoveEventRSVP = async (event: APIGatewayProxyEvent): Promis
   }
 };
 
+// Edit an existing event (host only)
+export const handleEditEvent = async (request: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+  try {
+    // Allow PUT (preferred) and POST for flexibility
+    if (request.httpMethod !== 'PUT' && request.httpMethod !== 'POST') {
+      return {
+        statusCode: 405,
+        body: JSON.stringify({ message: 'Method not allowed. Use PUT to edit events.' })
+      };
+    }
+
+    // Authenticate
+    const authResult = await authMiddleware(request);
+    if ('statusCode' in authResult) {
+      return authResult;
+    }
+    const user = authResult.user;
+
+    if (!request.body) {
+      return { statusCode: 400, body: JSON.stringify({ message: 'Request body is required' }) };
+    }
+
+    const {
+      eventId,
+      name,
+      description,
+      date,
+      location,
+      memberCap,
+      ticketPrice,
+      paymentHandle,
+      isPublic,
+      coverPhoto, // base64 JPEG string (optional)
+      removeCoverPhoto // boolean to remove existing cover photo
+    } = JSON.parse(request.body);
+
+    if (!eventId) {
+      return { statusCode: 400, body: JSON.stringify({ message: 'Event ID is required' }) };
+    }
+
+    const prisma = await initializeDatabase();
+
+    // Ensure event exists and the requester is the host
+    const existing = await prisma.event.findUnique({ where: { id: eventId }, select: { id: true, hostId: true, coverPhotoID: true } });
+    if (!existing) {
+      return { statusCode: 404, body: JSON.stringify({ message: 'Event not found' }) };
+    }
+    if (existing.hostId !== user.uid) {
+      return { statusCode: 403, body: JSON.stringify({ message: 'Only the host can edit this event' }) };
+    }
+
+    // Build update payload with only provided fields
+    const updateData: any = {};
+    if (typeof name === 'string') updateData.name = name;
+    if (typeof description === 'string') updateData.description = description;
+    if (typeof date === 'string') updateData.date = date; // ISO 8601
+    if (typeof location === 'string') updateData.location = location;
+    if (typeof memberCap === 'number') updateData.memberCap = memberCap;
+    if (typeof ticketPrice === 'number') updateData.ticketPrice = ticketPrice;
+    if (typeof paymentHandle === 'string') updateData.paymentHandle = paymentHandle;
+    if (typeof isPublic === 'boolean') updateData.isPublic = isPublic;
+
+    // Apply simple field updates first
+    if (Object.keys(updateData).length > 0) {
+      await prisma.event.update({ where: { id: eventId }, data: updateData });
+    }
+
+    // Handle cover photo remove
+    if (removeCoverPhoto === true) {
+      await prisma.event.update({ where: { id: eventId }, data: { coverPhotoID: null } });
+    }
+
+    // Handle cover photo upload if provided
+    if (coverPhoto) {
+      const eventImage = await prisma.eventImage.create({ data: { eventId } });
+      const bucketName = process.env.EVENT_IMAGE_BUCKET_NAME;
+      if (!bucketName) {
+        throw new Error('EVENT_IMAGE_BUCKET_NAME environment variable is not set');
+      }
+      const s3Key = `${eventId}/${eventImage.id}.jpg`;
+      const imageBuffer = Buffer.from(coverPhoto, 'base64');
+      await s3Client.send(new PutObjectCommand({ Bucket: bucketName, Key: s3Key, Body: imageBuffer, ContentType: 'image/jpeg' }));
+      await prisma.event.update({ where: { id: eventId }, data: { coverPhotoID: eventImage.id } });
+    }
+
+    // Return updated event (minimal fields)
+    const updated = await prisma.event.findUnique({
+      where: { id: eventId },
+      include: {
+        coverPhoto: { select: { id: true } },
+        hostedBy: { select: { id: true, name: true } },
+        cove: { select: { id: true, name: true, coverPhotoID: true } }
+      }
+    });
+
+    if (!updated) {
+      return { statusCode: 500, body: JSON.stringify({ message: 'Failed to load updated event' }) };
+    }
+
+    const coverPhotoUrl = updated.coverPhoto ? await getSignedUrl(
+      s3Client,
+      new GetObjectCommand({ Bucket: process.env.EVENT_IMAGE_BUCKET_NAME!, Key: `${updated.id}/${updated.coverPhoto.id}.jpg` }),
+      { expiresIn: 3600 }
+    ) : null;
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        message: 'Event updated successfully',
+        event: {
+          id: updated.id,
+          name: updated.name,
+          description: updated.description,
+          date: updated.date,
+          location: updated.location,
+          memberCap: updated.memberCap,
+          ticketPrice: updated.ticketPrice,
+          paymentHandle: updated.paymentHandle,
+          isPublic: updated.isPublic,
+          coveId: updated.coveId,
+          host: { id: updated.hostedBy.id, name: updated.hostedBy.name },
+          cove: { id: updated.cove.id, name: updated.cove.name },
+          coverPhoto: updated.coverPhoto ? { id: updated.coverPhoto.id, url: coverPhotoUrl } : null
+        }
+      })
+    };
+  } catch (error) {
+    console.error('Edit event error:', error);
+    return { statusCode: 500, body: JSON.stringify({ message: 'Error processing edit event request' }) };
+  }
+};
+
 // TODO: In the future, consider handling MAYBE responses as well for a more comprehensive calendar view
 // Get events that the user has RSVP'd "GOING" to OR is hosting (for calendar view)
 // This endpoint handles retrieving events the user has committed to attend or is hosting with the following requirements:
