@@ -119,6 +119,12 @@ struct HomeView: View {
     @State private var tabSelection = 1
     @State private var showInboxAutomatically = false
     @EnvironmentObject var appController: AppController
+    // Persisted navigation stacks per tab
+    @State private var upcomingPath = NavigationPath()
+    @State private var chatPath = NavigationPath()
+    @State private var covePath = NavigationPath()
+    @State private var calendarPath = NavigationPath()
+    @State private var profilePath = NavigationPath()
 
     var body: some View {
         ZStack {
@@ -128,12 +134,12 @@ struct HomeView: View {
                 ZStack {
                     // Main content area - switch instead of TabView to prevent rebuilding
                     switch tabSelection {
-                    case 1: UpcomingView()
-                    case 2: ChatView()
-                    case 3: CoveFeedView()
-                    case 4: CalendarView()
-                    case 5: ProfileView()
-                    default: ChatView()
+                    case 1: UpcomingView(navigationPath: $upcomingPath)
+                    case 2: ChatView(navigationPath: $chatPath)
+                    case 3: CoveFeedView(navigationPath: $covePath)
+                    case 4: CalendarView(navigationPath: $calendarPath)
+                    case 5: ProfileView(navigationPath: $profilePath)
+                    default: ChatView(navigationPath: $chatPath)
                     }
                 }
 
@@ -213,8 +219,9 @@ struct HomeView: View {
 
 // MARK: - ChatView (placeholder for navbar tab)
 struct ChatView: View {
+    @Binding var navigationPath: NavigationPath
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigationPath) {
             ZStack {
                 Colors.background.ignoresSafeArea()
 

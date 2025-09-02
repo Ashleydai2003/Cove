@@ -196,6 +196,12 @@ export const handleProfile = async (event: APIGatewayProxyEvent): Promise<APIGat
       // Viewer is NOT the profile owner – return a limited view
       // TODO: extend this logic to honour the target user's privacy preferences (e.g., private/public fields)
       const profilePic = photoUrls.find(p => p.isProfilePic) ?? null;
+      // For friend view, include up to two photos: profile pic first, then first extra
+      const sortedPhotos = (() => {
+        const extras = photoUrls.filter(p => !p.isProfilePic);
+        const ordered = profilePic ? [profilePic, ...extras] : extras;
+        return ordered.slice(0, 2);
+      })();
 
       profileData = {
         name: userProfile.name,
@@ -205,7 +211,7 @@ export const handleProfile = async (event: APIGatewayProxyEvent): Promise<APIGat
         interests: userProfile.profile?.interests ?? [],
         latitude: userProfile.profile?.latitude,
         longitude: userProfile.profile?.longitude,
-        photos: profilePic ? [profilePic] : [],
+        photos: sortedPhotos,
         stats: {
           friendCount: 0,
           requestCount: 0,

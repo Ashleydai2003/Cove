@@ -11,14 +11,15 @@ import UIKit
 struct CoveFeedView: View {
     @EnvironmentObject var appController: AppController
     @ObservedObject private var coveFeed: CoveFeed
-    @State private var navigationPath = NavigationPath()
+    @Binding var navigationPath: NavigationPath
     @State private var topTabSelection: CoveTopTabs.Tab = .coves
     @GestureState private var isHorizontalSwiping: Bool = false
     
 
-    init() {
+    init(navigationPath: Binding<NavigationPath>) {
         // Initialize with the shared instance
         self._coveFeed = ObservedObject(wrappedValue: AppController.shared.coveFeed)
+        self._navigationPath = navigationPath
     }
 
     // MARK: - Main Body
@@ -310,6 +311,6 @@ private struct CoveTabBoundsKey: PreferenceKey {
     }
 }
 #Preview {
-    CoveFeedView()
+    CoveFeedView(navigationPath: .constant(NavigationPath()))
         .environmentObject(AppController.shared)
 }

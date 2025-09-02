@@ -7,6 +7,7 @@ struct FriendProfileView: View {
     @StateObject private var viewModel = FriendProfileModel()
     @Environment(\.dismiss) private var dismiss
     @State private var displayPhotoURL: URL?
+    @State private var showDetails = false
 
     init(userId: String, initialPhotoUrl: URL? = nil) {
         self.userId = userId
@@ -25,68 +26,132 @@ struct FriendProfileView: View {
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 24) {
 
-                        // MARK: Header (back & chat)
-                        HStack {
-                            Button { dismiss() } label: { Images.backArrow }
-                            Spacer()
-                        }
-                        .padding(.horizontal)
+                        // MARK: Header (standardized)
+                        TopIconBar(
+                            showBackArrow: true,
+                            showGear: false,
+                            onBackTapped: { dismiss() },
+                            onGearTapped: {}
+                        )
 
-                        // MARK: Profile & Stats
-                        HStack(alignment: .top, spacing: 20) {
-                            // Profile image (120x120)
-                            let photoURL = displayPhotoURL ?? profile.photos.first(where: { $0.isProfilePic })?.url
-                            if let url = photoURL {
-                                KFImage(url)
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(width: 120, height: 120)
-                                    .clipShape(Circle())
-                            } else {
-                                Image("default_user_pfp")
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(width: 120, height: 120)
-                                    .clipShape(Circle())
-                            }
+                        // MARK: Profile & Stats (match ProfileView layout)
+                        VStack(spacing: 8) {
+                            // Profile photo
+                            HStack { Spacer()
+                                let photoURL = displayPhotoURL ?? profile.photos.first(where: { $0.isProfilePic })?.url
+                                if let url = photoURL {
+                                    KFImage(url)
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(width: 170, height: 170)
+                                        .clipShape(Circle())
+                                } else {
+                                    Image("default_user_pfp")
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(width: 170, height: 170)
+                                        .clipShape(Circle())
+                                }
+                            Spacer() }
 
-                            VStack(alignment: .leading, spacing: 8) {
+                            // Name + bio
+                            VStack(alignment: .center, spacing: 8) {
                                 Text(profile.name)
                                     .font(.LibreBodoniBold(size: 32))
                                     .foregroundColor(Colors.primaryDark)
+                                    .frame(maxWidth: .infinity, alignment: .center)
 
-                                // Location
-                                if !viewModel.locationName.isEmpty {
-                                    HStack(spacing: 6) {
-                                        Image(systemName: "mappin.and.ellipse")
-                                            .foregroundColor(Colors.k6F6F73)
-                                        Text(viewModel.locationName)
-                                            .font(.LeagueSpartan(size: 14))
-                                            .foregroundColor(Colors.k6F6F73)
-                                    }
-                                }
-
-                                // Bio
                                 if let bio = profile.bio, !bio.isEmpty {
                                     Text(bio)
-                                        .font(.LibreBodoni(size: 15))
+                                        .font(.LibreBodoni(size: 16))
                                         .foregroundColor(Colors.k6F6F73)
                                         .fixedSize(horizontal: false, vertical: true)
+                                        .multilineTextAlignment(.center)
+                                        .frame(maxWidth: .infinity, alignment: .center)
+                                }
+                            }
+                            .padding(.horizontal, 24)
+
+                            // Combined row: Age, Location, Alma Mater with carrot
+                            HStack(spacing: 16) {
+                                Text("23")
+                                    .font(.LibreBodoni(size: 18))
+                                    .foregroundColor(Colors.primaryDark)
+
+                                HStack(spacing: 6) {
+                                    Image("locationIcon")
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fit)
+                                        .frame(width: 16, height: 16)
+                                        .foregroundColor(Colors.primaryDark)
+                                    Text(viewModel.locationName.isEmpty ? "" : viewModel.locationName.lowercased())
+                                        .font(.LibreBodoni(size: 14))
+                                        .foregroundColor(Colors.primaryDark)
                                 }
 
-                                // Stats strip
-                                if let s = profile.stats {
-                                    HStack(spacing: 24) {
-                                        StatBlock(number: s.sharedFriendCount ?? 0, label: "mutuals")
-                                        StatBlock(number: s.sharedCoveCount ?? 0,   label: "coves")
-                                        StatBlock(number: s.sharedEventCount ?? 0, label: "events together")
+                                HStack(spacing: 10) {
+                                    Image("gradIcon")
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fit)
+                                        .frame(width: 16, height: 16)
+                                        .foregroundStyle(Colors.k6B6B6B)
+                                    Text("stanford")
+                                        .font(.LibreBodoni(size: 14))
+                                        .foregroundColor(Colors.primaryDark)
+                                    Button(action: {
+                                        withAnimation(.easeInOut(duration: 0.2)) { showDetails.toggle() }
+                                    }) {
+                                        Image(systemName: showDetails ? "chevron.up" : "chevron.down")
+                                            .font(.system(size: 12, weight: .semibold))
+                                            .foregroundColor(Colors.primaryDark)
+                                            .frame(width: 16, height: 16)
+                                            .contentShape(Rectangle())
                                     }
                                 }
                             }
-                        }
-                        .padding(.horizontal)
+                            .frame(maxWidth: .infinity, alignment: .center)
 
-                        // TODO: Mutual Events carousel can be inserted here when data is available
+                            // Collapsible details row (status + work)
+                            if showDetails {
+                                HStack(spacing: 16) {
+                                    HStack(spacing: 6) {
+                                        Image("relationshipIcon")
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fit)
+                                            .frame(width: 16, height: 16)
+                                        Text("single")
+                                            .font(.LibreBodoni(size: 14))
+                                            .foregroundColor(Colors.primaryDark)
+                                    }
+
+                                    HStack(spacing: 6) {
+                                        Image("workIcon")
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fit)
+                                            .frame(width: 16, height: 16)
+                                            .foregroundStyle(Colors.k6B6B6B)
+                                        Text("swe @ google")
+                                            .font(.LibreBodoni(size: 15))
+                                            .foregroundColor(Colors.primaryDark)
+                                    }
+                                }
+                                .frame(maxWidth: .infinity, alignment: .center)
+                                .transition(.opacity.combined(with: .move(edge: .top)))
+                            }
+
+                            // Stats strip (centered)
+                            if let s = profile.stats {
+                                HStack(spacing: 24) {
+                                    StatBlock(number: s.sharedFriendCount ?? 0, topLabel: "mutual", bottomLabel: "friends")
+                                    StatBlock(number: s.sharedCoveCount ?? 0,   topLabel: "shared", bottomLabel: "coves")
+                                    StatBlock(number: s.sharedEventCount ?? 0, topLabel: "shared", bottomLabel: "events")
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.top, 4)
+                            }
+                        }
+
+                        // Removed extra photo for now (show only profile picture at top)
 
                         // MARK: Hobbies / Interests
                         if !profile.interests.isEmpty {
@@ -104,7 +169,7 @@ struct FriendProfileView: View {
                                     }
                                 }
                             }
-                            .padding(.horizontal)
+                            .padding(.horizontal, 24)
                             .padding(.top, 12)
                         }
 
@@ -113,7 +178,7 @@ struct FriendProfileView: View {
                             headerActionButton
                             Spacer()
                         }
-                        .padding(.horizontal)
+                        .padding(.horizontal, 24)
 
                     }
                     .padding(.vertical, 20)
@@ -181,15 +246,20 @@ private struct StatChip: View {
 
 private struct StatBlock: View {
     let number: Int
-    let label: String
+    let topLabel: String
+    let bottomLabel: String
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .center, spacing: 2) {
             Text("\(number)")
-                .font(.LibreBodoniBold(size: 20))
-                .foregroundColor(.black)
-            Text(label)
-                .font(.LibreBodoni(size: 14))
-                .foregroundColor(Colors.k6F6F73)
+                .font(.LibreBodoniSemiBold(size: 18))
+                .foregroundColor(Colors.primaryDark)
+            VStack(spacing: 0) {
+                Text(topLabel)
+                Text(bottomLabel)
+            }
+            .font(.LibreBodoni(size: 13))
+            .foregroundColor(Colors.k6F6F73)
+            .multilineTextAlignment(.center)
         }
     }
 }
