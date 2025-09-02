@@ -716,9 +716,14 @@ struct EventPostView: View {
         .overlay(alignment: .topTrailing) {
             if showSettingsMenu {
                 EventSettingsDropdownMenu(
+                    isHost: viewModel.event?.isHost == true,
                     onShare: {
                         withAnimation(.easeInOut(duration: 0.18)) { showSettingsMenu = false }
                         showingShareSheet = true
+                    },
+                    onEdit: {
+                        withAnimation(.easeInOut(duration: 0.18)) { showSettingsMenu = false }
+                        // Edit not implemented yet
                     },
                     dismiss: {
                         withAnimation(.easeInOut(duration: 0.18)) { showSettingsMenu = false }
@@ -799,11 +804,16 @@ struct ShareSheet: UIViewControllerRepresentable {
 
 // MARK: - Settings Dropdown (matches CoveView style)
 private struct EventSettingsDropdownMenu: View {
+    let isHost: Bool
     let onShare: () -> Void
+    let onEdit: () -> Void
     let dismiss: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
+            if isHost {
+                MenuRow(title: "edit", systemImage: "pencil") { onEdit() }
+            }
             MenuRow(title: "share", systemImage: "square.and.arrow.up") { onShare() }
         }
         .padding(.vertical, 6)
