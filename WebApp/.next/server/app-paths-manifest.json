@@ -1,10 +1,8 @@
 {
-  "/_not-found/page": "app/_not-found/page.js",
   "/coves/[coveId]/page": "app/coves/[coveId]/page.js",
-  "/api/event/route": "app/api/event/route.js",
   "/api/auth/status/route": "app/api/auth/status/route.js",
-  "/api/coves/[coveId]/events/route": "app/api/coves/[coveId]/events/route.js",
   "/api/coves/[coveId]/route": "app/api/coves/[coveId]/route.js",
   "/api/auth/refresh/route": "app/api/auth/refresh/route.js",
+  "/api/coves/[coveId]/events/route": "app/api/coves/[coveId]/events/route.js",
   "/events/[eventId]/page": "app/events/[eventId]/page.js"
 }

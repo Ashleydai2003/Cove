@@ -113,12 +113,12 @@ export default function CovePage() {
       <div className="w-full px-8 pt-8 pb-12">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <span className="font-libre-bodoni text-3xl text-[#5E1C1D]">cove</span>
-          <button 
-            onClick={() => setShowJoinModal(true)}
+          <a 
+            href="https://coveapp.co"
             className="font-libre-bodoni text-[#5E1C1D] underline underline-offset-4 text-lg"
           >
             join the cove waitlist
-          </button>
+          </a>
         </div>
       </div>
 
@@ -151,16 +151,12 @@ export default function CovePage() {
               >
                 Cancel
               </button>
-              <button
-                onClick={() => {
-                  setShowJoinModal(false);
-                  // Here you could implement waitlist logic
-                  alert('Waitlist feature coming soon!');
-                }}
-                className="w-full bg-[#5E1C1D] text-white py-3 px-6 rounded-xl font-libre-bodoni font-semibold hover:bg-[#4A1617] transition-colors"
+              <a
+                href="https://coveapp.co"
+                className="w-full bg-[#5E1C1D] text-white py-3 px-6 rounded-xl font-libre-bodoni font-semibold hover:bg-[#4A1617] transition-colors text-center block"
               >
                 Join Waitlist
-              </button>
+              </a>
             </div>
           </div>
         </div>
