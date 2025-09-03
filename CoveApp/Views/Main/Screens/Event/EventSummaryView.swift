@@ -35,8 +35,8 @@ struct EventSummaryView: View {
                             .placeholder {
                                 Rectangle()
                                     .fill(Color.gray.opacity(0.2))
-                                    .aspectRatio(16/10, contentMode: .fit)
                                     .frame(maxWidth: .infinity)
+                                    .aspectRatio(16/10, contentMode: .fit)
                                     .clipped()
                                     .overlay(ProgressView().tint(.gray))
                                     .clipShape(RoundedRectangle(cornerRadius: 18))
@@ -49,17 +49,19 @@ struct EventSummaryView: View {
                             .resizable()
                             .fade(duration: 0.2)
                             .cacheOriginalImage()
-                            .loadDiskFileSynchronously()
-                            .aspectRatio(16/10, contentMode: .fit)
+                            .cancelOnDisappear(true)
+                            .scaledToFill()
                             .frame(maxWidth: .infinity)
+                            .frame(height: UIScreen.main.bounds.width * 0.55) // Balanced height
                             .clipped()
                             .clipShape(RoundedRectangle(cornerRadius: 18))
                     } else {
                         // Default event image
                         Image("default_event2")
                             .resizable()
-                            .aspectRatio(16/10, contentMode: .fit)
+                            .scaledToFill()
                             .frame(maxWidth: .infinity)
+                            .frame(height: UIScreen.main.bounds.width * 0.55) // Balanced height
                             .clipped()
                             .clipShape(RoundedRectangle(cornerRadius: 18))
                             .onAppear {

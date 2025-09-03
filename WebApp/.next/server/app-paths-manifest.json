@@ -1,15 +1,8 @@
 {
-  "/_not-found/page": "app/_not-found/page.js",
-  "/api/auth/login/route": "app/api/auth/login/route.js",
-  "/api/auth/logout/route": "app/api/auth/logout/route.js",
-  "/api/notion/route": "app/api/notion/route.js",
-  "/api/login/route": "app/api/login/route.js",
-  "/api/verify-otp/route": "app/api/verify-otp/route.js",
-  "/api/onboard/route": "app/api/onboard/route.js",
-  "/api/rsvp/route": "app/api/rsvp/route.js",
+  "/coves/[coveId]/page": "app/coves/[coveId]/page.js",
   "/api/auth/status/route": "app/api/auth/status/route.js",
-  "/events/[eventId]/page": "app/events/[eventId]/page.js",
-  "/page": "app/page.js",
-  "/api/event-members/route": "app/api/event-members/route.js",
-  "/events/[eventId]/opengraph-image/route": "app/events/[eventId]/opengraph-image/route.js"
+  "/api/coves/[coveId]/route": "app/api/coves/[coveId]/route.js",
+  "/api/auth/refresh/route": "app/api/auth/refresh/route.js",
+  "/api/coves/[coveId]/events/route": "app/api/coves/[coveId]/events/route.js",
+  "/events/[eventId]/page": "app/events/[eventId]/page.js"
 }

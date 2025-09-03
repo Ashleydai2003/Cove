@@ -172,6 +172,13 @@ struct CoveFeedView: View {
                 coveFeed.deepLinkToCoveId = nil
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .coveWasDeleted)) { _ in
+            // Navigate back if we're currently viewing any cove
+            // This ensures the user returns to the cove list
+            if !navigationPath.isEmpty {
+                navigationPath.removeLast()
+            }
+        }
         .alert("error", isPresented: Binding(
             get: { coveFeed.errorMessage != nil },
             set: { if !$0 { coveFeed.errorMessage = nil } }

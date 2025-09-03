@@ -273,6 +273,26 @@ Takes Data Parameters:
 Returns:
 * message: String
 
+### `/delete-cove`
+
+Deletes a cove and all its associated data. Only the cove creator can delete the cove.
+
+**Data Cleanup:**
+* Cove members
+* Events in the cove
+* Event RSVPs for events in the cove
+* Event images for events in the cove
+* Posts in the cove
+* Post likes for posts in the cove
+* Cove cover photo
+* Invites to the cove
+
+Takes Data Parameters:
+* coveId: String (required) - ID of the cove to delete
+
+Returns:
+* message: String
+
 ### `/update-event-rsvp`
 
 Updates a user's RSVP status for an event. User must be a member of the event's cove.
@@ -385,6 +405,31 @@ Returns:
 * message: String - Confirmation message ("Invite rejected successfully")
 
 ## GET
+
+### `/universities`
+
+Retrieves a comprehensive list of universities for onboarding and profile creation. This endpoint serves as the single source of truth for university data across all platforms.
+
+Returns:
+* universities: Array<String> - Complete list of supported universities (150+ institutions)
+* total: Number - Total count of universities
+
+**University Categories Included:**
+* Ivy League (Brown, Columbia, Cornell, Dartmouth, Harvard, Penn, Princeton, Yale)
+* Stanford & Top California (Stanford, Berkeley, UCLA, USC, Caltech, UC system)
+* Top East Coast (MIT, NYU, Georgetown, Johns Hopkins, Carnegie Mellon, Duke, Vanderbilt)
+* Top Midwest (Northwestern, UChicago, Michigan, Illinois, Wisconsin, Minnesota)
+* Top South (UVA, UNC, Florida, Texas, Rice, Tulane)
+* Top West & Mountain (Washington, Oregon, Arizona, Colorado, Utah, BYU)
+* Top Northeast (Boston University, Boston College, Northeastern, Tufts, Brandeis)
+* Liberal Arts Colleges (Pomona, Claremont McKenna, Swarthmore, Wellesley, etc.)
+* International Universities (Toronto, UBC, McGill, Oxford, Cambridge, LSE, Imperial)
+
+**Notes:**
+* No authentication required - public endpoint
+* Universities are returned in lowercase format
+* Client-side filtering recommended for search functionality
+* List is curated and updated periodically
 
 ### `/profile`
 

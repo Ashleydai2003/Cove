@@ -176,8 +176,11 @@ struct GuestListTab: View {
                         onAction: onAction
                     )
                     .onAppear {
-                        // Load more when reaching near the end
-                        if member.id == members.last?.id && hasMore && !isLoading {
+                        // Load more when reaching near the end (last 3 items)
+                        let lastIndex = members.count - 1
+                        let currentIndex = members.firstIndex(where: { $0.id == member.id }) ?? 0
+                        
+                        if currentIndex >= lastIndex - 2 && hasMore && !isLoading {
                             onLoadMore()
                         }
                     }

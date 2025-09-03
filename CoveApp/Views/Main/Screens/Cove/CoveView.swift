@@ -29,8 +29,27 @@ struct CoveView: View {
     @GestureState private var isHorizontalSwiping: Bool = false
     @State private var headerOpacity: CGFloat = 1.0
     @State private var showSettingsMenu: Bool = false
+    @State private var showingDeleteAlert: Bool = false
 
     // TODO: admin can update cove cover photo
+    
+    private func shareCove() {
+        guard let cove = viewModel.cove else { return }
+        
+        let shareUrl = "https://cove-app.com/coves/\(coveId)"
+        let shareText = "Check out this cove: \(cove.name)"
+        
+        let activityVC = UIActivityViewController(
+            activityItems: [shareText, shareUrl],
+            applicationActivities: nil
+        )
+        
+        // Present the share sheet
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let window = windowScene.windows.first {
+            window.rootViewController?.present(activityVC, animated: true)
+        }
+    }
 
     var body: some View {
         ZStack {
@@ -217,11 +236,26 @@ struct CoveView: View {
         }
         .overlay(alignment: .topTrailing) {
             if showSettingsMenu {
-                SettingsDropdownMenu(isAdmin: viewModel.isCurrentUserAdmin) {
-                    withAnimation(.easeInOut(duration: 0.18)) {
-                        showSettingsMenu = false
+                SettingsDropdownMenu(
+                    isAdmin: viewModel.isCurrentUserAdmin,
+                    onDelete: {
+                        withAnimation(.easeInOut(duration: 0.18)) {
+                            showSettingsMenu = false
+                        }
+                        showingDeleteAlert = true
+                    },
+                    onShare: {
+                        withAnimation(.easeInOut(duration: 0.18)) {
+                            showSettingsMenu = false
+                        }
+                        shareCove()
+                    },
+                    dismiss: {
+                        withAnimation(.easeInOut(duration: 0.18)) {
+                            showSettingsMenu = false
+                        }
                     }
-                }
+                )
                 .frame(width: UIScreen.main.bounds.width * 0.65)
                 .padding(.trailing, 8)
                 .offset(y: 40)
@@ -249,6 +283,20 @@ struct CoveView: View {
             Button("ok") { viewModel.errorMessage = nil }
         } message: {
             Text(viewModel.errorMessage ?? "")
+        }
+        .alert("Delete Cove", isPresented: $showingDeleteAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("Delete", role: .destructive) {
+                viewModel.deleteCove(coveId: coveId) { success in
+                    if success {
+                        // Remove the deleted cove from the feed
+                        appController.coveFeed.removeDeletedCove(coveId)
+                        dismiss()
+                    }
+                }
+            }
+        } message: {
+            Text("Are you sure you want to delete this cove? This action cannot be undone and will remove all events, posts, and members.")
         }
     }
 }
@@ -471,6 +519,8 @@ private extension CoveView {
 // MARK: - Settings Dropdown Menu
 private struct SettingsDropdownMenu: View {
     let isAdmin: Bool
+    let onDelete: () -> Void
+    let onShare: () -> Void
     let dismiss: () -> Void
 
     var body: some View {
@@ -480,11 +530,14 @@ private struct SettingsDropdownMenu: View {
                 Divider().background(Color.black.opacity(0.08))
                 MenuRow(title: "manage members", systemImage: "person.2") { dismiss() }
                 Divider().background(Color.black.opacity(0.08))
-                MenuRow(title: "share", systemImage: "square.and.arrow.up") { dismiss() }
+                MenuRow(title: "share", systemImage: "square.and.arrow.up") { onShare() }
                 Divider().background(Color.black.opacity(0.08))
-                MenuRow(title: "delete", textColor: .red, systemImage: "trash") { dismiss() }
+                MenuRow(title: "delete", textColor: .red, systemImage: "trash") { 
+                    dismiss()
+                    onDelete()
+                }
             } else {
-                MenuRow(title: "share", systemImage: "square.and.arrow.up") { dismiss() }
+                MenuRow(title: "share", systemImage: "square.and.arrow.up") { onShare() }
                 Divider().background(Color.black.opacity(0.08))
                 MenuRow(title: "leave cove", textColor: .red, systemImage: "rectangle.portrait.and.arrow.right") { dismiss() }
             }
