@@ -9,6 +9,7 @@ import {
   RecaptchaVerifier,
   signInWithPhoneNumber
 } from 'firebase/auth';
+import { AlmaMaterData, GradYearsData } from '../lib/onboardingData';
 
 interface OnboardingModalProps {
   isOpen: boolean;
@@ -41,18 +42,51 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
 
   // Validation functions
   const isGradYearValid = (year: string) => {
-    return /^\d{4}$/.test(year); // Exactly 4 digits
+    return GradYearsData.isValidYear(year);
   };
+
+  const [isAlmaMaterValid, setIsAlmaMaterValid] = useState(false);
+
+  // Check alma mater validity when it changes
+  useEffect(() => {
+    const checkValidity = async () => {
+      if (formData.almaMater.trim()) {
+        const valid = await AlmaMaterData.isValidUniversity(formData.almaMater);
+        setIsAlmaMaterValid(valid);
+      } else {
+        setIsAlmaMaterValid(false);
+      }
+    };
+
+    checkValidity();
+  }, [formData.almaMater]);
 
   const isFormValid = () => {
     return (
       formData.firstName.trim() !== '' &&
       formData.lastName.trim() !== '' &&
       formData.birthdate !== '' &&
-      formData.almaMater.trim() !== '' &&
+      isAlmaMaterValid &&
       isGradYearValid(formData.gradYear)
     );
   };
+
+  // Filtered suggestions - now async
+  const [filteredUniversities, setFilteredUniversities] = useState<string[]>([]);
+
+  // Debounced search for universities (like most modern apps)
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (formData.almaMater.trim()) {
+        const universities = await AlmaMaterData.filteredUniversities(formData.almaMater);
+        setFilteredUniversities(universities);
+      } else {
+        setFilteredUniversities([]);
+      }
+    }, 300); // 300ms delay - standard debounce
+
+    return () => clearTimeout(timer);
+  }, [formData.almaMater]);
 
   // Initialize reCAPTCHA verifier
   useEffect(() => {
@@ -221,9 +255,14 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
   const handleOnboardingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate graduation year before submitting
+    // Validate alma mater and graduation year before submitting
+    if (!isAlmaMaterValid) {
+      setError('Please select a valid university from the list');
+      return;
+    }
+    
     if (!isGradYearValid(formData.gradYear)) {
-      setError('Please enter a valid graduation year');
+      setError('Please select a valid graduation year');
       return;
     }
     
@@ -389,18 +428,40 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
                 />
               </div>
 
-              <div>
+              <div className="relative">
                 <input
                   type="text"
                   value={formData.almaMater}
                   onChange={(e) => setFormData(prev => ({ ...prev, almaMater: e.target.value.toLowerCase() }))}
                   placeholder="alma mater"
-                  className="w-full px-0 py-3 border-b-2 border-gray-300 focus:border-[#5E1C1D] focus:outline-none text-lg font-libre-bodoni bg-transparent"
+                  className={`w-full px-0 py-3 border-b-2 focus:outline-none text-lg font-libre-bodoni bg-transparent ${
+                    formData.almaMater && !isAlmaMaterValid
+                      ? 'border-red-500' 
+                      : formData.almaMater && isAlmaMaterValid
+                        ? 'border-green-500' 
+                        : 'border-gray-300 focus:border-[#5E1C1D]'
+                  }`}
                   required
                 />
+                
+                {/* University suggestions dropdown */}
+                {formData.almaMater && filteredUniversities.length > 0 && !isAlmaMaterValid && (
+                  <div className="absolute top-full left-0 right-0 z-10 bg-white border border-gray-200 rounded-lg shadow-lg max-h-32 overflow-y-auto">
+                    {filteredUniversities.slice(0, 3).map((university, index) => (
+                      <button
+                        key={university}
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, almaMater: university }))}
+                        className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm font-libre-bodoni text-[#2D2D2D]"
+                      >
+                        {university}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              <div>
+              <div className="relative">
                 <input
                   type="text"
                   value={formData.gradYear}
@@ -409,14 +470,17 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
                   className={`w-full px-0 py-3 border-0 border-b-2 focus:outline-none text-lg font-libre-bodoni bg-transparent ${
                     formData.gradYear && !isGradYearValid(formData.gradYear) 
                       ? 'border-red-500' 
-                      : formData.gradYear 
+                      : formData.gradYear && isGradYearValid(formData.gradYear)
                         ? 'border-green-500' 
                         : 'border-gray-300 focus:border-[#5E1C1D]'
                   }`}
                   required
                 />
+                
+
+                
                 {formData.gradYear && !isGradYearValid(formData.gradYear) && (
-                  <p className="text-red-500 text-sm mt-1">Please enter a valid 4-digit year (e.g., 2025)</p>
+                  <p className="text-red-500 text-sm mt-1">Please select a valid graduation year</p>
                 )}
               </div>
 

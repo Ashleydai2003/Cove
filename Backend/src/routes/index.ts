@@ -15,3 +15,4 @@ export { handleSendInvite, handleGetInvites, handleOpenInvite, handleRejectInvit
 export { handleCreateThread, handleSendMessage, handleGetThreads, handleGetThreadMessages, handleMarkMessageRead, handleUpdateFCMToken } from './messaging';
 export { handleCreatePost, handleGetCovePosts, handleGetPost, handleTogglePostLike } from './post';
 export { handleGetFeed } from './feed';
+export { handleGetUniversities } from './universities';

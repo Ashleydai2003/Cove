@@ -51,6 +51,7 @@ import {
   handleGetEventMembers,
   handleGetPendingMembers,
   handleApproveDeclineRSVP,
+  handleGetUniversities,
 } from './routes';
 
 export const handler = async (
@@ -175,6 +176,8 @@ export const handler = async (
         return handleGetPendingMembers(event);
       case '/approve-decline-rsvp':
         return handleApproveDeclineRSVP(event);
+      case '/universities':
+        return handleGetUniversities(event);
       default:
         // Handle common web standard files
         switch (event.path) {
