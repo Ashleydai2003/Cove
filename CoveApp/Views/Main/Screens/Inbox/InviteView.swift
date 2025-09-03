@@ -35,6 +35,7 @@ struct InviteView: View {
                 // Cove cover photo
                 Group {
                     if let coverPhotoUrlString = invite.cove.coverPhotoUrl,
+                       !coverPhotoUrlString.isEmpty,
                        let coverPhotoUrl = URL(string: coverPhotoUrlString) {
                         KFImage(coverPhotoUrl)
                             .placeholder {
@@ -50,10 +51,7 @@ struct InviteView: View {
                                 Log.debug("❌ InviteView: Failed to load cove cover photo from \(coverPhotoUrlString): \(error)")
                             }
                             .resizable()
-                            .scaleFactor(UIScreen.main.scale)
                             .fade(duration: 0.2)
-                            .cacheOriginalImage()
-                            .cancelOnDisappear(true)
                             .scaledToFill()
                             .frame(height: 192)
                             .clipShape(RoundedRectangle(cornerRadius: 12))
@@ -68,7 +66,6 @@ struct InviteView: View {
                             }
                     }
                 }
-                .id("photo-\(invite.id)-\(invite.cove.coverPhotoUrl ?? "none")")  // Force refresh when photo URL changes
                 .padding(.horizontal, 20)
 
                 // Bottom section
