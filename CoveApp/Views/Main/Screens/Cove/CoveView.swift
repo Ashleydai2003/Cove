@@ -30,6 +30,7 @@ struct CoveView: View {
     @State private var headerOpacity: CGFloat = 1.0
     @State private var showSettingsMenu: Bool = false
     @State private var showingDeleteAlert: Bool = false
+    @State private var showInviteMembers: Bool = false
 
     // TODO: admin can update cove cover photo
     
@@ -250,6 +251,12 @@ struct CoveView: View {
                         }
                         shareCove()
                     },
+                    onManageMembers: {
+                        withAnimation(.easeInOut(duration: 0.18)) {
+                            showSettingsMenu = false
+                        }
+                        showInviteMembers = true
+                    },
                     dismiss: {
                         withAnimation(.easeInOut(duration: 0.18)) {
                             showSettingsMenu = false
@@ -297,6 +304,14 @@ struct CoveView: View {
             }
         } message: {
             Text("Are you sure you want to delete this cove? This action cannot be undone and will remove all events, posts, and members.")
+        }
+        .sheet(isPresented: $showInviteMembers) {
+            if let cove = viewModel.cove {
+                SendInvitesView(
+                    coveId: cove.id,
+                    coveName: cove.name
+                )
+            }
         }
     }
 }
@@ -453,13 +468,6 @@ private extension CoveView {
                         .foregroundStyle(Colors.primaryDark)
                         .font(.LibreBodoniBold(size: 18))
                     Spacer()
-                    if viewModel.isCurrentUserAdmin {
-                        Button(action: { /* open invites elsewhere in full view */ }) {
-                            Image(systemName: "plus.circle.fill")
-                                .font(.system(size: 24))
-                                .foregroundColor(Colors.primaryDark)
-                        }
-                    }
                 }
                 .padding(.top, 16)
             }
@@ -521,6 +529,7 @@ private struct SettingsDropdownMenu: View {
     let isAdmin: Bool
     let onDelete: () -> Void
     let onShare: () -> Void
+    let onManageMembers: () -> Void
     let dismiss: () -> Void
 
     var body: some View {
@@ -528,7 +537,10 @@ private struct SettingsDropdownMenu: View {
             if isAdmin {
                 MenuRow(title: "edit cove", systemImage: "pencil") { dismiss() }
                 Divider().background(Color.black.opacity(0.08))
-                MenuRow(title: "manage members", systemImage: "person.2") { dismiss() }
+                MenuRow(title: "manage members", systemImage: "person.2") { 
+                    dismiss()
+                    onManageMembers()
+                }
                 Divider().background(Color.black.opacity(0.08))
                 MenuRow(title: "share", systemImage: "square.and.arrow.up") { onShare() }
                 Divider().background(Color.black.opacity(0.08))

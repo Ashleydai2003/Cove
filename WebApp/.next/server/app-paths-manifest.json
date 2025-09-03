@@ -1,8 +1,5 @@
 {
-  "/coves/[coveId]/page": "app/coves/[coveId]/page.js",
-  "/api/auth/status/route": "app/api/auth/status/route.js",
-  "/api/coves/[coveId]/route": "app/api/coves/[coveId]/route.js",
   "/api/auth/refresh/route": "app/api/auth/refresh/route.js",
-  "/api/coves/[coveId]/events/route": "app/api/coves/[coveId]/events/route.js",
+  "/coves/[coveId]/page": "app/coves/[coveId]/page.js",
   "/events/[eventId]/page": "app/events/[eventId]/page.js"
 }

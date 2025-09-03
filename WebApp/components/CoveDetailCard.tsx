@@ -25,10 +25,9 @@ interface Cove {
 
 interface CoveDetailCardProps {
   cove: Cove;
-  isAuthenticated: boolean | null;
 }
 
-export default function CoveDetailCard({ cove, isAuthenticated }: CoveDetailCardProps) {
+export default function CoveDetailCard({ cove }: CoveDetailCardProps) {
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [events, setEvents] = useState<{
     id: string;
@@ -88,11 +87,6 @@ export default function CoveDetailCard({ cove, isAuthenticated }: CoveDetailCard
   }, [cove.id]);
 
   const handleJoinCove = () => {
-    if (!isAuthenticated) {
-      // Redirect to login or show login modal
-      window.location.href = '/login';
-      return;
-    }
     setShowJoinModal(true);
   };
 
@@ -203,7 +197,7 @@ export default function CoveDetailCard({ cove, isAuthenticated }: CoveDetailCard
                 onClick={handleJoinCove}
                 className="bg-[#5E1C1D] text-white py-3 sm:py-4 px-6 sm:px-8 rounded-xl font-libre-bodoni font-semibold text-base sm:text-lg hover:bg-[#4A1617] transition-colors shadow-lg hover:shadow-xl w-full sm:w-auto sm:min-w-[160px]"
               >
-                {isAuthenticated ? 'Join Cove' : 'Sign in to Join'}
+                Join Cove
               </button>
               
               <button
