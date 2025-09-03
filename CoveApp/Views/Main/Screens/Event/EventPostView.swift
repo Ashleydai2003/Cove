@@ -366,6 +366,7 @@ struct EventPostView: View {
     @State private var showingGuestList = false
     @State private var showingTicketConfirmation = false
     @State private var showingShareSheet = false
+    @State private var showSettingsMenu = false
 
     init(eventId: String, coveCoverPhoto: CoverPhoto? = nil) {
         self.eventId = eventId
@@ -380,70 +381,18 @@ struct EventPostView: View {
                 ProgressView()
             } else if let event = viewModel.event {
                 ScrollView(.vertical, showsIndicators: false) {
+                    VStack(spacing: 0) {
+                        TopIconBar(
+                            showBackArrow: true,
+                            showGear: true,
+                            onBackTapped: { dismiss() },
+                            onGearTapped: {
+                                withAnimation(.easeInOut(duration: 0.18)) { showSettingsMenu.toggle() }
+                            }
+                        )
+                    }
+
                     VStack(alignment: .leading, spacing: 24) {
-                        // Back button, cove photo and delete button
-                        HStack(alignment: .top) {
-                            Button {
-                                dismiss()
-                            } label: {
-                                Images.backArrow
-                            }
-                            .padding(.top, 16)
-
-                            Spacer()
-
-                            // Use provided cover photo first, fallback to fetched event data
-                            let covePhotoUrl = coveCoverPhoto?.url ?? event.cove.coverPhoto?.url
-                            if let urlString = covePhotoUrl, !urlString.isEmpty, let url = URL(string: urlString) {
-                                KFImage(url)
-                                    .placeholder {
-                                        Circle()
-                                            .fill(Color.gray.opacity(0.2))
-                                            .frame(width: 100, height: 100)
-                                    }
-                                    .resizable()
-                                    .scaleFactor(UIScreen.main.scale)
-                                    .setProcessor(DownsamplingImageProcessor(size: CGSize(width: 100 * UIScreen.main.scale, height: 100 * UIScreen.main.scale)))
-                                    .fade(duration: 0.2)
-                                    .cacheOriginalImage()
-                                    .cancelOnDisappear(true)
-                                    .scaledToFill()
-                                    .frame(width: 100, height: 100)
-                                    .clipShape(Circle())
-                            } else {
-                                // Default cove image when no cover photo is available
-                                Image("default_cove_pfp")
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(width: 100, height: 100)
-                                    .clipShape(Circle())
-                            }
-
-                            Spacer()
-
-                            // Add share button
-                            Button {
-                                    showingShareSheet = true
-                                } label: {
-                                    Image(systemName: "square.and.arrow.up")
-                                        .foregroundColor(Colors.primaryDark)
-                                        .font(.system(size: 20))
-                                }
-                                .padding(.top, 16)
-                            
-                            // Add delete button if user is the host
-                            if event.isHost == true {
-                                Button {
-                                    showingDeleteAlert = true
-                                } label: {
-                                    Image(systemName: "trash")
-                                        .foregroundColor(Colors.primaryDark)
-                                        .font(.system(size: 20))
-                                }
-                                .padding(.top, 16)
-                            }
-                        }
-                        .padding(.horizontal, 16)
 
                         Text(event.name.isEmpty ? "Untitled" : event.name)
                             .foregroundStyle(Colors.primaryDark)
@@ -743,7 +692,7 @@ struct EventPostView: View {
 
                         Spacer(minLength: 32)
                     }
-                    .padding(.horizontal, 40)
+                    .padding(.horizontal, 24)
                     .padding(.top, 10)
                 }
             } else if let error = viewModel.errorMessage {
@@ -763,6 +712,24 @@ struct EventPostView: View {
         .navigationBarBackButtonHidden(true)
         .onAppear {
             viewModel.fetchEventDetails(eventId: eventId)
+        }
+        .overlay(alignment: .topTrailing) {
+            if showSettingsMenu {
+                EventSettingsDropdownMenu(
+                    onShare: {
+                        withAnimation(.easeInOut(duration: 0.18)) { showSettingsMenu = false }
+                        showingShareSheet = true
+                    },
+                    dismiss: {
+                        withAnimation(.easeInOut(duration: 0.18)) { showSettingsMenu = false }
+                    }
+                )
+                .frame(width: UIScreen.main.bounds.width * 0.65)
+                .padding(.trailing, 8)
+                .offset(y: 40)
+                .transition(.opacity.combined(with: .move(edge: .top)))
+                .zIndex(100000)
+            }
         }
         .navigationDestination(isPresented: $showingGuestList) {
             EventGuestListView(
@@ -828,6 +795,73 @@ struct ShareSheet: UIViewControllerRepresentable {
     }
     
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
+// MARK: - Settings Dropdown (matches CoveView style)
+private struct EventSettingsDropdownMenu: View {
+    let onShare: () -> Void
+    let dismiss: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            MenuRow(title: "share", systemImage: "square.and.arrow.up") { onShare() }
+        }
+        .padding(.vertical, 6)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Colors.background)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.black.opacity(0.12), lineWidth: 1)
+                )
+        )
+        .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 4)
+        .onTapGesture {} // absorb taps inside menu
+    }
+
+    private struct MenuRow: View {
+        let title: String
+        var textColor: Color = Colors.primaryDark
+        var systemImage: String? = nil
+        let action: () -> Void
+
+        var body: some View {
+            Button(action: action) {
+                HStack(spacing: 10) {
+                    if let systemImage {
+                        Image(systemName: systemImage)
+                            .font(.system(size: 16, weight: .regular))
+                            .foregroundStyle(textColor)
+                    }
+                    Text(title)
+                        .font(.LibreBodoni(size: 16))
+                        .foregroundStyle(textColor)
+                    Spacer(minLength: 24)
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(PressHighlightStyle())
+        }
+    }
+}
+
+// Press highlight style (copied to match CoveView)
+private struct PressHighlightStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .background(configuration.isPressed ? Color.black.opacity(0.06) : Color.clear)
+    }
+}
+
+// Icon tint on press (matches CoveInfoHeaderView)
+private struct TintOnPressIconStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .symbolRenderingMode(.monochrome)
+            .foregroundStyle(Colors.primaryDark.opacity(configuration.isPressed ? 0.5 : 1.0))
+    }
 }
 
 #Preview {
