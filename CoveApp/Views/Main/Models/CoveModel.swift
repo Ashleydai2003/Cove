@@ -599,6 +599,44 @@ class CoveModel: ObservableObject {
             }
         }
     }
+    
+    /// Deletes a cove and all its associated data
+    /// - Parameter coveId: The ID of the cove to delete
+    /// - Parameter completion: Callback with success status
+    func deleteCove(coveId: String, completion: @escaping (Bool) -> Void) {
+        guard let currentUserId = Auth.auth().currentUser?.uid else {
+            Log.error("❌ CoveModel: Cannot delete cove - user not authenticated")
+            self.errorMessage = "You must be logged in to delete a cove"
+            completion(false)
+            return
+        }
+        
+        // Verify user is the cove creator
+        guard let cove = cove, cove.creator.id == currentUserId else {
+            Log.error("❌ CoveModel: Cannot delete cove - user is not the creator")
+            self.errorMessage = "Only the cove creator can delete the cove"
+            completion(false)
+            return
+        }
+        
+        Log.debug("🗑️ CoveModel: Deleting cove \(coveId)")
+        
+        NetworkManager.shared.post(endpoint: "/delete-cove", parameters: ["coveId": coveId]) { [weak self] (result: Result<DeleteCoveResponse, NetworkError>) in
+            guard let self = self else { return }
+            
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let response):
+                    Log.debug("✅ CoveModel: Cove deleted successfully: \(response.message)")
+                    completion(true)
+                case .failure(let error):
+                    Log.error("❌ CoveModel: Cove deletion failed: \(error)")
+                    self.errorMessage = "Failed to delete cove: \(error.localizedDescription)"
+                    completion(false)
+                }
+            }
+        }
+    }
 }
 
 // MARK: - Response Models
@@ -661,5 +699,10 @@ struct TogglePostLikeResponse: Decodable {
     let message: String
     let action: String
     let likeCount: Int
+}
+
+/// Response for /delete-cove API
+struct DeleteCoveResponse: Decodable {
+    let message: String
 }
 
