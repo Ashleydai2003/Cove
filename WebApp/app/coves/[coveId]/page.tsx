@@ -32,17 +32,7 @@ export default function CovePage() {
   const [cove, setCove] = useState<Cove | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [showJoinModal, setShowJoinModal] = useState(false);
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      const authStatus = await checkAuthStatus();
-      setIsAuthenticated(authStatus.isAuthenticated);
-    };
-    
-    checkAuth();
-  }, []);
 
   useEffect(() => {
     const fetchCove = async () => {
@@ -126,7 +116,6 @@ export default function CovePage() {
       <div className="max-w-7xl mx-auto px-8 pb-16">
         <CoveDetailCard 
           cove={cove}
-          isAuthenticated={isAuthenticated}
         />
       </div>
 
