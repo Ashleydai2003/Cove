@@ -386,6 +386,31 @@ Returns:
 
 ## GET
 
+### `/universities`
+
+Retrieves a comprehensive list of universities for onboarding and profile creation. This endpoint serves as the single source of truth for university data across all platforms.
+
+Returns:
+* universities: Array<String> - Complete list of supported universities (150+ institutions)
+* total: Number - Total count of universities
+
+**University Categories Included:**
+* Ivy League (Brown, Columbia, Cornell, Dartmouth, Harvard, Penn, Princeton, Yale)
+* Stanford & Top California (Stanford, Berkeley, UCLA, USC, Caltech, UC system)
+* Top East Coast (MIT, NYU, Georgetown, Johns Hopkins, Carnegie Mellon, Duke, Vanderbilt)
+* Top Midwest (Northwestern, UChicago, Michigan, Illinois, Wisconsin, Minnesota)
+* Top South (UVA, UNC, Florida, Texas, Rice, Tulane)
+* Top West & Mountain (Washington, Oregon, Arizona, Colorado, Utah, BYU)
+* Top Northeast (Boston University, Boston College, Northeastern, Tufts, Brandeis)
+* Liberal Arts Colleges (Pomona, Claremont McKenna, Swarthmore, Wellesley, etc.)
+* International Universities (Toronto, UBC, McGill, Oxford, Cambridge, LSE, Imperial)
+
+**Notes:**
+* No authentication required - public endpoint
+* Universities are returned in lowercase format
+* Client-side filtering recommended for search functionality
+* List is curated and updated periodically
+
 ### `/profile`
 
 Retrieves a user's profile information.

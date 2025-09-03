@@ -42,6 +42,7 @@ declare namespace __next_route_internal_types__ {
     | `/api/rsvp`
     | `/api/rsvp-remove`
     | `/api/verify-otp`
+    | `/api/universities`
   type DynamicRoutes<T extends string = string> = 
     | `/events/${SafeSlug<T>}`
 
