@@ -1,3 +1,4 @@
+// Note: keep this page server-rendered for metadata to be available to crawlers
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -84,7 +85,7 @@ export default function EventPage() {
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <span className="font-libre-bodoni text-3xl text-[#5E1C1D]">cove</span>
           <Link href="/" className="font-libre-bodoni text-[#5E1C1D] underline underline-offset-4 text-lg">
-            join the waitlist
+            join the cove waitlist
           </Link>
         </div>
       </div>

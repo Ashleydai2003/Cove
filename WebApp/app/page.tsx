@@ -246,7 +246,7 @@ export default function Home() {
             </h1>
             {/* Subtitle fades in too */}
             <p className={`${libreBodoni.className} text-xl text-center text-[#7a3131ff] dark:text-white font-bold opacity-0 fade-in delay-1000`}>
-              plug back into community.
+              events for young alumni
             </p>
           </div>
           

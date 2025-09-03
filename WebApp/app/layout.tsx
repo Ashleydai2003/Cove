@@ -4,25 +4,37 @@ import './globals.css';
 import { SessionProvider } from '@/components/SessionProvider';
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://www.coveapp.co'),
+  themeColor: '#5E1C1D',
   title: {
     template: '%s | Cove',
-    default: 'Cove - Connect Through Events',
+    default: 'cove - events for young alumni',
   },
-  description: 'Discover and attend events in your community through Cove.',
+  description: 'your city, unlocked.',
   keywords: ['events', 'community', 'social', 'meetups'],
   authors: [{ name: 'Cove Team' }],
   viewport: 'width=device-width, initial-scale=1',
   robots: 'index, follow',
+  icons: {
+    icon: [
+      { url: '/cove-logo.svg', type: 'image/svg+xml' },
+      { url: '/cove-logo.png', type: 'image/png', sizes: '32x32' },
+    ],
+    apple: [{ url: '/cove-logo.png' }],
+  },
   openGraph: {
     type: 'website',
     siteName: 'Cove',
-    title: 'Cove - Connect Through Events',
-    description: 'Discover and attend events in your community through Cove.',
+    url: 'https://www.coveapp.co',
+    title: 'cove - events for young alumni',
+    description: 'your city, unlocked',
+    images: [{ url: '/cove-logo.png', width: 1200, height: 630, alt: 'Cove logo' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Cove - Connect Through Events',
-    description: 'Discover and attend events in your community through Cove.',
+    title: 'cove - events for young alumni',
+    description: 'your city, unlocked',
+    images: ['/cove-logo.png'],
   },
 };
 
