@@ -44,7 +44,10 @@ declare namespace __next_route_internal_types__ {
     | `/api/verify-otp`
     | `/api/universities`
   type DynamicRoutes<T extends string = string> = 
+    | `/api/coves/${SafeSlug<T>}`
+    | `/api/coves/${SafeSlug<T>}/events`
     | `/events/${SafeSlug<T>}`
+    | `/coves/${SafeSlug<T>}`
 
   type RouteImpl<T> = 
     | StaticRoutes
