@@ -3,6 +3,8 @@ import { clearSecureSession, validateToken } from '@/lib/session';
 
 export async function GET(request: NextRequest) {
   try {
+    console.log('Auth status check - BACKEND_API_URL:', process.env.BACKEND_API_URL);
+    
     // Get auth token from cookie
     const authToken = request.cookies.get('session-token')?.value;
 
@@ -13,6 +15,8 @@ export async function GET(request: NextRequest) {
         { status: 401 }
       );
     }
+
+    console.log('Session token found, length:', authToken.length);
 
     // Validate token format
     if (!validateToken(authToken)) {
@@ -25,6 +29,8 @@ export async function GET(request: NextRequest) {
       return response;
     }
 
+    console.log('Token format is valid, calling backend...');
+
     // Call the backend API to verify the token
     const backendResponse = await fetch(`${process.env.BACKEND_API_URL}/profile`, {
       method: 'GET',
@@ -33,22 +39,31 @@ export async function GET(request: NextRequest) {
       },
     });
 
+    console.log('Backend response status:', backendResponse.status);
+
     if (backendResponse.ok) {
       const data = await backendResponse.json();
-      console.log('Session validated successfully');
+      console.log('Session validated successfully, user data:', data.profile);
       return NextResponse.json({
         isAuthenticated: true,
         user: data.profile,
       });
-    } else {
-      // Token is invalid, clear the cookie
-      console.log('Backend validation failed, clearing session');
+    } else if (backendResponse.status === 401) {
+      // Token is expired or invalid, clear the cookie
+      console.log('Backend validation failed (401), clearing session');
       const response = NextResponse.json(
         { isAuthenticated: false },
         { status: 401 }
       );
       clearSecureSession(response);
       return response;
+    } else {
+      // Other backend errors
+      console.log('Backend validation failed with status:', backendResponse.status);
+      return NextResponse.json(
+        { isAuthenticated: false },
+        { status: backendResponse.status }
+      );
     }
   } catch (error) {
     console.error('Auth status API error:', error);
