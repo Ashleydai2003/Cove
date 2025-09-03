@@ -203,7 +203,7 @@ export default function CoveDetailCard({ cove, isAuthenticated }: CoveDetailCard
                 onClick={handleJoinCove}
                 className="bg-[#5E1C1D] text-white py-3 sm:py-4 px-6 sm:px-8 rounded-xl font-libre-bodoni font-semibold text-base sm:text-lg hover:bg-[#4A1617] transition-colors shadow-lg hover:shadow-xl w-full sm:w-auto sm:min-w-[160px]"
               >
-                {isAuthenticated ? 'Join Waitlist' : 'Sign in to Join'}
+                {isAuthenticated ? 'Join Cove' : 'Sign in to Join'}
               </button>
               
               <button
@@ -295,7 +295,7 @@ export default function CoveDetailCard({ cove, isAuthenticated }: CoveDetailCard
                   onClick={handleJoinCove}
                   className="bg-[#5E1C1D] text-white py-3 px-6 rounded-xl font-libre-bodoni font-semibold hover:bg-[#4A1617] transition-colors"
                 >
-                  Join Waitlist
+                  Join Cove
                 </button>
               </div>
             </div>
@@ -324,16 +324,12 @@ export default function CoveDetailCard({ cove, isAuthenticated }: CoveDetailCard
               >
                 Cancel
               </button>
-              <button
-                onClick={() => {
-                  setShowJoinModal(false);
-                  // Here you could implement invite request logic
-                  alert('Invite request feature coming soon!');
-                }}
-                className="w-full bg-[#5E1C1D] text-white py-3 px-6 rounded-xl font-libre-bodoni font-semibold hover:bg-[#4A1617] transition-colors"
+              <a
+                href="https://coveapp.co"
+                className="w-full bg-[#5E1C1D] text-white py-3 px-6 rounded-xl font-libre-bodoni font-semibold hover:bg-[#4A1617] transition-colors text-center block"
               >
-                Request Invite
-              </button>
+                Join Waitlist
+              </a>
             </div>
           </div>
         </div>
