@@ -21,7 +21,7 @@ async function refreshTokenAndSession(firebaseUser: FirebaseUser) {
     const newIdToken = await firebaseUser.getIdToken(true); // Force refresh
     
     // Update the session with the new token
-    await fetch('/api/auth/refresh', {
+    const response = await fetch('/api/auth/refresh', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -30,7 +30,13 @@ async function refreshTokenAndSession(firebaseUser: FirebaseUser) {
       body: JSON.stringify({ idToken: newIdToken }),
     });
     
-    console.log('Token refreshed successfully');
+    if (response.ok) {
+      console.log('Token refreshed successfully');
+    } else {
+      console.error('Token refresh failed with status:', response.status);
+      // If refresh fails, the user will need to log in again
+      await logout();
+    }
   } catch (error) {
     console.error('Token refresh failed:', error);
     // If refresh fails, the user will need to log in again

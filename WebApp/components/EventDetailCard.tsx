@@ -37,6 +37,7 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
     const checkAuth = async () => {
       try {
         const { isAuthenticated, user } = await checkAuthStatus();
+        console.log('Auth check result:', { isAuthenticated, user });
         setIsAuthenticated(isAuthenticated);
         setHasCompletedOnboarding(!!(isAuthenticated && user && !user.onboarding));
         
@@ -44,6 +45,7 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
         if (isAuthenticated) {
           try {
             const eventData = await apiClient.fetchEvent(event.id);
+            console.log('Fresh event data:', eventData);
             setRsvpStatus(eventData.rsvpStatus ?? null);
           } catch (error) {
             console.error('Error fetching fresh event data:', error);
