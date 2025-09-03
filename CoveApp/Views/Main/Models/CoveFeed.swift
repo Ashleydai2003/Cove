@@ -162,6 +162,31 @@ class CoveFeed: ObservableObject {
         let model = getOrCreateCoveModel(for: id)
         model.fetchCoveDetailsIfStale(coveId: id)
     }
+    
+    /// Removes a deleted cove from the user's cove list and refreshes the data.
+    /// - Parameter coveId: The ID of the cove that was deleted
+    func removeDeletedCove(_ coveId: String) {
+        // Remove the cove from the local list
+        userCoves.removeAll { $0.id == coveId }
+        
+        // Remove the cove model from cache
+        coveModels.removeValue(forKey: coveId)
+        
+        // If this was the selected cove, select the first available cove
+        if selectedCoveId == coveId {
+            selectedCoveId = userCoves.first?.id
+        }
+        
+        // Post notification to handle navigation if user is viewing the deleted cove
+        NotificationCenter.default.post(
+            name: .coveWasDeleted,
+            object: nil,
+            userInfo: ["coveId": coveId]
+        )
+        
+        // Force a refresh to get the updated list from the backend
+        refreshUserCoves()
+    }
 }
 
 // MARK: - Response Models

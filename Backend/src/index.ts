@@ -26,6 +26,7 @@ import {
   handleGetCoveMembers,
   handleDeleteUser,
   handleDeleteEvent,
+  handleDeleteCove,
   handleGetEvent,
   handleGetUserCoves,
   handleUpdateEventRSVP,
@@ -51,6 +52,7 @@ import {
   handleGetEventMembers,
   handleGetPendingMembers,
   handleApproveDeclineRSVP,
+  handleGetUniversities,
 } from './routes';
 
 export const handler = async (
@@ -120,6 +122,8 @@ export const handler = async (
         return handleDeleteUser(event);
       case '/delete-event':
         return handleDeleteEvent(event);
+      case '/delete-cove':
+        return handleDeleteCove(event);
       case '/event':
         response = await handleGetEvent(event);
         break;
@@ -175,6 +179,8 @@ export const handler = async (
         return handleGetPendingMembers(event);
       case '/approve-decline-rsvp':
         return handleApproveDeclineRSVP(event);
+      case '/universities':
+        return handleGetUniversities(event);
       default:
         // Handle common web standard files
         switch (event.path) {

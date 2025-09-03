@@ -104,6 +104,26 @@ terraform.tfstate.backup
 # Prisma
 **/prisma/dev.db
 
+# Next.js
+**/.next/
+**/out/
+**/.vercel
+
+# Firebase
+**/.firebase/
+**/firebase-data/
+**/firebase-debug.log*
+**/.firebaserc
+
+# Backend specific
+**/build/Release
+**/.lock-wscript
+**/.grunt
+**/bower_components
+**/lib-cov
+**/.eslintcache
+**/.dataconnect
+
 # Xcode specific
 *.xcuserstate
 *.xcuserdata/

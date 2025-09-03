@@ -1,8 +1,8 @@
 {
   "components/EventDetailCard.tsx -> ./OnboardingModal": {
-    "id": 1421,
+    "id": "components/EventDetailCard.tsx -> ./OnboardingModal",
     "files": [
-      "static/chunks/421.64f25927d1c02e9a.js"
+      "static/chunks/_app-pages-browser_components_OnboardingModal_tsx.js"
     ]
   }
 }

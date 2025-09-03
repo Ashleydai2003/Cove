@@ -477,4 +477,206 @@ export const handleDeleteEvent = async (event: APIGatewayProxyEvent): Promise<AP
       })
     };
   }
+};
+
+/**
+ * Handles cove deletion
+ * 
+ * This endpoint deletes a cove and all its associated data:
+ * - Cove members
+ * - Events in the cove
+ * - Event RSVPs for events in the cove
+ * - Event images for events in the cove
+ * - Posts in the cove
+ * - Post likes for posts in the cove
+ * - Cove cover photo
+ * - Invites to the cove
+ * 
+ * Requirements:
+ * - User must be authenticated
+ * - User must be the creator of the cove
+ * 
+ * Error cases:
+ * - 400: Missing coveId
+ * - 401: Unauthorized
+ * - 403: Not the cove creator
+ * - 404: Cove not found
+ * - 405: Invalid HTTP method
+ * - 500: Server error
+ */
+export const handleDeleteCove = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+  try {
+    // Step 1: Validate request method
+    if (event.httpMethod !== 'POST') {
+      return {
+        statusCode: 405,
+        body: JSON.stringify({
+          message: 'Method not allowed. Only POST requests are accepted for cove deletion.'
+        })
+      };
+    }
+
+    // Step 2: Authenticate the request
+    const authResult = await authMiddleware(event);
+    if ('statusCode' in authResult) {
+      return authResult;
+    }
+
+    // Step 3: Get the authenticated user's info
+    const userId = authResult.user.uid;
+
+    // Step 4: Get coveId from request body
+    if (!event.body) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          message: 'Request body is required'
+        })
+      };
+    }
+
+    const { coveId } = JSON.parse(event.body);
+    if (!coveId) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          message: 'Cove ID is required'
+        })
+      };
+    }
+
+    // Step 5: Initialize database connection
+    const prisma = await initializeDatabase();
+
+    // Step 6: Get cove and verify user is the creator
+    const coveToDelete = await prisma.cove.findUnique({
+      where: { id: coveId },
+      include: {
+        coverPhoto: {
+          select: {
+            id: true
+          }
+        }
+      }
+    });
+
+    if (!coveToDelete) {
+      return {
+        statusCode: 404,
+        body: JSON.stringify({
+          message: 'Cove not found'
+        })
+      };
+    }
+
+    if (coveToDelete.creatorId !== userId) {
+      return {
+        statusCode: 403,
+        body: JSON.stringify({
+          message: 'Only the cove creator can delete the cove'
+        })
+      };
+    }
+
+    // Step 7: Delete cove cover photo from S3 if it exists
+    if (coveToDelete.coverPhoto) {
+      const bucketName = process.env.COVE_IMAGE_BUCKET_NAME;
+      if (!bucketName) {
+        throw new Error('COVE_IMAGE_BUCKET_NAME environment variable is not set');
+      }
+
+      console.log(`Starting S3 deletion for cove ${coveId}`);
+      const deletedCount = await deleteObjectsWithPrefix(bucketName, `${coveId}/`);
+      console.log(`Completed S3 deletion for cove ${coveId}, deleted ${deletedCount} objects`);
+    }
+
+    // Step 8: Delete cove and all associated data in a transaction
+    await prisma.$transaction(async (tx) => {
+      // Get all events in the cove
+      const coveEvents = await tx.event.findMany({
+        where: { coveId },
+        select: { id: true }
+      });
+
+      const coveEventIds = coveEvents.map(event => event.id);
+
+      // Delete event images for all events in the cove
+      if (coveEventIds.length > 0) {
+        await tx.eventImage.deleteMany({
+          where: { eventId: { in: coveEventIds } }
+        });
+      }
+
+      // Delete all RSVPs to events in the cove
+      if (coveEventIds.length > 0) {
+        await tx.eventRSVP.deleteMany({
+          where: { eventId: { in: coveEventIds } }
+        });
+      }
+
+      // Delete all events in the cove
+      await tx.event.deleteMany({
+        where: { coveId }
+      });
+
+      // Get all posts in the cove
+      const covePosts = await tx.post.findMany({
+        where: { coveId },
+        select: { id: true }
+      });
+
+      const covePostIds = covePosts.map(post => post.id);
+
+      // Delete post likes for all posts in the cove
+      if (covePostIds.length > 0) {
+        await tx.postLike.deleteMany({
+          where: { postId: { in: covePostIds } }
+        });
+      }
+
+      // Delete all posts in the cove
+      await tx.post.deleteMany({
+        where: { coveId }
+      });
+
+      // Delete all cove members
+      await tx.coveMember.deleteMany({
+        where: { coveId }
+      });
+
+      // Delete all invites to the cove
+      await tx.invite.deleteMany({
+        where: { coveId }
+      });
+
+      // Delete cove cover photo record
+      if (coveToDelete.coverPhoto) {
+        await tx.coveImage.delete({
+          where: { id: coveToDelete.coverPhoto.id }
+        });
+      }
+
+      // Finally, delete the cove
+      await tx.cove.delete({
+        where: { id: coveId }
+      });
+    });
+
+    // Step 9: Return success response
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        message: 'Cove and all associated data deleted successfully'
+      })
+    };
+  } catch (error) {
+    console.error('Delete cove route error:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        message: 'Error processing cove deletion',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      })
+    };
+  }
 }; 

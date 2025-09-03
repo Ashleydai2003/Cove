@@ -204,7 +204,13 @@ class EventPostViewModel: ObservableObject {
                     if refresh {
                         self.eventMembers = response.members
                     } else {
-                        self.eventMembers.append(contentsOf: response.members)
+                        // Prevent duplicates by checking if we already have these members
+                        let newMembers = response.members.filter { newMember in
+                            !self.eventMembers.contains { existingMember in
+                                existingMember.id == newMember.id
+                            }
+                        }
+                        self.eventMembers.append(contentsOf: newMembers)
                     }
                     self.hasMoreMembers = response.hasMore
                     self.membersCursor = response.nextCursor
@@ -244,7 +250,13 @@ class EventPostViewModel: ObservableObject {
                     if refresh {
                         self.pendingMembers = response.pendingMembers
                     } else {
-                        self.pendingMembers.append(contentsOf: response.pendingMembers)
+                        // Prevent duplicates by checking if we already have these members
+                        let newMembers = response.pendingMembers.filter { newMember in
+                            !self.pendingMembers.contains { existingMember in
+                                existingMember.id == newMember.id
+                            }
+                        }
+                        self.pendingMembers.append(contentsOf: newMembers)
                     }
                     self.hasMorePending = response.hasMore
                     self.pendingCursor = response.nextCursor
@@ -359,6 +371,7 @@ struct ApproveDeclineResponse: Decodable {
 struct EventPostView: View {
     let eventId: String
     let coveCoverPhoto: CoverPhoto?
+    var onEventDeleted: ((String) -> Void)? // Callback for when event is deleted
     @StateObject private var viewModel = EventPostViewModel()
     @EnvironmentObject var appController: AppController
     @Environment(\.dismiss) private var dismiss
@@ -368,9 +381,10 @@ struct EventPostView: View {
     @State private var showingShareSheet = false
     @State private var showSettingsMenu = false
 
-    init(eventId: String, coveCoverPhoto: CoverPhoto? = nil) {
+    init(eventId: String, coveCoverPhoto: CoverPhoto? = nil, onEventDeleted: ((String) -> Void)? = nil) {
         self.eventId = eventId
         self.coveCoverPhoto = coveCoverPhoto
+        self.onEventDeleted = onEventDeleted
     }
 
     var body: some View {
@@ -415,17 +429,17 @@ struct EventPostView: View {
                                 .cacheOriginalImage()
                                 .cancelOnDisappear(true)
                                 .aspectRatio(contentMode: .fill)
-                                .clipShape(RoundedRectangle(cornerRadius: 10))
                                 .frame(height: 192)
                                 .clipped()
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
                         } else {
                             // Default event image
                             Image("default_event2")
                                 .resizable()
                                 .aspectRatio(contentMode: .fill)
                                 .frame(height: 192)
-                                .clipShape(RoundedRectangle(cornerRadius: 10))
                                 .clipped()
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
                         }
 
                         VStack(alignment: .leading, spacing: 20) {
@@ -720,6 +734,11 @@ struct EventPostView: View {
                         withAnimation(.easeInOut(duration: 0.18)) { showSettingsMenu = false }
                         showingShareSheet = true
                     },
+                    onDelete: {
+                        withAnimation(.easeInOut(duration: 0.18)) { showSettingsMenu = false }
+                        showingDeleteAlert = true
+                    },
+                    isHost: viewModel.event?.isHost == true,
                     dismiss: {
                         withAnimation(.easeInOut(duration: 0.18)) { showSettingsMenu = false }
                     }
@@ -751,6 +770,8 @@ struct EventPostView: View {
             Button("Delete", role: .destructive) {
                 viewModel.deleteEvent(eventId: eventId) { success in
                     if success {
+                        // Notify parent views that event was deleted
+                        onEventDeleted?(eventId)
                         dismiss()
                     }
                 }
@@ -800,11 +821,24 @@ struct ShareSheet: UIViewControllerRepresentable {
 // MARK: - Settings Dropdown (matches CoveView style)
 private struct EventSettingsDropdownMenu: View {
     let onShare: () -> Void
+    let onDelete: () -> Void
+    let isHost: Bool
     let dismiss: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             MenuRow(title: "share", systemImage: "square.and.arrow.up") { onShare() }
+            
+            if isHost {
+                Divider()
+                    .padding(.horizontal, 14)
+                
+                MenuRow(
+                    title: "delete event",
+                    textColor: .red,
+                    systemImage: "trash"
+                ) { onDelete() }
+            }
         }
         .padding(.vertical, 6)
         .background(

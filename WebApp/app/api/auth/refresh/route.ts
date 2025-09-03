@@ -1,21 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { setSecureSession, validateToken, checkRateLimit } from '@/lib/session';
+import { setSecureSession, validateToken } from '@/lib/session';
 
 export async function POST(request: NextRequest) {
   try {
-    // Rate limiting
-    const clientIP = request.headers.get('x-forwarded-for') || 
-                    request.headers.get('x-real-ip') || 
-                    'unknown';
-    const rateLimit = checkRateLimit(`refresh:${clientIP}`);
-    
-    if (!rateLimit.allowed) {
-      return NextResponse.json(
-        { message: 'Too many refresh attempts. Please try again later.' },
-        { status: 429 }
-      );
-    }
-
     const { idToken } = await request.json();
 
     if (!idToken) {
@@ -33,25 +20,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Call the backend API to validate the new token
-    const backendResponse = await fetch(`${process.env.BACKEND_API_URL}/login`, {
-      method: 'POST',
+    // Verify the token with the backend
+    const backendResponse = await fetch(`${process.env.BACKEND_API_URL}/profile`, {
+      method: 'GET',
       headers: {
-        'Content-Type': 'application/json',
         'Authorization': `Bearer ${idToken}`,
       },
     });
 
     if (backendResponse.ok) {
-      // Update the session cookie with the new token
-      const response = NextResponse.json({ success: true });
-      
+      // Token is valid, update the session
+      const response = NextResponse.json({ message: 'Token refreshed successfully' });
       setSecureSession(response, idToken);
-
       return response;
     } else {
       return NextResponse.json(
-        { message: 'Token validation failed' },
+        { message: 'Invalid token' },
         { status: 401 }
       );
     }
