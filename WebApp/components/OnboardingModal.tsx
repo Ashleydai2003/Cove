@@ -31,7 +31,8 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
 
   // Onboarding form data
   const [formData, setFormData] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     birthdate: '',
     almaMater: '',
     gradYear: '',
@@ -45,7 +46,8 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
 
   const isFormValid = () => {
     return (
-      formData.name.trim() !== '' &&
+      formData.firstName.trim() !== '' &&
+      formData.lastName.trim() !== '' &&
       formData.birthdate !== '' &&
       formData.almaMater.trim() !== '' &&
       isGradYearValid(formData.gradYear)
@@ -234,7 +236,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include', // Include cookies
         body: JSON.stringify({
-          name: formData.name.toLowerCase(),
+          name: `${formData.firstName.toLowerCase()} ${formData.lastName.toLowerCase()}`,
           birthdate: formData.birthdate,
           almaMater: formData.almaMater.toLowerCase(),
           gradYear: formData.gradYear,
@@ -356,9 +358,20 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
               <div>
                 <input
                   type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value.toLowerCase() }))}
-                  placeholder="full name"
+                  value={formData.firstName}
+                  onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value.toLowerCase() }))}
+                  placeholder="first name"
+                  className="w-full px-0 py-3 border-0 border-b-2 border-gray-300 focus:border-[#5E1C1D] focus:outline-none text-lg font-libre-bodoni bg-transparent"
+                  required
+                />
+              </div>
+
+              <div>
+                <input
+                  type="text"
+                  value={formData.lastName}
+                  onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value.toLowerCase() }))}
+                  placeholder="last name"
                   className="w-full px-0 py-3 border-0 border-b-2 border-gray-300 focus:border-[#5E1C1D] focus:outline-none text-lg font-libre-bodoni bg-transparent"
                   required
                 />

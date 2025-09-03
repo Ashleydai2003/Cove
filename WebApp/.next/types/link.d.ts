@@ -29,16 +29,19 @@ declare namespace __next_route_internal_types__ {
     S extends `${string}${SearchOrHash}` ? never : S
 
   type StaticRoutes = 
+    | `/`
     | `/api/auth/login`
     | `/api/auth/logout`
-    | `/api/notion`
+    | `/api/auth/refresh`
+    | `/api/auth/status`
+    | `/api/event`
+    | `/api/event-members`
     | `/api/login`
-    | `/api/verify-otp`
+    | `/api/notion`
     | `/api/onboard`
     | `/api/rsvp`
-    | `/api/auth/status`
-    | `/`
-    | `/api/event-members`
+    | `/api/rsvp-remove`
+    | `/api/verify-otp`
   type DynamicRoutes<T extends string = string> = 
     | `/events/${SafeSlug<T>}`
 
