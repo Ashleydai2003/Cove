@@ -26,6 +26,7 @@ import {
   handleGetCoveMembers,
   handleDeleteUser,
   handleDeleteEvent,
+  handleDeleteCove,
   handleGetEvent,
   handleGetUserCoves,
   handleUpdateEventRSVP,
@@ -121,6 +122,8 @@ export const handler = async (
         return handleDeleteUser(event);
       case '/delete-event':
         return handleDeleteEvent(event);
+      case '/delete-cove':
+        return handleDeleteCove(event);
       case '/event':
         response = await handleGetEvent(event);
         break;

@@ -7,4 +7,5 @@ extension Notification.Name {
 	static let navigateToFriends = Notification.Name("navigateToFriends")
 	static let navigateToInbox = Notification.Name("navigateToInbox")
 	static let navigateToCalendar = Notification.Name("navigateToCalendar")
+	static let coveWasDeleted = Notification.Name("coveWasDeleted")
 } 

@@ -273,6 +273,26 @@ Takes Data Parameters:
 Returns:
 * message: String
 
+### `/delete-cove`
+
+Deletes a cove and all its associated data. Only the cove creator can delete the cove.
+
+**Data Cleanup:**
+* Cove members
+* Events in the cove
+* Event RSVPs for events in the cove
+* Event images for events in the cove
+* Posts in the cove
+* Post likes for posts in the cove
+* Cove cover photo
+* Invites to the cove
+
+Takes Data Parameters:
+* coveId: String (required) - ID of the cove to delete
+
+Returns:
+* message: String
+
 ### `/update-event-rsvp`
 
 Updates a user's RSVP status for an event. User must be a member of the event's cove.
