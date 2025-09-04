@@ -182,7 +182,7 @@ class EventPostViewModel: ObservableObject {
         if refresh {
             eventMembers.removeAll()
             membersCursor = nil
-            hasMoreMembers = false
+            hasMoreMembers = true
         }
         
         guard !isLoadingMembers else { return }
