@@ -247,10 +247,11 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
                   <div className="flex items-center gap-4">
                     <img src="/capacity.svg" alt="Capacity" className="w-8 h-8" />
                     <span className="font-libre-bodoni text-lg font-semibold text-[#5E1C1D]">
-                      {displayGoingCount !== undefined && displayGoingCount !== null 
+                      {/* {displayGoingCount !== undefined && displayGoingCount !== null 
                         ? `${Math.max(0, event.memberCap - displayGoingCount)}/${event.memberCap} spots left`
                         : `${event.memberCap} spots available`
-                      }
+                      } */}
+                      {displayGoingCount} people going
                     </span>
                   </div>
                 )}
