@@ -146,6 +146,14 @@ struct EventGuestListView: View {
             }
         }
         .navigationBarHidden(true)
+        .onAppear {
+            // Load fresh data when the guest list opens
+            // This ensures we get the complete list with proper pagination
+            viewModel.fetchEventMembers(eventId: eventId, refresh: true)
+            if event?.isHost == true {
+                viewModel.fetchPendingMembers(eventId: eventId, refresh: true)
+            }
+        }
     }
     
     private func formatDate(_ dateString: String) -> String {
@@ -176,11 +184,11 @@ struct GuestListTab: View {
                         onAction: onAction
                     )
                     .onAppear {
-                        // Load more when reaching near the end (last 3 items)
-                        let lastIndex = members.count - 1
+                        // Load more when reaching the last item
                         let currentIndex = members.firstIndex(where: { $0.id == member.id }) ?? 0
+                        let lastIndex = members.count - 1
                         
-                        if currentIndex >= lastIndex - 2 && hasMore && !isLoading {
+                        if currentIndex == lastIndex && hasMore && !isLoading {
                             onLoadMore()
                         }
                     }

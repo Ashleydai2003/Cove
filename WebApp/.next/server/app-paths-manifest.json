@@ -1,5 +1,4 @@
 {
-  "/api/auth/refresh/route": "app/api/auth/refresh/route.js",
   "/coves/[coveId]/page": "app/coves/[coveId]/page.js",
   "/events/[eventId]/page": "app/events/[eventId]/page.js"
 }
