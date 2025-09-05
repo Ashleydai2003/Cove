@@ -8,9 +8,7 @@ const SESSION_CONFIG = {
   secure: process.env.NODE_ENV === 'production',
   sameSite: 'lax' as const, // Changed from 'strict' to 'lax' for better compatibility
   path: '/',
-  // Don't set domain in production - let it default to the current domain
-  // This allows cookies to work on any deployment domain (Vercel, custom domains, etc.)
-  domain: undefined,
+  domain: process.env.NODE_ENV === 'production' ? '.coveapp.co' : undefined,
 };
 
 // Rate limiting configuration
