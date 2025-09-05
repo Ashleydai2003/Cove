@@ -49,7 +49,9 @@ export async function POST(request: NextRequest) {
       const response = NextResponse.json(data);
       
       // Set secure session cookie
+      console.log('Login API - Setting session cookie with token length:', idToken.length);
       setSecureSession(response, idToken);
+      console.log('Login API - Session cookie set successfully');
 
       return response;
     } else {
