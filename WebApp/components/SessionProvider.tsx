@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { setupTokenRefresh, checkAuthStatus } from '@/lib/auth';
+import { setupTokenRefresh } from '@/lib/auth';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 
@@ -10,20 +10,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     // Set up automatic token refresh when the app loads
     setupTokenRefresh();
     
-    // Check if we have a valid session on page load/refresh
-    const checkSession = async () => {
-      try {
-        const { isAuthenticated, user } = await checkAuthStatus();
-        if (isAuthenticated && user) {
-          console.log('Session restored on page load');
-        }
-      } catch (error) {
-        console.error('Session check failed:', error);
-      }
-    };
-    
-    // Check session immediately
-    checkSession();
+    // No need to check session status - cookies handle it automatically
     
     // Also listen for auth state changes to handle page refreshes
     const unsubscribe = onAuthStateChanged(auth, async (user) => {

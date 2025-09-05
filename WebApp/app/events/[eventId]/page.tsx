@@ -16,23 +16,24 @@ export default function EventPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchEvent = async () => {
-    if (!eventId) return;
-    
-    try {
-      setLoading(true);
-      setError(null);
-      const eventData = await apiClient.fetchEvent(eventId);
-      setEvent(eventData);
-    } catch (err) {
-      console.error('Error fetching event:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load event');
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // This is where we fetch the event data
   useEffect(() => {
+    if (!eventId) return;
+
+    const fetchEvent = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const eventData = await apiClient.fetchEvent(eventId);
+        setEvent(eventData);
+      } catch (err) {
+        console.error('Error fetching event:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load event');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchEvent();
   }, [eventId]);
 
@@ -92,7 +93,7 @@ export default function EventPage() {
 
       {/* Event Content */}
       <div className="max-w-7xl mx-auto px-8 pb-16">
-        <EventDetailCard event={event} onEventUpdate={fetchEvent} />
+        <EventDetailCard event={event} />
       </div>
     </div>
   );
