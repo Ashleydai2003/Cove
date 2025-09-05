@@ -44,7 +44,7 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
   useEffect(() => {
     const fetchFreshData = async () => {
       try {
-        const eventData = await apiClient.fetchEvent(event.id);
+        const eventData = await apiClient.fetchEvent(event.id, true); // Force fresh data
         console.log('Fresh event data:', eventData);
 
         // Update the entire event object with authenticated data
@@ -118,7 +118,7 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
         // API Call #3: After user RSVP - fetch fresh event data
         console.log('Fetching fresh event data after RSVP...');
         try {
-          const eventData = await apiClient.fetchEvent(event.id);
+          const eventData = await apiClient.fetchEvent(event.id, true); // Force fresh data
           setRsvpStatus(eventData.rsvpStatus ?? null);
         } catch (refreshError) {
           console.error('Error refreshing event data after RSVP:', refreshError);
@@ -154,7 +154,7 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
         // API Call #3: After user RSVP removal - fetch fresh event data
         console.log('Fetching fresh event data after RSVP removal...');
         try {
-          const eventData = await apiClient.fetchEvent(event.id);
+          const eventData = await apiClient.fetchEvent(event.id, true); // Force fresh data
           setRsvpStatus(eventData.rsvpStatus ?? null);
         } catch (refreshError) {
           console.error('Error refreshing event data after RSVP removal:', refreshError);
@@ -172,7 +172,7 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
   const handleOnboardingComplete = async (userId: string) => {
     try {
       // Fetch fresh event data to get updated auth state
-      const eventData = await apiClient.fetchEvent(event.id);
+      const eventData = await apiClient.fetchEvent(event.id, true); // Force fresh data
       setRsvpStatus(eventData.rsvpStatus ?? null);
       setIsAuthenticated(eventData.rsvpStatus !== null || !!eventData.isHost);
       setHasCompletedOnboarding(true);

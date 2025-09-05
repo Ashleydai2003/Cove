@@ -40,9 +40,11 @@ export async function GET(request: NextRequest) {
       
       // Set caching headers based on authentication status
       if (authToken) {
+        // Authenticated requests: no cache to ensure fresh data
         response.headers.set('Cache-Control', 'private, no-store');
         response.headers.set('Vary', 'Authorization, Cookie');
       } else {
+        // Unauthenticated requests: cache for performance
         response.headers.set('Cache-Control', 'public, max-age=60');
       }
       

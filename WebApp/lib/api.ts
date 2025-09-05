@@ -8,14 +8,14 @@ class ApiClient {
     this.baseUrl = baseUrl;
   }
 
-  async fetchEvent(eventId: string): Promise<Event> {
+  async fetchEvent(eventId: string, forceFresh: boolean = false): Promise<Event> {
     try {
-      const url = `/api/event?eventId=${encodeURIComponent(eventId)}`;
+      const url = `/api/event?eventId=${encodeURIComponent(eventId)}${forceFresh ? `&_t=${Date.now()}` : ''}`;
 
       const response = await fetch(url, {
         method: 'GET',
         credentials: 'include', // Browser automatically includes auth cookies
-        cache: 'no-store', // Always fresh data
+        cache: forceFresh ? 'no-store' : 'default', // Force fresh data when needed
       });
 
       if (!response.ok) {
@@ -74,7 +74,7 @@ export async function getEventData(eventId: string): Promise<Event | null> {
         'Content-Type': 'application/json',
       },
       // Server-side requests don't include cookies, so we get unauthenticated response
-      cache: 'force-cache',
+      cache: 'force-cache', // Cache for SSR performance
     });
 
     if (!response.ok) {
