@@ -5,7 +5,6 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Event } from '@/types/event';
-import { apiClient } from '@/lib/api';
 import { EventDetailCard } from '@/components/EventDetailCard';
 
 export default function EventPage() {
@@ -31,16 +30,13 @@ export default function EventPage() {
       name: '',
       description: '',
       date: '',
-      time: '',
       location: '',
-      imageUrl: null,
-      paymentHandle: null,
+      coveId: '',
+      host: { id: '', name: '' },
+      cove: { id: '', name: '' },
       rsvpStatus: null,
       isHost: false,
-      host: { id: '', name: '', profileImage: null },
-      attendees: [],
-      pendingAttendees: [],
-      maxAttendees: null,
+      paymentHandle: null,
     });
     setLoading(false);
   }, [eventId]);
