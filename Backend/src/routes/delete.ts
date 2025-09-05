@@ -477,7 +477,7 @@ export const handleDeleteEvent = async (event: APIGatewayProxyEvent): Promise<AP
       })
     };
   }
-};
+}; 
 
 /**
  * Handles cove deletion

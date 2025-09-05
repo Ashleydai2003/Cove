@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     });
 
     const data = await backendResponse.json().catch(() => ({ message: 'Invalid response from backend' }));
-
+    
     if (backendResponse.ok) {
       return NextResponse.json(data);
     } else {

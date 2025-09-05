@@ -244,14 +244,11 @@ struct GuestRowView: View {
                     .frame(width: 48, height: 48)
                     .clipShape(Circle())
             } else {
-                Circle()
-                    .fill(Color.gray.opacity(0.2))
+                Image("default_user_pfp")
+                    .resizable()
+                    .scaledToFill()
                     .frame(width: 48, height: 48)
-                    .overlay(
-                        Image(systemName: "person.fill")
-                            .foregroundColor(.gray)
-                            .font(.system(size: 20))
-                    )
+                    .clipShape(Circle())
             }
             
             // Member name
