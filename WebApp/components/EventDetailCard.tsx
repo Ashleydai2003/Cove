@@ -22,6 +22,13 @@ interface EventDetailCardProps {
   event: Event;
 }
 
+/**
+ * API Call Strategy - Only 3 instances:
+ * 1. Initial page load (handled in page.tsx)
+ * 2. After user login (handleOnboardingComplete)
+ * 3. After user RSVP/RSVP removal (handleRSVP/handleRemoveRSVP)
+ */
+
 export function EventDetailCard({ event }: EventDetailCardProps) {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showGuestList, setShowGuestList] = useState(false);
@@ -98,7 +105,8 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
         setRsvpStatus('PENDING');
         setShowSuccessModal(true);
         
-        // Refresh event data to ensure we have the latest state
+        // API Call #3: After user RSVP - fetch fresh event data
+        console.log('Fetching fresh event data after RSVP...');
         try {
           const eventData = await apiClient.fetchEvent(event.id);
           setRsvpStatus(eventData.rsvpStatus ?? null);
@@ -133,7 +141,8 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
       if (response.ok) {
         setRsvpStatus(null);
         
-        // Refresh event data to ensure we have the latest state
+        // API Call #3: After user RSVP removal - fetch fresh event data
+        console.log('Fetching fresh event data after RSVP removal...');
         try {
           const eventData = await apiClient.fetchEvent(event.id);
           setRsvpStatus(eventData.rsvpStatus ?? null);
