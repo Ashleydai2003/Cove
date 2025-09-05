@@ -51,12 +51,21 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
         if (onEventUpdate) {
           onEventUpdate(eventData);
         }
+        
+        // Update local state to trigger re-renders
         setRsvpStatus(eventData.rsvpStatus ?? null);
 
         // Update authentication state based on the fresh data
         const isUserAuthenticated = eventData.rsvpStatus !== null || !!eventData.isHost;
         setIsAuthenticated(isUserAuthenticated);
         setHasCompletedOnboarding(isUserAuthenticated);
+        
+        console.log('Updated event data with auth info:', {
+          rsvpStatus: eventData.rsvpStatus,
+          isHost: eventData.isHost,
+          location: eventData.location,
+          rsvpCount: eventData.rsvps?.length || 0
+        });
       } catch (error) {
         console.error('Error fetching fresh event data:', error);
         setIsAuthenticated(false);
@@ -89,7 +98,19 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
   };
 
   // Check if user can see full event details (RSVP'd, pending, or host)
-  const canSeeFullDetails = rsvpStatus === 'GOING' || rsvpStatus === 'PENDING' || event.isHost;
+  // Use the most up-to-date rsvpStatus from either local state or event prop
+  const currentRsvpStatus = rsvpStatus || event.rsvpStatus;
+  const canSeeFullDetails = currentRsvpStatus === 'GOING' || currentRsvpStatus === 'PENDING' || event.isHost;
+  
+  // Debug logging for UI visibility
+  console.log('UI Visibility Check:', {
+    currentRsvpStatus,
+    isHost: event.isHost,
+    canSeeFullDetails,
+    hasLocation: !!event.location,
+    hasRsvps: !!(event.rsvps && event.rsvps.length > 0),
+    rsvpCount: event.rsvps?.length || 0
+  });
 
   // Check if user can see Venmo handle (authenticated and completed onboarding)
   const canSeeVenmoHandle = isAuthenticated && hasCompletedOnboarding && event.paymentHandle;
