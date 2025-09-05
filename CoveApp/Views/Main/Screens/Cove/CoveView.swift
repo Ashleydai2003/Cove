@@ -258,10 +258,10 @@ struct CoveView: View {
                         showInviteMembers = true
                     },
                     dismiss: {
-                        withAnimation(.easeInOut(duration: 0.18)) {
-                            showSettingsMenu = false
-                        }
+                    withAnimation(.easeInOut(duration: 0.18)) {
+                        showSettingsMenu = false
                     }
+                }
                 )
                 .frame(width: UIScreen.main.bounds.width * 0.65)
                 .padding(.trailing, 8)
