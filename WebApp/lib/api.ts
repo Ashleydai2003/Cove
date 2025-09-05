@@ -12,19 +12,11 @@ class ApiClient {
     try {
       const url = `/api/event?eventId=${encodeURIComponent(eventId)}`;
 
-      console.log('🎯🎯🎯 API Client - fetchEvent called with eventId:', eventId);
-      console.log('API Client - Making request to:', url);
-      console.log('API Client - Request will include credentials:', true);
-      console.log('API Client - Available cookies:', document.cookie);
-
       const response = await fetch(url, {
         method: 'GET',
         credentials: 'include', // Browser automatically includes auth cookies
         cache: 'no-store', // Always fresh data
       });
-      
-      console.log('API Client - Response status:', response.status);
-      console.log('API Client - Response headers:', Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
         const errorData: ApiError = await response.json().catch(() => ({

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
-  console.log('🚨🚨🚨 /api/event/route.ts - GET function called! 🚨🚨🚨');
   try {
     // Get event ID from query parameters
     const { searchParams } = new URL(request.url);
@@ -16,12 +15,6 @@ export async function GET(request: NextRequest) {
 
     // Get auth token from cookie
     const authToken = request.cookies.get('session-token')?.value;
-    
-    // Debug logging
-    console.log('Event API - Auth token found:', !!authToken);
-    console.log('Event API - Token length:', authToken?.length || 0);
-    console.log('Event API - All cookies:', request.cookies.getAll().map(c => c.name));
-    console.log('Event API - All cookies with values:', request.cookies.getAll().map(c => ({ name: c.name, value: c.value.substring(0, 20) + '...' })));
 
     // Prepare headers for backend request
     const headers: Record<string, string> = {
@@ -31,19 +24,13 @@ export async function GET(request: NextRequest) {
     // Add authorization header if token exists
     if (authToken) {
       headers['Authorization'] = `Bearer ${authToken}`;
-      console.log('Event API - Authorization header set');
-    } else {
-      console.log('Event API - No auth token, making unauthenticated request');
     }
 
     // Call the backend API to get event data
-    console.log('Event API - Calling backend with headers:', headers);
     const backendResponse = await fetch(`${process.env.BACKEND_API_URL}/event?eventId=${encodeURIComponent(eventId)}`, {
       method: 'GET',
       headers,
     });
-    
-    console.log('Event API - Backend response status:', backendResponse.status);
 
     if (backendResponse.ok) {
       const data = await backendResponse.json();
