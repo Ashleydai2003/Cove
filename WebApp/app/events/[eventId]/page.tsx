@@ -31,7 +31,8 @@ export default function EventPage() {
           id: eventData.id,
           rsvpStatus: eventData.rsvpStatus,
           isHost: eventData.isHost,
-          name: eventData.name
+          name: eventData.name,
+          fullEventData: eventData
         });
         setEvent(eventData);
       } catch (err) {
