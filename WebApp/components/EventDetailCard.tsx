@@ -40,7 +40,7 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
         console.log('Fresh event data:', eventData);
         setRsvpStatus(eventData.rsvpStatus ?? null);
         // If we have an RSVP status, user is authenticated
-        setIsAuthenticated(eventData.rsvpStatus !== null || eventData.isHost);
+        setIsAuthenticated(eventData.rsvpStatus !== null || !!eventData.isHost);
       } catch (error) {
         console.error('Error fetching fresh event data:', error);
         setIsAuthenticated(false);
@@ -155,7 +155,7 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
       // Fetch fresh event data to get updated auth state
       const eventData = await apiClient.fetchEvent(event.id);
       setRsvpStatus(eventData.rsvpStatus ?? null);
-      setIsAuthenticated(eventData.rsvpStatus !== null || eventData.isHost);
+      setIsAuthenticated(eventData.rsvpStatus !== null || !!eventData.isHost);
       setHasCompletedOnboarding(true);
     } catch (error) {
       console.error('Error refreshing after login:', error);
