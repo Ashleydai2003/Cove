@@ -193,6 +193,8 @@ class EventPostViewModel: ObservableObject {
             parameters["cursor"] = cursor
         }
         
+        print("EventMembers: requesting page — refresh=\(refresh), cursor=\(membersCursor ?? "nil")")
+        
         NetworkManager.shared.get(endpoint: "/event-members", parameters: parameters) { [weak self] (result: Result<EventMembersResponse, NetworkError>) in
             guard let self = self else { return }
             
@@ -201,6 +203,7 @@ class EventPostViewModel: ObservableObject {
                 
                 switch result {
                 case .success(let response):
+                    print("EventMembers: received — count=\(response.members.count), hasMore=\(response.hasMore), nextCursor=\(response.nextCursor ?? "nil")")
                     if refresh {
                         self.eventMembers = response.members
                     } else {
@@ -214,9 +217,11 @@ class EventPostViewModel: ObservableObject {
                     }
                     self.hasMoreMembers = response.hasMore
                     self.membersCursor = response.nextCursor
+                    print("EventMembers: total appended — totalCount=\(self.eventMembers.count)")
                     completion?()
                 case .failure(let error):
                     self.errorMessage = error.localizedDescription
+                    print("EventMembers: error — \(error.localizedDescription)")
                     completion?()
                 }
             }
