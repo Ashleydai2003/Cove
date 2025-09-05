@@ -26,6 +26,12 @@ export default function EventPage() {
         // API Call #1: Initial page load or page refresh
         console.log('Fetching event data on initial page load...');
         const eventData = await apiClient.fetchEvent(eventId);
+        console.log('Initial event data received:', {
+          id: eventData.id,
+          rsvpStatus: eventData.rsvpStatus,
+          isHost: eventData.isHost,
+          name: eventData.name
+        });
         setEvent(eventData);
       } catch (err) {
         console.error('Error fetching event:', err);
