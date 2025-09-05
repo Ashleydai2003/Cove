@@ -40,41 +40,22 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
   const [rsvpStatus, setRsvpStatus] = useState<string | null>(event.rsvpStatus ?? null);
   const [isRsvpLoading, setIsRsvpLoading] = useState(false);
 
-  // Fetch fresh event data on mount to get current auth state and complete event details
+  // Initialize auth state from event data on mount
   useEffect(() => {
-    const fetchFreshData = async () => {
-      try {
-        const eventData = await apiClient.fetchEvent(event.id, true); // Force fresh data
-        console.log('Fresh event data:', eventData);
-
-        // Update the entire event object with authenticated data
-        if (onEventUpdate) {
-          onEventUpdate(eventData);
-        }
-        
-        // Update local state to trigger re-renders
-        setRsvpStatus(eventData.rsvpStatus ?? null);
-
-        // Update authentication state based on the fresh data
-        const isUserAuthenticated = eventData.rsvpStatus !== null || !!eventData.isHost;
-        setIsAuthenticated(isUserAuthenticated);
-        setHasCompletedOnboarding(isUserAuthenticated);
-        
-        console.log('Updated event data with auth info:', {
-          rsvpStatus: eventData.rsvpStatus,
-          isHost: eventData.isHost,
-          location: eventData.location,
-          rsvpCount: eventData.rsvps?.length || 0
-        });
-      } catch (error) {
-        console.error('Error fetching fresh event data:', error);
-        setIsAuthenticated(false);
-        setHasCompletedOnboarding(false);
-      }
-    };
-
-    fetchFreshData();
-  }, [event.id]);
+    // Set initial auth state based on event data
+    const isUserAuthenticated = event.rsvpStatus !== null || !!event.isHost;
+    setIsAuthenticated(isUserAuthenticated);
+    setHasCompletedOnboarding(isUserAuthenticated);
+    setRsvpStatus(event.rsvpStatus ?? null);
+    
+    console.log('Initial auth state from event data:', {
+      rsvpStatus: event.rsvpStatus,
+      isHost: event.isHost,
+      isAuthenticated: isUserAuthenticated,
+      hasLocation: !!event.location,
+      hasRsvps: !!(event.rsvps && event.rsvps.length > 0)
+    });
+  }, [event.id, event.rsvpStatus, event.isHost]);
 
   const handleRSVP = async () => {
     // Check if user is authenticated and has completed onboarding
@@ -136,13 +117,16 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
         setRsvpStatus('PENDING');
         setShowSuccessModal(true);
         
-        // API Call #3: After user RSVP - fetch fresh event data
+        // API Call #3: After user RSVP - fetch fresh event data and reload page
         console.log('Fetching fresh event data after RSVP...');
         try {
           const eventData = await apiClient.fetchEvent(event.id, true); // Force fresh data
-          setRsvpStatus(eventData.rsvpStatus ?? null);
+          console.log('RSVP successful, reloading page with fresh data...');
+          window.location.reload(); // Reload entire page to show updated UI
         } catch (refreshError) {
           console.error('Error refreshing event data after RSVP:', refreshError);
+          // Still reload even if refresh fails to ensure UI is updated
+          window.location.reload();
         }
       } else {
         const data = await response.json();
@@ -172,13 +156,16 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
       if (response.ok) {
         setRsvpStatus(null);
         
-        // API Call #3: After user RSVP removal - fetch fresh event data
+        // API Call #3: After user RSVP removal - fetch fresh event data and reload page
         console.log('Fetching fresh event data after RSVP removal...');
         try {
           const eventData = await apiClient.fetchEvent(event.id, true); // Force fresh data
-          setRsvpStatus(eventData.rsvpStatus ?? null);
+          console.log('RSVP removal successful, reloading page with fresh data...');
+          window.location.reload(); // Reload entire page to show updated UI
         } catch (refreshError) {
           console.error('Error refreshing event data after RSVP removal:', refreshError);
+          // Still reload even if refresh fails to ensure UI is updated
+          window.location.reload();
         }
       } else {
         const data = await response.json();
@@ -194,14 +181,12 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
     try {
       // Fetch fresh event data to get updated auth state
       const eventData = await apiClient.fetchEvent(event.id, true); // Force fresh data
-      setRsvpStatus(eventData.rsvpStatus ?? null);
-      setIsAuthenticated(eventData.rsvpStatus !== null || !!eventData.isHost);
-      setHasCompletedOnboarding(true);
+      console.log('Login successful, reloading page with fresh data...');
+      window.location.reload(); // Reload entire page to show updated UI
     } catch (error) {
       console.error('Error refreshing after login:', error);
-      // Fallback: update basic auth state
-      setIsAuthenticated(true);
-      setHasCompletedOnboarding(true);
+      // Still reload even if refresh fails to ensure UI is updated
+      window.location.reload();
     }
     
     setShowOnboarding(false);
