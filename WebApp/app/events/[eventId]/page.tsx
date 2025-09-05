@@ -23,6 +23,8 @@ export default function EventPage() {
       try {
         setLoading(true);
         setError(null);
+        // API Call #1: Initial page load or page refresh
+        console.log('Fetching event data on initial page load...');
         const eventData = await apiClient.fetchEvent(eventId);
         setEvent(eventData);
       } catch (err) {
