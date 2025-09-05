@@ -21,17 +21,6 @@ const RATE_LIMIT = {
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
 
 export function setSecureSession(response: NextResponse, token: string): NextResponse {
-  console.log('setSecureSession - Setting cookie:', {
-    name: SESSION_CONFIG.name,
-    tokenLength: token.length,
-    httpOnly: SESSION_CONFIG.httpOnly,
-    secure: SESSION_CONFIG.secure,
-    sameSite: SESSION_CONFIG.sameSite,
-    maxAge: SESSION_CONFIG.maxAge,
-    path: SESSION_CONFIG.path,
-    domain: SESSION_CONFIG.domain,
-  });
-  
   response.cookies.set(SESSION_CONFIG.name, token, {
     httpOnly: SESSION_CONFIG.httpOnly,
     secure: SESSION_CONFIG.secure,
@@ -40,8 +29,6 @@ export function setSecureSession(response: NextResponse, token: string): NextRes
     path: SESSION_CONFIG.path,
     domain: SESSION_CONFIG.domain,
   });
-  
-  console.log('setSecureSession - Cookie set successfully');
   return response;
 }
 

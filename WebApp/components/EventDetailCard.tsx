@@ -20,16 +20,17 @@ import VenmoConfirmModal from './VenmoConfirmModal';
 
 interface EventDetailCardProps {
   event: Event;
+  onEventUpdate?: (event: Event) => void;
 }
 
 /**
  * API Call Strategy - Only 3 instances:
- * 1. Initial page load (handled in page.tsx)
+ * 1. Initial page load (handled in EventDetailCard useEffect)
  * 2. After user login (handleOnboardingComplete)
  * 3. After user RSVP/RSVP removal (handleRSVP/handleRemoveRSVP)
  */
 
-export function EventDetailCard({ event }: EventDetailCardProps) {
+export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showGuestList, setShowGuestList] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -39,18 +40,27 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
   const [rsvpStatus, setRsvpStatus] = useState<string | null>(event.rsvpStatus ?? null);
   const [isRsvpLoading, setIsRsvpLoading] = useState(false);
 
-  // Fetch fresh event data on mount to get current auth state
+  // Fetch fresh event data on mount to get current auth state and complete event details
   useEffect(() => {
     const fetchFreshData = async () => {
       try {
         const eventData = await apiClient.fetchEvent(event.id);
         console.log('Fresh event data:', eventData);
+
+        // Update the entire event object with authenticated data
+        if (onEventUpdate) {
+          onEventUpdate(eventData);
+        }
         setRsvpStatus(eventData.rsvpStatus ?? null);
-        // If we have an RSVP status, user is authenticated
-        setIsAuthenticated(eventData.rsvpStatus !== null || !!eventData.isHost);
+
+        // Update authentication state based on the fresh data
+        const isUserAuthenticated = eventData.rsvpStatus !== null || !!eventData.isHost;
+        setIsAuthenticated(isUserAuthenticated);
+        setHasCompletedOnboarding(isUserAuthenticated);
       } catch (error) {
         console.error('Error fetching fresh event data:', error);
         setIsAuthenticated(false);
+        setHasCompletedOnboarding(false);
       }
     };
 
@@ -160,15 +170,9 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
   };
 
   const handleOnboardingComplete = async (userId: string) => {
-    console.log('EventDetailCard - handleOnboardingComplete called with userId:', userId);
     try {
       // Fetch fresh event data to get updated auth state
-      console.log('EventDetailCard - About to call apiClient.fetchEvent for event:', event.id);
       const eventData = await apiClient.fetchEvent(event.id);
-      console.log('EventDetailCard - Fresh event data received:', {
-        rsvpStatus: eventData.rsvpStatus,
-        isHost: eventData.isHost
-      });
       setRsvpStatus(eventData.rsvpStatus ?? null);
       setIsAuthenticated(eventData.rsvpStatus !== null || !!eventData.isHost);
       setHasCompletedOnboarding(true);
