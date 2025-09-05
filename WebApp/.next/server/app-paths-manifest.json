@@ -1,6 +1,0 @@
-{
-  "/api/auth/refresh/route": "app/api/auth/refresh/route.js",
-  "/api/event/route": "app/api/event/route.js",
-  "/api/auth/logout/route": "app/api/auth/logout/route.js",
-  "/events/[eventId]/page": "app/events/[eventId]/page.js"
-}
