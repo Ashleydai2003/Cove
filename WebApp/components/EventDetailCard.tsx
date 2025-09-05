@@ -20,9 +20,10 @@ import VenmoConfirmModal from './VenmoConfirmModal';
 
 interface EventDetailCardProps {
   event: Event;
+  onEventUpdate?: () => Promise<void>;
 }
 
-export function EventDetailCard({ event }: EventDetailCardProps) {
+export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showGuestList, setShowGuestList] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);

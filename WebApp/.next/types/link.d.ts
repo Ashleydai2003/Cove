@@ -41,13 +41,13 @@ declare namespace __next_route_internal_types__ {
     | `/api/onboard`
     | `/api/rsvp`
     | `/api/rsvp-remove`
-    | `/api/verify-otp`
     | `/api/universities`
+    | `/api/verify-otp`
   type DynamicRoutes<T extends string = string> = 
     | `/api/coves/${SafeSlug<T>}`
     | `/api/coves/${SafeSlug<T>}/events`
-    | `/events/${SafeSlug<T>}`
     | `/coves/${SafeSlug<T>}`
+    | `/events/${SafeSlug<T>}`
 
   type RouteImpl<T> = 
     | StaticRoutes

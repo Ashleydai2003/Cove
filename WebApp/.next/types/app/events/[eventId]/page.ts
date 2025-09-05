@@ -1,4 +1,4 @@
-// File: /Users/ashleydai2017/Developer/spr25-team-23/WebApp/app/events/[eventId]/page.tsx
+// File: /Users/ashleydai2017/Developer/Cove/WebApp/app/events/[eventId]/page.tsx
 import * as entry from '../../../../../app/events/[eventId]/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
