@@ -10,17 +10,12 @@ class ApiClient {
 
   async fetchEvent(eventId: string): Promise<Event> {
     try {
-      // Use the web app's API route instead of calling backend directly
       const url = `/api/event?eventId=${encodeURIComponent(eventId)}`;
-      
+
       const response = await fetch(url, {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include', // Include cookies for authentication
-        // Don't cache authenticated requests
-        cache: 'no-store',
+        credentials: 'include', // Browser automatically includes auth cookies
+        cache: 'no-store', // Always fresh data
       });
 
       if (!response.ok) {
@@ -35,19 +30,32 @@ class ApiClient {
       return data.event;
     } catch (error) {
       console.error('Error fetching event:', error);
-      
-      if (error instanceof Error) {
-        throw error;
-      }
-      
-      throw new Error('Failed to fetch event data');
+      throw error instanceof Error ? error : new Error('Failed to fetch event data');
     }
   }
 
-  // Future: Add authentication and RSVP methods
-  async updateRSVP(eventId: string, status: string, authToken?: string): Promise<void> {
-    // This will be implemented when authentication is added
-    throw new Error('RSVP functionality requires authentication - coming soon!');
+  async updateRSVP(eventId: string, status: string): Promise<void> {
+    try {
+      const response = await fetch('/api/rsvp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Browser automatically includes auth cookies
+        body: JSON.stringify({ eventId, status }),
+      });
+
+      if (!response.ok) {
+        const errorData: ApiError = await response.json().catch(() => ({
+          message: `HTTP ${response.status}: ${response.statusText}`,
+        }));
+        
+        throw new Error(errorData.message || `Failed to update RSVP: ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error('Error updating RSVP:', error);
+      throw error instanceof Error ? error : new Error('Failed to update RSVP');
+    }
   }
 }
 

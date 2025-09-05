@@ -89,39 +89,8 @@ if (typeof window !== 'undefined') {
   });
 }
 
-export async function checkAuthStatus(): Promise<{ isAuthenticated: boolean; user?: User }> {
-  try {
-    const response = await fetch('/api/auth/status', {
-      method: 'GET',
-      credentials: 'include', // Include cookies
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      return {
-        isAuthenticated: true,
-        user: data.user,
-      };
-    } else if (response.status === 401) {
-      // 401 is expected for unauthenticated users - don't log as error
-      return {
-        isAuthenticated: false,
-      };
-    } else {
-      // Log other errors (500, 403, etc.)
-      console.error('Auth check failed with status:', response.status);
-      return {
-        isAuthenticated: false,
-      };
-    }
-  } catch (error) {
-    // Network errors or other exceptions
-    console.error('Auth check network error:', error);
-    return {
-      isAuthenticated: false,
-    };
-  }
-}
+// Note: Auth status is now handled automatically by cookies in API calls
+// No need for manual status checking - the browser handles it
 
 export async function logout(): Promise<void> {
   try {

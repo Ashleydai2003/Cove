@@ -5,43 +5,40 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Event } from '@/types/event';
-import { apiClient } from '@/lib/api';
 import { EventDetailCard } from '@/components/EventDetailCard';
 
 export default function EventPage() {
   const params = useParams();
   const eventId = params?.eventId as string;
-  
+
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Pass initial state to component - EventDetailCard will handle fetching
   useEffect(() => {
-    if (!eventId) return;
+    if (!eventId) {
+      setError('Event ID is required');
+      setLoading(false);
+      return;
+    }
 
-    const fetchEvent = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        // API Call #1: Initial page load or page refresh
-        console.log('Fetching event data on initial page load...');
-        const eventData = await apiClient.fetchEvent(eventId);
-        console.log('Initial event data received:', {
-          id: eventData.id,
-          rsvpStatus: eventData.rsvpStatus,
-          isHost: eventData.isHost,
-          name: eventData.name
-        });
-        setEvent(eventData);
-      } catch (err) {
-        console.error('Error fetching event:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load event');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchEvent();
+    // Create a minimal event object for initial render
+    // EventDetailCard will fetch the real data with authentication
+    setEvent({
+      id: eventId,
+      name: '',
+      description: '',
+      date: '',
+      location: '',
+      coveId: '',
+      host: { id: '', name: '' },
+      cove: { id: '', name: '' },
+      rsvpStatus: null,
+      isHost: false,
+      paymentHandle: null,
+    });
+    setLoading(false);
   }, [eventId]);
 
   if (loading) {
@@ -100,7 +97,7 @@ export default function EventPage() {
 
       {/* Event Content */}
       <div className="max-w-7xl mx-auto px-8 pb-16">
-        <EventDetailCard event={event} />
+        <EventDetailCard event={event} onEventUpdate={setEvent} />
       </div>
     </div>
   );
