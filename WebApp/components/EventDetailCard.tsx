@@ -316,9 +316,11 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full bg-gray-300 flex items-center justify-center">
-                          <User size={14} className="text-gray-500" />
-                        </div>
+                        <img
+                          src="/default_user_pfp.svg"
+                          alt="Default profile"
+                          className="w-full h-full object-cover"
+                        />
                       )}
                     </div>
                   ))}

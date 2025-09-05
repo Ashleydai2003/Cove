@@ -4,6 +4,8 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const eventId = searchParams.get('eventId');
+    const cursor = searchParams.get('cursor');
+    const limit = searchParams.get('limit') || '20';
 
     if (!eventId) {
       return NextResponse.json(
@@ -22,8 +24,17 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Call the backend API to get event members
-    const backendResponse = await fetch(`${process.env.BACKEND_API_URL}/event-members?eventId=${eventId}`, {
+    // Build query parameters for backend
+    const backendParams = new URLSearchParams({
+      eventId,
+      limit
+    });
+    if (cursor) {
+      backendParams.append('cursor', cursor);
+    }
+
+    // Call the backend API to get event members with pagination
+    const backendResponse = await fetch(`${process.env.BACKEND_API_URL}/event-members?${backendParams.toString()}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${authToken}`,

@@ -609,14 +609,11 @@ struct EventPostView: View {
                                                         .frame(width: 62, height: 62)
                                                         .clipShape(Circle())
                                                 } else {
-                                                    Circle()
-                                                        .fill(Color.gray.opacity(0.2))
+                                                    Image("default_user_pfp")
+                                                        .resizable()
+                                                        .scaledToFill()
                                                         .frame(width: 62, height: 62)
-                                                        .overlay(
-                                                            Image(systemName: "person.fill")
-                                                                .foregroundColor(.gray)
-                                                                .font(.system(size: 25))
-                                                        )
+                                                        .clipShape(Circle())
                                                 }
                                             }
 
