@@ -117,17 +117,9 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
         setRsvpStatus('PENDING');
         setShowSuccessModal(true);
         
-        // API Call #3: After user RSVP - fetch fresh event data and reload page
-        console.log('Fetching fresh event data after RSVP...');
-        try {
-          const eventData = await apiClient.fetchEvent(event.id, true); // Force fresh data
-          console.log('RSVP successful, reloading page with fresh data...');
-          window.location.reload(); // Reload entire page to show updated UI
-        } catch (refreshError) {
-          console.error('Error refreshing event data after RSVP:', refreshError);
-          // Still reload even if refresh fails to ensure UI is updated
-          window.location.reload();
-        }
+        // Reload page to show updated UI with fresh data
+        console.log('RSVP successful, reloading page...');
+        window.location.reload();
       } else {
         const data = await response.json();
         alert(data.message || 'Failed to RSVP');
@@ -156,17 +148,9 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
       if (response.ok) {
         setRsvpStatus(null);
         
-        // API Call #3: After user RSVP removal - fetch fresh event data and reload page
-        console.log('Fetching fresh event data after RSVP removal...');
-        try {
-          const eventData = await apiClient.fetchEvent(event.id, true); // Force fresh data
-          console.log('RSVP removal successful, reloading page with fresh data...');
-          window.location.reload(); // Reload entire page to show updated UI
-        } catch (refreshError) {
-          console.error('Error refreshing event data after RSVP removal:', refreshError);
-          // Still reload even if refresh fails to ensure UI is updated
-          window.location.reload();
-        }
+        // Reload page to show updated UI with fresh data
+        console.log('RSVP removal successful, reloading page...');
+        window.location.reload();
       } else {
         const data = await response.json();
         alert(data.message || 'Failed to remove RSVP');
@@ -178,16 +162,9 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
   };
 
   const handleOnboardingComplete = async (userId: string) => {
-    try {
-      // Fetch fresh event data to get updated auth state
-      const eventData = await apiClient.fetchEvent(event.id, true); // Force fresh data
-      console.log('Login successful, reloading page with fresh data...');
-      window.location.reload(); // Reload entire page to show updated UI
-    } catch (error) {
-      console.error('Error refreshing after login:', error);
-      // Still reload even if refresh fails to ensure UI is updated
-      window.location.reload();
-    }
+    // Reload page to show updated UI with fresh authenticated data
+    console.log('Login successful, reloading page...');
+    window.location.reload();
     
     setShowOnboarding(false);
   };
