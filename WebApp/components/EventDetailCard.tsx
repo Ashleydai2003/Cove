@@ -12,7 +12,7 @@ const OnboardingModal = dynamic(() => import('./OnboardingModal'), {
   ssr: false,
   loading: () => <div>Loading...</div>
 });
-import { checkAuthStatus } from '@/lib/auth';
+// Auth status is now determined from event data, no separate auth check needed
 import { apiClient } from '@/lib/api';
 import GuestListModal from './GuestListModal';
 import RSVPSuccessModal from './RSVPSuccessModal';
@@ -21,6 +21,13 @@ import VenmoConfirmModal from './VenmoConfirmModal';
 interface EventDetailCardProps {
   event: Event;
 }
+
+/**
+ * API Call Strategy - Only 3 instances:
+ * 1. Initial page load (handled in page.tsx)
+ * 2. After user login (handleOnboardingComplete)
+ * 3. After user RSVP/RSVP removal (handleRSVP/handleRemoveRSVP)
+ */
 
 export function EventDetailCard({ event }: EventDetailCardProps) {
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -32,32 +39,19 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
   const [rsvpStatus, setRsvpStatus] = useState<string | null>(event.rsvpStatus ?? null);
   const [isRsvpLoading, setIsRsvpLoading] = useState(false);
 
-  // Simple authentication check on mount
+  // Initialize auth state based on initial event data (no API call needed)
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const { isAuthenticated, user } = await checkAuthStatus();
-        console.log('Auth check result:', { isAuthenticated, user });
-        setIsAuthenticated(isAuthenticated);
-        setHasCompletedOnboarding(!!(isAuthenticated && user && !user.onboarding));
-        
-        // If authenticated, fetch fresh event data
-        if (isAuthenticated) {
-          try {
-            const eventData = await apiClient.fetchEvent(event.id);
-            console.log('Fresh event data:', eventData);
-            setRsvpStatus(eventData.rsvpStatus ?? null);
-          } catch (error) {
-            console.error('Error fetching fresh event data:', error);
-          }
-        }
-      } catch (error) {
-        console.error('Error checking auth status:', error);
-      }
-    };
-
-    checkAuth();
-  }, [event.id]);
+    // Use the initial event data to determine auth state
+    const isUserAuthenticated = event.rsvpStatus !== null || !!event.isHost;
+    setIsAuthenticated(isUserAuthenticated);
+    setHasCompletedOnboarding(isUserAuthenticated);
+    
+    console.log('Initial auth state from event data:', {
+      rsvpStatus: event.rsvpStatus,
+      isHost: event.isHost,
+      isAuthenticated: isUserAuthenticated
+    });
+  }, [event.id, event.rsvpStatus, event.isHost]);
 
   const handleRSVP = async () => {
     // Check if user is authenticated and has completed onboarding
@@ -107,7 +101,8 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
         setRsvpStatus('PENDING');
         setShowSuccessModal(true);
         
-        // Refresh event data to ensure we have the latest state
+        // API Call #3: After user RSVP - fetch fresh event data
+        console.log('Fetching fresh event data after RSVP...');
         try {
           const eventData = await apiClient.fetchEvent(event.id);
           setRsvpStatus(eventData.rsvpStatus ?? null);
@@ -142,7 +137,8 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
       if (response.ok) {
         setRsvpStatus(null);
         
-        // Refresh event data to ensure we have the latest state
+        // API Call #3: After user RSVP removal - fetch fresh event data
+        console.log('Fetching fresh event data after RSVP removal...');
         try {
           const eventData = await apiClient.fetchEvent(event.id);
           setRsvpStatus(eventData.rsvpStatus ?? null);
@@ -161,12 +157,12 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
 
   const handleOnboardingComplete = async (userId: string) => {
     try {
-      // Check authentication status again
-      const { isAuthenticated, user } = await checkAuthStatus();
-      setIsAuthenticated(isAuthenticated);
-      setHasCompletedOnboarding(!!(isAuthenticated && user && !user.onboarding));
+      // User just completed onboarding, so they're now authenticated
+      setIsAuthenticated(true);
+      setHasCompletedOnboarding(true);
       
-      // Refresh event data to get updated RSVP status
+      // API Call #2: After user login - fetch fresh event data
+      console.log('Fetching fresh event data after login...');
       const eventData = await apiClient.fetchEvent(event.id);
       setRsvpStatus(eventData.rsvpStatus ?? null);
     } catch (error) {
