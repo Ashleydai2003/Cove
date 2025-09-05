@@ -17,6 +17,7 @@ function getAllowedOrigins(): string[] {
     'https://coveapp.co',
     'https://www.coveapp.co',
     'https://api.coveapp.co',
+    'https://coveweb-git-ashley-webapp-cove-1deff183.vercel.app', //tmp
     'capacitor://localhost', // iOS Capacitor
     'ionic://localhost' // Ionic
   ];
