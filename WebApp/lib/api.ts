@@ -11,11 +11,12 @@ class ApiClient {
   async fetchEvent(eventId: string): Promise<Event> {
     try {
       const url = `/api/event?eventId=${encodeURIComponent(eventId)}`;
-      
+
+      console.log('🎯🎯🎯 API Client - fetchEvent called with eventId:', eventId);
       console.log('API Client - Making request to:', url);
       console.log('API Client - Request will include credentials:', true);
       console.log('API Client - Available cookies:', document.cookie);
-      
+
       const response = await fetch(url, {
         method: 'GET',
         credentials: 'include', // Browser automatically includes auth cookies
