@@ -160,9 +160,15 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
   };
 
   const handleOnboardingComplete = async (userId: string) => {
+    console.log('EventDetailCard - handleOnboardingComplete called with userId:', userId);
     try {
       // Fetch fresh event data to get updated auth state
+      console.log('EventDetailCard - About to call apiClient.fetchEvent for event:', event.id);
       const eventData = await apiClient.fetchEvent(event.id);
+      console.log('EventDetailCard - Fresh event data received:', {
+        rsvpStatus: eventData.rsvpStatus,
+        isHost: eventData.isHost
+      });
       setRsvpStatus(eventData.rsvpStatus ?? null);
       setIsAuthenticated(eventData.rsvpStatus !== null || !!eventData.isHost);
       setHasCompletedOnboarding(true);
