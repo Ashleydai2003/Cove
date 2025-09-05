@@ -525,228 +525,6 @@ export const handleGetCoveEvents = async (event: APIGatewayProxyEvent): Promise<
 // 1. User must be authenticated
 // 2. User must be a member of the event's cove
 // 3. Returns all event details including host info, cove info, and user's RSVP status
-export const handleGetEvent = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-  try {
-    if (event.httpMethod !== 'GET') {
-      return {
-        statusCode: 405,
-        body: JSON.stringify({
-          message: 'Method not allowed. Only GET requests are accepted for retrieving event details.'
-        })
-      };
-    }
-
-    // Optional authentication
-    console.log('Request cookies:', event.headers.cookie);
-    const authAttempt = await authMiddleware(event);
-    let userUid: string | null = null;
-    if (!('statusCode' in authAttempt)) {
-      userUid = authAttempt.user.uid;
-      console.log('Authenticated user:', userUid);
-    } else {
-      console.log('Authentication failed or no auth token provided');
-    }
-
-    const eventId = event.queryStringParameters?.eventId;
-    if (!eventId) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ message: 'Event ID is required' })
-      };
-    }
-
-    const prisma = await initializeDatabase();
-
-    // Minimal fetch first (avoid over-fetching sensitive relations)
-    const eventData = await prisma.event.findUnique({
-      where: { id: eventId },
-      include: {
-        hostedBy: { select: { id: true, name: true } },
-        cove: { select: { id: true, name: true, coverPhotoID: true } },
-        coverPhoto: { select: { id: true } }
-      }
-    });
-
-    if (!eventData) {
-      return {
-        statusCode: 404,
-        body: JSON.stringify({ message: 'Event not found' })
-      };
-    }
-
-    // Precompute signed URLs
-    const coverPhoto = eventData.coverPhoto ? {
-      id: eventData.coverPhoto.id,
-      url: await getSignedUrl(s3Client, new GetObjectCommand({
-        Bucket: process.env.EVENT_IMAGE_BUCKET_NAME,
-        Key: `${eventData.id}/${eventData.coverPhoto.id}.jpg`
-      }), { expiresIn: 3600 })
-    } : null;
-
-    const coveCoverPhoto = eventData.cove.coverPhotoID ? {
-      id: eventData.cove.coverPhotoID,
-      url: await getSignedUrl(s3Client, new GetObjectCommand({
-        Bucket: process.env.COVE_IMAGE_BUCKET_NAME,
-        Key: `${eventData.cove.id}/${eventData.cove.coverPhotoID}.jpg`
-      }), { expiresIn: 3600 })
-    } : null;
-
-    // Determine user relationship without over-fetching
-    const isHost = !!(userUid && eventData.hostId === userUid);
-    console.log('User relationship check:', { userUid, eventHostId: eventData.hostId, isHost });
-    
-    const userRsvp = userUid ? await prisma.eventRSVP.findUnique({
-      where: { eventId_userId: { eventId: eventData.id, userId: userUid } },
-      select: { id: true, status: true, userId: true }
-    }) : null;
-    
-    console.log('User RSVP lookup result:', { userUid, eventId: eventData.id, userRsvp });
-    
-    // Debug: Let's also check all RSVPs for this event to see what's in the database
-    if (userUid) {
-      const allRsvps = await prisma.eventRSVP.findMany({
-        where: { eventId: eventData.id },
-        select: { id: true, status: true, userId: true }
-      });
-      console.log('All RSVPs for this event:', allRsvps);
-      console.log('Looking for user ID:', userUid);
-    }
-
-    // If entitled (host OR has GOING status), fetch attendee list and return full details
-    // Note: Hosts always get full access to manage their events, regardless of RSVP status
-    const hasGoingRsvp = userRsvp && userRsvp.status === 'GOING';
-    if (isHost || hasGoingRsvp) {
-      const attendees = await prisma.eventRSVP.findMany({
-        where: { eventId: eventData.id, status: 'GOING' },
-        orderBy: { createdAt: 'desc' },
-        take: 5,
-        include: {
-          user: { select: { id: true, name: true, profilePhotoID: true } }
-        }
-      });
-
-      // Count RSVPs with "GOING" status for this event
-      const goingCount = await prisma.eventRSVP.count({
-        where: { eventId: eventData.id, status: 'GOING' }
-      });
-
-      // Count RSVPs with "PENDING" status for this event  
-      const pendingCount = await prisma.eventRSVP.count({
-        where: { eventId: eventData.id, status: 'PENDING' }
-      });
-
-      return {
-        statusCode: 200,
-        headers: {
-          'Cache-Control': 'private, no-store',
-          'Vary': 'Authorization, Cookie'
-        },
-        body: JSON.stringify({
-          event: {
-            id: eventData.id,
-            name: eventData.name,
-            description: eventData.description,
-            date: eventData.date,
-            location: eventData.location,
-                  memberCap: eventData.memberCap,
-      ticketPrice: eventData.ticketPrice,
-      paymentHandle: eventData.paymentHandle, // Available to all authenticated users
-      coveId: eventData.coveId,
-            host: {
-              id: eventData.hostedBy.id,
-              name: eventData.hostedBy.name
-            },
-            cove: {
-              id: eventData.cove.id,
-              name: eventData.cove.name,
-              coverPhoto: coveCoverPhoto
-            },
-            rsvpStatus: userRsvp?.status || null,
-            goingCount: goingCount,
-            pendingCount: pendingCount,
-            rsvps: await Promise.all(attendees.map(async rsvp => {
-              const profilePhotoUrl = rsvp.user.profilePhotoID ?
-                await getSignedUrl(s3Client, new GetObjectCommand({
-                  Bucket: process.env.USER_IMAGE_BUCKET_NAME,
-                  Key: `${rsvp.user.id}/${rsvp.user.profilePhotoID}.jpg`
-                }), { expiresIn: 3600 }) : null;
-              return {
-                id: rsvp.id,
-                status: rsvp.status,
-                userId: rsvp.userId,
-                userName: rsvp.user.name,
-                profilePhotoUrl,
-                createdAt: rsvp.createdAt
-              };
-            })),
-            coverPhoto,
-            isHost
-          }
-        })
-      };
-    }
-
-    // Count RSVPs with "GOING" status for this event (for limited response)
-    const goingCount = await prisma.eventRSVP.count({
-      where: { eventId: eventData.id, status: 'GOING' }
-    });
-
-    // Count RSVPs with "PENDING" status for this event (for limited response)
-    const pendingCount = await prisma.eventRSVP.count({
-      where: { eventId: eventData.id, status: 'PENDING' }
-    });
-
-    // Limited response for unauthenticated or authenticated-without-GOING-status/host
-    const limitedEvent: any = {
-      id: eventData.id,
-      name: eventData.name,
-      description: eventData.description,
-      date: eventData.date,
-      memberCap: eventData.memberCap,
-      ticketPrice: eventData.ticketPrice,
-      paymentHandle: eventData.paymentHandle, // Available to all authenticated users
-      host: { name: eventData.hostedBy.name },
-      cove: { 
-        name: eventData.cove.name,
-        coverPhoto: coveCoverPhoto 
-      },
-      goingCount: goingCount,
-      pendingCount: pendingCount,
-      coverPhoto
-    };
-
-    // Always include rsvpStatus for authenticated users
-    if (userUid) {
-      limitedEvent.isHost = false;
-      limitedEvent.rsvpStatus = userRsvp?.status || null;
-      console.log('Limited response for authenticated user:', { 
-        userUid, 
-        rsvpStatus: limitedEvent.rsvpStatus, 
-        userRsvp: userRsvp 
-      });
-    } else {
-      // Unauthenticated users get null rsvpStatus
-      limitedEvent.rsvpStatus = null;
-    }
-
-    return {
-      statusCode: 200,
-      headers: {
-        'Cache-Control': 'private, no-store'
-      },
-      body: JSON.stringify({ event: limitedEvent })
-    };
-  } catch (error) {
-    console.error('Get event route error:', error);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({
-        message: 'Error processing get event request',
-        error: error instanceof Error ? error.message : 'Unknown error'
-      })
-    };
-  }
-};
 
 // Update a user's RSVP status for an event
 // This endpoint handles updating RSVP status with the following requirements:
@@ -1404,14 +1182,11 @@ export const handleGetEventMembers = async (event: APIGatewayProxyEvent): Promis
       status: 'GOING'
     };
 
-    if (cursor) {
-      whereClause.id = { gt: cursor };
-    }
-
     const members = await prisma.eventRSVP.findMany({
       where: whereClause,
       orderBy: { createdAt: 'desc' },
       take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       include: {
         user: { 
           select: { 
@@ -1540,14 +1315,11 @@ export const handleGetPendingMembers = async (event: APIGatewayProxyEvent): Prom
       status: 'PENDING'
     };
 
-    if (cursor) {
-      whereClause.id = { gt: cursor };
-    }
-
     const pendingMembers = await prisma.eventRSVP.findMany({
       where: whereClause,
       orderBy: { createdAt: 'desc' },
       take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       include: {
         user: { 
           select: { 
