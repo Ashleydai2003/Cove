@@ -225,6 +225,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
       const idToken = await userCredential.user.getIdToken();
 
       // Call backend login with the ID token
+      console.log('OnboardingModal - Calling login API with token length:', idToken.length);
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -232,8 +233,12 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
         body: JSON.stringify({ idToken })
       });
 
+      console.log('OnboardingModal - Login response status:', response.status);
+      console.log('OnboardingModal - Login response headers:', Object.fromEntries(response.headers.entries()));
+
       if (response.ok) {
         const data = await response.json();
+        console.log('OnboardingModal - Login successful, user data:', data);
         if (data.user?.onboarding) {
           setStep('onboarding');
         } else {
@@ -242,6 +247,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
         }
       } else {
         const data = await response.json();
+        console.error('OnboardingModal - Login failed:', data);
         setError(data.message || 'Backend authentication failed');
       }
     } catch (err: any) {
