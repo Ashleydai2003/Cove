@@ -591,11 +591,11 @@ struct EventPostView: View {
                                             ForEach(Array(goingRsvps.prefix(4).enumerated()), id: \.element.id) { index, rsvp in
                                                 if let profilePhotoUrl = rsvp.profilePhotoUrl {
                                                     KFImage(profilePhotoUrl)
-                                                        .placeholder {
-                                                            Circle()
-                                                                .fill(Color.gray.opacity(0.2))
-                                                                .frame(width: 62, height: 62)
-                                                        }
+                                                                                                                 .placeholder {
+                                                             Circle()
+                                                                 .fill(Color.gray.opacity(0.2))
+                                                                 .frame(width: 44, height: 44)
+                                                         }
                                                         .onFailure { error in
                                                             Log.debug("❌ Failed to load profile photo: \(error)")
                                                         }
