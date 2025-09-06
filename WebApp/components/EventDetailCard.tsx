@@ -17,6 +17,8 @@ import { apiClient } from '@/lib/api';
 import GuestListModal from './GuestListModal';
 import RSVPSuccessModal from './RSVPSuccessModal';
 import VenmoConfirmModal from './VenmoConfirmModal';
+import { auth } from '@/lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 
 interface EventDetailCardProps {
   event: Event;
@@ -40,40 +42,57 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
   const [rsvpStatus, setRsvpStatus] = useState<string | null>(event.rsvpStatus ?? null);
   const [isRsvpLoading, setIsRsvpLoading] = useState(false);
 
-  // Initialize auth state from event data on mount
+  // Initialize auth state from Firebase and RSVP status from event data
   useEffect(() => {
-    // Set initial auth state based on event data
-    const isUserAuthenticated = event.rsvpStatus !== null || !!event.isHost;
-    setIsAuthenticated(isUserAuthenticated);
-    setHasCompletedOnboarding(isUserAuthenticated);
+    // Set initial RSVP status from event data (separate from auth state)
     setRsvpStatus(event.rsvpStatus ?? null);
     
-    console.log('Initial auth state from event data:', {
-      rsvpStatus: event.rsvpStatus,
-      isHost: event.isHost,
-      isAuthenticated: isUserAuthenticated,
-      hasLocation: !!event.location,
-      hasRsvps: !!(event.rsvps && event.rsvps.length > 0)
+    // Listen for Firebase auth state changes to determine authentication
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      const isUserAuthenticated = !!user;
+      setIsAuthenticated(isUserAuthenticated);
+      setHasCompletedOnboarding(isUserAuthenticated);
+      
+      console.log('Auth state changed:', {
+        isAuthenticated: isUserAuthenticated,
+        rsvpStatus: event.rsvpStatus,
+        isHost: event.isHost,
+        hasLocation: !!event.location,
+        hasRsvps: !!(event.rsvps && event.rsvps.length > 0)
+      });
+      
+      // If user just became authenticated, refresh the event data to get user-specific info
+      if (isUserAuthenticated && !event.location && !event.rsvps?.length && !event.isHost) {
+        console.log('User authenticated, refreshing event data...');
+        // Trigger a page reload to get fresh data with authentication
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+      }
     });
-  }, [event.id, event.rsvpStatus, event.isHost]);
+    
+    return () => unsubscribe();
+  }, [event.id, event.rsvpStatus, event.isHost, event.location, event.rsvps]);
 
   const handleRSVP = async () => {
-    // Check if user is authenticated and has completed onboarding
+    // Check if user is authenticated (required to call RSVP API)
     if (!isAuthenticated || !hasCompletedOnboarding) {
       setShowOnboarding(true);
+      return;
+    }
+    
+    // User is authenticated, check their current RSVP status
+    if (rsvpStatus === 'GOING' || rsvpStatus === 'PENDING') {
+      // User is already going or pending, no action needed (button should be disabled)
+      return;
     } else {
-      // User is authenticated and has completed onboarding, proceed with RSVP
-      if (rsvpStatus === 'GOING' || rsvpStatus === 'PENDING') {
-        // User is already going or pending, no action needed (button should be disabled)
-        return;
+      // User is authenticated but hasn't RSVP'd yet, proceed with RSVP
+      // Check if event has a ticket price - if so, show Venmo confirmation
+      if (event.ticketPrice && event.ticketPrice > 0 && event.paymentHandle) {
+        setShowVenmoConfirm(true);
       } else {
-        // Check if event has a ticket price - if so, show Venmo confirmation
-        if (event.ticketPrice && event.ticketPrice > 0 && event.paymentHandle) {
-          setShowVenmoConfirm(true);
-        } else {
-          // No payment required, proceed directly with RSVP
-          await performRSVP();
-        }
+        // No payment required, proceed directly with RSVP
+        await performRSVP();
       }
     }
   };
@@ -101,6 +120,9 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
   const performRSVP = async () => {
     setIsRsvpLoading(true);
     try {
+      console.log('Attempting RSVP for event:', event.id);
+      console.log('Current auth state:', { isAuthenticated, hasCompletedOnboarding });
+      
       const response = await fetch('/api/rsvp', {
         method: 'POST',
         headers: {
@@ -113,6 +135,8 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
         }),
       });
 
+      console.log('RSVP response status:', response.status);
+
       if (response.ok) {
         setRsvpStatus('PENDING');
         setShowSuccessModal(true);
@@ -122,7 +146,16 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
         window.location.reload();
       } else {
         const data = await response.json();
-        alert(data.message || 'Failed to RSVP');
+        console.error('RSVP failed:', data);
+        
+        // If it's an auth error, try to refresh the session
+        if (response.status === 401) {
+          console.log('Auth error detected, attempting session refresh...');
+          // The SessionProvider should handle this automatically
+          alert('Please try again. If the issue persists, please refresh the page.');
+        } else {
+          alert(data.message || 'Failed to RSVP');
+        }
       }
     } catch (error) {
       console.error('RSVP error:', error);
@@ -199,7 +232,7 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
           </div>
 
           <div className="space-y-6">
-            {/* Location or RSVP prompt */}
+            {/* Location visibility: based on RSVP status, not auth status */}
             {canSeeFullDetails && event.location ? (
               <div className="flex items-center space-x-2">
                 <MapPin size={16} className="text-[#8B8B8B]" />
