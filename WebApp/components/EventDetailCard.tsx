@@ -74,8 +74,12 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
         console.log('User already RSVPed, no action needed');
         return;
       } else {
-        // Check if event has a ticket price - if so, show Venmo confirmation
-        if (event.ticketPrice && event.ticketPrice > 0 && event.paymentHandle) {
+        // Check if event requires payment (single price or any tier has price)
+        const hasPayment = event.useTieredPricing 
+          ? event.pricingTiers?.some(tier => tier.price > 0) && event.paymentHandle
+          : event.ticketPrice && event.ticketPrice > 0 && event.paymentHandle;
+          
+        if (hasPayment) {
           console.log('Event has payment, showing Venmo confirmation');
           setShowVenmoConfirm(true);
         } else {
@@ -185,8 +189,12 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
       
       // Small delay to ensure state updates are processed
       setTimeout(async () => {
-        // Check if event has a ticket price - if so, show Venmo confirmation
-        if (event.ticketPrice && event.ticketPrice > 0 && event.paymentHandle) {
+        // Check if event requires payment (single price or any tier has price)
+        const hasPayment = event.useTieredPricing 
+          ? event.pricingTiers?.some(tier => tier.price > 0) && event.paymentHandle
+          : event.ticketPrice && event.ticketPrice > 0 && event.paymentHandle;
+          
+        if (hasPayment) {
           setShowVenmoConfirm(true);
         } else {
           // No payment required, proceed directly with RSVP
@@ -252,9 +260,63 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
             {/* Divider */}
             <div className="h-px w-full bg-[#E5E5E5]"></div>
 
-            {/* Price and spots - only show if data exists */}
-            {(event.ticketPrice !== null && event.ticketPrice !== undefined) || 
-             (event.memberCap !== null && event.memberCap !== undefined) ? (
+            {/* Price and spots - tiered or single pricing */}
+            {(event.useTieredPricing && event.pricingTiers && event.pricingTiers.length > 0) ? (
+              <div className="space-y-4">
+                {/* Tiered Pricing Display */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <img src="/ticket.svg" alt="Ticket" className="w-6 h-6" />
+                    <span className="font-libre-bodoni text-lg font-semibold text-[#5E1C1D]">
+                      Pricing
+                    </span>
+                  </div>
+                  
+                  {event.pricingTiers
+                    .sort((a, b) => a.sortOrder - b.sortOrder)
+                    .map((tier) => {
+                      const isSoldOut = tier.spotsLeft === 0;
+                      
+                      return (
+                        <div 
+                          key={tier.id} 
+                          className={`flex items-center justify-between p-4 rounded-lg border ${
+                            isSoldOut 
+                              ? 'bg-gray-100 border-gray-300' 
+                              : 'bg-white/60 border-black/10'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`w-3 h-3 rounded-full ${
+                              isSoldOut ? 'bg-gray-400' : 'bg-[#5E1C1D]'
+                            }`}></div>
+                            <span className={`font-libre-bodoni text-base ${
+                              isSoldOut ? 'text-gray-400' : 'text-[#5E1C1D]'
+                            }`}>
+                              {tier.tierType}
+                            </span>
+                          </div>
+                          
+                          <div className="text-right">
+                            <div className={`font-libre-bodoni font-semibold text-base ${
+                              isSoldOut ? 'text-gray-400' : 'text-[#5E1C1D]'
+                            }`}>
+                              ${tier.price.toFixed(2)}
+                            </div>
+                            {tier.spotsLeft !== undefined && tier.spotsLeft !== null && (
+                              <div className={`font-libre-bodoni text-sm ${tier.spotsLeft > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                {tier.spotsLeft > 0 ? `${tier.spotsLeft} left` : 'sold out'}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })
+                  }
+                </div>
+              </div>
+            ) : ((event.ticketPrice !== null && event.ticketPrice !== undefined) || 
+             (event.memberCap !== null && event.memberCap !== undefined)) ? (
               <div className="space-y-4">
                 {event.ticketPrice !== null && event.ticketPrice !== undefined && (
                   <div className="flex items-center gap-4">
@@ -451,6 +513,8 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
         }}
         paymentHandle={event.paymentHandle || ''}
         ticketPrice={event.ticketPrice || 0}
+        pricingTiers={event.pricingTiers}
+        useTieredPricing={event.useTieredPricing}
       />
 
       {/* RSVP Success Modal */}

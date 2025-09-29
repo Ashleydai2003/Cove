@@ -825,26 +825,28 @@ struct EventPostView: View {
             }
             
             ForEach(tiers.sorted { $0.sortOrder < $1.sortOrder }, id: \.id) { tier in
+                let isSoldOut = tier.spotsLeft == 0
+                
                 HStack(spacing: 12) {
                     // Tier icon based on type
                     Image(systemName: tierIcon(for: tier.tierType))
-                        .foregroundColor(tierColor(for: tier.tierType))
+                        .foregroundColor(isSoldOut ? .gray : tierColor(for: tier.tierType))
                         .font(.system(size: 14, weight: .medium))
                     
                     // Tier name and price
                     Text(tier.tierType)
                         .font(.LibreBodoni(size: 14))
-                        .foregroundColor(Colors.primaryDark)
+                        .foregroundColor(isSoldOut ? .gray : Colors.primaryDark)
                     
                     Spacer()
                     
                     VStack(alignment: .trailing, spacing: 2) {
                         Text("$\(String(format: "%.2f", tier.price))")
                             .font(.LibreBodoniBold(size: 14))
-                            .foregroundColor(Colors.primaryDark)
+                            .foregroundColor(isSoldOut ? .gray : Colors.primaryDark)
                         
                         if let spotsLeft = tier.spotsLeft {
-                            Text("\(spotsLeft) left")
+                            Text(spotsLeft > 0 ? "\(spotsLeft) left" : "sold out")
                                 .font(.LibreBodoni(size: 12))
                                 .foregroundColor(spotsLeft > 0 ? .green : .red)
                         }
@@ -854,10 +856,10 @@ struct EventPostView: View {
                 .padding(.vertical, 8)
                 .background(
                     RoundedRectangle(cornerRadius: 8)
-                        .fill(Color.white.opacity(0.6))
+                        .fill(isSoldOut ? Color.gray.opacity(0.1) : Color.white.opacity(0.6))
                         .overlay(
                             RoundedRectangle(cornerRadius: 8)
-                                .stroke(Color.black.opacity(0.1), lineWidth: 1)
+                                .stroke(isSoldOut ? Color.gray.opacity(0.3) : Color.black.opacity(0.1), lineWidth: 1)
                         )
                 )
             }
