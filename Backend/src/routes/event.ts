@@ -6,6 +6,34 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { s3Client } from '../config/s3';
 import * as admin from 'firebase-admin';
 
+// Helper function to calculate tier allocation based on GOING RSVPs
+// Allocates RSVPs to tiers in order: Early Bird → Regular → Last Minute
+function calculateTierAllocation(pricingTiers: any[], goingCount: number) {
+  if (!pricingTiers || pricingTiers.length === 0) {
+    return pricingTiers;
+  }
+
+  // Sort tiers by sortOrder to ensure proper allocation order
+  const sortedTiers = [...pricingTiers].sort((a, b) => a.sortOrder - b.sortOrder);
+  
+  let remainingRSVPs = goingCount;
+  
+  return sortedTiers.map(tier => {
+    const maxSpots = tier.maxSpots || Infinity;
+    const allocatedToThisTier = Math.min(remainingRSVPs, maxSpots);
+    const spotsLeft = Math.max(0, maxSpots - allocatedToThisTier);
+    
+    remainingRSVPs = Math.max(0, remainingRSVPs - allocatedToThisTier);
+    
+    return {
+      ...tier,
+      currentSpots: allocatedToThisTier,
+      spotsLeft: spotsLeft,
+      isSoldOut: spotsLeft === 0 && maxSpots !== Infinity
+    };
+  });
+}
+
 // Create a new event
 // This endpoint handles event creation with the following requirements:
 // 1. User must be authenticated
@@ -57,7 +85,9 @@ export const handleCreateEvent = async (request: APIGatewayProxyEvent): Promise<
       paymentHandle,
       isPublic,
       coverPhoto,
-      coveId 
+      coveId,
+      useTieredPricing,
+      pricingTiers
     } = JSON.parse(request.body);
 
     // Validate all required fields are present
@@ -99,6 +129,72 @@ export const handleCreateEvent = async (request: APIGatewayProxyEvent): Promise<
       };
     }
 
+    // Validate tiered pricing if provided
+    if (useTieredPricing !== undefined && typeof useTieredPricing !== 'boolean') {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          message: 'useTieredPricing must be a boolean if provided'
+        })
+      };
+    }
+
+    // If tiered pricing is enabled, validate pricing tiers
+    if (useTieredPricing === true) {
+      if (!pricingTiers || !Array.isArray(pricingTiers) || pricingTiers.length === 0) {
+        return {
+          statusCode: 400,
+          body: JSON.stringify({
+            message: 'pricingTiers array is required when useTieredPricing is true'
+          })
+        };
+      }
+
+      // Validate each pricing tier
+      for (let i = 0; i < pricingTiers.length; i++) {
+        const tier = pricingTiers[i];
+        
+        if (!tier.tierType || typeof tier.tierType !== 'string') {
+          return {
+            statusCode: 400,
+            body: JSON.stringify({
+              message: `Pricing tier ${i + 1}: tierType is required and must be a string`
+            })
+          };
+        }
+
+        if (tier.price === undefined || tier.price === null || typeof tier.price !== 'number' || tier.price < 0) {
+          return {
+            statusCode: 400,
+            body: JSON.stringify({
+              message: `Pricing tier ${i + 1}: price is required and must be a non-negative number`
+            })
+          };
+        }
+
+        if (tier.maxSpots !== undefined && tier.maxSpots !== null && (!Number.isInteger(tier.maxSpots) || tier.maxSpots < 1)) {
+          return {
+            statusCode: 400,
+            body: JSON.stringify({
+              message: `Pricing tier ${i + 1}: maxSpots must be a positive integer if provided`
+            })
+          };
+        }
+      }
+
+      // Check for duplicate tier types
+      const tierTypes = pricingTiers.map(tier => tier.tierType);
+      const uniqueTierTypes = new Set(tierTypes);
+      if (tierTypes.length !== uniqueTierTypes.size) {
+        return {
+          statusCode: 400,
+          body: JSON.stringify({
+            message: 'Duplicate tier types are not allowed'
+          })
+        };
+      }
+    }
+
     // Initialize database connection
     const prisma = await initializeDatabase();
 
@@ -135,20 +231,41 @@ export const handleCreateEvent = async (request: APIGatewayProxyEvent): Promise<
       };
     }
 
-    // Create the event in the database
-    const newEvent = await prisma.event.create({
-      data: {
-        name,
-        description: description || null,
-        date: new Date(date),
-        location,
-        memberCap: memberCap || null,
-        ticketPrice: ticketPrice || null,
-        paymentHandle: paymentHandle || null,
-        isPublic: isPublic === true,
-        coveId,
-        hostId: user.uid,
+    // Create the event in the database with transaction for tiered pricing
+    const newEvent = await prisma.$transaction(async (tx) => {
+      // Create the event
+      const event = await tx.event.create({
+        data: {
+          name,
+          description: description || null,
+          date: new Date(date),
+          location,
+          memberCap: memberCap || null,
+          ticketPrice: ticketPrice || null,
+          paymentHandle: paymentHandle || null,
+          isPublic: isPublic === true,
+          useTieredPricing: useTieredPricing === true,
+          coveId,
+          hostId: user.uid,
+        }
+      });
+
+      // If tiered pricing is enabled, create pricing tiers
+      if (useTieredPricing === true && pricingTiers && pricingTiers.length > 0) {
+        const tierData = pricingTiers.map((tier: any, index: number) => ({
+          eventId: event.id,
+          tierType: tier.tierType,
+          price: tier.price,
+          maxSpots: tier.maxSpots || null,
+          sortOrder: index,
+        }));
+
+        await tx.eventPricingTier.createMany({
+          data: tierData
+        });
       }
+
+      return event;
     });
 
     // Automatically create a "GOING" RSVP for the event host
@@ -196,6 +313,16 @@ export const handleCreateEvent = async (request: APIGatewayProxyEvent): Promise<
       });
     }
 
+    // Fetch the created event with pricing tiers for response
+    const eventWithTiers = await prisma.event.findUnique({
+      where: { id: newEvent.id },
+      include: {
+        pricingTiers: {
+          orderBy: { sortOrder: 'asc' }
+        }
+      }
+    });
+
     // Return success response with event details
     const response = {
       statusCode: 200,
@@ -211,6 +338,8 @@ export const handleCreateEvent = async (request: APIGatewayProxyEvent): Promise<
           ticketPrice: newEvent.ticketPrice,
           paymentHandle: newEvent.paymentHandle,
           isPublic: newEvent.isPublic,
+          useTieredPricing: newEvent.useTieredPricing,
+          pricingTiers: eventWithTiers?.pricingTiers || [],
           coveId: newEvent.coveId,
           createdAt: newEvent.createdAt
         }
@@ -346,7 +475,8 @@ export const handleGetCoveEvents = async (event: APIGatewayProxyEvent): Promise<
         include: {
           hostedBy: { select: { id: true, name: true } },
           cove: { select: { id: true, name: true, coverPhotoID: true } },
-          coverPhoto: { select: { id: true } }
+          coverPhoto: { select: { id: true } },
+          pricingTiers: { orderBy: { sortOrder: 'asc' } }
         },
         orderBy: { date: 'asc' },
         take: 5
@@ -400,7 +530,8 @@ export const handleGetCoveEvents = async (event: APIGatewayProxyEvent): Promise<
       include: {
         hostedBy: { select: { id: true, name: true } },
         cove: { select: { id: true, name: true, coverPhotoID: true } },
-        coverPhoto: { select: { id: true } }
+        coverPhoto: { select: { id: true } },
+        pricingTiers: { orderBy: { sortOrder: 'asc' } }
       },
       orderBy: { date: 'asc' },
       take: limit + 1,
@@ -453,16 +584,23 @@ export const handleGetCoveEvents = async (event: APIGatewayProxyEvent): Promise<
           where: { eventId: ev.id, status: 'GOING' }
         });
 
+        // Calculate tier allocation for pricing tiers
+        const pricingTiersWithAllocation = ev.useTieredPricing 
+          ? calculateTierAllocation(ev.pricingTiers, goingCount)
+          : ev.pricingTiers;
+
         return {
           id: ev.id,
           name: ev.name,
           description: ev.description,
           date: ev.date,
           location: ev.location,
-                      memberCap: ev.memberCap,
-            ticketPrice: ev.ticketPrice,
-            paymentHandle: null, // Not included in cove events list for privacy
-            coveId: ev.coveId,
+          memberCap: ev.memberCap,
+          ticketPrice: ev.ticketPrice,
+          paymentHandle: null, // Not included in cove events list for privacy
+          useTieredPricing: ev.useTieredPricing,
+          pricingTiers: pricingTiersWithAllocation,
+          coveId: ev.coveId,
           coveName: ev.cove.name,
           coveCoverPhoto: coveCoverPhoto,
           hostId: ev.hostId,
@@ -560,7 +698,8 @@ export const handleGetEvent = async (event: APIGatewayProxyEvent): Promise<APIGa
       include: {
         hostedBy: { select: { id: true, name: true } },
         cove: { select: { id: true, name: true, coverPhotoID: true } },
-        coverPhoto: { select: { id: true } }
+        coverPhoto: { select: { id: true } },
+        pricingTiers: { orderBy: { sortOrder: 'asc' } }
       }
     });
 
@@ -632,6 +771,11 @@ export const handleGetEvent = async (event: APIGatewayProxyEvent): Promise<APIGa
         where: { eventId: eventData.id, status: 'PENDING' }
       });
 
+      // Calculate tier allocation for pricing tiers
+      const pricingTiersWithAllocation = eventData.useTieredPricing 
+        ? calculateTierAllocation(eventData.pricingTiers, goingCount)
+        : eventData.pricingTiers;
+
       return {
         statusCode: 200,
         headers: {
@@ -645,10 +789,12 @@ export const handleGetEvent = async (event: APIGatewayProxyEvent): Promise<APIGa
             description: eventData.description,
             date: eventData.date,
             location: eventData.location,
-                  memberCap: eventData.memberCap,
-      ticketPrice: eventData.ticketPrice,
-      paymentHandle: eventData.paymentHandle, // Available to all authenticated users
-      coveId: eventData.coveId,
+            memberCap: eventData.memberCap,
+            ticketPrice: eventData.ticketPrice,
+            paymentHandle: eventData.paymentHandle, // Available to all authenticated users
+            useTieredPricing: eventData.useTieredPricing,
+            pricingTiers: pricingTiersWithAllocation,
+            coveId: eventData.coveId,
             host: {
               id: eventData.hostedBy.id,
               name: eventData.hostedBy.name
@@ -693,6 +839,11 @@ export const handleGetEvent = async (event: APIGatewayProxyEvent): Promise<APIGa
       where: { eventId: eventData.id, status: 'PENDING' }
     });
 
+    // Calculate tier allocation for pricing tiers
+    const pricingTiersWithAllocation = eventData.useTieredPricing 
+      ? calculateTierAllocation(eventData.pricingTiers, goingCount)
+      : eventData.pricingTiers;
+
     // Limited response for unauthenticated or authenticated-without-GOING-status/host
     const limitedEvent: any = {
       id: eventData.id,
@@ -702,6 +853,8 @@ export const handleGetEvent = async (event: APIGatewayProxyEvent): Promise<APIGa
       memberCap: eventData.memberCap,
       ticketPrice: eventData.ticketPrice,
       paymentHandle: eventData.paymentHandle, // Available to all authenticated users
+      useTieredPricing: eventData.useTieredPricing,
+      pricingTiers: pricingTiersWithAllocation,
       host: { name: eventData.hostedBy.name },
       cove: { 
         name: eventData.cove.name,
@@ -1231,6 +1384,12 @@ export const handleGetCalendarEvents = async (event: APIGatewayProxyEvent): Prom
           select: {
             id: true
           }
+        },
+        // Include pricing tiers
+        pricingTiers: {
+          orderBy: {
+            sortOrder: 'asc'
+          }
         }
       },
       // Order events by date ascending (earliest first)
@@ -1293,6 +1452,11 @@ export const handleGetCalendarEvents = async (event: APIGatewayProxyEvent): Prom
             }), { expiresIn: 3600 })
           } : null;
           
+          // Calculate tier allocation for pricing tiers
+          const pricingTiersWithAllocation = event.useTieredPricing 
+            ? calculateTierAllocation(event.pricingTiers, goingCount)
+            : event.pricingTiers;
+
           return {
             id: event.id,
             name: event.name,
@@ -1302,6 +1466,8 @@ export const handleGetCalendarEvents = async (event: APIGatewayProxyEvent): Prom
             memberCap: event.memberCap,
             ticketPrice: event.ticketPrice,
             paymentHandle: null, // Not included in calendar events list for privacy
+            useTieredPricing: event.useTieredPricing,
+            pricingTiers: pricingTiersWithAllocation,
             coveId: event.coveId,
             coveName: event.cove.name,
             coveCoverPhoto: coveCoverPhoto,

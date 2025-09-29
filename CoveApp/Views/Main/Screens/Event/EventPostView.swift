@@ -121,7 +121,9 @@ class EventPostViewModel: ObservableObject {
                         userId: currentUserId,
                         userName: updatedRsvps[index].userName,
                         profilePhotoUrl: updatedRsvps[index].profilePhotoUrl,
-                        createdAt: updatedRsvps[index].createdAt
+                        createdAt: updatedRsvps[index].createdAt,
+                        pricingTierId: updatedRsvps[index].pricingTierId,
+                        pricePaid: updatedRsvps[index].pricePaid
                     )
                     updatedRsvps[index] = updatedRSVP
                 }
@@ -134,7 +136,9 @@ class EventPostViewModel: ObservableObject {
                         userId: currentUserId,
                         userName: "You", // Placeholder name
                         profilePhotoUrl: nil,
-                        createdAt: ISO8601DateFormatter().string(from: Date())
+                        createdAt: ISO8601DateFormatter().string(from: Date()),
+                        pricingTierId: nil,
+                        pricePaid: nil
                     )
                     updatedRsvps.append(newRSVP)
                 }
@@ -158,7 +162,9 @@ class EventPostViewModel: ObservableObject {
                 pendingCount: currentEvent.pendingCount,
                 rsvps: updatedRsvps,
                 coverPhoto: currentEvent.coverPhoto,
-                isHost: currentEvent.isHost
+                isHost: currentEvent.isHost,
+                useTieredPricing: currentEvent.useTieredPricing,
+                pricingTiers: currentEvent.pricingTiers
             )
 
             // Update the published event
@@ -483,16 +489,11 @@ struct EventPostView: View {
                             
                             // Event details section (price, capacity, going count)
                             VStack(alignment: .leading, spacing: 12) {
-                                // Ticket price display
-                                if let ticketPrice = event.ticketPrice {
-                                    HStack {
-                                        Image(systemName: "dollarsign.circle")
-                                            .foregroundColor(Colors.primaryDark)
-                                            .font(.system(size: 16))
-                                        Text("$\(String(format: "%.2f", ticketPrice))")
-                                            .font(.LibreBodoni(size: 16))
-                                            .foregroundColor(Colors.primaryDark)
-                                    }
+                                // Pricing display - tiered or single
+                                if event.useTieredPricing == true, let pricingTiers = event.pricingTiers, !pricingTiers.isEmpty {
+                                    tieredPricingDisplaySection(tiers: pricingTiers)
+                                } else if let ticketPrice = event.ticketPrice {
+                                    singlePricingDisplaySection(price: ticketPrice)
                                 }
                                 
                                 // Payment handle display
@@ -665,7 +666,7 @@ struct EventPostView: View {
                                 Log.debug("🔵 PENDING button clicked - no action needed")
                                            } else {
                    // Check if this is a ticketed event and user is not the host
-                   if event.ticketPrice != nil, event.isHost != true {
+                   if (event.ticketPrice != nil || event.useTieredPricing == true), event.isHost != true {
                        // Show ticket confirmation popup for non-hosts
                        showingTicketConfirmation = true
                    } else {
@@ -782,6 +783,8 @@ struct EventPostView: View {
             Text("Are you sure you want to delete this event? This action cannot be undone.")
         }
         .sheet(isPresented: $showingTicketConfirmation) {
+            // TODO: Implement TieredTicketConfirmationView for tier selection
+            // For now, fall back to regular ticket confirmation
             TicketConfirmationView(
                 ticketPrice: Float(viewModel.event?.ticketPrice ?? 0),
                 paymentHandle: viewModel.event?.paymentHandle,
@@ -804,6 +807,99 @@ struct EventPostView: View {
         }
         .sheet(isPresented: $showingShareSheet) {
             ShareSheet(activityItems: ["https://www.coveapp.co/events/\(eventId)"])
+        }
+    }
+    
+    // MARK: - Pricing Display Helpers
+    
+    @ViewBuilder
+    private func tieredPricingDisplaySection(tiers: [EventPricingTier]) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "tag.fill")
+                    .foregroundColor(Colors.primaryDark)
+                    .font(.system(size: 16))
+                Text("Tiered Pricing")
+                    .font(.LibreBodoniBold(size: 16))
+                    .foregroundColor(Colors.primaryDark)
+            }
+            
+            ForEach(tiers.sorted { $0.sortOrder < $1.sortOrder }, id: \.id) { tier in
+                HStack(spacing: 12) {
+                    // Tier icon based on type
+                    Image(systemName: tierIcon(for: tier.tierType))
+                        .foregroundColor(tierColor(for: tier.tierType))
+                        .font(.system(size: 14, weight: .medium))
+                    
+                    // Tier name and price
+                    Text(tier.tierType)
+                        .font(.LibreBodoni(size: 14))
+                        .foregroundColor(Colors.primaryDark)
+                    
+                    Spacer()
+                    
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text("$\(String(format: "%.2f", tier.price))")
+                            .font(.LibreBodoniBold(size: 14))
+                            .foregroundColor(Colors.primaryDark)
+                        
+                        if let spotsLeft = tier.spotsLeft {
+                            Text("\(spotsLeft) left")
+                                .font(.LibreBodoni(size: 12))
+                                .foregroundColor(spotsLeft > 0 ? .green : .red)
+                        }
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.white.opacity(0.6))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color.black.opacity(0.1), lineWidth: 1)
+                        )
+                )
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private func singlePricingDisplaySection(price: Double) -> some View {
+        HStack {
+            Image(systemName: "dollarsign.circle")
+                .foregroundColor(Colors.primaryDark)
+                .font(.system(size: 16))
+            Text("$\(String(format: "%.2f", price))")
+                .font(.LibreBodoni(size: 16))
+                .foregroundColor(Colors.primaryDark)
+        }
+    }
+    
+    // Helper functions for tier display
+    private func tierIcon(for tierType: String) -> String {
+        switch tierType.lowercased() {
+        case "early bird":
+            return "clock.fill"
+        case "regular":
+            return "person.fill"
+        case "last minute":
+            return "exclamationmark.triangle.fill"
+        default:
+            return "tag.fill"
+        }
+    }
+    
+    private func tierColor(for tierType: String) -> Color {
+        switch tierType.lowercased() {
+        case "early bird":
+            return Colors.primaryDark.opacity(0.8)
+        case "regular":
+            return Colors.primaryDark
+        case "last minute":
+            return Colors.primaryDark.opacity(0.9)
+        default:
+            return Colors.primaryDark
         }
     }
 }
