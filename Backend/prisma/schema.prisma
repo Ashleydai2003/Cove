@@ -123,24 +123,26 @@ model CoveMember {
 }
 
 model Event {
-  id            String      @id @default(cuid())
-  name          String
-  description   String?
-  date          DateTime
-  location      String
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  coveId        String
-  hostId        String
-  coverPhotoID  String?     @unique
-  isPublic      Boolean     @default(false)
-  memberCap     Int?
-  ticketPrice   Float?
-  paymentHandle String?
-  cove          Cove        @relation(fields: [coveId], references: [id])
-  coverPhoto    EventImage? @relation("EventCoverPhoto", fields: [coverPhotoID], references: [id])
-  hostedBy      User        @relation("CreatedEvents", fields: [hostId], references: [id])
-  rsvps         EventRSVP[]
+  id               String             @id @default(cuid())
+  name             String
+  description      String?
+  date             DateTime
+  location         String
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  coveId           String
+  hostId           String
+  coverPhotoID     String?            @unique
+  isPublic         Boolean            @default(false)
+  memberCap        Int?
+  ticketPrice      Float?
+  paymentHandle    String?
+  useTieredPricing Boolean            @default(false)
+  cove             Cove               @relation(fields: [coveId], references: [id])
+  coverPhoto       EventImage?        @relation("EventCoverPhoto", fields: [coverPhotoID], references: [id])
+  hostedBy         User               @relation("CreatedEvents", fields: [hostId], references: [id])
+  rsvps            EventRSVP[]
+  pricingTiers     EventPricingTier[]
 }
 
 model Post {
@@ -169,15 +171,37 @@ model PostLike {
 }
 
 model EventRSVP {
-  id        String     @id @default(cuid())
-  eventId   String
-  userId    String
-  status    RSVPStatus @default(PENDING)
-  createdAt DateTime   @default(now())
-  event     Event      @relation(fields: [eventId], references: [id])
-  user      User       @relation(fields: [userId], references: [id])
+  id             String            @id @default(cuid())
+  eventId        String
+  userId         String
+  status         RSVPStatus        @default(PENDING)
+  pricingTierId  String?
+  pricePaid      Float?
+  createdAt      DateTime          @default(now())
+  event          Event             @relation(fields: [eventId], references: [id])
+  user           User              @relation(fields: [userId], references: [id])
+  pricingTier    EventPricingTier? @relation(fields: [pricingTierId], references: [id])
 
   @@unique([eventId, userId])
+  @@index([pricingTierId])
+}
+
+model EventPricingTier {
+  id           String      @id @default(cuid())
+  eventId      String
+  tierType     String
+  price        Float
+  maxSpots     Int?
+  currentSpots Int         @default(0)
+  sortOrder    Int         @default(0)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  event        Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  rsvps        EventRSVP[]
+
+  @@unique([eventId, tierType])
+  @@index([eventId])
+  @@index([tierType])
 }
 
 model CoveImage {
