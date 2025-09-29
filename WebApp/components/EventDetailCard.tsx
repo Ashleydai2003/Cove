@@ -32,6 +32,20 @@ interface EventDetailCardProps {
 
 export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) {
   const [showOnboarding, setShowOnboarding] = useState(false);
+  
+  // Helper function to map tier names to display names
+  const getTierDisplayName = (tierType: string) => {
+    switch (tierType.toLowerCase()) {
+      case 'early bird':
+        return 'Early Bird';
+      case 'regular':
+        return 'Tier 1';
+      case 'last minute':
+        return 'Tier 2';
+      default:
+        return tierType;
+    }
+  };
   const [showGuestList, setShowGuestList] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showVenmoConfirm, setShowVenmoConfirm] = useState(false);
@@ -293,7 +307,7 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
                             <span className={`font-libre-bodoni text-base ${
                               isSoldOut ? 'text-gray-400' : 'text-[#5E1C1D]'
                             }`}>
-                              {tier.tierType}
+                              {getTierDisplayName(tier.tierType)}
                             </span>
                           </div>
                           

@@ -24,6 +24,20 @@ export default function VenmoConfirmModal({
   useTieredPricing
 }: VenmoConfirmModalProps) {
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Helper function to map tier names to display names
+  const getTierDisplayName = (tierType: string) => {
+    switch (tierType.toLowerCase()) {
+      case 'early bird':
+        return 'Early Bird';
+      case 'regular':
+        return 'Tier 1';
+      case 'last minute':
+        return 'Tier 2';
+      default:
+        return tierType;
+    }
+  };
 
   // Find the lowest available tier (first tier with spots left)
   const getLowestAvailableTier = () => {
@@ -83,7 +97,7 @@ export default function VenmoConfirmModal({
                     <img src="/ticket.svg" alt="Ticket" className="w-6 h-6" />
                     <div className="text-center">
                       <div className="font-libre-bodoni text-lg font-semibold text-[#5E1C1D]">
-                        {lowestAvailableTier.tierType}
+                        {getTierDisplayName(lowestAvailableTier.tierType)}
                       </div>
                       <div className="font-libre-bodoni text-xl font-bold text-[#5E1C1D]">
                         ${lowestAvailableTier.price.toFixed(2)}
@@ -115,7 +129,7 @@ export default function VenmoConfirmModal({
                           <span className={`font-libre-bodoni text-base ${
                             isAvailable ? 'text-[#5E1C1D]' : 'text-gray-400'
                           }`}>
-                            {tier.tierType}
+                            {getTierDisplayName(tier.tierType)}
                             {isCurrentTier}
                           </span>
                           <div className="text-right">
