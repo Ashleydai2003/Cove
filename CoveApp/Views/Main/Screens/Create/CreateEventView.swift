@@ -61,7 +61,6 @@ struct CreateEventView: View {
                             dateTimeSection
                             locationSection
                                 .id("locationSection")
-                            spotsSection
                             visibilitySection
                             advancedOptionsSection
                             // TODO: in the future we also want to have a privacy section
@@ -447,10 +446,6 @@ extension CreateEventView {
         )
     }
 
-    // MARK: - Number of Spots Section
-    private var spotsSection: some View {
-        numberOfSpotsView
-    }
 
     // MARK: - Visibility Section
     private var visibilitySection: some View {
@@ -551,6 +546,14 @@ extension CreateEventView {
                         Group {
                             if viewModel.useTieredPricing {
                                 tieredPricingSection
+                            }
+                        }
+                        .animation(.easeInOut(duration: 0.3), value: viewModel.useTieredPricing)
+                        
+                        // Number of Spots Section (only show if NOT using tiered pricing)
+                        Group {
+                            if !viewModel.useTieredPricing {
+                                numberOfSpotsSection
                             }
                         }
                         .animation(.easeInOut(duration: 0.3), value: viewModel.useTieredPricing)
@@ -866,6 +869,28 @@ extension CreateEventView {
         }
     }
 
+    // MARK: - Number of Spots Section
+    private var numberOfSpotsSection: some View {
+        VStack(spacing: 12) {
+            Text("Event Capacity")
+                .font(.LibreBodoniBold(size: 16))
+                .foregroundColor(Colors.primaryDark)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            
+            numberOfSpotsView
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Color.white.opacity(0.4))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(Color.black.opacity(0.08), lineWidth: 1)
+                )
+        )
+    }
+    
     // MARK: - Number of Spots Input
     private var numberOfSpotsView: some View {
         HStack {
