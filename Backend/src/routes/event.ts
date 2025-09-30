@@ -6,9 +6,9 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { s3Client } from '../config/s3';
 import * as admin from 'firebase-admin';
 
-// Helper function to calculate tier allocation based on GOING RSVPs
+// Helper function to calculate tier allocation based on GOING and PENDING RSVPs
 // Allocates RSVPs to tiers in order: Early Bird → Regular → Last Minute
-function calculateTierAllocation(pricingTiers: any[], goingCount: number) {
+function calculateTierAllocation(pricingTiers: any[], goingCount: number, pendingCount: number = 0) {
   if (!pricingTiers || pricingTiers.length === 0) {
     return pricingTiers;
   }
@@ -16,7 +16,8 @@ function calculateTierAllocation(pricingTiers: any[], goingCount: number) {
   // Sort tiers by sortOrder to ensure proper allocation order
   const sortedTiers = [...pricingTiers].sort((a, b) => a.sortOrder - b.sortOrder);
   
-  let remainingRSVPs = goingCount;
+  // Use both GOING and PENDING RSVPs for availability calculation
+  let remainingRSVPs = goingCount + pendingCount;
   
   return sortedTiers.map(tier => {
     const maxSpots = tier.maxSpots || Infinity;
@@ -579,14 +580,18 @@ export const handleGetCoveEvents = async (event: APIGatewayProxyEvent): Promise<
       // Enriched item if host or has RSVP
       if (isHost || rsvpStatus) {
         anyEnriched = true;
-        // Compute goingCount only for enriched items
+        // Compute goingCount and pendingCount only for enriched items
         const goingCount = await prisma.eventRSVP.count({
           where: { eventId: ev.id, status: 'GOING' }
+        });
+        
+        const pendingCount = await prisma.eventRSVP.count({
+          where: { eventId: ev.id, status: 'PENDING' }
         });
 
         // Calculate tier allocation for pricing tiers
         const pricingTiersWithAllocation = ev.useTieredPricing 
-          ? calculateTierAllocation(ev.pricingTiers, goingCount)
+          ? calculateTierAllocation(ev.pricingTiers, goingCount, pendingCount)
           : ev.pricingTiers;
 
         return {
@@ -773,7 +778,7 @@ export const handleGetEvent = async (event: APIGatewayProxyEvent): Promise<APIGa
 
       // Calculate tier allocation for pricing tiers
       const pricingTiersWithAllocation = eventData.useTieredPricing 
-        ? calculateTierAllocation(eventData.pricingTiers, goingCount)
+        ? calculateTierAllocation(eventData.pricingTiers, goingCount, pendingCount)
         : eventData.pricingTiers;
 
       return {
@@ -841,7 +846,7 @@ export const handleGetEvent = async (event: APIGatewayProxyEvent): Promise<APIGa
 
     // Calculate tier allocation for pricing tiers
     const pricingTiersWithAllocation = eventData.useTieredPricing 
-      ? calculateTierAllocation(eventData.pricingTiers, goingCount)
+      ? calculateTierAllocation(eventData.pricingTiers, goingCount, pendingCount)
       : eventData.pricingTiers;
 
     // Limited response for unauthenticated or authenticated-without-GOING-status/host
@@ -1434,6 +1439,14 @@ export const handleGetCalendarEvents = async (event: APIGatewayProxyEvent): Prom
             }
           });
           
+          // Count RSVPs with "PENDING" status for this event
+          const pendingCount = await prisma.eventRSVP.count({
+            where: {
+              eventId: event.id,
+              status: 'PENDING'
+            }
+          });
+          
           // Generate cover photo URL if it exists
           const coverPhoto = event.coverPhoto ? {
             id: event.coverPhoto.id,
@@ -1454,7 +1467,7 @@ export const handleGetCalendarEvents = async (event: APIGatewayProxyEvent): Prom
           
           // Calculate tier allocation for pricing tiers
           const pricingTiersWithAllocation = event.useTieredPricing 
-            ? calculateTierAllocation(event.pricingTiers, goingCount)
+            ? calculateTierAllocation(event.pricingTiers, goingCount, pendingCount)
             : event.pricingTiers;
 
           return {
