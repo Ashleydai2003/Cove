@@ -227,7 +227,22 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
   const dateStr = formatDate(event.date);
   const timeStr = formatTime(event.date);
   const coveName = event.cove?.name || '';
-  const displayGoingCount = (event.goingCount ?? 0) + 24;
+  // Smart display count logic: show capped count until we have enough pending RSVPs
+  const getDisplayGoingCount = () => {
+    const goingCount = event.goingCount ?? 0;
+    const pendingCount = event.pendingCount ?? 0;
+    const cap = 20; // Cap at 20 people going
+    
+    // If we have 20 or more pending RSVPs, show true count
+    if (pendingCount >= cap) {
+      return goingCount;
+    }
+    
+    // Otherwise, show the capped display count
+    return Math.max(goingCount, cap);
+  };
+  
+  const displayGoingCount = getDisplayGoingCount();
 
   // Create the hosted by text in the format "hosted by [host] @ [cove]"
   const hostedByText = hostName && coveName 
