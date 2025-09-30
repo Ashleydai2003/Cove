@@ -143,7 +143,8 @@ export const handleOnboard = async (event: APIGatewayProxyEvent): Promise<APIGat
       workLocation,
       relationStatus,
       sexuality,
-      gender
+      gender,
+      smsOptIn = false  // SMS consent (required by Twilio)
     } = parsedBody;
 
     // Step 6.5: Validate required fields
@@ -296,6 +297,7 @@ export const handleOnboard = async (event: APIGatewayProxyEvent): Promise<APIGat
         name: name || null,
         onboarding: false, // Mark onboarding as complete
         verified: isAdmin, // Set verified to true if user is an admin
+        smsOptIn: smsOptIn, // Store SMS consent
         profile: {
           create: {
             birthdate: birthdate ? new Date(birthdate) : null,

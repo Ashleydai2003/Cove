@@ -88,17 +88,25 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
         console.log('User already RSVPed, no action needed');
         return;
       } else {
+        // Check if event is at capacity (waitlist)
+        const isAtCapacity = event.memberCap !== null && 
+                             event.memberCap !== undefined && 
+                             event.goingCount !== null && 
+                             event.goingCount !== undefined && 
+                             event.goingCount >= event.memberCap;
+        
         // Check if event requires payment (single price or any tier has price)
-        const hasPayment = event.useTieredPricing 
+        // Skip payment modal for waitlist (when at capacity)
+        const hasPayment = !isAtCapacity && (event.useTieredPricing 
           ? event.pricingTiers?.some(tier => tier.price > 0) && event.paymentHandle
-          : event.ticketPrice && event.ticketPrice > 0 && event.paymentHandle;
+          : event.ticketPrice && event.ticketPrice > 0 && event.paymentHandle);
           
         if (hasPayment) {
           console.log('Event has payment, showing Venmo confirmation');
           setShowVenmoConfirm(true);
         } else {
-          // No payment required, proceed directly with RSVP
-          console.log('No payment required, proceeding with RSVP');
+          // No payment required or event is at capacity (waitlist), proceed directly with RSVP
+          console.log(isAtCapacity ? 'Event at capacity, joining waitlist' : 'No payment required, proceeding with RSVP');
           await performRSVP();
         }
       }
@@ -484,15 +492,26 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
               >
                 you're on the list!
               </button>
-            ) : (
-              <button
-                onClick={handleRSVP}
-                disabled={isRsvpLoading}
-                className="px-24 py-3 bg-[#5E1C1D] text-white rounded-lg font-libre-bodoni text-xl font-medium hover:bg-[#4A1718] transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isRsvpLoading ? 'rsvping...' : 'rsvp'}
-              </button>
-            )}
+            ) : (() => {
+              // Check if event is at capacity (only for users not already going/pending)
+              const isAtCapacity = event.memberCap !== null && 
+                                   event.memberCap !== undefined && 
+                                   event.goingCount !== null && 
+                                   event.goingCount !== undefined && 
+                                   event.goingCount >= event.memberCap;
+              
+              const buttonText = isAtCapacity ? 'join the waitlist' : 'rsvp';
+              
+              return (
+                <button
+                  onClick={handleRSVP}
+                  disabled={isRsvpLoading}
+                  className="px-24 py-3 bg-[#5E1C1D] text-white rounded-lg font-libre-bodoni text-xl font-medium hover:bg-[#4A1718] transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isRsvpLoading ? 'rsvping...' : buttonText}
+                </button>
+              );
+            })()}
           </div>
 
           {/* Login button - only show when not authenticated */}

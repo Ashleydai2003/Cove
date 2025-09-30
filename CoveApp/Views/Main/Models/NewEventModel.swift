@@ -156,8 +156,27 @@ class NewEventModel: ObservableObject {
         let finalDate: String = combineDateTime(date: eventDate, time: eventTime) ?? ""
 
         // Convert string inputs to appropriate types
-        if !numberOfSpots.isEmpty, let spots = Int(numberOfSpots) {
-            memberCap = spots
+        // For tiered pricing, auto-calculate total spots from all tiers
+        if useTieredPricing {
+            var totalSpots = 0
+            if let earlyBird = Int(earlyBirdSpots) {
+                totalSpots += earlyBird
+            }
+            if let regular = Int(regularSpots) {
+                totalSpots += regular
+            }
+            if let lastMinute = Int(lastMinuteSpots) {
+                totalSpots += lastMinute
+            }
+            // Only set memberCap if there are spots in any tier
+            if totalSpots > 0 {
+                memberCap = totalSpots
+            }
+        } else {
+            // For single pricing, use the numberOfSpots field
+            if !numberOfSpots.isEmpty, let spots = Int(numberOfSpots) {
+                memberCap = spots
+            }
         }
         
         if !ticketPriceString.isEmpty, let price = Double(ticketPriceString) {
