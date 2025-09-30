@@ -5,6 +5,7 @@ import { PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { s3Client } from '../config/s3';
 import * as admin from 'firebase-admin';
+import { sendRSVPApprovedSMS, sendRSVPDeclinedSMS } from '../services/smsService';
 
 // Helper function to calculate tier allocation based on GOING and PENDING RSVPs
 // Allocates RSVPs to tiers in order: Early Bird → Regular → Last Minute
@@ -1872,21 +1873,21 @@ export const handleApproveDeclineRSVP = async (event: APIGatewayProxyEvent): Pro
       });
     }
 
-    // Send notification to the user
+    // Send notifications to the user (push + SMS)
     try {
       const message = action === 'approve' 
         ? `Your RSVP to "${rsvp.event.name}" has been approved!`
         : `Your RSVP to "${rsvp.event.name}" was declined.`;
 
-      // Only send notifications in production mode
-      if (process.env.NODE_ENV === 'production') {
-        // Get user's FCM token and send notification
-        const user = await prisma.user.findUnique({
-          where: { id: rsvp.user.id },
-          select: { fcmToken: true }
-        });
+      // Get user details (phone, FCM token, and SMS consent)
+      const user = await prisma.user.findUnique({
+        where: { id: rsvp.user.id },
+        select: { fcmToken: true, phone: true, smsOptIn: true }
+      });
 
-        if (user?.fcmToken) {
+      // Send push notification (existing logic)
+      if (process.env.NODE_ENV === 'production' && user?.fcmToken) {
+        try {
           await admin.messaging().send({
             token: user.fcmToken,
             notification: {
@@ -1899,12 +1900,47 @@ export const handleApproveDeclineRSVP = async (event: APIGatewayProxyEvent): Pro
               action: action
             }
           });
+          console.log('[Push] Notification sent successfully');
+        } catch (pushErr) {
+          console.error('[Push] Error sending notification:', pushErr);
         }
-      } else {
+      }
+
+      // Send SMS notification (new logic) - only if user opted in
+      if (user?.phone && user?.smsOptIn) {
+        try {
+          // Get event date for approved RSVPs
+          const eventDetails = await prisma.event.findUnique({
+            where: { id: rsvp.eventId },
+            select: { date: true }
+          });
+
+          if (action === 'approve' && eventDetails) {
+            // Format event date for SMS
+            const eventDate = new Date(eventDetails.date).toLocaleDateString('en-US', {
+              weekday: 'short',
+              month: 'short',
+              day: 'numeric',
+              hour: 'numeric',
+              minute: '2-digit'
+            });
+            
+            await sendRSVPApprovedSMS(user.phone, rsvp.event.name, eventDate);
+          } else {
+            await sendRSVPDeclinedSMS(user.phone, rsvp.event.name);
+          }
+        } catch (smsErr) {
+          console.error('[SMS] Error sending notification:', smsErr);
+        }
+      } else if (user?.phone && !user?.smsOptIn) {
+        console.log('[SMS] User has not opted in to SMS notifications');
+      }
+
+      if (process.env.NODE_ENV !== 'production') {
         console.log(`[DEBUG] Would send notification: ${message}`);
       }
     } catch (notifyErr) {
-      console.error('Approval notification error:', notifyErr);
+      console.error('[Notification] Error sending notifications:', notifyErr);
     }
 
     return {
