@@ -330,8 +330,9 @@ extension CreateEventView {
                                 .keyboardType(.alphabet)
                                 .focused($isAddressFocused)
                                 .onChange(of: searchAddress) { oldValue, newValue in
-                                    let trimmed = newValue.trimmingCharacters(in: .whitespaces)
-                                    searchAddress = trimmed
+                                    // Only trim leading and trailing whitespace, preserve internal spaces
+                                    let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
+                                    searchAddress = newValue // Keep the original input with spaces
                                     addressVM.searchQuery = trimmed
                                     showAddressDropdown = !trimmed.isEmpty
                                 }
