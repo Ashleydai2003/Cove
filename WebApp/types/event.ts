@@ -52,6 +52,7 @@ export interface Event {
   cove: Cove;
   rsvpStatus?: 'GOING' | 'NOT_GOING' | 'PENDING' | null;
   goingCount?: number;
+  pendingCount?: number;
   rsvps?: EventRSVP[];
   coverPhoto?: CoverPhoto;
   isHost?: boolean;
