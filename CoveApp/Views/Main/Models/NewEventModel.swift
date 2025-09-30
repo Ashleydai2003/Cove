@@ -28,6 +28,18 @@ class NewEventModel: ObservableObject {
     @Published var isSubmitting = false
     @Published var errorMessage: String?
     @Published var isPublic: Bool = false
+    
+    // Advanced Options
+    @Published var showAdvancedOptions: Bool = false
+    @Published var useTieredPricing: Bool = false
+    
+    // Tiered Pricing
+    @Published var earlyBirdPrice: String = ""
+    @Published var earlyBirdSpots: String = ""
+    @Published var regularPrice: String = ""
+    @Published var regularSpots: String = ""
+    @Published var lastMinutePrice: String = ""
+    @Published var lastMinuteSpots: String = ""
 
     // Sheet States
     @Published var showImagePicker: Bool = false
@@ -68,6 +80,29 @@ class NewEventModel: ObservableObject {
         // Remove any non-numeric characters
         return input.filter { $0.isNumber }
     }
+    
+    /// Validates tiered pricing price input
+    func validateTieredPriceInput(_ input: String) -> String {
+        let filtered = input.filter { $0.isNumber || $0 == "." }
+        
+        // Ensure only one decimal point
+        let components = filtered.components(separatedBy: ".")
+        if components.count > 2 {
+            return components[0] + "." + components[1...].joined()
+        }
+        
+        // Limit to 2 decimal places
+        if components.count == 2 && components[1].count > 2 {
+            return components[0] + "." + String(components[1].prefix(2))
+        }
+        
+        return filtered
+    }
+    
+    /// Validates tiered pricing spots input
+    func validateTieredSpotsInput(_ input: String) -> String {
+        return input.filter { $0.isNumber }
+    }
 
     /// Resets all form fields to their initial state
     func resetForm() {
@@ -86,6 +121,14 @@ class NewEventModel: ObservableObject {
         isSubmitting = false
         errorMessage = nil
         isPublic = false
+        showAdvancedOptions = false
+        useTieredPricing = false
+        earlyBirdPrice = ""
+        earlyBirdSpots = ""
+        regularPrice = ""
+        regularSpots = ""
+        lastMinutePrice = ""
+        lastMinuteSpots = ""
         showImagePicker = false
         showLocationPicker = false
         showDatePicker = false
@@ -113,8 +156,27 @@ class NewEventModel: ObservableObject {
         let finalDate: String = combineDateTime(date: eventDate, time: eventTime) ?? ""
 
         // Convert string inputs to appropriate types
-        if !numberOfSpots.isEmpty, let spots = Int(numberOfSpots) {
-            memberCap = spots
+        // For tiered pricing, auto-calculate total spots from all tiers
+        if useTieredPricing {
+            var totalSpots = 0
+            if let earlyBird = Int(earlyBirdSpots) {
+                totalSpots += earlyBird
+            }
+            if let regular = Int(regularSpots) {
+                totalSpots += regular
+            }
+            if let lastMinute = Int(lastMinuteSpots) {
+                totalSpots += lastMinute
+            }
+            // Only set memberCap if there are spots in any tier
+            if totalSpots > 0 {
+                memberCap = totalSpots
+            }
+        } else {
+            // For single pricing, use the numberOfSpots field
+            if !numberOfSpots.isEmpty, let spots = Int(numberOfSpots) {
+                memberCap = spots
+            }
         }
         
         if !ticketPriceString.isEmpty, let price = Double(ticketPriceString) {
@@ -127,7 +189,8 @@ class NewEventModel: ObservableObject {
             "date": finalDate,
             "location": location,
             "coveId": coveId,
-            "isPublic": isPublic
+            "isPublic": isPublic,
+            "useTieredPricing": useTieredPricing
         ]
 
         // Add optional fields if they have values
@@ -139,12 +202,59 @@ class NewEventModel: ObservableObject {
             params["memberCap"] = memberCap
         }
         
-        if let ticketPrice = ticketPrice {
-            params["ticketPrice"] = ticketPrice
-        }
-        
         if !paymentHandle.isEmpty {
             params["paymentHandle"] = paymentHandle
+        }
+        
+        // Handle pricing based on tiered pricing setting
+        if useTieredPricing {
+            // Build pricing tiers array
+            var pricingTiers: [[String: Any]] = []
+            
+            // Early Bird Tier
+            if !earlyBirdPrice.isEmpty, let price = Double(earlyBirdPrice) {
+                var tier: [String: Any] = [
+                    "tierType": "Early Bird",
+                    "price": price
+                ]
+                if !earlyBirdSpots.isEmpty, let spots = Int(earlyBirdSpots) {
+                    tier["maxSpots"] = spots
+                }
+                pricingTiers.append(tier)
+            }
+            
+            // Regular Tier
+            if !regularPrice.isEmpty, let price = Double(regularPrice) {
+                var tier: [String: Any] = [
+                    "tierType": "Regular",
+                    "price": price
+                ]
+                if !regularSpots.isEmpty, let spots = Int(regularSpots) {
+                    tier["maxSpots"] = spots
+                }
+                pricingTiers.append(tier)
+            }
+            
+            // Last Minute Tier
+            if !lastMinutePrice.isEmpty, let price = Double(lastMinutePrice) {
+                var tier: [String: Any] = [
+                    "tierType": "Last Minute",
+                    "price": price
+                ]
+                if !lastMinuteSpots.isEmpty, let spots = Int(lastMinuteSpots) {
+                    tier["maxSpots"] = spots
+                }
+                pricingTiers.append(tier)
+            }
+            
+            if !pricingTiers.isEmpty {
+                params["pricingTiers"] = pricingTiers
+            }
+        } else {
+            // Use single ticket price if not using tiered pricing
+            if let ticketPrice = ticketPrice {
+                params["ticketPrice"] = ticketPrice
+            }
         }
 
         // Debug: Log the current userId from Firebase Auth

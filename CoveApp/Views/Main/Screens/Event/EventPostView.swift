@@ -121,7 +121,9 @@ class EventPostViewModel: ObservableObject {
                         userId: currentUserId,
                         userName: updatedRsvps[index].userName,
                         profilePhotoUrl: updatedRsvps[index].profilePhotoUrl,
-                        createdAt: updatedRsvps[index].createdAt
+                        createdAt: updatedRsvps[index].createdAt,
+                        pricingTierId: updatedRsvps[index].pricingTierId,
+                        pricePaid: updatedRsvps[index].pricePaid
                     )
                     updatedRsvps[index] = updatedRSVP
                 }
@@ -134,7 +136,9 @@ class EventPostViewModel: ObservableObject {
                         userId: currentUserId,
                         userName: "You", // Placeholder name
                         profilePhotoUrl: nil,
-                        createdAt: ISO8601DateFormatter().string(from: Date())
+                        createdAt: ISO8601DateFormatter().string(from: Date()),
+                        pricingTierId: nil,
+                        pricePaid: nil
                     )
                     updatedRsvps.append(newRSVP)
                 }
@@ -158,7 +162,9 @@ class EventPostViewModel: ObservableObject {
                 pendingCount: currentEvent.pendingCount,
                 rsvps: updatedRsvps,
                 coverPhoto: currentEvent.coverPhoto,
-                isHost: currentEvent.isHost
+                isHost: currentEvent.isHost,
+                useTieredPricing: currentEvent.useTieredPricing,
+                pricingTiers: currentEvent.pricingTiers
             )
 
             // Update the published event
@@ -483,16 +489,11 @@ struct EventPostView: View {
                             
                             // Event details section (price, capacity, going count)
                             VStack(alignment: .leading, spacing: 12) {
-                                // Ticket price display
-                                if let ticketPrice = event.ticketPrice {
-                                    HStack {
-                                        Image(systemName: "dollarsign.circle")
-                                            .foregroundColor(Colors.primaryDark)
-                                            .font(.system(size: 16))
-                                        Text("$\(String(format: "%.2f", ticketPrice))")
-                                            .font(.LibreBodoni(size: 16))
-                                            .foregroundColor(Colors.primaryDark)
-                                    }
+                                // Pricing display - tiered or single
+                                if event.useTieredPricing == true, let pricingTiers = event.pricingTiers, !pricingTiers.isEmpty {
+                                    tieredPricingDisplaySection(tiers: pricingTiers)
+                                } else if let ticketPrice = event.ticketPrice {
+                                    singlePricingDisplaySection(price: ticketPrice)
                                 }
                                 
                                 // Payment handle display
@@ -591,11 +592,11 @@ struct EventPostView: View {
                                             ForEach(Array(goingRsvps.prefix(4).enumerated()), id: \.element.id) { index, rsvp in
                                                 if let profilePhotoUrl = rsvp.profilePhotoUrl {
                                                     KFImage(profilePhotoUrl)
-                                                        .placeholder {
-                                                            Circle()
-                                                                .fill(Color.gray.opacity(0.2))
-                                                                .frame(width: 62, height: 62)
-                                                        }
+                                                                                                                 .placeholder {
+                                                             Circle()
+                                                                 .fill(Color.gray.opacity(0.2))
+                                                                 .frame(width: 44, height: 44)
+                                                         }
                                                         .onFailure { error in
                                                             Log.debug("❌ Failed to load profile photo: \(error)")
                                                         }
@@ -609,14 +610,11 @@ struct EventPostView: View {
                                                         .frame(width: 62, height: 62)
                                                         .clipShape(Circle())
                                                 } else {
-                                                    Circle()
-                                                        .fill(Color.gray.opacity(0.2))
+                                                    Image("default_user_pfp")
+                                                        .resizable()
+                                                        .scaledToFill()
                                                         .frame(width: 62, height: 62)
-                                                        .overlay(
-                                                            Image(systemName: "person.fill")
-                                                                .foregroundColor(.gray)
-                                                                .font(.system(size: 25))
-                                                        )
+                                                        .clipShape(Circle())
                                                 }
                                             }
 
@@ -646,7 +644,7 @@ struct EventPostView: View {
                         }
                         .padding(.top, 16)
 
-                        // Single RSVP button with three states
+                        // Single RSVP button with three states (+ waitlist when at capacity)
                         Button {
                             let currentStatus = event.rsvpStatus
                             Log.debug("🔵 RSVP Button Clicked - Current Status: \(currentStatus ?? "nil")")
@@ -666,13 +664,17 @@ struct EventPostView: View {
                             } else if currentStatus == "PENDING" {
                                 // User is pending - do nothing (button is static)
                                 Log.debug("🔵 PENDING button clicked - no action needed")
-                                           } else {
-                   // Check if this is a ticketed event and user is not the host
-                   if event.ticketPrice != nil, event.isHost != true {
-                       // Show ticket confirmation popup for non-hosts
-                       showingTicketConfirmation = true
-                   } else {
-                                    // No ticket price or user is host, proceed with RSVP
+                            } else {
+                                // Check if event is at capacity
+                                let isAtCapacity = event.memberCap != nil && event.goingCount != nil && event.goingCount! >= event.memberCap!
+                                
+                                // Check if this is a ticketed event and user is not the host
+                                // Skip payment for waitlist (when at capacity)
+                                if (event.ticketPrice != nil || event.useTieredPricing == true), event.isHost != true, !isAtCapacity {
+                                    // Show ticket confirmation popup for non-hosts (only if not at capacity)
+                                    showingTicketConfirmation = true
+                                } else {
+                                    // No ticket price, user is host, or event is at capacity (waitlist) - proceed with RSVP
                                     Log.debug("🔵 Sending PENDING to backend...")
                                     viewModel.updateRSVP(eventId: eventId, status: "PENDING") { success in
                                         Log.debug("🔵 PENDING response - Success: \(success)")
@@ -683,31 +685,52 @@ struct EventPostView: View {
                                     }
                                 }
                             }
-                            } label: {
+                        } label: {
                             let currentStatus = event.rsvpStatus
                             let isGoing = currentStatus == "GOING"
                             let isPending = currentStatus == "PENDING"
                             
-                            let buttonText = isGoing ? "can't make it..." : (isPending ? "pending approval..." : "rsvp")
+                            // Check if event is at capacity (for users not already going/pending)
+                            let isAtCapacity: Bool = {
+                                guard currentStatus != "GOING" && currentStatus != "PENDING" else { return false }
+                                
+                                if let memberCap = event.memberCap, let goingCount = event.goingCount {
+                                    return goingCount >= memberCap
+                                }
+                                return false
+                            }()
+                            
+                            let buttonText: String = {
+                                if isGoing {
+                                    return "can't make it..."
+                                } else if isPending {
+                                    return "pending approval..."
+                                } else if isAtCapacity {
+                                    return "join the waitlist"
+                                } else {
+                                    return "rsvp"
+                                }
+                            }()
 
                             Text(buttonText)
                                 .foregroundStyle(isGoing ? Colors.primaryDark : (isPending ? .gray : .white))
                                 .font(.LibreBodoni(size: 25))
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 12)
-                                    .background(
+                                .background(
                                     RoundedRectangle(cornerRadius: 20)
                                         .fill(isGoing ? Color.white : (isPending ? Color.gray.opacity(0.3) : Colors.primaryDark))
                                         .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 8)
-                                    )
-                            }
-                            .onAppear {
-                                let currentStatus = event.rsvpStatus
-                                let buttonText = currentStatus == "GOING" ? "can't make it..." : (currentStatus == "PENDING" ? "pending approval..." : "rsvp")
-                                Log.debug("🔵 Button Text: \(buttonText) (Status: \(currentStatus ?? "nil"))")
-                            }
-                            .disabled(viewModel.isUpdatingRSVP || event.rsvpStatus == "PENDING")
-                            .padding(.top, 24)
+                                )
+                        }
+                        .onAppear {
+                            let currentStatus = event.rsvpStatus
+                            let isAtCapacity = (event.memberCap != nil && event.goingCount != nil && event.goingCount! >= event.memberCap!)
+                            let buttonText = currentStatus == "GOING" ? "can't make it..." : (currentStatus == "PENDING" ? "pending approval..." : (isAtCapacity ? "join the waitlist" : "rsvp"))
+                            Log.debug("🔵 Button Text: \(buttonText) (Status: \(currentStatus ?? "nil"), At Capacity: \(isAtCapacity))")
+                        }
+                        .disabled(viewModel.isUpdatingRSVP || event.rsvpStatus == "PENDING")
+                        .padding(.top, 24)
 
                         Spacer(minLength: 32)
                     }
@@ -785,8 +808,27 @@ struct EventPostView: View {
             Text("Are you sure you want to delete this event? This action cannot be undone.")
         }
         .sheet(isPresented: $showingTicketConfirmation) {
+            // Calculate the correct ticket price to show
+            let displayPrice: Float = {
+                // For tiered pricing, show the lowest available tier price
+                if let event = viewModel.event, event.useTieredPricing == true,
+                   let pricingTiers = event.pricingTiers, !pricingTiers.isEmpty {
+                    // Sort by sortOrder and find first tier with spots left
+                    let sortedTiers = pricingTiers.sorted { $0.sortOrder < $1.sortOrder }
+                    if let lowestAvailableTier = sortedTiers.first(where: { tier in
+                        tier.spotsLeft == nil || tier.spotsLeft! > 0
+                    }) {
+                        return Float(lowestAvailableTier.price)
+                    }
+                    // If all sold out, show first tier price anyway
+                    return Float(sortedTiers.first?.price ?? 0)
+                }
+                // For single pricing, use ticketPrice
+                return Float(viewModel.event?.ticketPrice ?? 0)
+            }()
+            
             TicketConfirmationView(
-                ticketPrice: Float(viewModel.event?.ticketPrice ?? 0),
+                ticketPrice: displayPrice,
                 paymentHandle: viewModel.event?.paymentHandle,
                 onConfirm: {
                     // User confirmed they've paid, proceed with RSVP
@@ -807,6 +849,101 @@ struct EventPostView: View {
         }
         .sheet(isPresented: $showingShareSheet) {
             ShareSheet(activityItems: ["https://www.coveapp.co/events/\(eventId)"])
+        }
+    }
+    
+    // MARK: - Pricing Display Helpers
+    
+    @ViewBuilder
+    private func tieredPricingDisplaySection(tiers: [EventPricingTier]) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "tag.fill")
+                    .foregroundColor(Colors.primaryDark)
+                    .font(.system(size: 16))
+                Text("Tiered Pricing")
+                    .font(.LibreBodoniBold(size: 16))
+                    .foregroundColor(Colors.primaryDark)
+            }
+            
+            ForEach(tiers.sorted { $0.sortOrder < $1.sortOrder }, id: \.id) { tier in
+                let isSoldOut = tier.spotsLeft == 0
+                
+                HStack(spacing: 12) {
+                    // Tier icon based on type
+                    Image(systemName: tierIcon(for: tier.tierType))
+                        .foregroundColor(isSoldOut ? .gray : tierColor(for: tier.tierType))
+                        .font(.system(size: 14, weight: .medium))
+                    
+                    // Tier name and price
+                    Text(tier.tierType)
+                        .font(.LibreBodoni(size: 14))
+                        .foregroundColor(isSoldOut ? .gray : Colors.primaryDark)
+                    
+                    Spacer()
+                    
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text("$\(String(format: "%.2f", tier.price))")
+                            .font(.LibreBodoniBold(size: 14))
+                            .foregroundColor(isSoldOut ? .gray : Colors.primaryDark)
+                        
+                        if let spotsLeft = tier.spotsLeft {
+                            Text(spotsLeft > 0 ? "\(spotsLeft) left" : "sold out")
+                                .font(.LibreBodoni(size: 12))
+                                .foregroundColor(spotsLeft > 0 ? .green : .red)
+                        }
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(isSoldOut ? Color.gray.opacity(0.1) : Color.white.opacity(0.6))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(isSoldOut ? Color.gray.opacity(0.3) : Color.black.opacity(0.1), lineWidth: 1)
+                        )
+                )
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private func singlePricingDisplaySection(price: Double) -> some View {
+        HStack {
+            Image(systemName: "dollarsign.circle")
+                .foregroundColor(Colors.primaryDark)
+                .font(.system(size: 16))
+            Text("$\(String(format: "%.2f", price))")
+                .font(.LibreBodoni(size: 16))
+                .foregroundColor(Colors.primaryDark)
+        }
+    }
+    
+    // Helper functions for tier display
+    private func tierIcon(for tierType: String) -> String {
+        switch tierType.lowercased() {
+        case "early bird":
+            return "clock.fill"
+        case "regular":
+            return "person.fill"
+        case "last minute":
+            return "exclamationmark.triangle.fill"
+        default:
+            return "tag.fill"
+        }
+    }
+    
+    private func tierColor(for tierType: String) -> Color {
+        switch tierType.lowercased() {
+        case "early bird":
+            return Colors.primaryDark.opacity(0.8)
+        case "regular":
+            return Colors.primaryDark
+        case "last minute":
+            return Colors.primaryDark.opacity(0.9)
+        default:
+            return Colors.primaryDark
         }
     }
 }

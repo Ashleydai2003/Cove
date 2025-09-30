@@ -1,29 +1,22 @@
 'use client';
 
 import { useEffect } from 'react';
-import { setupTokenRefresh, checkAuthStatus } from '@/lib/auth';
+import { setupTokenRefresh } from '@/lib/auth';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
+import { debugAuthState } from '@/lib/debug';
 
 export function SessionProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
+    // Debug auth state in development
+    if (process.env.NODE_ENV === 'development') {
+      debugAuthState();
+    }
+    
     // Set up automatic token refresh when the app loads
     setupTokenRefresh();
     
-    // Check if we have a valid session on page load/refresh
-    const checkSession = async () => {
-      try {
-        const { isAuthenticated, user } = await checkAuthStatus();
-        if (isAuthenticated && user) {
-          console.log('Session restored on page load');
-        }
-      } catch (error) {
-        console.error('Session check failed:', error);
-      }
-    };
-    
-    // Check session immediately
-    checkSession();
+    // No need to check session status - cookies handle it automatically
     
     // Also listen for auth state changes to handle page refreshes
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -34,7 +27,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         // Also refresh the session to ensure it's up to date
         try {
           const idToken = await user.getIdToken();
-          await fetch('/api/auth/refresh', {
+          const response = await fetch('/api/auth/refresh', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -42,6 +35,23 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
             credentials: 'include',
             body: JSON.stringify({ idToken }),
           });
+          
+          if (!response.ok) {
+            console.warn('Session refresh failed with status:', response.status);
+            // Try to re-establish session by calling login endpoint
+            const loginResponse = await fetch('/api/auth/login', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              credentials: 'include',
+              body: JSON.stringify({ idToken }),
+            });
+            
+            if (!loginResponse.ok) {
+              console.error('Failed to re-establish session');
+            }
+          }
         } catch (error) {
           console.error('Session refresh failed:', error);
         }
