@@ -22,6 +22,11 @@
 **/.env
 **/.env.local
 **/.env.*.local
+**/env.development
+**/env.production
+**/dotenv
+**/.env.*
+**/env.*
 
 # Docker
 # Docker-related files and directories
