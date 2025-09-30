@@ -37,7 +37,8 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
     birthdate: '',
     almaMater: '',
     gradYear: '',
-    hobbies: [] as string[]
+    hobbies: [] as string[],
+    smsOptIn: false  // SMS consent required by Twilio
   });
 
   // Validation functions
@@ -67,7 +68,8 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
       formData.lastName.trim() !== '' &&
       formData.birthdate !== '' &&
       isAlmaMaterValid &&
-      isGradYearValid(formData.gradYear)
+      isGradYearValid(formData.gradYear) &&
+      formData.smsOptIn  // SMS consent is required
     );
   };
 
@@ -279,7 +281,8 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
           birthdate: formData.birthdate,
           almaMater: formData.almaMater.toLowerCase(),
           gradYear: formData.gradYear,
-          hobbies: formData.hobbies.map(hobby => hobby.toLowerCase())
+          hobbies: formData.hobbies.map(hobby => hobby.toLowerCase()),
+          smsOptIn: formData.smsOptIn  // SMS consent
         })
       });
 
@@ -482,6 +485,27 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
                 {formData.gradYear && !isGradYearValid(formData.gradYear) && (
                   <p className="text-red-500 text-sm mt-1">Please select a valid graduation year</p>
                 )}
+              </div>
+
+              {/* SMS Opt-in Checkbox - Required by Twilio */}
+              <div className="border-t border-gray-200 pt-4">
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={formData.smsOptIn}
+                    onChange={(e) => setFormData(prev => ({ ...prev, smsOptIn: e.target.checked }))}
+                    className="mt-1 w-5 h-5 text-[#5E1C1D] border-gray-300 rounded focus:ring-[#5E1C1D] cursor-pointer"
+                    required
+                  />
+                  <span className="flex-1 font-libre-bodoni text-sm text-[#2D2D2D] leading-relaxed">
+                    I agree to receive SMS notifications from Cove about event updates and RSVP confirmations. 
+                    Message and data rates may apply. 
+                    <span className="text-[#5E1C1D] font-semibold"> (Required)</span>
+                  </span>
+                </label>
+                <p className="ml-8 mt-2 font-libre-bodoni text-xs text-[#8B8B8B]">
+                  Standard messaging rates apply. You can opt out at any time by replying STOP.
+                </p>
               </div>
 
               <button

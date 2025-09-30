@@ -5,19 +5,23 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Event } from '@/types/event';
-import { apiClient } from '@/lib/api';
 import { EventDetailCard } from '@/components/EventDetailCard';
 
 export default function EventPage() {
   const params = useParams();
   const eventId = params?.eventId as string;
-  
+
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Fetch event data on initial page load
   useEffect(() => {
-    if (!eventId) return;
+    if (!eventId) {
+      setError('Event ID is required');
+      setLoading(false);
+      return;
+    }
 
     const fetchEvent = async () => {
       try {
@@ -25,12 +29,15 @@ export default function EventPage() {
         setError(null);
         // API Call #1: Initial page load or page refresh
         console.log('Fetching event data on initial page load...');
-        const eventData = await apiClient.fetchEvent(eventId);
+        const { apiClient } = await import('@/lib/api');
+        const eventData = await apiClient.fetchEvent(eventId, true); // Force fresh data
         console.log('Initial event data received:', {
           id: eventData.id,
           rsvpStatus: eventData.rsvpStatus,
           isHost: eventData.isHost,
-          name: eventData.name
+          name: eventData.name,
+          hasLocation: !!eventData.location,
+          hasRsvps: !!(eventData.rsvps && eventData.rsvps.length > 0)
         });
         setEvent(eventData);
       } catch (err) {
@@ -100,7 +107,7 @@ export default function EventPage() {
 
       {/* Event Content */}
       <div className="max-w-7xl mx-auto px-8 pb-16">
-        <EventDetailCard event={event} />
+        <EventDetailCard event={event} onEventUpdate={setEvent} />
       </div>
     </div>
   );

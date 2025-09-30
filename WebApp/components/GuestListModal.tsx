@@ -24,25 +24,51 @@ export default function GuestListModal({ isOpen, onClose, eventId }: GuestListMo
   const [guests, setGuests] = useState<Guest[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [hasMore, setHasMore] = useState(false);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   useEffect(() => {
     if (isOpen && eventId) {
-      fetchGuests();
+      fetchGuests(true); // Refresh on open
     }
   }, [isOpen, eventId]);
 
-  const fetchGuests = async () => {
-    setLoading(true);
+  const fetchGuests = async (refresh: boolean = false) => {
+    if (refresh) {
+      setLoading(true);
+      setGuests([]);
+      setNextCursor(null);
+    } else {
+      setLoadingMore(true);
+    }
     setError('');
 
     try {
-      const response = await fetch(`/api/event-members?eventId=${eventId}`, {
+      const params = new URLSearchParams({
+        eventId,
+        limit: '20'
+      });
+      
+      if (!refresh && nextCursor) {
+        params.append('cursor', nextCursor);
+      }
+
+      const response = await fetch(`/api/event-members?${params.toString()}`, {
         credentials: 'include',
       });
 
       if (response.ok) {
         const data = await response.json();
-        setGuests(data.members || []);
+        
+        if (refresh) {
+          setGuests(data.members || []);
+        } else {
+          setGuests(prev => [...prev, ...(data.members || [])]);
+        }
+        
+        setHasMore(data.hasMore || false);
+        setNextCursor(data.nextCursor || null);
       } else {
         const data = await response.json();
         setError(data.message || 'Failed to load guests');
@@ -51,6 +77,13 @@ export default function GuestListModal({ isOpen, onClose, eventId }: GuestListMo
       setError('Network error. Please try again.');
     } finally {
       setLoading(false);
+      setLoadingMore(false);
+    }
+  };
+
+  const loadMore = () => {
+    if (hasMore && !loadingMore && !loading) {
+      fetchGuests(false);
     }
   };
 
@@ -96,8 +129,17 @@ export default function GuestListModal({ isOpen, onClose, eventId }: GuestListMo
 
           {!loading && !error && guests.length > 0 && (
             <div className="space-y-4">
-              {guests.map((guest) => (
-                <div key={guest.id} className="flex items-center space-x-4">
+              {guests.map((guest, index) => (
+                <div 
+                  key={guest.id} 
+                  className="flex items-center space-x-4"
+                  onMouseEnter={() => {
+                    // Load more when reaching the last few items
+                    if (index >= guests.length - 3 && hasMore && !loadingMore) {
+                      loadMore();
+                    }
+                  }}
+                >
                   <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-200 flex-shrink-0 border-2 border-white shadow-sm">
                     {guest.profilePhotoUrl ? (
                       <img
@@ -106,9 +148,11 @@ export default function GuestListModal({ isOpen, onClose, eventId }: GuestListMo
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="w-full h-full bg-gray-300 flex items-center justify-center">
-                        <User size={24} className="text-gray-500" />
-                      </div>
+                      <img
+                        src="/default_user_pfp.svg"
+                        alt="Default profile"
+                        className="w-full h-full object-cover"
+                      />
                     )}
                   </div>
                   <div className="flex-1">
@@ -121,6 +165,26 @@ export default function GuestListModal({ isOpen, onClose, eventId }: GuestListMo
                   </div>
                 </div>
               ))}
+              
+              {/* Loading more indicator */}
+              {loadingMore && (
+                <div className="text-center py-4">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#5E1C1D] mx-auto mb-2"></div>
+                  <p className="font-libre-bodoni text-sm text-[#8B8B8B]">Loading more guests...</p>
+                </div>
+              )}
+              
+              {/* Load more button (fallback) */}
+              {hasMore && !loadingMore && (
+                <div className="text-center py-4">
+                  <button
+                    onClick={loadMore}
+                    className="font-libre-bodoni text-[#5E1C1D] underline underline-offset-4 text-sm hover:text-[#4A1718]"
+                  >
+                    Load more guests
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>

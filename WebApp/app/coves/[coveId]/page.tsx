@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { checkAuthStatus } from '@/lib/auth';
+// Auth is now handled automatically by cookies in API calls
 import CoveDetailCard from '@/components/CoveDetailCard';
 
 interface Cove {

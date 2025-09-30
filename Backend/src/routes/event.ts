@@ -5,6 +5,36 @@ import { PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { s3Client } from '../config/s3';
 import * as admin from 'firebase-admin';
+import { sendRSVPApprovedSMS, sendRSVPDeclinedSMS } from '../services/smsService';
+
+// Helper function to calculate tier allocation based on GOING and PENDING RSVPs
+// Allocates RSVPs to tiers in order: Early Bird → Regular → Last Minute
+function calculateTierAllocation(pricingTiers: any[], goingCount: number, pendingCount: number = 0) {
+  if (!pricingTiers || pricingTiers.length === 0) {
+    return pricingTiers;
+  }
+
+  // Sort tiers by sortOrder to ensure proper allocation order
+  const sortedTiers = [...pricingTiers].sort((a, b) => a.sortOrder - b.sortOrder);
+  
+  // Use both GOING and PENDING RSVPs for availability calculation
+  let remainingRSVPs = goingCount + pendingCount;
+  
+  return sortedTiers.map(tier => {
+    const maxSpots = tier.maxSpots || Infinity;
+    const allocatedToThisTier = Math.min(remainingRSVPs, maxSpots);
+    const spotsLeft = Math.max(0, maxSpots - allocatedToThisTier);
+    
+    remainingRSVPs = Math.max(0, remainingRSVPs - allocatedToThisTier);
+    
+    return {
+      ...tier,
+      currentSpots: allocatedToThisTier,
+      spotsLeft: spotsLeft,
+      isSoldOut: spotsLeft === 0 && maxSpots !== Infinity
+    };
+  });
+}
 
 // Create a new event
 // This endpoint handles event creation with the following requirements:
@@ -57,7 +87,9 @@ export const handleCreateEvent = async (request: APIGatewayProxyEvent): Promise<
       paymentHandle,
       isPublic,
       coverPhoto,
-      coveId 
+      coveId,
+      useTieredPricing,
+      pricingTiers
     } = JSON.parse(request.body);
 
     // Validate all required fields are present
@@ -99,6 +131,72 @@ export const handleCreateEvent = async (request: APIGatewayProxyEvent): Promise<
       };
     }
 
+    // Validate tiered pricing if provided
+    if (useTieredPricing !== undefined && typeof useTieredPricing !== 'boolean') {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          message: 'useTieredPricing must be a boolean if provided'
+        })
+      };
+    }
+
+    // If tiered pricing is enabled, validate pricing tiers
+    if (useTieredPricing === true) {
+      if (!pricingTiers || !Array.isArray(pricingTiers) || pricingTiers.length === 0) {
+        return {
+          statusCode: 400,
+          body: JSON.stringify({
+            message: 'pricingTiers array is required when useTieredPricing is true'
+          })
+        };
+      }
+
+      // Validate each pricing tier
+      for (let i = 0; i < pricingTiers.length; i++) {
+        const tier = pricingTiers[i];
+        
+        if (!tier.tierType || typeof tier.tierType !== 'string') {
+          return {
+            statusCode: 400,
+            body: JSON.stringify({
+              message: `Pricing tier ${i + 1}: tierType is required and must be a string`
+            })
+          };
+        }
+
+        if (tier.price === undefined || tier.price === null || typeof tier.price !== 'number' || tier.price < 0) {
+          return {
+            statusCode: 400,
+            body: JSON.stringify({
+              message: `Pricing tier ${i + 1}: price is required and must be a non-negative number`
+            })
+          };
+        }
+
+        if (tier.maxSpots !== undefined && tier.maxSpots !== null && (!Number.isInteger(tier.maxSpots) || tier.maxSpots < 1)) {
+          return {
+            statusCode: 400,
+            body: JSON.stringify({
+              message: `Pricing tier ${i + 1}: maxSpots must be a positive integer if provided`
+            })
+          };
+        }
+      }
+
+      // Check for duplicate tier types
+      const tierTypes = pricingTiers.map(tier => tier.tierType);
+      const uniqueTierTypes = new Set(tierTypes);
+      if (tierTypes.length !== uniqueTierTypes.size) {
+        return {
+          statusCode: 400,
+          body: JSON.stringify({
+            message: 'Duplicate tier types are not allowed'
+          })
+        };
+      }
+    }
+
     // Initialize database connection
     const prisma = await initializeDatabase();
 
@@ -135,20 +233,41 @@ export const handleCreateEvent = async (request: APIGatewayProxyEvent): Promise<
       };
     }
 
-    // Create the event in the database
-    const newEvent = await prisma.event.create({
-      data: {
-        name,
-        description: description || null,
-        date: new Date(date),
-        location,
-        memberCap: memberCap || null,
-        ticketPrice: ticketPrice || null,
-        paymentHandle: paymentHandle || null,
-        isPublic: isPublic === true,
-        coveId,
-        hostId: user.uid,
+    // Create the event in the database with transaction for tiered pricing
+    const newEvent = await prisma.$transaction(async (tx) => {
+      // Create the event
+      const event = await tx.event.create({
+        data: {
+          name,
+          description: description || null,
+          date: new Date(date),
+          location,
+          memberCap: memberCap || null,
+          ticketPrice: ticketPrice || null,
+          paymentHandle: paymentHandle || null,
+          isPublic: isPublic === true,
+          useTieredPricing: useTieredPricing === true,
+          coveId,
+          hostId: user.uid,
+        }
+      });
+
+      // If tiered pricing is enabled, create pricing tiers
+      if (useTieredPricing === true && pricingTiers && pricingTiers.length > 0) {
+        const tierData = pricingTiers.map((tier: any, index: number) => ({
+          eventId: event.id,
+          tierType: tier.tierType,
+          price: tier.price,
+          maxSpots: tier.maxSpots || null,
+          sortOrder: index,
+        }));
+
+        await tx.eventPricingTier.createMany({
+          data: tierData
+        });
       }
+
+      return event;
     });
 
     // Automatically create a "GOING" RSVP for the event host
@@ -196,6 +315,16 @@ export const handleCreateEvent = async (request: APIGatewayProxyEvent): Promise<
       });
     }
 
+    // Fetch the created event with pricing tiers for response
+    const eventWithTiers = await prisma.event.findUnique({
+      where: { id: newEvent.id },
+      include: {
+        pricingTiers: {
+          orderBy: { sortOrder: 'asc' }
+        }
+      }
+    });
+
     // Return success response with event details
     const response = {
       statusCode: 200,
@@ -211,6 +340,8 @@ export const handleCreateEvent = async (request: APIGatewayProxyEvent): Promise<
           ticketPrice: newEvent.ticketPrice,
           paymentHandle: newEvent.paymentHandle,
           isPublic: newEvent.isPublic,
+          useTieredPricing: newEvent.useTieredPricing,
+          pricingTiers: eventWithTiers?.pricingTiers || [],
           coveId: newEvent.coveId,
           createdAt: newEvent.createdAt
         }
@@ -346,7 +477,8 @@ export const handleGetCoveEvents = async (event: APIGatewayProxyEvent): Promise<
         include: {
           hostedBy: { select: { id: true, name: true } },
           cove: { select: { id: true, name: true, coverPhotoID: true } },
-          coverPhoto: { select: { id: true } }
+          coverPhoto: { select: { id: true } },
+          pricingTiers: { orderBy: { sortOrder: 'asc' } }
         },
         orderBy: { date: 'asc' },
         take: 5
@@ -400,7 +532,8 @@ export const handleGetCoveEvents = async (event: APIGatewayProxyEvent): Promise<
       include: {
         hostedBy: { select: { id: true, name: true } },
         cove: { select: { id: true, name: true, coverPhotoID: true } },
-        coverPhoto: { select: { id: true } }
+        coverPhoto: { select: { id: true } },
+        pricingTiers: { orderBy: { sortOrder: 'asc' } }
       },
       orderBy: { date: 'asc' },
       take: limit + 1,
@@ -448,10 +581,19 @@ export const handleGetCoveEvents = async (event: APIGatewayProxyEvent): Promise<
       // Enriched item if host or has RSVP
       if (isHost || rsvpStatus) {
         anyEnriched = true;
-        // Compute goingCount only for enriched items
+        // Compute goingCount and pendingCount only for enriched items
         const goingCount = await prisma.eventRSVP.count({
           where: { eventId: ev.id, status: 'GOING' }
         });
+        
+        const pendingCount = await prisma.eventRSVP.count({
+          where: { eventId: ev.id, status: 'PENDING' }
+        });
+
+        // Calculate tier allocation for pricing tiers
+        const pricingTiersWithAllocation = ev.useTieredPricing 
+          ? calculateTierAllocation(ev.pricingTiers, goingCount, pendingCount)
+          : ev.pricingTiers;
 
         return {
           id: ev.id,
@@ -459,10 +601,12 @@ export const handleGetCoveEvents = async (event: APIGatewayProxyEvent): Promise<
           description: ev.description,
           date: ev.date,
           location: ev.location,
-                      memberCap: ev.memberCap,
-            ticketPrice: ev.ticketPrice,
-            paymentHandle: null, // Not included in cove events list for privacy
-            coveId: ev.coveId,
+          memberCap: ev.memberCap,
+          ticketPrice: ev.ticketPrice,
+          paymentHandle: null, // Not included in cove events list for privacy
+          useTieredPricing: ev.useTieredPricing,
+          pricingTiers: pricingTiersWithAllocation,
+          coveId: ev.coveId,
           coveName: ev.cove.name,
           coveCoverPhoto: coveCoverPhoto,
           hostId: ev.hostId,
@@ -522,9 +666,243 @@ export const handleGetCoveEvents = async (event: APIGatewayProxyEvent): Promise<
 
 // Get a specific event by ID
 // This endpoint handles retrieving a specific event with the following requirements:
-// 1. User must be authenticated
-// 2. User must be a member of the event's cove
-// 3. Returns all event details including host info, cove info, and user's RSVP status
+export const handleGetEvent = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+  try {
+    if (event.httpMethod !== 'GET') {
+      return {
+        statusCode: 405,
+        body: JSON.stringify({
+          message: 'Method not allowed. Only GET requests are accepted for retrieving event details.'
+        })
+      };
+    }
+
+    // Optional authentication
+    console.log('Request cookies:', event.headers.cookie);
+    const authAttempt = await authMiddleware(event);
+    let userUid: string | null = null;
+    if (!('statusCode' in authAttempt)) {
+      userUid = authAttempt.user.uid;
+      console.log('Authenticated user:', userUid);
+    } else {
+      console.log('Authentication failed or no auth token provided');
+    }
+
+    const eventId = event.queryStringParameters?.eventId;
+    if (!eventId) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ message: 'Event ID is required' })
+      };
+    }
+
+    const prisma = await initializeDatabase();
+
+    // Minimal fetch first (avoid over-fetching sensitive relations)
+    const eventData = await prisma.event.findUnique({
+      where: { id: eventId },
+      include: {
+        hostedBy: { select: { id: true, name: true } },
+        cove: { select: { id: true, name: true, coverPhotoID: true } },
+        coverPhoto: { select: { id: true } },
+        pricingTiers: { orderBy: { sortOrder: 'asc' } }
+      }
+    });
+
+    if (!eventData) {
+      return {
+        statusCode: 404,
+        body: JSON.stringify({ message: 'Event not found' })
+      };
+    }
+
+    // Precompute signed URLs
+    const coverPhoto = eventData.coverPhoto ? {
+      id: eventData.coverPhoto.id,
+      url: await getSignedUrl(s3Client, new GetObjectCommand({
+        Bucket: process.env.EVENT_IMAGE_BUCKET_NAME,
+        Key: `${eventData.id}/${eventData.coverPhoto.id}.jpg`
+      }), { expiresIn: 3600 })
+    } : null;
+
+    const coveCoverPhoto = eventData.cove.coverPhotoID ? {
+      id: eventData.cove.coverPhotoID,
+      url: await getSignedUrl(s3Client, new GetObjectCommand({
+        Bucket: process.env.COVE_IMAGE_BUCKET_NAME,
+        Key: `${eventData.cove.id}/${eventData.cove.coverPhotoID}.jpg`
+      }), { expiresIn: 3600 })
+    } : null;
+
+    // Determine user relationship without over-fetching
+    const isHost = !!(userUid && eventData.hostId === userUid);
+    console.log('User relationship check:', { userUid, eventHostId: eventData.hostId, isHost });
+
+    const userRsvp = userUid ? await prisma.eventRSVP.findUnique({
+      where: { eventId_userId: { eventId: eventData.id, userId: userUid } },
+      select: { id: true, status: true, userId: true }
+    }) : null;
+
+    console.log('User RSVP lookup result:', { userUid, eventId: eventData.id, userRsvp });
+
+    // Debug: Let's also check all RSVPs for this event to see what's in the database
+    if (userUid) {
+      const allRsvps = await prisma.eventRSVP.findMany({
+        where: { eventId: eventData.id },
+        select: { id: true, status: true, userId: true }
+      });
+      console.log('All RSVPs for this event:', allRsvps);
+      console.log('Looking for user ID:', userUid);
+    }
+
+    // If entitled (host OR has GOING status), fetch attendee list and return full details
+    // Note: Hosts always get full access to manage their events, regardless of RSVP status
+    const hasGoingRsvp = userRsvp && userRsvp.status === 'GOING';
+    if (isHost || hasGoingRsvp) {
+      const attendees = await prisma.eventRSVP.findMany({
+        where: { eventId: eventData.id, status: 'GOING' },
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+        include: {
+          user: { select: { id: true, name: true, profilePhotoID: true } }
+        }
+      });
+
+      // Count RSVPs with "GOING" status for this event
+      const goingCount = await prisma.eventRSVP.count({
+        where: { eventId: eventData.id, status: 'GOING' }
+      });
+
+      // Count RSVPs with "PENDING" status for this event  
+      const pendingCount = await prisma.eventRSVP.count({
+        where: { eventId: eventData.id, status: 'PENDING' }
+      });
+
+      // Calculate tier allocation for pricing tiers
+      const pricingTiersWithAllocation = eventData.useTieredPricing 
+        ? calculateTierAllocation(eventData.pricingTiers, goingCount, pendingCount)
+        : eventData.pricingTiers;
+
+      return {
+        statusCode: 200,
+        headers: {
+          'Cache-Control': 'private, no-store',
+          'Vary': 'Authorization, Cookie'
+        },
+        body: JSON.stringify({
+          event: {
+            id: eventData.id,
+            name: eventData.name,
+            description: eventData.description,
+            date: eventData.date,
+            location: eventData.location,
+            memberCap: eventData.memberCap,
+            ticketPrice: eventData.ticketPrice,
+            paymentHandle: eventData.paymentHandle, // Available to all authenticated users
+            useTieredPricing: eventData.useTieredPricing,
+            pricingTiers: pricingTiersWithAllocation,
+            coveId: eventData.coveId,
+            host: {
+              id: eventData.hostedBy.id,
+              name: eventData.hostedBy.name
+            },
+            cove: {
+              id: eventData.cove.id,
+              name: eventData.cove.name,
+              coverPhoto: coveCoverPhoto
+            },
+            rsvpStatus: userRsvp?.status || null,
+            goingCount: goingCount,
+            pendingCount: pendingCount,
+            rsvps: await Promise.all(attendees.map(async rsvp => {
+              const profilePhotoUrl = rsvp.user.profilePhotoID ?
+                await getSignedUrl(s3Client, new GetObjectCommand({
+                  Bucket: process.env.USER_IMAGE_BUCKET_NAME,
+                  Key: `${rsvp.user.id}/${rsvp.user.profilePhotoID}.jpg`
+                }), { expiresIn: 3600 }) : null;
+              return {
+                id: rsvp.id,
+                status: rsvp.status,
+                userId: rsvp.userId,
+                userName: rsvp.user.name,
+                profilePhotoUrl,
+                createdAt: rsvp.createdAt
+              };
+            })),
+            coverPhoto,
+            isHost
+          }
+        })
+      };
+    }
+
+    // Count RSVPs with "GOING" status for this event (for limited response)
+    const goingCount = await prisma.eventRSVP.count({
+      where: { eventId: eventData.id, status: 'GOING' }
+    });
+
+    // Count RSVPs with "PENDING" status for this event (for limited response)
+    const pendingCount = await prisma.eventRSVP.count({
+      where: { eventId: eventData.id, status: 'PENDING' }
+    });
+
+    // Calculate tier allocation for pricing tiers
+    const pricingTiersWithAllocation = eventData.useTieredPricing 
+      ? calculateTierAllocation(eventData.pricingTiers, goingCount, pendingCount)
+      : eventData.pricingTiers;
+
+    // Limited response for unauthenticated or authenticated-without-GOING-status/host
+    const limitedEvent: any = {
+      id: eventData.id,
+      name: eventData.name,
+      description: eventData.description,
+      date: eventData.date,
+      memberCap: eventData.memberCap,
+      ticketPrice: eventData.ticketPrice,
+      paymentHandle: eventData.paymentHandle, // Available to all authenticated users
+      useTieredPricing: eventData.useTieredPricing,
+      pricingTiers: pricingTiersWithAllocation,
+      host: { name: eventData.hostedBy.name },
+      cove: { 
+        name: eventData.cove.name,
+        coverPhoto: coveCoverPhoto 
+      },
+      goingCount: goingCount,
+      pendingCount: pendingCount,
+      coverPhoto
+    };
+
+    // Always include rsvpStatus for authenticated users
+    if (userUid) {
+      limitedEvent.isHost = false;
+      limitedEvent.rsvpStatus = userRsvp?.status || null;
+      console.log('Limited response for authenticated user:', { 
+        userUid, 
+        rsvpStatus: limitedEvent.rsvpStatus, 
+        userRsvp: userRsvp 
+      });
+    } else {
+      // Unauthenticated users get null rsvpStatus
+      limitedEvent.rsvpStatus = null;
+    }
+
+    return {
+      statusCode: 200,
+      headers: {
+        'Cache-Control': 'private, no-store'
+      },
+      body: JSON.stringify({ event: limitedEvent })
+    };
+  } catch (error) {
+    console.error('Get event route error:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        message: 'Error processing get event request',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      })
+    };
+  }
+};
 
 // Update a user's RSVP status for an event
 // This endpoint handles updating RSVP status with the following requirements:
@@ -1012,6 +1390,12 @@ export const handleGetCalendarEvents = async (event: APIGatewayProxyEvent): Prom
           select: {
             id: true
           }
+        },
+        // Include pricing tiers
+        pricingTiers: {
+          orderBy: {
+            sortOrder: 'asc'
+          }
         }
       },
       // Order events by date ascending (earliest first)
@@ -1056,6 +1440,14 @@ export const handleGetCalendarEvents = async (event: APIGatewayProxyEvent): Prom
             }
           });
           
+          // Count RSVPs with "PENDING" status for this event
+          const pendingCount = await prisma.eventRSVP.count({
+            where: {
+              eventId: event.id,
+              status: 'PENDING'
+            }
+          });
+          
           // Generate cover photo URL if it exists
           const coverPhoto = event.coverPhoto ? {
             id: event.coverPhoto.id,
@@ -1074,6 +1466,11 @@ export const handleGetCalendarEvents = async (event: APIGatewayProxyEvent): Prom
             }), { expiresIn: 3600 })
           } : null;
           
+          // Calculate tier allocation for pricing tiers
+          const pricingTiersWithAllocation = event.useTieredPricing 
+            ? calculateTierAllocation(event.pricingTiers, goingCount, pendingCount)
+            : event.pricingTiers;
+
           return {
             id: event.id,
             name: event.name,
@@ -1083,6 +1480,8 @@ export const handleGetCalendarEvents = async (event: APIGatewayProxyEvent): Prom
             memberCap: event.memberCap,
             ticketPrice: event.ticketPrice,
             paymentHandle: null, // Not included in calendar events list for privacy
+            useTieredPricing: event.useTieredPricing,
+            pricingTiers: pricingTiersWithAllocation,
             coveId: event.coveId,
             coveName: event.cove.name,
             coveCoverPhoto: coveCoverPhoto,
@@ -1474,21 +1873,21 @@ export const handleApproveDeclineRSVP = async (event: APIGatewayProxyEvent): Pro
       });
     }
 
-    // Send notification to the user
+    // Send notifications to the user (push + SMS)
     try {
       const message = action === 'approve' 
         ? `Your RSVP to "${rsvp.event.name}" has been approved!`
         : `Your RSVP to "${rsvp.event.name}" was declined.`;
 
-      // Only send notifications in production mode
-      if (process.env.NODE_ENV === 'production') {
-        // Get user's FCM token and send notification
-        const user = await prisma.user.findUnique({
-          where: { id: rsvp.user.id },
-          select: { fcmToken: true }
-        });
+      // Get user details (phone, FCM token, and SMS consent)
+      const user = await prisma.user.findUnique({
+        where: { id: rsvp.user.id },
+        select: { fcmToken: true, phone: true, smsOptIn: true }
+      });
 
-        if (user?.fcmToken) {
+      // Send push notification (existing logic)
+      if (process.env.NODE_ENV === 'production' && user?.fcmToken) {
+        try {
           await admin.messaging().send({
             token: user.fcmToken,
             notification: {
@@ -1501,12 +1900,47 @@ export const handleApproveDeclineRSVP = async (event: APIGatewayProxyEvent): Pro
               action: action
             }
           });
+          console.log('[Push] Notification sent successfully');
+        } catch (pushErr) {
+          console.error('[Push] Error sending notification:', pushErr);
         }
-      } else {
+      }
+
+      // Send SMS notification (new logic) - only if user opted in
+      if (user?.phone && user?.smsOptIn) {
+        try {
+          // Get event date for approved RSVPs
+          const eventDetails = await prisma.event.findUnique({
+            where: { id: rsvp.eventId },
+            select: { date: true }
+          });
+
+          if (action === 'approve' && eventDetails) {
+            // Format event date for SMS
+            const eventDate = new Date(eventDetails.date).toLocaleDateString('en-US', {
+              weekday: 'short',
+              month: 'short',
+              day: 'numeric',
+              hour: 'numeric',
+              minute: '2-digit'
+            });
+            
+            await sendRSVPApprovedSMS(user.phone, rsvp.event.name, eventDate);
+          } else {
+            await sendRSVPDeclinedSMS(user.phone, rsvp.event.name);
+          }
+        } catch (smsErr) {
+          console.error('[SMS] Error sending notification:', smsErr);
+        }
+      } else if (user?.phone && !user?.smsOptIn) {
+        console.log('[SMS] User has not opted in to SMS notifications');
+      }
+
+      if (process.env.NODE_ENV !== 'production') {
         console.log(`[DEBUG] Would send notification: ${message}`);
       }
     } catch (notifyErr) {
-      console.error('Approval notification error:', notifyErr);
+      console.error('[Notification] Error sending notifications:', notifyErr);
     }
 
     return {
