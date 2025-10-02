@@ -50,7 +50,7 @@ resource "aws_iam_role" "lambda_role" {
   tags = local.common_tags
 }
 
-# Policy for Secrets Manager access allows Lambda to retrieve database credentials from Secrets Manager
+# Policy for Secrets Manager access allows Lambda to retrieve credentials from Secrets Manager
 resource "aws_iam_role_policy" "lambda_secrets_policy" {
   name = "lambda-secrets-policy"
   role = aws_iam_role.lambda_role.id
@@ -65,7 +65,8 @@ resource "aws_iam_role_policy" "lambda_secrets_policy" {
         Effect   = "Allow"
         Resource = [
           aws_db_instance.postgres.master_user_secret[0].secret_arn,
-          data.aws_secretsmanager_secret.firebase_credentials.arn
+          data.aws_secretsmanager_secret.firebase_credentials.arn,
+          data.aws_secretsmanager_secret.twilio_credentials.arn
         ]
       }
     ]
