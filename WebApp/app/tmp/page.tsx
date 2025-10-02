@@ -1,9 +1,4 @@
-'use client';
-
-import { useState } from 'react';
-
 export default function TmpPage() {
-  const [imageUrl, setImageUrl] = useState('/proof.png');
   
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
@@ -15,22 +10,9 @@ export default function TmpPage() {
         <div className="space-y-4">
           <div className="text-center">
             <img 
-              src={imageUrl} 
+              src="/proof.png" 
               alt="Proof image" 
               className="w-full h-64 object-cover rounded-lg border-2 border-gray-200"
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Image URL:
-            </label>
-            <input
-              type="url"
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-              placeholder="Enter image URL (e.g., /proof.png or /api/placeholder/400/300)"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           
