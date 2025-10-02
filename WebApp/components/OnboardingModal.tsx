@@ -435,7 +435,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
                 <input
                   type="text"
                   value={formData.almaMater}
-                  onChange={(e) => setFormData(prev => ({ ...prev, almaMater: e.target.value }))}
+                  onChange={(e) => setFormData(prev => ({ ...prev, almaMater: e.target.value.toLowerCase() }))}
                   placeholder="alma mater"
                   className={`w-full px-0 py-3 border-b-2 focus:outline-none text-lg font-libre-bodoni bg-transparent ${
                     formData.almaMater && !isAlmaMaterValid
@@ -449,14 +449,16 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
                 
                 {/* University suggestions dropdown */}
                 {formData.almaMater && filteredUniversities.length > 0 && !isAlmaMaterValid && (
-                  <div className="absolute top-full left-0 right-0 z-10 bg-white border border-gray-200 rounded-lg shadow-lg max-h-32 overflow-y-auto">
-                    {filteredUniversities.slice(0, 3).map((university, index) => (
+                  <div className="absolute top-full left-0 right-0 z-10 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                    {filteredUniversities.map((university, index) => (
                       <button
                         key={university}
                         type="button"
                         onClick={() => setFormData(prev => ({ ...prev, almaMater: university }))}
-                        className={`w-full text-left px-4 py-2 hover:bg-gray-50 text-sm font-libre-bodoni text-[#2D2D2D] ${
-                          university === 'Other' ? 'font-semibold text-[#5E1C1D]' : ''
+                        className={`w-full text-left px-4 py-2 hover:bg-gray-50 text-sm font-libre-bodoni ${
+                          university === "Other" 
+                            ? "text-[#5E1C1D] font-semibold border-t border-gray-200" 
+                            : "text-[#2D2D2D]"
                         }`}
                       >
                         {university}
