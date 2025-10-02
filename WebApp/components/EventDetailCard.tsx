@@ -297,6 +297,24 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
             {/* Divider */}
             <div className="h-px w-full bg-[#E5E5E5]"></div>
 
+            {/* Image - Show on mobile BEFORE pricing */}
+            <div className="lg:hidden">
+              <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden">
+                {event.coverPhoto?.url ? (
+                  <Image
+                    src={event.coverPhoto.url}
+                    alt={title}
+                    fill
+                    className="object-cover"
+                    sizes="100vw"
+                    priority
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-200" />
+                )}
+              </div>
+            </div>
+
             {/* Price and spots - tiered or single pricing */}
             {(event.useTieredPricing && event.pricingTiers && event.pricingTiers.length > 0) ? (
               <div className="space-y-4">
@@ -402,15 +420,15 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
 
         {/* Right column: image + button */}
         <div className="space-y-6">
-          {/* Image */}
-          <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden">
+          {/* Image - Hide on mobile, show on desktop */}
+          <div className="hidden lg:block relative w-full aspect-[4/3] rounded-2xl overflow-hidden">
             {event.coverPhoto?.url ? (
               <Image
                 src={event.coverPhoto.url}
                 alt={title}
                 fill
                 className="object-cover"
-                sizes="(max-width: 768px) 100vw, 50vw"
+                sizes="50vw"
                 priority
               />
             ) : (
@@ -503,13 +521,13 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
               const buttonText = isAtCapacity ? 'join the waitlist' : 'rsvp';
               
               return (
-                <button
-                  onClick={handleRSVP}
-                  disabled={isRsvpLoading}
-                  className="px-24 py-3 bg-[#5E1C1D] text-white rounded-lg font-libre-bodoni text-xl font-medium hover:bg-[#4A1718] transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                >
+              <button
+                onClick={handleRSVP}
+                disabled={isRsvpLoading}
+                className="px-24 py-3 bg-[#5E1C1D] text-white rounded-lg font-libre-bodoni text-xl font-medium hover:bg-[#4A1718] transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              >
                   {isRsvpLoading ? 'rsvping...' : buttonText}
-                </button>
+              </button>
               );
             })()}
           </div>
