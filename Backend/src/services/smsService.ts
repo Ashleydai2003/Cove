@@ -123,9 +123,9 @@ export const sendSMS = async (
     // Generate message
     const message = generateMessage(type, params);
 
-    // Get Twilio client and phone number
-    const twilioClient = getTwilioClient();
-    const twilioPhoneNumber = getTwilioPhoneNumber();
+    // Get Twilio client and phone number (async in production)
+    const twilioClient = await getTwilioClient();
+    const twilioPhoneNumber = await getTwilioPhoneNumber();
 
     // If Twilio not configured (development), just log
     if (!twilioClient || !twilioPhoneNumber) {
