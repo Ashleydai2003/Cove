@@ -235,19 +235,20 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
   const dateStr = formatDate(event.date);
   const timeStr = formatTime(event.date);
   const coveName = event.cove?.name || '';
-  // Smart display count logic: show capped count until we have enough pending RSVPs
+  // Smart display count logic: show capped count until we have enough total RSVPs
   const getDisplayGoingCount = () => {
     const goingCount = event.goingCount ?? 0;
     const pendingCount = event.pendingCount ?? 0;
+    const totalCount = goingCount + pendingCount; // True going count = approved + pending
     const cap = 20; // Cap at 20 people going
     
-    // If we have 20 or more pending RSVPs, show true count
-    if (pendingCount >= cap) {
-      return goingCount;
+    // If we have 20 or more total RSVPs (pending + approved), show true count
+    if (totalCount >= cap) {
+      return totalCount;
     }
     
     // Otherwise, show the capped display count
-    return Math.max(goingCount, cap);
+    return Math.max(totalCount, cap);
   };
   
   const displayGoingCount = getDisplayGoingCount();
