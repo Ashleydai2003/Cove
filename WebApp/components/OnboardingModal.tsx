@@ -508,7 +508,9 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
                   </span>
                 </label>
                 <p className="ml-8 mt-2 font-libre-bodoni text-xs text-[#8B8B8B]">
-                  Standard messaging rates apply. You can opt out at any time by replying STOP. 
+                  Standard messaging rates apply. You can opt out at any time by replying STOP.
+                </p>
+                <p className="ml-8 mt-1 font-libre-bodoni text-xs">
                   <a 
                     href="/privacy" 
                     target="_blank" 
