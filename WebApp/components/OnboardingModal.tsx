@@ -504,7 +504,6 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
                   <span className="flex-1 font-libre-bodoni text-sm text-[#2D2D2D] leading-relaxed">
                     I agree to receive SMS notifications from Cove about event updates and RSVP confirmations. 
                     Message and data rates may apply. 
-                    <span className="text-[#5E1C1D] font-semibold"> (Required)</span>
                   </span>
                 </label>
                 <p className="ml-8 mt-2 font-libre-bodoni text-xs text-[#8B8B8B]">
