@@ -175,8 +175,8 @@ export default function PrivacyPolicy() {
               If you have any questions about this Privacy Policy or our data practices, please contact us:
             </p>
             <div className="bg-[#F8F8F8] p-6 rounded-lg">
-              <p className="mb-2"><strong>Email:</strong> privacy@coveapp.com</p>
-              <p className="mb-2"><strong>Website:</strong> https://coveapp.com</p>
+              <p className="mb-2"><strong>Email:</strong> privacy@coveapp.co</p>
+              <p className="mb-2"><strong>Website:</strong> https://coveapp.co</p>
               <p><strong>Response Time:</strong> We will respond to your inquiry within 30 days.</p>
             </div>
           </section>
