@@ -2,6 +2,7 @@
 
 import { Libre_Bodoni, Berkshire_Swash } from 'next/font/google'
 import { useState, ChangeEvent, useEffect } from 'react'
+import NavigationMenu from '../components/NavigationMenu'
 
 interface FormData {
   firstName: string;
@@ -228,6 +229,9 @@ export default function Home() {
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden">
+      {/* Navigation Menu */}
+      <NavigationMenu />
+      
       {/* Background image container */}
       <div className="fixed inset-0 w-full h-full">
         <div 
