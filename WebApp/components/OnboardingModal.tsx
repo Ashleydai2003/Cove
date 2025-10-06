@@ -68,8 +68,8 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
       formData.lastName.trim() !== '' &&
       formData.birthdate !== '' &&
       isAlmaMaterValid &&
-      isGradYearValid(formData.gradYear) &&
-      formData.smsOptIn  // SMS consent is required
+      isGradYearValid(formData.gradYear)
+      // SMS consent is now optional
     );
   };
 
@@ -491,34 +491,59 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
                 )}
               </div>
 
-              {/* SMS Opt-in Checkbox - Required by Twilio */}
+              {/* SMS Opt-in Checkbox - Optional with full compliance */}
               <div className="border-t border-gray-200 pt-4">
-                <label className="flex items-start gap-3 cursor-pointer group">
-                  <input
-                    type="checkbox"
-                    checked={formData.smsOptIn}
-                    onChange={(e) => setFormData(prev => ({ ...prev, smsOptIn: e.target.checked }))}
-                    className="mt-1 w-5 h-5 text-[#5E1C1D] border-gray-300 rounded focus:ring-[#5E1C1D] cursor-pointer"
-                    required
-                  />
-                  <span className="flex-1 font-libre-bodoni text-sm text-[#2D2D2D] leading-relaxed">
-                    I agree to receive SMS notifications from Cove about event updates and RSVP confirmations. 
-                    Message and data rates may apply. 
-                  </span>
-                </label>
-                <p className="ml-8 mt-2 font-libre-bodoni text-xs text-[#8B8B8B]">
-                  Standard messaging rates apply. You can opt out at any time by replying STOP.
-                </p>
-                <p className="ml-8 mt-1 font-libre-bodoni text-xs">
-                  <a 
-                    href="/privacy" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-[#5E1C1D] hover:text-[#4A1718] underline"
-                  >
-                    View our Privacy Policy
-                  </a>
-                </p>
+                <div className="bg-[#F8F8F8] p-4 rounded-lg mb-4">
+                  <h4 className="font-libre-bodoni text-sm font-semibold text-[#5E1C1D] mb-2">
+                    SMS Notifications (Optional)
+                  </h4>
+                  <p className="font-libre-bodoni text-xs text-[#2D2D2D] mb-3">
+                    Receive SMS reminders about event updates from Cove.
+                  </p>
+                  
+                  <label className="flex items-start gap-3 cursor-pointer group">
+                    <input
+                      type="checkbox"
+                      checked={formData.smsOptIn}
+                      onChange={(e) => setFormData(prev => ({ ...prev, smsOptIn: e.target.checked }))}
+                      className="mt-1 w-5 h-5 text-[#5E1C1D] border-gray-300 rounded focus:ring-[#5E1C1D] cursor-pointer"
+                    />
+                    <span className="flex-1 font-libre-bodoni text-sm text-[#2D2D2D] leading-relaxed">
+                      By checking this box, you agree to receive SMS notifications from Cove.
+                    </span>
+                  </label>
+                  
+                  <div className="ml-8 mt-3 space-y-1">
+                    <p className="font-libre-bodoni text-xs text-[#8B8B8B]">
+                      • Text STOP to unsubscribe, HELP for help
+                    </p>
+                    <p className="font-libre-bodoni text-xs text-[#8B8B8B]">
+                      • Up to 3 messages per event
+                    </p>
+                    <p className="font-libre-bodoni text-xs text-[#8B8B8B]">
+                      • Message and data rates may apply
+                    </p>
+                  </div>
+                  
+                  <div className="ml-8 mt-2 flex gap-4">
+                    <a 
+                      href="/privacy" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="font-libre-bodoni text-xs text-[#5E1C1D] hover:text-[#4A1718] underline"
+                    >
+                      Privacy Policy
+                    </a>
+                    <a 
+                      href="/terms" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="font-libre-bodoni text-xs text-[#5E1C1D] hover:text-[#4A1718] underline"
+                    >
+                      Terms of Service
+                    </a>
+                  </div>
+                </div>
               </div>
 
               <button
