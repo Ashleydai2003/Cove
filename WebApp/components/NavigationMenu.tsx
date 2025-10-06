@@ -39,42 +39,51 @@ export default function NavigationMenu() {
               Menu
             </h3>
             <nav className="space-y-3">
-              <Link
+              <a
                 href="/about"
                 onClick={closeMenu}
                 className="block font-libre-bodoni text-[#2D2D2D] hover:text-[#5E1C1D] transition-colors"
               >
                 About
-              </Link>
-              <Link
+              </a>
+              <a
                 href="/services"
                 onClick={closeMenu}
                 className="block font-libre-bodoni text-[#2D2D2D] hover:text-[#5E1C1D] transition-colors"
               >
                 Services
-              </Link>
-              <Link
+              </a>
+              <a
+                href="https://www.coveapp.co/coves/cmebw8cg40001jv02f7zh22lj"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={closeMenu}
+                className="block font-libre-bodoni text-[#2D2D2D] hover:text-[#5E1C1D] transition-colors"
+              >
+                Our Events
+              </a>
+              <a
                 href="/contact"
                 onClick={closeMenu}
                 className="block font-libre-bodoni text-[#2D2D2D] hover:text-[#5E1C1D] transition-colors"
               >
                 Contact
-              </Link>
+              </a>
               <div className="border-t border-gray-200 pt-3 mt-3">
-                <Link
+                <a
                   href="/privacy"
                   onClick={closeMenu}
                   className="block font-libre-bodoni text-sm text-[#8B8B8B] hover:text-[#5E1C1D] transition-colors"
                 >
                   Privacy Policy
-                </Link>
-                <Link
+                </a>
+                <a
                   href="/terms"
                   onClick={closeMenu}
                   className="block font-libre-bodoni text-sm text-[#8B8B8B] hover:text-[#5E1C1D] transition-colors mt-2"
                 >
                   Terms of Service
-                </Link>
+                </a>
               </div>
             </nav>
           </div>
