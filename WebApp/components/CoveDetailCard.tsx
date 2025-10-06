@@ -214,9 +214,7 @@ export default function CoveDetailCard({ cove }: CoveDetailCardProps) {
                 return (
                   <div 
                     key={event.id} 
-                    className={`bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow cursor-pointer transform hover:scale-105 transition-transform duration-200 ${
-                      isPastEvent ? 'opacity-75' : ''
-                    }`}
+                    className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow cursor-pointer transform hover:scale-105 transition-transform duration-200"
                     onClick={() => window.location.href = `/events/${event.id}`}
                   >
                     {/* Event Image */}
@@ -226,7 +224,7 @@ export default function CoveDetailCard({ cove }: CoveDetailCardProps) {
                           src={event.coverPhoto.url}
                           alt={event.name}
                           fill
-                          className={`object-cover ${isPastEvent ? 'grayscale' : ''}`}
+                          className="object-cover"
                           sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                         />
                       ) : (
@@ -234,10 +232,10 @@ export default function CoveDetailCard({ cove }: CoveDetailCardProps) {
                           <div className="text-6xl">🎉</div>
                         </div>
                       )}
-                      {/* Past Event Overlay */}
+                      {/* Past Event Banner */}
                       {isPastEvent && (
-                        <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                          <span className="bg-[#5E1C1D] text-white px-3 py-1 rounded-full text-sm font-libre-bodoni font-semibold">
+                        <div className="absolute top-4 left-4">
+                          <span className="bg-[#5E1C1D] text-white px-3 py-1 rounded-full text-sm font-libre-bodoni font-semibold shadow-lg">
                             Past Event
                           </span>
                         </div>
