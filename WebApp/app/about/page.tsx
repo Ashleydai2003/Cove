@@ -21,91 +21,62 @@ export default function AboutPage() {
             className="inline-flex items-center gap-2 text-[#5E1C1D] hover:text-[#4A1718] transition-colors mb-6"
           >
             <ArrowLeft size={20} />
-            <span className="font-libre-bodoni">Back to Home</span>
+            <span className="font-libre-bodoni">back to home</span>
           </Link>
           <h1 className="text-6xl font-bold text-[#5E1C1D] mb-4">cove</h1>
-          <h2 className="text-3xl font-semibold text-[#5E1C1D]">About Us</h2>
+          <h2 className="text-3xl font-semibold text-[#5E1C1D]">about us</h2>
         </div>
 
         {/* Content */}
         <div className="prose prose-lg max-w-none">
           <section className="mb-8">
-            <h3 className="text-2xl font-semibold text-[#5E1C1D] mb-4">Our Mission</h3>
+            <h3 className="text-2xl font-semibold text-[#5E1C1D] mb-4">about us</h3>
             <p className="mb-4">
-              Cove creates events for young alumni to connect, network, and build meaningful relationships. 
-              We believe that the connections formed during college should continue to flourish in the professional world, 
-              and we're here to make that happen.
+              we're three stanford grads who miss how college turned serendipitous encounters into core memories.
             </p>
             <p className="mb-4">
-              Our mission is to create a vibrant community where recent graduates can maintain their college connections 
-              while building new professional relationships through curated events and experiences.
+              now, it’s the same five college friends at the same bars, while our future favorite humans probably live two blocks away–but we may never randomly collide.
             </p>
           </section>
 
           <section className="mb-8">
-            <h3 className="text-2xl font-semibold text-[#5E1C1D] mb-4">What We Do</h3>
-            <p className="mb-4">
-              Cove organizes exclusive events for young alumni, including:
-            </p>
+            <h3 className="text-2xl font-semibold text-[#5E1C1D] mb-4">the truth nobody admits:</h3>
             <ul className="list-disc pl-6 mb-4">
-              <li><strong>Networking Events:</strong> Professional mixers and industry meetups</li>
-              <li><strong>Social Gatherings:</strong> Casual get-togethers and recreational activities</li>
-              <li><strong>Career Development:</strong> Workshops, panels, and mentorship opportunities</li>
-              <li><strong>Alumni Reunions:</strong> University-specific events and celebrations</li>
+              <li>the interesting people aren't swiping through strangers</li>
+              <li>meeting your new crush at thursday pickleball beats any app</li>
+              <li>random meetups are…random</li>
+              <li>your people exist; finding them shouldn't require luck</li>
+              <li>alumni events are old and networky—nothing like college was</li>
             </ul>
           </section>
 
           <section className="mb-8">
-            <h3 className="text-2xl font-semibold text-[#5E1C1D] mb-4">Our Community</h3>
-            <p className="mb-4">
-              Cove is built for recent graduates (typically within 10 years of graduation) who want to:
-            </p>
+            <h3 className="text-2xl font-semibold text-[#5E1C1D] mb-4">why alumni first</h3>
+            <p className="mb-4">we're launching with ten elite institutions. vetted network. shared context. the kind of people who start companies, shape culture, and change cities.</p>
+            <p className="mb-4">think of it as college after college, curated for you.</p>
+            <p className="mb-4">so we built cove.</p>
+            <p className="mb-4">you joined college soccer to play soccer. you stayed for the people. cove works the same way.</p>
+            <p className="mb-4">carefully curated humans based on real compatibility—young alumni, shared context, and exactly who you're looking for.</p>
+            <p className="mb-4">recurring rituals that actually happen (think: sunday brunch club). no logistics drama. we handle everything. just show up.</p>
+            <p className="mb-4">friends, roommates, romance–whatever comes next—that's up to you. but we make the odds infinitely better than leaving it up to chance.</p>
+          </section>
+
+          <section className="mb-8">
+            <h3 className="text-2xl font-semibold text-[#5E1C1D] mb-4">the humans behind this:</h3>
             <ul className="list-disc pl-6 mb-4">
-              <li>Stay connected with their college community</li>
-              <li>Expand their professional network</li>
-              <li>Attend exclusive, high-quality events</li>
-              <li>Build meaningful relationships with like-minded peers</li>
+              <li>nina (ceo) - built things people show up to</li>
+              <li>ashley (cto) - turns code into human connection</li>
+              <li>angela (cmo) - knows what’s next before it’s next</li>
             </ul>
-          </section>
-
-          <section className="mb-8">
-            <h3 className="text-2xl font-semibold text-[#5E1C1D] mb-4">Why Cove?</h3>
-            <p className="mb-4">
-              Unlike generic networking platforms, Cove is specifically designed for young alumni who share the common 
-              experience of recent graduation. This creates a more authentic and meaningful community where connections 
-              are based on shared experiences and mutual understanding.
-            </p>
-            <p className="mb-4">
-              Our events are carefully curated to ensure quality and relevance, and our platform makes it easy to 
-              discover and RSVP to events that match your interests and schedule.
-            </p>
-          </section>
-
-          <section className="mb-8">
-            <h3 className="text-2xl font-semibold text-[#5E1C1D] mb-4">Join Our Community</h3>
-            <p className="mb-4">
-              Ready to reconnect with your college community and build new professional relationships? 
-              Join Cove today and start attending exclusive events designed just for young alumni.
-            </p>
-            <div className="bg-[#F8F8F8] p-6 rounded-lg">
-              <p className="mb-4">
-                <strong>Getting Started:</strong> Simply sign up with your phone number and complete your profile. 
-                You'll receive notifications about events in your area and can start building your network immediately.
-              </p>
-              <Link 
-                href="/"
-                className="inline-block bg-[#5E1C1D] text-white px-6 py-3 rounded-lg hover:bg-[#4A1718] transition-colors font-libre-bodoni"
-              >
-                Join the Waitlist
-              </Link>
-            </div>
+            <p className="mb-4">we know you probably have friends already. but aren't you just a little curious who else is out there?</p>
+            <p className="mb-4">we’re in sf. coming to nyc soon.</p>
           </section>
         </div>
 
         {/* Footer */}
         <div className="mt-12 pt-8 border-t border-[#E5E5E5] text-center">
           <p className="text-[#8B8B8B] text-sm">
-            Questions about Cove? <Link href="/contact" className="text-[#5E1C1D] hover:text-[#4A1718] underline">Contact us</Link>
+            questions about cove? <Link href="/contact" className="text-[#5E1C1D] hover:text-[#4A1718] underline">contact us</Link>
           </p>
         </div>
       </div>
