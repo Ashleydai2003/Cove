@@ -24,7 +24,7 @@ export default function AboutPage() {
             <span className="font-libre-bodoni">back to home</span>
           </Link>
           <h1 className="text-6xl font-bold text-[#5E1C1D] mb-4">cove</h1>
-          <h2 className="text-3xl font-semibold text-[#5E1C1D]">about us</h2>
+          <h2 className="text-3xl font-semibold text-[#5E1C1D]">about</h2>
         </div>
 
         {/* Content */}
