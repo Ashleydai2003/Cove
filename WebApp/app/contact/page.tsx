@@ -21,10 +21,10 @@ export default function ContactPage() {
             className="inline-flex items-center gap-2 text-[#5E1C1D] hover:text-[#4A1718] transition-colors mb-6"
           >
             <ArrowLeft size={20} />
-            <span className="font-libre-bodoni">Back to Home</span>
+            <span className="font-libre-bodoni">back to home</span>
           </Link>
           <h1 className="text-6xl font-bold text-[#5E1C1D] mb-4">cove</h1>
-          <h2 className="text-3xl font-semibold text-[#5E1C1D]">Contact Us</h2>
+          <h2 className="text-3xl font-semibold text-[#5E1C1D]">reach out</h2>
         </div>
 
         {/* Content */}
@@ -40,20 +40,20 @@ export default function ContactPage() {
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 max-w-md">
               <div className="flex items-center gap-3 mb-4">
                 <Mail className="text-[#5E1C1D]" size={24} />
-                <h4 className="text-xl font-semibold text-[#5E1C1D]">Get in Touch</h4>
+            <h4 className="text-xl font-semibold text-[#5E1C1D]">get in touch</h4>
               </div>
               <p className="text-[#2D2D2D] mb-4">
-                Have questions about our events for young alumni? We're here to help!
+                have questions about our events for young alumni? we're here to help!
               </p>
               <div className="bg-[#F8F8F8] p-4 rounded-lg">
                 <p className="text-sm">
-                  <strong>Contact Us:</strong><br />
+                  <strong>contact us:</strong><br />
                   <a href="mailto:tech@coveapp.co" className="text-[#5E1C1D] hover:text-[#4A1718]">
                     tech@coveapp.co
                   </a>
                 </p>
                 <p className="text-xs text-[#8B8B8B] mt-2">
-                  We'll get back to you within 24 hours
+                  we'll get back to you within 24 hours
                 </p>
               </div>
             </div>

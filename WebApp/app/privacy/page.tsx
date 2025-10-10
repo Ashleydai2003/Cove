@@ -15,19 +15,19 @@ export default function PrivacyPolicy() {
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-6xl font-bold text-[#5E1C1D] mb-4">cove</h1>
-          <h2 className="text-3xl font-semibold text-[#5E1C1D]">Privacy Policy</h2>
-          <p className="text-lg text-[#8B8B8B] mt-2">Last updated: {new Date().toLocaleDateString()}</p>
+          <h2 className="text-3xl font-semibold text-[#5E1C1D]">privacy policy</h2>
+          <p className="text-lg text-[#8B8B8B] mt-2">last updated: {new Date().toLocaleDateString()}</p>
         </div>
 
         {/* Content */}
         <div className="prose prose-lg max-w-none">
           <section className="mb-8">
-            <h3 className="text-2xl font-semibold text-[#5E1C1D] mb-4">1. Introduction</h3>
+            <h3 className="text-2xl font-semibold text-[#5E1C1D] mb-4">1. introduction</h3>
             <p className="mb-4">
-              Cove ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our web application and services.
+              cove ("we," "our," or "us") is committed to protecting your privacy. this privacy policy explains how we collect, use, disclose, and safeguard your information when you use our web application and services.
             </p>
             <p className="mb-4">
-              By using Cove, you consent to the data practices described in this policy. If you do not agree with the terms of this Privacy Policy, please do not use our services.
+              by using cove, you consent to the data practices described in this policy. if you do not agree with the terms of this privacy policy, please do not use our services.
             </p>
           </section>
 
