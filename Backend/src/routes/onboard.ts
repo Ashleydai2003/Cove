@@ -144,7 +144,7 @@ export const handleOnboard = async (event: APIGatewayProxyEvent): Promise<APIGat
       relationStatus,
       sexuality,
       gender,
-      smsOptIn = false  // SMS consent (required by Twilio)
+      smsOptIn = false  // SMS consent (optional, for Sinch notifications)
     } = parsedBody;
 
     // Step 6.5: Validate required fields
@@ -305,7 +305,7 @@ export const handleOnboard = async (event: APIGatewayProxyEvent): Promise<APIGat
             latitude: finalLatitude || null,
             longitude: finalLongitude || null,
             almaMater: almaMater || null,
-            gradYear: gradYear || null,
+            gradYear: gradYear ? gradYear.replace(/[^0-9]/g, '') : null,
             job: job || null,
             workLocation: workLocation || null,
             relationStatus: relationStatus || null,
