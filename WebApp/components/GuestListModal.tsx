@@ -157,9 +157,13 @@ export default function GuestListModal({ isOpen, onClose, eventId }: GuestListMo
                   </div>
                   <div className="flex-1">
                     <p className="font-libre-bodoni text-[#2D2D2D] font-medium">{guest.userName}</p>
-                    {guest.school && guest.gradYear && (
+                    {guest.school && guest.gradYear && guest.school.toLowerCase() !== 'other' && (
                       <p className="font-libre-bodoni text-sm text-[#8B8B8B] mt-1">
-                        {guest.school}'{guest.gradYear.slice(-2)}
+                        {guest.school}'{(() => {
+                          // Clean and format the graduation year
+                          const cleanYear = guest.gradYear.replace(/[^0-9]/g, '');
+                          return cleanYear.length >= 2 ? cleanYear.slice(-2) : cleanYear;
+                        })()}
                       </p>
                     )}
                   </div>
