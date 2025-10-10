@@ -38,7 +38,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
     almaMater: '',
     gradYear: '',
     hobbies: [] as string[],
-    smsOptIn: false  // SMS consent required by Twilio
+    smsOptIn: false  // SMS consent optional (Sinch notifications)
   });
 
   // Validation functions

@@ -1876,7 +1876,7 @@ export const handleApproveDeclineRSVP = async (event: APIGatewayProxyEvent): Pro
     // Send notifications to the user (push + SMS)
     try {
       const message = action === 'approve' 
-        ? `Your RSVP to "${rsvp.event.name}" has been approved!`
+        ? `Your RSVP to "${rsvp.event.name}" has been approved! Check full event details at https://coveapp.co/event/${rsvp.eventId}`
         : `Your RSVP to "${rsvp.event.name}" was declined.`;
 
       // Get user details (phone, FCM token, and SMS consent)

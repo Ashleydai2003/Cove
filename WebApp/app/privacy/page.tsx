@@ -85,10 +85,10 @@ export default function PrivacyPolicy() {
               <li><strong>Data Processing:</strong> User data is processed by Google according to their privacy policy</li>
             </ul>
 
-            <h4 className="text-xl font-semibold text-[#5E1C1D] mb-3">4.2 Twilio</h4>
+            <h4 className="text-xl font-semibold text-[#5E1C1D] mb-3">4.2 Sinch</h4>
             <ul className="list-disc pl-6 mb-4">
               <li><strong>SMS Services:</strong> Sending verification codes and event notifications</li>
-              <li><strong>Phone Number Processing:</strong> Phone numbers are processed by Twilio for SMS delivery</li>
+              <li><strong>Phone Number Processing:</strong> Phone numbers are processed by Sinch for SMS delivery</li>
             </ul>
 
             <h4 className="text-xl font-semibold text-[#5E1C1D] mb-3">4.3 AWS (Amazon Web Services)</h4>
