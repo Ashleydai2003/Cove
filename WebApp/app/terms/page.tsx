@@ -21,11 +21,11 @@ export default function TermsPage() {
             className="inline-flex items-center gap-2 text-[#5E1C1D] hover:text-[#4A1718] transition-colors mb-6"
           >
             <ArrowLeft size={20} />
-            <span className="font-libre-bodoni">Back to Home</span>
+            <span className="font-libre-bodoni">back to home</span>
           </Link>
           <h1 className="text-6xl font-bold text-[#5E1C1D] mb-4">cove</h1>
-          <h2 className="text-3xl font-semibold text-[#5E1C1D]">Terms of Service</h2>
-          <p className="text-lg text-[#8B8B8B] mt-2">Last updated: {new Date().toLocaleDateString()}</p>
+          <h2 className="text-3xl font-semibold text-[#5E1C1D]">terms of service</h2>
+          <p className="text-lg text-[#8B8B8B] mt-2">last updated: {new Date().toLocaleDateString()}</p>
         </div>
 
         {/* Content */}

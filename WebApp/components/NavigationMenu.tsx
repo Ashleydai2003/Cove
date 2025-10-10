@@ -35,23 +35,20 @@ export default function NavigationMenu() {
       {isOpen && (
         <div className="fixed top-4 right-4 z-50 bg-white rounded-lg shadow-xl border border-gray-200 min-w-[200px]">
           <div className="p-4">
-            <h3 className="font-libre-bodoni text-lg font-semibold text-[#5E1C1D] mb-4">
-              Menu
-            </h3>
             <nav className="space-y-3">
               <a
                 href="/about"
                 onClick={closeMenu}
                 className="block font-libre-bodoni text-[#2D2D2D] hover:text-[#5E1C1D] transition-colors"
               >
-                About
+                about
               </a>
               <a
-                href="/services"
+                href="/how-it-works"
                 onClick={closeMenu}
                 className="block font-libre-bodoni text-[#2D2D2D] hover:text-[#5E1C1D] transition-colors"
               >
-                Services
+                how it works
               </a>
               <a
                 href="https://www.coveapp.co/coves/cmebw8cg40001jv02f7zh22lj"
@@ -60,14 +57,14 @@ export default function NavigationMenu() {
                 onClick={closeMenu}
                 className="block font-libre-bodoni text-[#2D2D2D] hover:text-[#5E1C1D] transition-colors"
               >
-                Our Events
+                events
               </a>
               <a
                 href="/contact"
                 onClick={closeMenu}
                 className="block font-libre-bodoni text-[#2D2D2D] hover:text-[#5E1C1D] transition-colors"
               >
-                Contact
+                reach out
               </a>
               <div className="border-t border-gray-200 pt-3 mt-3">
                 <a
@@ -75,14 +72,14 @@ export default function NavigationMenu() {
                   onClick={closeMenu}
                   className="block font-libre-bodoni text-sm text-[#8B8B8B] hover:text-[#5E1C1D] transition-colors"
                 >
-                  Privacy Policy
+                  privacy policy
                 </a>
                 <a
                   href="/terms"
                   onClick={closeMenu}
                   className="block font-libre-bodoni text-sm text-[#8B8B8B] hover:text-[#5E1C1D] transition-colors mt-2"
                 >
-                  Terms of Service
+                  terms of service
                 </a>
               </div>
             </nav>
