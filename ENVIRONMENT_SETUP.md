@@ -16,7 +16,7 @@
    - Database credentials
    - AWS credentials
    - Firebase credentials
-   - Twilio credentials (optional)
+   - Sinch credentials (optional, for SMS)
 
 ### Production
 1. Copy the example file:
@@ -49,10 +49,11 @@ The backend also supports standard `.env` files. The `dotenv` package will load 
 - `FIREBASE_CLIENT_EMAIL`: Firebase service account email
 - `FIREBASE_PRIVATE_KEY`: Firebase service account private key
 
-### Twilio (Optional)
-- `TWILIO_ACCOUNT_SID`: Twilio account SID
-- `TWILIO_AUTH_TOKEN`: Twilio auth token
-- `TWILIO_PHONE_NUMBER`: Twilio phone number for SMS
+### Sinch (Optional - for SMS)
+- `SINCH_SERVICE_PLAN_ID`: Sinch Service Plan ID
+- `SINCH_API_TOKEN`: Sinch API Token
+- `SINCH_PHONE_NUMBER`: Sinch phone number for SMS
+- `SINCH_REGION`: Region (us or eu)
 
 ### API Configuration
 - `API_BASE_URL`: Base URL for the API
@@ -111,4 +112,4 @@ See the following guides for obtaining credentials:
 - Database: `Backend/EC2-SETUP.md`
 - AWS: Contact team lead or AWS console
 - Firebase: `Backend/FIREBASE-FCM-SETUP.md`
-- Twilio: `Backend/SMS-SETUP.md`
+- Sinch: See `setup-sinch-secrets-access.sh` and Backend SMS setup docs

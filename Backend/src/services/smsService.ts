@@ -1,7 +1,7 @@
 /**
  * SMS Notification Service
  * 
- * This service handles sending SMS notifications via Twilio.
+ * This service handles sending SMS notifications via Sinch REST API.
  * It provides a clean interface for sending different types of SMS messages
  * and handles errors gracefully.
  * 
@@ -10,9 +10,11 @@
  * - Phone number validation and formatting
  * - Graceful error handling
  * - Type-safe message templates
+ * 
+ * Documentation: https://developers.sinch.com/docs/sms/getting-started/node/send-sms/
  */
 
-import { getTwilioClient, getTwilioPhoneNumber } from '../config/twilio';
+import { getSinchClient, getSinchPhoneNumber } from '../config/sinch';
 
 /**
  * SMS notification types
@@ -123,12 +125,12 @@ export const sendSMS = async (
     // Generate message
     const message = generateMessage(type, params);
 
-    // Get Twilio client and phone number (async in production)
-    const twilioClient = await getTwilioClient();
-    const twilioPhoneNumber = await getTwilioPhoneNumber();
+    // Get Sinch client and phone number (async in production)
+    const sinchClient = await getSinchClient();
+    const sinchPhoneNumber = await getSinchPhoneNumber();
 
-    // If Twilio not configured (development), just log
-    if (!twilioClient || !twilioPhoneNumber) {
+    // If Sinch not configured (development), just log
+    if (!sinchClient || !sinchPhoneNumber) {
       console.log('[SMS] [DEVELOPMENT MODE] Would send SMS:');
       console.log(`  To: ${formattedPhone}`);
       console.log(`  Type: ${type}`);
@@ -136,19 +138,27 @@ export const sendSMS = async (
       return true;
     }
 
-    // Send SMS via Twilio
+    // Send SMS via Sinch REST API
     console.log(`[SMS] Sending ${type} to ${formattedPhone}`);
-    const result = await twilioClient.messages.create({
-      body: message,
-      to: formattedPhone,
-      from: twilioPhoneNumber,
-    });
+    
+    // Prepare Sinch batch SMS request
+    const smsData = {
+      from: sinchPhoneNumber,
+      to: [formattedPhone],
+      body: message
+    };
 
-    console.log(`[SMS] Message sent successfully. SID: ${result.sid}`);
+    const response = await sinchClient.post('/batches', smsData);
+
+    console.log(`[SMS] Message sent successfully. Batch ID: ${response.data.id}`);
     return true;
 
   } catch (error) {
     console.error('[SMS] Error sending SMS:', error);
+    if (error instanceof Error && 'response' in error) {
+      const axiosError = error as any;
+      console.error('[SMS] Sinch API Error:', axiosError.response?.data);
+    }
     return false;
   }
 };

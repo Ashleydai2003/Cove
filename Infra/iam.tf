@@ -66,7 +66,7 @@ resource "aws_iam_role_policy" "lambda_secrets_policy" {
         Resource = [
           aws_db_instance.postgres.master_user_secret[0].secret_arn,
           data.aws_secretsmanager_secret.firebase_credentials.arn,
-          data.aws_secretsmanager_secret.twilio_credentials.arn
+          data.aws_secretsmanager_secret.sinch_credentials.arn
         ]
       }
     ]

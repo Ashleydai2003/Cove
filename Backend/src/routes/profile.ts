@@ -384,6 +384,7 @@ export const handleEditProfile = async (event: APIGatewayProxyEvent): Promise<AP
     // Step 10: Update user profile
     // Only update fields that were provided in the request
     // birthdate is converted to a Date object if provided
+    // gradYear is sanitized to ensure it only contains digits
     await prisma.userProfile.update({
       where: { userId },
       data: {
@@ -393,7 +394,7 @@ export const handleEditProfile = async (event: APIGatewayProxyEvent): Promise<AP
         latitude,
         longitude,
         almaMater,
-        gradYear,
+        gradYear: gradYear ? gradYear.replace(/[^0-9]/g, '') : undefined,
         job,
         workLocation,
         relationStatus,
