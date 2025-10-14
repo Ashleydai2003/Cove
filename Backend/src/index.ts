@@ -53,6 +53,7 @@ import {
   handleGetPendingMembers,
   handleApproveDeclineRSVP,
   handleGetUniversities,
+  handleSMSWebhook,
 } from './routes';
 
 export const handler = async (
@@ -181,6 +182,8 @@ export const handler = async (
         return handleApproveDeclineRSVP(event);
       case '/universities':
         return handleGetUniversities(event);
+      case '/sms-webhook':
+        return handleSMSWebhook(event);
       default:
         // Handle common web standard files
         switch (event.path) {

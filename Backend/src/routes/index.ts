@@ -16,3 +16,4 @@ export { handleCreateThread, handleSendMessage, handleGetThreads, handleGetThrea
 export { handleCreatePost, handleGetCovePosts, handleGetPost, handleTogglePostLike } from './post';
 export { handleGetFeed } from './feed';
 export { handleGetUniversities } from './universities';
+export { handleSMSWebhook } from './sms-webhook';
