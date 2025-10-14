@@ -20,10 +20,46 @@ import crypto from 'crypto';
 
 const prisma = new PrismaClient();
 
-// Rate limiting: Track requests per IP
-const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+// Rate limiting: Track requests per IP with eviction and hard cap
+const rateLimitMap = new Map<string, { count: number; resetTime: number; lastAccess: number }>();
 const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
 const RATE_LIMIT_MAX_REQUESTS = 10; // 10 requests per minute
+const MAX_RATE_LIMIT_ENTRIES = 1000; // Hard cap to prevent memory exhaustion
+const EVICTION_INTERVAL = 5 * 60 * 1000; // Clean up every 5 minutes
+
+let lastEviction = Date.now();
+
+/**
+ * Clean up expired entries and enforce hard cap
+ */
+const evictExpiredEntries = (): void => {
+  const now = Date.now();
+  
+  // Only evict if enough time has passed
+  if (now - lastEviction < EVICTION_INTERVAL) {
+    return;
+  }
+  
+  lastEviction = now;
+  
+  // Remove expired entries
+  for (const [ip, data] of rateLimitMap.entries()) {
+    if (now > data.resetTime) {
+      rateLimitMap.delete(ip);
+    }
+  }
+  
+  // If still over cap, remove oldest entries (LRU)
+  if (rateLimitMap.size > MAX_RATE_LIMIT_ENTRIES) {
+    const entries = Array.from(rateLimitMap.entries());
+    entries.sort((a, b) => a[1].lastAccess - b[1].lastAccess);
+    
+    const toRemove = entries.slice(0, rateLimitMap.size - MAX_RATE_LIMIT_ENTRIES);
+    for (const [ip] of toRemove) {
+      rateLimitMap.delete(ip);
+    }
+  }
+};
 
 /**
  * Check if request is within rate limits
@@ -33,11 +69,19 @@ const RATE_LIMIT_MAX_REQUESTS = 10; // 10 requests per minute
  */
 const checkRateLimit = (ip: string): boolean => {
   const now = Date.now();
+  
+  // Clean up expired entries periodically
+  evictExpiredEntries();
+  
   const clientData = rateLimitMap.get(ip);
   
   if (!clientData || now > clientData.resetTime) {
     // Reset or create new entry
-    rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
+    rateLimitMap.set(ip, { 
+      count: 1, 
+      resetTime: now + RATE_LIMIT_WINDOW,
+      lastAccess: now
+    });
     return true;
   }
   
@@ -46,6 +90,7 @@ const checkRateLimit = (ip: string): boolean => {
   }
   
   clientData.count++;
+  clientData.lastAccess = now;
   return true;
 };
 
@@ -127,17 +172,7 @@ const normalizePhoneNumber = (phone: string): string | null => {
  */
 export const handleSMSWebhook = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
-    // SECURITY: Rate limiting
-    const clientIP = event.requestContext?.identity?.sourceIp || 'unknown';
-    if (!checkRateLimit(clientIP)) {
-      console.error('[SMS Webhook] Rate limit exceeded for IP:', clientIP);
-      return {
-        statusCode: 429,
-        body: JSON.stringify({ error: 'Rate limit exceeded' })
-      };
-    }
-    
-    // SECURITY: Verify webhook signature
+    // SECURITY: Verify webhook signature FIRST (before any state changes)
     const signature = event.headers['X-Sinch-Signature'] || event.headers['x-sinch-signature'];
     const webhookSecret = process.env.SINCH_WEBHOOK_SECRET;
     
@@ -155,6 +190,16 @@ export const handleSMSWebhook = async (event: APIGatewayProxyEvent): Promise<API
       return {
         statusCode: 401,
         body: JSON.stringify({ error: 'Invalid signature' })
+      };
+    }
+    
+    // SECURITY: Rate limiting AFTER authentication (prevents DoS)
+    const clientIP = event.requestContext?.identity?.sourceIp || 'unknown';
+    if (!checkRateLimit(clientIP)) {
+      console.error('[SMS Webhook] Rate limit exceeded for IP:', clientIP);
+      return {
+        statusCode: 429,
+        body: JSON.stringify({ error: 'Rate limit exceeded' })
       };
     }
     
