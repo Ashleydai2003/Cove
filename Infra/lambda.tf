@@ -47,6 +47,7 @@ resource "aws_lambda_function" "my_lambda" {
   # Environment variables for the Lambda function
   environment {
     variables = {
+      NODE_ENV = "production"
       DB_HOST     = aws_db_instance.postgres.address
       DB_USER     = aws_db_instance.postgres.username
       DB_NAME     = aws_db_instance.postgres.db_name

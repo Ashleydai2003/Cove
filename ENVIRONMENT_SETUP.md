@@ -54,6 +54,7 @@ The backend also supports standard `.env` files. The `dotenv` package will load 
 - `SINCH_API_TOKEN`: Sinch API Token
 - `SINCH_PHONE_NUMBER`: Sinch phone number for SMS
 - `SINCH_REGION`: Region (us or eu)
+- `SINCH_WEBHOOK_SECRET`: Webhook secret for signature verification (REQUIRED for production)
 
 ### API Configuration
 - `API_BASE_URL`: Base URL for the API
