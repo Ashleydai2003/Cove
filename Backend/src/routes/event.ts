@@ -1909,23 +1909,8 @@ export const handleApproveDeclineRSVP = async (event: APIGatewayProxyEvent): Pro
       // Send SMS notification (new logic) - only if user opted in
       if (user?.phone && user?.smsOptIn) {
         try {
-          // Get event date for approved RSVPs
-          const eventDetails = await prisma.event.findUnique({
-            where: { id: rsvp.eventId },
-            select: { date: true }
-          });
-
-          if (action === 'approve' && eventDetails) {
-            // Format event date for SMS
-            const eventDate = new Date(eventDetails.date).toLocaleDateString('en-US', {
-              weekday: 'short',
-              month: 'short',
-              day: 'numeric',
-              hour: 'numeric',
-              minute: '2-digit'
-            });
-            
-            await sendRSVPApprovedSMS(user.phone, rsvp.event.name, eventDate);
+          if (action === 'approve') {
+            await sendRSVPApprovedSMS(user.phone, rsvp.event.name, rsvp.eventId);
           } else {
             await sendRSVPDeclinedSMS(user.phone, rsvp.event.name);
           }

@@ -23,6 +23,8 @@ import { getSinchClient, getSinchPhoneNumber } from '../config/sinch';
 export enum SMSNotificationType {
   RSVP_APPROVED = 'RSVP_APPROVED',
   RSVP_DECLINED = 'RSVP_DECLINED',
+  STOP_KEYWORD = 'STOP_KEYWORD',
+  HELP_KEYWORD = 'HELP_KEYWORD',
 }
 
 /**
@@ -30,7 +32,7 @@ export enum SMSNotificationType {
  */
 interface RSVPApprovedParams {
   eventName: string;
-  eventDate: string;
+  eventId: string;
 }
 
 /**
@@ -41,9 +43,16 @@ interface RSVPDeclinedParams {
 }
 
 /**
+ * Parameters for keyword responses
+ */
+interface KeywordParams {
+  userPhone: string;
+}
+
+/**
  * Union type for all SMS parameters
  */
-type SMSParams = RSVPApprovedParams | RSVPDeclinedParams;
+type SMSParams = RSVPApprovedParams | RSVPDeclinedParams | KeywordParams;
 
 /**
  * Format a phone number to E.164 format
@@ -87,11 +96,18 @@ const generateMessage = (type: SMSNotificationType, params: SMSParams): string =
   switch (type) {
     case SMSNotificationType.RSVP_APPROVED:
       const approvedParams = params as RSVPApprovedParams;
-      return `🎉 Your RSVP to "${approvedParams.eventName}" on ${approvedParams.eventDate} has been approved! See you there!`;
+      const eventLink = `https://www.coveapp.co/events/${approvedParams.eventId}`;
+      return `You're in for ${approvedParams.eventName} 😌✨\n\nEvent deets and guest list: ${eventLink}\n\nCan't wait to see you there!\n— Cove\n\nReply STOP to opt out, HELP for help. Msg&data rates may apply.`;
     
     case SMSNotificationType.RSVP_DECLINED:
       const declinedParams = params as RSVPDeclinedParams;
-      return `Your RSVP to "${declinedParams.eventName}" was declined. The event may be at capacity.`;
+      return `Your RSVP to "${declinedParams.eventName}" was declined. The event may be at capacity.\n\nReply STOP to opt out, HELP for help. Msg&data rates may apply.`;
+    
+    case SMSNotificationType.STOP_KEYWORD:
+      return 'You have been unsubscribed from Cove SMS notifications. You will no longer receive event updates via text. Reply HELP for assistance.';
+    
+    case SMSNotificationType.HELP_KEYWORD:
+      return 'Cove SMS Help:\n• Event RSVP confirmations\n• Up to 3 msgs per event\n• Reply STOP to unsubscribe\n• Visit coveapp.co for support\n\nMsg&data rates may apply.';
     
     default:
       return 'You have a new notification from Cove.';
@@ -170,17 +186,17 @@ export const sendSMS = async (
  * 
  * @param phoneNumber - Recipient's phone number
  * @param eventName - Name of the event
- * @param eventDate - Date of the event (formatted string)
+ * @param eventId - ID of the event for generating the share link
  * @returns Promise<boolean> - True if sent successfully
  */
 export const sendRSVPApprovedSMS = async (
   phoneNumber: string,
   eventName: string,
-  eventDate: string
+  eventId: string
 ): Promise<boolean> => {
   return sendSMS(phoneNumber, SMSNotificationType.RSVP_APPROVED, {
     eventName,
-    eventDate,
+    eventId,
   });
 };
 
@@ -199,5 +215,37 @@ export const sendRSVPDeclinedSMS = async (
 ): Promise<boolean> => {
   return sendSMS(phoneNumber, SMSNotificationType.RSVP_DECLINED, {
     eventName,
+  });
+};
+
+/**
+ * Send STOP keyword response
+ * 
+ * Sends confirmation when user texts STOP to unsubscribe.
+ * 
+ * @param phoneNumber - Recipient's phone number
+ * @returns Promise<boolean> - True if sent successfully
+ */
+export const sendSTOPResponse = async (
+  phoneNumber: string
+): Promise<boolean> => {
+  return sendSMS(phoneNumber, SMSNotificationType.STOP_KEYWORD, {
+    userPhone: phoneNumber,
+  });
+};
+
+/**
+ * Send HELP keyword response
+ * 
+ * Sends help information when user texts HELP.
+ * 
+ * @param phoneNumber - Recipient's phone number
+ * @returns Promise<boolean> - True if sent successfully
+ */
+export const sendHELPResponse = async (
+  phoneNumber: string
+): Promise<boolean> => {
+  return sendSMS(phoneNumber, SMSNotificationType.HELP_KEYWORD, {
+    userPhone: phoneNumber,
   });
 };
