@@ -75,6 +75,7 @@ class UpcomingFeed: ObservableObject {
 
             DispatchQueue.main.async {
                 self.isLoading = false
+                print("🔍 UpcomingFeed: Processing result")
 
                 switch result {
                 case .success(let response):
@@ -159,14 +160,14 @@ class UpcomingFeed: ObservableObject {
                     location: event.location,
                     memberCap: event.memberCap,
                                 ticketPrice: event.ticketPrice,
-            coveId: event.coveId,
+            coveId: event.coveId ?? "",
                     coveName: event.coveName,
                     coveCoverPhoto: event.coveCoverPhoto,
-                    hostId: event.hostId,
+                    hostId: event.hostId ?? "",
                     hostName: event.hostName,
                     rsvpStatus: event.rsvpStatus,
                     goingCount: event.goingCount,
-                    pendingCount: event.pendingCount,
+                    pendingCount: nil,
                     createdAt: event.createdAt,
                     coverPhoto: event.coverPhoto
                 )

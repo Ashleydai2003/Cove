@@ -69,3 +69,29 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "event_images_encr
   }
 }
 
+# Vendor images S3 bucket for vendor cover photos and vendor user profile photos
+resource "aws_s3_bucket" "vendor_images" {
+  bucket = "cove-vendor-images"
+
+  tags = local.common_tags
+}
+
+# Enable versioning for the vendor images bucket
+resource "aws_s3_bucket_versioning" "vendor_images_versioning" {
+  bucket = aws_s3_bucket.vendor_images.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+# Configure server-side encryption for vendor images
+resource "aws_s3_bucket_server_side_encryption_configuration" "vendor_images_encryption" {
+  bucket = aws_s3_bucket.vendor_images.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+

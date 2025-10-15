@@ -113,11 +113,14 @@ class NetworkManager {
                     }
 
                     do {
-                        let decodedResponse = try JSONDecoder().decode(T.self, from: data)
+                        let decoder = JSONDecoder()
+                        decoder.dateDecodingStrategy = .iso8601
+                        let decodedResponse = try decoder.decode(T.self, from: data)
                         Log.network("GET request successful", endpoint: endpoint, method: "GET")
                         completion(.success(decodedResponse))
                     } catch {
                         Log.error("Decoding error: \(error.localizedDescription)", category: "network")
+                        print("🔍 NetworkManager: Raw response data: \(String(data: data, encoding: .utf8) ?? "Unable to convert to string")")
                         CrashlyticsHandler.recordNetworkError(error, endpoint: endpoint, method: "GET")
                         completion(.failure(.decodingError(error)))
                     }
