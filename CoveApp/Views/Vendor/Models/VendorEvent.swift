@@ -6,7 +6,7 @@
 
 import Foundation
 
-struct VendorEvent: Codable, Identifiable {
+struct VendorEvent: Codable, Identifiable, Hashable {
     let id: String
     let name: String
     let description: String?
@@ -24,14 +24,14 @@ struct VendorEvent: Codable, Identifiable {
     let rsvpCounts: RSVPCounts
     let createdAt: String  // Changed from Date to String to match API response
     
-    struct PricingTier: Codable {
+    struct PricingTier: Codable, Hashable {
         let tierType: String
         let price: Double
         let maxSpots: Int?
         let sortOrder: Int
     }
     
-    struct RSVPCounts: Codable {
+    struct RSVPCounts: Codable, Hashable {
         let going: Int
         let maybe: Int
         let cantGo: Int

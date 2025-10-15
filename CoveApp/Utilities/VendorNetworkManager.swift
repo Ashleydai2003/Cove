@@ -245,6 +245,17 @@ class VendorNetworkManager {
         }
     }
     
+    // MARK: - Event Details
+    
+    func deleteVendorEvent(eventId: String, completion: @escaping (Result<MessageResponse, NetworkError>) -> Void) {
+        guard let url = URL(string: "\(baseURL)/vendor/event/\(eventId)") else {
+            completion(.failure(.invalidURL))
+            return
+        }
+        
+        makeAuthenticatedRequest(url: url, method: "DELETE", body: nil, completion: completion)
+    }
+    
     // MARK: - Image Upload
     
     func uploadVendorImage(imageData: Data, isProfilePic: Bool, completion: @escaping (Result<String, NetworkError>) -> Void) {
