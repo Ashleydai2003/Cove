@@ -49,6 +49,9 @@ class VendorController: ObservableObject {
     /// Trigger to refresh vendor events
     @Published var shouldRefreshEvents: Bool = false
     
+    /// Vendor events feed manager
+    @Published var vendorFeed = VendorFeed()
+    
     /// Whether the current vendor user has completed onboarding
     var hasCompletedOnboarding: Bool {
         get {
@@ -148,6 +151,7 @@ class VendorController: ObservableObject {
     /// Refresh vendor events feed
     func refreshVendorEvents() {
         print("🔄 VendorController: Refreshing vendor events...")
+        vendorFeed.refreshVendorEvents()
         shouldRefreshEvents.toggle() // Toggle to trigger refresh in VendorEventsView
     }
     
