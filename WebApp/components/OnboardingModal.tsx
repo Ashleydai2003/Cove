@@ -509,7 +509,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
                       className="mt-1 w-5 h-5 text-[#5E1C1D] border-gray-300 rounded focus:ring-[#5E1C1D] cursor-pointer"
                     />
                     <span className="flex-1 font-libre-bodoni text-sm text-[#2D2D2D] leading-relaxed">
-                      By checking this box, you agree to receive recurring SMS notifications from Cove about event updates and RSVP confirmations. Message frequency varies by event activity. Message and data rates may apply. Reply STOP to cancel, HELP for help.
+                      By checking this box, you agree to receive SMS notifications from Cove about event updates and reminders. Message frequency varies and may include up to 3 messages per event. Message and data rates may apply. Reply STOP to unsubscribe or HELP for help. View our Terms & Privacy at https://www.coveapp.co/terms and https://www.coveapp.co/privacy
                     </span>
                   </label>
                   
