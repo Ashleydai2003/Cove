@@ -35,7 +35,7 @@ export default function AboutPage() {
               we're three stanford grads who miss how college turned serendipitous encounters into core memories.
             </p>
             <p className="mb-4">
-              now, it’s the same five college friends at the same bars, while our future favorite humans probably live two blocks away–but we may never randomly collide.
+              now, it's the same five college friends at the same places, while our future favorite humans probably live two blocks away–but we may never randomly collide.
             </p>
           </section>
 
