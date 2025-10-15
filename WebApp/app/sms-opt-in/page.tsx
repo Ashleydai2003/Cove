@@ -118,10 +118,21 @@ export default function SMSOptInDocumentation() {
         {/* SMS Message Templates */}
         <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
           <h2 className="text-2xl font-semibold text-[#5E1C1D] mb-4">
-            SMS Message Templates
+            SMS Message Templates & Keywords
           </h2>
           
           <div className="space-y-6">
+            {/* Start Message */}
+            <div>
+              <h3 className="font-semibold text-[#5E1C1D] mb-2">Start Message (Optional)</h3>
+              <div className="bg-[#F8F8F8] p-3 rounded-lg">
+                <p className="text-sm text-[#2D2D2D]">
+                  "You're subscribed to SMS updates from Cove. We send up to 3 messages per event. Message and data rates may apply. Reply STOP to unsubscribe, HELP for help."
+                </p>
+              </div>
+            </div>
+
+            {/* RSVP Messages */}
             <div>
               <h3 className="font-semibold text-[#5E1C1D] mb-2">RSVP Approved Message</h3>
               <div className="bg-[#F8F8F8] p-3 rounded-lg">
@@ -142,18 +153,26 @@ export default function SMSOptInDocumentation() {
               </div>
             </div>
 
+            {/* STOP Message */}
             <div>
-              <h3 className="font-semibold text-[#5E1C1D] mb-2">HELP Response</h3>
+              <h3 className="font-semibold text-[#5E1C1D] mb-2">Stop Message</h3>
               <div className="bg-[#F8F8F8] p-3 rounded-lg">
                 <p className="text-sm text-[#2D2D2D]">
-                  "Cove SMS Help:<br/>
-                  • RSVP confirmations and event updates<br/>
-                  • Up to 3 msgs per event<br/>
-                  • Reply STOP to unsubscribe<br/>
-                  • Visit coveapp.co for support<br/><br/>
-                  Msg&data rates may apply."
+                  "You have been unsubscribed and will no longer receive messages from Cove."
                 </p>
               </div>
+              <p className="text-xs text-[#8B8B8B] mt-1">Opt-Out Keywords: STOP</p>
+            </div>
+
+            {/* HELP Message */}
+            <div>
+              <h3 className="font-semibold text-[#5E1C1D] mb-2">Help Message</h3>
+              <div className="bg-[#F8F8F8] p-3 rounded-lg">
+                <p className="text-sm text-[#2D2D2D]">
+                  "Cove: Reply STOP to unsubscribe. For help, email tech@coveapp.co."
+                </p>
+              </div>
+              <p className="text-xs text-[#8B8B8B] mt-1">Help Keywords: HELP (Optional)</p>
             </div>
           </div>
         </div>
