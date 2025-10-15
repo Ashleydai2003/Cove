@@ -81,6 +81,13 @@ export default function NavigationMenu() {
                 >
                   terms of service
                 </a>
+                <a
+                  href="/sms-opt-in"
+                  onClick={closeMenu}
+                  className="block font-libre-bodoni text-sm text-[#8B8B8B] hover:text-[#5E1C1D] transition-colors mt-2"
+                >
+                  sms compliance
+                </a>
               </div>
             </nav>
           </div>
