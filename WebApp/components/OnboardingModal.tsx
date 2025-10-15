@@ -509,19 +509,19 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
                       className="mt-1 w-5 h-5 text-[#5E1C1D] border-gray-300 rounded focus:ring-[#5E1C1D] cursor-pointer"
                     />
                     <span className="flex-1 font-libre-bodoni text-sm text-[#2D2D2D] leading-relaxed">
-                      By checking this box, you agree to receive SMS notifications from Cove.
+                      By checking this box, you agree to receive SMS notifications from Cove about event updates and reminders. Message frequency varies and may include up to 3 messages per event. Message and data rates may apply. Reply STOP to unsubscribe or HELP for help. View our Terms & Privacy at https://www.coveapp.co/terms and https://www.coveapp.co/privacy
                     </span>
                   </label>
                   
                   <div className="ml-8 mt-3 space-y-1">
                     <p className="font-libre-bodoni text-xs text-[#8B8B8B]">
-                      • Text STOP to unsubscribe, HELP for help
-                    </p>
-                    <p className="font-libre-bodoni text-xs text-[#8B8B8B]">
-                      • Up to 3 messages per event
+                      • Message frequency: Up to 3 messages per event
                     </p>
                     <p className="font-libre-bodoni text-xs text-[#8B8B8B]">
                       • Message and data rates may apply
+                    </p>
+                    <p className="font-libre-bodoni text-xs text-[#8B8B8B]">
+                      • Reply STOP to cancel, HELP for help
                     </p>
                   </div>
                   

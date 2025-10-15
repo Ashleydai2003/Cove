@@ -97,7 +97,7 @@ const generateMessage = (type: SMSNotificationType, params: SMSParams): string =
     case SMSNotificationType.RSVP_APPROVED:
       const approvedParams = params as RSVPApprovedParams;
       const eventLink = `https://www.coveapp.co/events/${approvedParams.eventId}`;
-      return `You're in for ${approvedParams.eventName} 😌✨\n\nEvent deets and guest list: ${eventLink}\n\nCan't wait to see you there!\n— Cove\n\nReply STOP to opt out, HELP for help. Msg&data rates may apply.`;
+      return `Your RSVP to ${approvedParams.eventName} has been approved! Event details and guest list: ${eventLink}\n\nReply STOP to opt out, HELP for help. Msg&data rates may apply.`;
     
     case SMSNotificationType.RSVP_DECLINED:
       const declinedParams = params as RSVPDeclinedParams;
@@ -107,7 +107,7 @@ const generateMessage = (type: SMSNotificationType, params: SMSParams): string =
       return 'You have been unsubscribed from Cove SMS notifications. You will no longer receive event updates via text. Reply HELP for assistance.';
     
     case SMSNotificationType.HELP_KEYWORD:
-      return 'Cove SMS Help:\n• Event RSVP confirmations\n• Up to 3 msgs per event\n• Reply STOP to unsubscribe\n• Visit coveapp.co for support\n\nMsg&data rates may apply.';
+      return 'Cove SMS Help:\n• RSVP confirmations and event updates\n• Up to 3 msgs per event\n• Reply STOP to unsubscribe\n• Visit coveapp.co for support\n\nMsg&data rates may apply.';
     
     default:
       return 'You have a new notification from Cove.';
