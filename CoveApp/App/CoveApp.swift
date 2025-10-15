@@ -22,6 +22,10 @@ struct CoveApp: App {
 
     /// Shared app controller instance - now properly managed by SwiftUI
     @StateObject private var appController = AppController.shared
+    @StateObject private var vendorController = VendorController.shared
+    
+    /// Track which account type is active
+    @AppStorage("activeAccountType") private var activeAccountType: String = "user"
 
     init() {
         // For Injection (hot reloading)
@@ -52,7 +56,7 @@ struct CoveApp: App {
 
     var body: some Scene {
         WindowGroup {
-            // Use Group & transitions for smoother authentication switches
+            // Route to correct app based on active account type
             Group {
                 #if DEBUG
                 if SKIP_ONBOARDING_FOR_DEV {
@@ -61,7 +65,72 @@ struct CoveApp: App {
                         .environmentObject(appController)
                         .preferredColorScheme(.light)
                 } else {
-                    // Normal DEBUG logic
+                    // Normal DEBUG logic - check active account type
+                    if activeAccountType == "vendor" {
+                        // Vendor flow
+                        if vendorController.isLoggedIn {
+                            VendorHomeView()
+                                .environmentObject(vendorController)
+                                .preferredColorScheme(.light)
+                                .transition(.asymmetric(
+                                    insertion: .move(edge: .trailing).combined(with: .opacity),
+                                    removal: .move(edge: .leading).combined(with: .opacity)
+                                ))
+                        } else {
+                            VendorOnboardingFlow()
+                                .environmentObject(vendorController)
+                                .preferredColorScheme(.light)
+                                .transition(.asymmetric(
+                                    insertion: .move(edge: .leading).combined(with: .opacity),
+                                    removal: .move(edge: .trailing).combined(with: .opacity)
+                                ))
+                        }
+                    } else {
+                        // User flow
+                        if appController.isLoggedIn {
+                            // Main app flow - tab-based navigation
+                            HomeView()
+                                .environmentObject(appController)
+                                .preferredColorScheme(.light)
+                                .transition(.asymmetric(
+                                    insertion: .move(edge: .trailing).combined(with: .opacity),
+                                    removal: .move(edge: .leading).combined(with: .opacity)
+                                ))
+                        } else {
+                            // Onboarding flow - linear navigation
+                            OnboardingFlow()
+                                .environmentObject(appController)
+                                .preferredColorScheme(.light)
+                                .transition(.asymmetric(
+                                    insertion: .move(edge: .leading).combined(with: .opacity),
+                                    removal: .move(edge: .trailing).combined(with: .opacity)
+                                ))
+                        }
+                    }
+                }
+                #else
+                // RELEASE logic - check active account type
+                if activeAccountType == "vendor" {
+                    // Vendor flow
+                    if vendorController.isLoggedIn {
+                        VendorHomeView()
+                            .environmentObject(vendorController)
+                            .preferredColorScheme(.light)
+                            .transition(.asymmetric(
+                                insertion: .move(edge: .trailing).combined(with: .opacity),
+                                removal: .move(edge: .leading).combined(with: .opacity)
+                            ))
+                    } else {
+                        VendorOnboardingFlow()
+                            .environmentObject(vendorController)
+                            .preferredColorScheme(.light)
+                            .transition(.asymmetric(
+                                insertion: .move(edge: .leading).combined(with: .opacity),
+                                removal: .move(edge: .trailing).combined(with: .opacity)
+                            ))
+                    }
+                } else {
+                    // User flow
                     if appController.isLoggedIn {
                         // Main app flow - tab-based navigation
                         HomeView()
@@ -82,30 +151,11 @@ struct CoveApp: App {
                             ))
                     }
                 }
-                #else
-                // RELEASE logic
-                if appController.isLoggedIn {
-                    // Main app flow - tab-based navigation
-                    HomeView()
-                        .environmentObject(appController)
-                        .preferredColorScheme(.light)
-                        .transition(.asymmetric(
-                            insertion: .move(edge: .trailing).combined(with: .opacity),
-                            removal: .move(edge: .leading).combined(with: .opacity)
-                        ))
-                } else {
-                    // Onboarding flow - linear navigation
-                    OnboardingFlow()
-                        .environmentObject(appController)
-                        .preferredColorScheme(.light)
-                        .transition(.asymmetric(
-                            insertion: .move(edge: .leading).combined(with: .opacity),
-                            removal: .move(edge: .trailing).combined(with: .opacity)
-                        ))
-                }
                 #endif
             }
             .animation(.easeInOut(duration: 0.45), value: appController.isLoggedIn)
+            .animation(.easeInOut(duration: 0.45), value: vendorController.isLoggedIn)
+            .animation(.easeInOut(duration: 0.45), value: activeAccountType)
         }
     }
 }

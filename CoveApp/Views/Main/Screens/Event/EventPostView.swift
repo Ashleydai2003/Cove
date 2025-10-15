@@ -482,7 +482,7 @@ struct EventPostView: View {
                                 Text("hosted by")
                                     .font(.LibreBodoni(size: 18))
                                     .foregroundColor(Color.black)
-                                Text(event.host.name)
+                                Text(event.host?.name ?? "Unknown Host")
                                 .font(.LibreBodoni(size: 18))
                                 .foregroundColor(Colors.primaryDark)
                             }

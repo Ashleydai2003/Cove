@@ -813,7 +813,7 @@ export const handleGetEvent = async (event: APIGatewayProxyEvent): Promise<APIGa
             } : null,
             cove: eventData.cove ? {
               id: eventData.cove.id,
-              name: eventData.cove?.name || null,
+              name: eventData.cove.name,
               coverPhoto: coveCoverPhoto
             } : null,
             rsvpStatus: userRsvp?.status || null,
@@ -867,8 +867,8 @@ export const handleGetEvent = async (event: APIGatewayProxyEvent): Promise<APIGa
       paymentHandle: eventData.paymentHandle, // Available to all authenticated users
       useTieredPricing: eventData.useTieredPricing,
       pricingTiers: pricingTiersWithAllocation,
-      host: eventData.hostedBy ? { name: eventData.hostedBy.name } : null,
-      cove: eventData.cove ? { 
+      host: { name: eventData.hostedBy?.name || null },
+      cove: { 
         name: eventData.cove.name,
         coverPhoto: coveCoverPhoto
       } : null,
@@ -1016,7 +1016,7 @@ export const handleUpdateEventRSVP = async (event: APIGatewayProxyEvent): Promis
     }
 
     // Check if user is a member of the cove (only for private events)
-    if (!eventData.isPublic && eventData.cove && eventData.cove.members.length === 0) {
+    if (!eventData.isPublic && eventData.cove.members.length === 0) {
       return {
         statusCode: 403,
         body: JSON.stringify({
@@ -1109,7 +1109,7 @@ export const handleUpdateEventRSVP = async (event: APIGatewayProxyEvent): Promis
               data: {
                 type: 'event_rsvp',
                 eventId: eventId,
-                coveId: eventDataFull.coveId || ''
+                coveId: eventDataFull.coveId
               }
             });
           } else {
@@ -1273,7 +1273,7 @@ export const handleRemoveEventRSVP = async (event: APIGatewayProxyEvent): Promis
               data: {
                 type: 'event_rsvp_removed',
                 eventId: eventId,
-                coveId: eventDataFull.coveId || ''
+                coveId: eventDataFull.coveId
               }
             });
           } else {
@@ -1488,11 +1488,11 @@ export const handleGetCalendarEvents = async (event: APIGatewayProxyEvent): Prom
             paymentHandle: null, // Not included in calendar events list for privacy
             useTieredPricing: event.useTieredPricing,
             pricingTiers: pricingTiersWithAllocation,
-            coveId: event.coveId || null,
-            coveName: event.cove?.name || null,
+            coveId: event.coveId,
+            coveName: event.cove.name,
             coveCoverPhoto: coveCoverPhoto,
-            hostId: event.hostId || null,
-            hostName: event.hostedBy?.name || null,
+            hostId: event.hostId,
+            hostName: event.hostedBy.name,
             rsvpStatus: userRsvp?.status || null,
             goingCount: goingCount,
             createdAt: event.createdAt,
