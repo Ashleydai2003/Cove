@@ -27,7 +27,7 @@ export interface EventPricingTier {
 
 export interface EventRSVP {
   id: string;
-  status: 'GOING' | 'NOT_GOING' | 'PENDING';
+  status: 'GOING' | 'NOT_GOING' | 'PENDING' | 'WAITLIST';
   userId: string;
   userName: string;
   profilePhotoUrl?: string | null;
@@ -50,7 +50,7 @@ export interface Event {
   coveId: string;
   host: Host;
   cove: Cove;
-  rsvpStatus?: 'GOING' | 'NOT_GOING' | 'PENDING' | null;
+  rsvpStatus?: 'GOING' | 'NOT_GOING' | 'PENDING' | 'WAITLIST' | null;
   goingCount?: number;
   pendingCount?: number;
   rsvps?: EventRSVP[];

@@ -83,8 +83,8 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
       setShowOnboarding(true);
     } else {
       // User is authenticated and has completed onboarding, proceed with RSVP
-      if (rsvpStatus === 'GOING' || rsvpStatus === 'PENDING') {
-        // User is already going or pending, no action needed (button should be disabled)
+      if (rsvpStatus === 'GOING' || rsvpStatus === 'PENDING' || rsvpStatus === 'WAITLIST') {
+        // User is already going, pending, or on waitlist, no action needed (button should be disabled)
         console.log('User already RSVPed, no action needed');
         return;
       } else {
@@ -117,16 +117,16 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
         } else {
           // No payment required or event is at capacity (waitlist), proceed directly with RSVP
           console.log(isAtCapacity ? 'Event at capacity, joining waitlist' : 'No payment required, proceeding with RSVP');
-          await performRSVP();
+          await performRSVP(isAtCapacity);
         }
       }
     }
   };
 
-  // Check if user can see full event details (RSVP'd, pending, or host)
+  // Check if user can see full event details (RSVP'd, pending, waitlist, or host)
   // Use the most up-to-date rsvpStatus from either local state or event prop
   const currentRsvpStatus = rsvpStatus || event.rsvpStatus;
-  const canSeeFullDetails = currentRsvpStatus === 'GOING' || currentRsvpStatus === 'PENDING' || event.isHost;
+  const canSeeFullDetails = currentRsvpStatus === 'GOING' || currentRsvpStatus === 'PENDING' || currentRsvpStatus === 'WAITLIST' || event.isHost;
   
   // Debug logging for UI visibility
   console.log('UI Visibility Check:', {
@@ -143,9 +143,11 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
 
 
 
-  const performRSVP = async () => {
+  const performRSVP = async (isWaitlist: boolean = false) => {
     setIsRsvpLoading(true);
     try {
+      const status = isWaitlist ? 'WAITLIST' : 'PENDING';
+      
       const response = await fetch('/api/rsvp', {
         method: 'POST',
         headers: {
@@ -154,12 +156,12 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
         credentials: 'include',
         body: JSON.stringify({
           eventId: event.id,
-          status: 'PENDING',
+          status: status,
         }),
       });
 
       if (response.ok) {
-        setRsvpStatus('PENDING');
+        setRsvpStatus(status);
         setShowSuccessModal(true);
         
         // Reload page to show updated UI with fresh data
@@ -249,7 +251,7 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
         } else {
           // No payment required or event is at capacity (waitlist), proceed directly with RSVP
           console.log(isAtCapacity ? 'Event at capacity, joining waitlist' : 'No payment required, proceeding with RSVP');
-          await performRSVP();
+          await performRSVP(isAtCapacity);
         }
       }, 100);
     } else {
@@ -532,6 +534,13 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
                 className="px-16 py-3 bg-gray-200 text-gray-500 rounded-lg font-libre-bodoni text-lg border border-gray-300 cursor-not-allowed"
               >
                 pending approval...
+              </button>
+            ) : rsvpStatus === 'WAITLIST' ? (
+              <button
+                disabled
+                className="px-16 py-3 bg-orange-100 text-orange-700 rounded-lg font-libre-bodoni text-lg border border-orange-300 cursor-not-allowed"
+              >
+                on the waitlist
               </button>
             ) : rsvpStatus === 'GOING' ? (
               <button
