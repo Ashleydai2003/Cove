@@ -36,6 +36,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
     lastName: '',
     birthdate: '',
     almaMater: '',
+    otherSchool: '', // For when user selects "Other"
     gradYear: '',
     hobbies: [] as string[],
     smsOptIn: false  // SMS consent optional (Sinch notifications)
@@ -62,12 +63,27 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
     checkValidity();
   }, [formData.almaMater]);
 
+  // Name validation helper
+  const isValidName = (name: string) => {
+    const trimmed = name.trim();
+    return trimmed.length >= 2;
+  };
+
+  // Other school validation helper
+  const isValidOtherSchool = (school: string) => {
+    const trimmed = school.trim();
+    return trimmed.length >= 2 && /^[a-zA-Z0-9\s]+$/.test(trimmed);
+  };
+
   const isFormValid = () => {
+    const isOtherSchoolValid = formData.almaMater.toLowerCase() !== 'other' || isValidOtherSchool(formData.otherSchool);
+    
     return (
-      formData.firstName.trim() !== '' &&
-      formData.lastName.trim() !== '' &&
+      isValidName(formData.firstName) &&
+      isValidName(formData.lastName) &&
       formData.birthdate !== '' &&
       isAlmaMaterValid &&
+      isOtherSchoolValid &&
       isGradYearValid(formData.gradYear)
       // SMS consent is now optional
     );
@@ -263,6 +279,12 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
       return;
     }
     
+    // Validate other school field if "Other" is selected
+    if (formData.almaMater.toLowerCase() === 'other' && !isValidOtherSchool(formData.otherSchool)) {
+      setError('Please enter a valid school name (at least 2 characters, letters and numbers only)');
+      return;
+    }
+    
     if (!isGradYearValid(formData.gradYear)) {
       setError('Please select a valid graduation year');
       return;
@@ -277,9 +299,9 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include', // Include cookies
         body: JSON.stringify({
-          name: `${formData.firstName.toLowerCase()} ${formData.lastName.toLowerCase()}`,
+          name: `${formData.firstName.trim().toLowerCase()} ${formData.lastName.trim().toLowerCase()}`,
           birthdate: formData.birthdate,
-          almaMater: formData.almaMater.toLowerCase(),
+          almaMater: formData.almaMater.toLowerCase() === 'other' ? formData.otherSchool.trim().toLowerCase() : formData.almaMater.toLowerCase(),
           gradYear: formData.gradYear,
           hobbies: formData.hobbies.map(hobby => hobby.toLowerCase()),
           smsOptIn: formData.smsOptIn  // SMS consent
@@ -403,9 +425,18 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
                   value={formData.firstName}
                   onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value.toLowerCase() }))}
                   placeholder="first name"
-                  className="w-full px-0 py-3 border-0 border-b-2 border-gray-300 focus:border-[#5E1C1D] focus:outline-none text-lg font-libre-bodoni bg-transparent"
+                  className={`w-full px-0 py-3 border-0 border-b-2 focus:outline-none text-lg font-libre-bodoni bg-transparent ${
+                    formData.firstName && !isValidName(formData.firstName)
+                      ? 'border-red-500' 
+                      : formData.firstName && isValidName(formData.firstName)
+                        ? 'border-green-500' 
+                        : 'border-gray-300 focus:border-[#5E1C1D]'
+                  }`}
                   required
                 />
+                {formData.firstName && !isValidName(formData.firstName) && (
+                  <p className="text-red-500 text-sm mt-1">First name must be at least 2 characters</p>
+                )}
               </div>
 
               <div>
@@ -414,9 +445,18 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
                   value={formData.lastName}
                   onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value.toLowerCase() }))}
                   placeholder="last name"
-                  className="w-full px-0 py-3 border-0 border-b-2 border-gray-300 focus:border-[#5E1C1D] focus:outline-none text-lg font-libre-bodoni bg-transparent"
+                  className={`w-full px-0 py-3 border-0 border-b-2 focus:outline-none text-lg font-libre-bodoni bg-transparent ${
+                    formData.lastName && !isValidName(formData.lastName)
+                      ? 'border-red-500' 
+                      : formData.lastName && isValidName(formData.lastName)
+                        ? 'border-green-500' 
+                        : 'border-gray-300 focus:border-[#5E1C1D]'
+                  }`}
                   required
                 />
+                {formData.lastName && !isValidName(formData.lastName) && (
+                  <p className="text-red-500 text-sm mt-1">Last name must be at least 2 characters</p>
+                )}
               </div>
 
               <div>
@@ -468,6 +508,33 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
                 )}
               </div>
 
+              {/* Other School Field - Only show when "Other" is selected */}
+              {formData.almaMater.toLowerCase() === 'other' && (
+                <div>
+                  <input
+                    type="text"
+                    value={formData.otherSchool}
+                    onChange={(e) => {
+                      // Only allow alphanumeric characters and spaces
+                      const value = e.target.value.replace(/[^a-zA-Z0-9\s]/g, '');
+                      setFormData(prev => ({ ...prev, otherSchool: value }));
+                    }}
+                    placeholder="enter your school name"
+                    className={`w-full px-0 py-3 border-0 border-b-2 focus:outline-none text-lg font-libre-bodoni bg-transparent ${
+                      formData.otherSchool && !isValidOtherSchool(formData.otherSchool)
+                        ? 'border-red-500' 
+                        : formData.otherSchool && isValidOtherSchool(formData.otherSchool)
+                          ? 'border-green-500' 
+                          : 'border-gray-300 focus:border-[#5E1C1D]'
+                    }`}
+                    required
+                  />
+                  {formData.otherSchool && !isValidOtherSchool(formData.otherSchool) && (
+                    <p className="text-red-500 text-sm mt-1">School name must be at least 2 characters (letters and numbers only)</p>
+                  )}
+                </div>
+              )}
+
               <div className="relative">
                 <input
                   type="text"
@@ -509,19 +576,19 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, originalA
                       className="mt-1 w-5 h-5 text-[#5E1C1D] border-gray-300 rounded focus:ring-[#5E1C1D] cursor-pointer"
                     />
                     <span className="flex-1 font-libre-bodoni text-sm text-[#2D2D2D] leading-relaxed">
-                      By checking this box, you agree to receive SMS notifications from Cove.
+                      By checking this box, you agree to receive SMS notifications from Cove about event updates and reminders. Message frequency varies and may include up to 3 messages per event. Message and data rates may apply. Reply STOP to unsubscribe or HELP for help. View our Terms & Privacy at https://www.coveapp.co/terms and https://www.coveapp.co/privacy
                     </span>
                   </label>
                   
                   <div className="ml-8 mt-3 space-y-1">
                     <p className="font-libre-bodoni text-xs text-[#8B8B8B]">
-                      • Text STOP to unsubscribe, HELP for help
-                    </p>
-                    <p className="font-libre-bodoni text-xs text-[#8B8B8B]">
-                      • Up to 3 messages per event
+                      • Message frequency: Up to 3 messages per event
                     </p>
                     <p className="font-libre-bodoni text-xs text-[#8B8B8B]">
                       • Message and data rates may apply
+                    </p>
+                    <p className="font-libre-bodoni text-xs text-[#8B8B8B]">
+                      • Reply STOP to cancel, HELP for help
                     </p>
                   </div>
                   

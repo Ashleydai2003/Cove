@@ -67,6 +67,7 @@ import {
   handleGetVendorEvents,
   handleVendorImageUpload,
   handleVendorImageUpdate,
+  // handleSMSWebhook, // Disabled for now
 } from './routes';
 
 export const handler = async (

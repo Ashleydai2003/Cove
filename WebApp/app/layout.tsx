@@ -54,7 +54,7 @@ export default function RootLayout({
         <meta httpEquiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
         <meta httpEquiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()" />
       </head>
-      <body className="min-h-screen bg-faf8f4 text-k292929 antialiased">
+      <body className="min-h-screen bg-faf8f4 text-k292929 antialiased lowercase">
         <SessionProvider>
           <main className="relative">
             {children}
