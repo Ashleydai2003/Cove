@@ -9,6 +9,8 @@ struct LoginView: View {
 
     /// AppController environment object used for navigation and app state management
     @EnvironmentObject var appController: AppController
+    @State private var showVendorFlow: Bool = false
+    @AppStorage("activeAccountType") private var activeAccountType: String = "user"
 
     // MARK: - Main View Body
     var body: some View {
@@ -36,7 +38,20 @@ struct LoginView: View {
                     // Start the proper onboarding flow
                     appController.path.append(.enterPhoneNumber)
                 }
-                .padding(.bottom)
+                .padding(.bottom, 8)
+                
+                // Vendor login link
+                Button(action: {
+                    AppController.isVendorFlowActive = true
+                    activeAccountType = "vendor"
+                    showVendorFlow = true
+                }) {
+                    Text("log in as vendor instead")
+                        .font(.LibreBodoni(size: 14))
+                        .foregroundColor(Colors.primaryDark.opacity(0.7))
+                        .underline()
+                }
+                .padding(.bottom, 16)
 
                 // Terms and privacy notice with interactive links
                 // Text(attributedString)
@@ -45,6 +60,15 @@ struct LoginView: View {
                 //     .padding([.horizontal, .vertical])
                 //     .font(.LeagueSpartan(size: 15))
             }
+        }
+        .fullScreenCover(isPresented: $showVendorFlow, onDismiss: {
+            AppController.isVendorFlowActive = false
+            // If user dismisses without completing vendor onboarding, return to user mode
+            if !VendorController.shared.isLoggedIn {
+                activeAccountType = "user"
+            }
+        }) {
+            VendorOnboardingFlow()
         }
     }
 
