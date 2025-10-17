@@ -75,13 +75,6 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
   const handleRSVP = async () => {
     console.log('RSVP clicked - Auth state:', { isAuthenticated, hasCompletedOnboarding, rsvpStatus });
     
-    // Check if event is at capacity (waitlist) - this check should happen regardless of auth status
-    const isAtCapacity = event.memberCap !== null && 
-                         event.memberCap !== undefined && 
-                         event.goingCount !== null && 
-                         event.goingCount !== undefined && 
-                         event.goingCount >= event.memberCap;
-    
     // Check if user is authenticated and has completed onboarding
     if (!isAuthenticated || !hasCompletedOnboarding) {
       // Mark that we need to RSVP after authentication
@@ -95,6 +88,13 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
         console.log('User already RSVPed, no action needed');
         return;
       } else {
+        // Check if event is at capacity (waitlist)
+        const isAtCapacity = event.memberCap !== null && 
+                             event.memberCap !== undefined && 
+                             event.goingCount !== null && 
+                             event.goingCount !== undefined && 
+                             event.goingCount >= event.memberCap;
+        
         // Check if event requires payment (single price or any tier has price)
         // Skip payment modal for waitlist (when at capacity)
         const hasPayment = !isAtCapacity && (event.useTieredPricing 
@@ -211,15 +211,24 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
       
       // Small delay to ensure state updates are processed
       setTimeout(async () => {
+        // Check if event is at capacity (waitlist)
+        const isAtCapacity = event.memberCap !== null && 
+                             event.memberCap !== undefined && 
+                             event.goingCount !== null && 
+                             event.goingCount !== undefined && 
+                             event.goingCount >= event.memberCap;
+        
         // Check if event requires payment (single price or any tier has price)
-        const hasPayment = event.useTieredPricing 
+        // Skip payment modal for waitlist (when at capacity)
+        const hasPayment = !isAtCapacity && (event.useTieredPricing 
           ? event.pricingTiers?.some(tier => tier.price > 0) && event.paymentHandle
-          : event.ticketPrice && event.ticketPrice > 0 && event.paymentHandle;
+          : event.ticketPrice && event.ticketPrice > 0 && event.paymentHandle);
           
         if (hasPayment) {
           setShowVenmoConfirm(true);
         } else {
-          // No payment required, proceed directly with RSVP
+          // No payment required or event is at capacity (waitlist), proceed directly with RSVP
+          console.log(isAtCapacity ? 'Event at capacity, joining waitlist' : 'No payment required, proceeding with RSVP');
           await performRSVP();
         }
       }, 100);
