@@ -155,6 +155,39 @@ export const handleOnboard = async (event: APIGatewayProxyEvent): Promise<APIGat
     if (!almaMater || almaMater.trim() === '') requiredFields.push('almaMater');
     if (!gradYear || gradYear.trim() === '') requiredFields.push('gradYear');
 
+    // Validate name format (must have at least 2 characters after trimming)
+    if (name && name.trim().length < 2) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          message: 'Name must be at least 2 characters long',
+          field: 'name'
+        })
+      };
+    }
+
+    // Validate alma mater format (must have at least 2 characters and be alphanumeric)
+    if (almaMater && almaMater.trim().length < 2) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          message: 'School name must be at least 2 characters long',
+          field: 'almaMater'
+        })
+      };
+    }
+
+    // Validate alma mater contains only alphanumeric characters and spaces
+    if (almaMater && !/^[a-zA-Z0-9\s]+$/.test(almaMater.trim())) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          message: 'School name can only contain letters, numbers, and spaces',
+          field: 'almaMater'
+        })
+      };
+    }
+
     if (requiredFields.length > 0) {
       console.log('Missing required fields:', requiredFields);
       return {
@@ -294,7 +327,7 @@ export const handleOnboard = async (event: APIGatewayProxyEvent): Promise<APIGat
         id: user.uid
       },
       data: {
-        name: name || null,
+        name: name ? name.trim() : null,
         onboarding: false, // Mark onboarding as complete
         verified: isAdmin, // Set verified to true if user is an admin
         smsOptIn: smsOptIn, // Store SMS consent

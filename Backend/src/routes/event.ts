@@ -1912,7 +1912,9 @@ export const handleApproveDeclineRSVP = async (event: APIGatewayProxyEvent): Pro
         }
       }
 
-      // Send SMS notification (new logic) - only if user opted in
+      // SMS notification disabled for now - can be re-enabled later
+      // TODO: Uncomment when ready to enable SMS notifications
+      /*
       if (user?.phone && user?.smsOptIn) {
         try {
           if (action === 'approve') {
@@ -1923,6 +1925,14 @@ export const handleApproveDeclineRSVP = async (event: APIGatewayProxyEvent): Pro
         } catch (smsErr) {
           console.error('[SMS] Error sending notification:', smsErr);
         }
+      } else if (user?.phone && !user?.smsOptIn) {
+        console.log('[SMS] User has not opted in to SMS notifications');
+      }
+      */
+      
+      // Log SMS status for debugging
+      if (user?.phone && user?.smsOptIn) {
+        console.log('[SMS] SMS notifications disabled - would have sent SMS to:', user.phone);
       } else if (user?.phone && !user?.smsOptIn) {
         console.log('[SMS] User has not opted in to SMS notifications');
       }
