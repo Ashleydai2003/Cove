@@ -22,4 +22,9 @@ output "socket_server_health_url" {
 output "socket_server_ws_url" {
   description = "The WebSocket URL for the Socket.io server"
   value       = "ws://${aws_eip.socket_server.public_ip}:3001"
+}
+
+output "vendor_images_bucket_name" {
+  description = "Name of the S3 bucket for vendor images"
+  value       = aws_s3_bucket.vendor_images.bucket
 } 
