@@ -144,8 +144,8 @@ struct Event: Decodable {
     let ticketPrice: Double?
     let paymentHandle: String?
     let coveId: String?
-    let host: Host
-    let cove: Cove
+    let host: Host?
+    let cove: Cove?
     let rsvpStatus: String?
     let goingCount: Int?
     let pendingCount: Int?
@@ -173,8 +173,8 @@ struct Event: Decodable {
         ticketPrice: Double?,
         paymentHandle: String?,
         coveId: String?,
-        host: Host,
-        cove: Cove,
+        host: Host?,
+        cove: Cove?,
         rsvpStatus: String?,
         goingCount: Int?,
         pendingCount: Int?,
@@ -218,8 +218,8 @@ struct Event: Decodable {
         ticketPrice = try container.decodeIfPresent(Double.self, forKey: .ticketPrice)
         paymentHandle = try container.decodeIfPresent(String.self, forKey: .paymentHandle)
         coveId = try container.decodeIfPresent(String.self, forKey: .coveId)
-        host = try container.decode(Host.self, forKey: .host)
-        cove = try container.decode(Cove.self, forKey: .cove)
+        host = try container.decodeIfPresent(Host.self, forKey: .host)
+        cove = try container.decodeIfPresent(Cove.self, forKey: .cove)
         rsvpStatus = try container.decodeIfPresent(String.self, forKey: .rsvpStatus)
         goingCount = try container.decodeIfPresent(Int.self, forKey: .goingCount)
         pendingCount = try container.decodeIfPresent(Int.self, forKey: .pendingCount)
