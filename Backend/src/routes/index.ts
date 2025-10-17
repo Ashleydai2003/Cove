@@ -17,3 +17,19 @@ export { handleCreatePost, handleGetCovePosts, handleGetPost, handleTogglePostLi
 export { handleGetFeed } from './feed';
 export { handleGetUniversities } from './universities';
 export { handleSMSWebhook } from './sms-webhook';
+
+// Vendor routes
+export {
+  handleVendorLogin,
+  handleValidateVendorCode,
+  handleCreateVendorOrganization,
+  handleJoinVendorOrganization,
+  handleVendorOnboard,
+  handleGetVendorProfile,
+  handleRotateVendorCode,
+  handleGetVendorMembers,
+  handleCreateVendorEvent,
+  handleGetVendorEvents,
+  handleVendorImageUpload,
+  handleVendorImageUpdate
+} from './vendor';

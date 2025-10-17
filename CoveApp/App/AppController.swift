@@ -85,12 +85,18 @@ class AppController: ObservableObject {
 
     /// Firebase Auth state listener handle so we can detach if ever needed
     private var authStateListenerHandle: AuthStateDidChangeListenerHandle?
+    
+    /// Flag to track if vendor flow is active (prevents AppController from interfering)
+    static var isVendorFlowActive = false
 
     /// Private initializer to enforce singleton pattern
     private init() {
         // Observe Firebase authentication state changes
         authStateListenerHandle = Auth.auth().addStateDidChangeListener { [weak self] _, user in
             guard let self else { return }
+            
+            // IMPORTANT: Don't interfere if vendor flow is active
+            guard !AppController.isVendorFlowActive else { return }
 
             Task { @MainActor in
                 let isAuthenticated = (user != nil)

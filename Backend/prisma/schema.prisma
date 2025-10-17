@@ -131,19 +131,23 @@ model Event {
   location         String
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
-  coveId           String
-  hostId           String
+  coveId           String? // Optional for vendor events
+  hostId           String? // Optional when vendorId is present
+  vendorId         String? // Optional - for vendor-created events
   coverPhotoID     String?            @unique
   isPublic         Boolean            @default(false)
   memberCap        Int?
   ticketPrice      Float?
   paymentHandle    String?
   useTieredPricing Boolean            @default(false)
-  cove             Cove               @relation(fields: [coveId], references: [id])
+  cove             Cove?              @relation(fields: [coveId], references: [id])
   coverPhoto       EventImage?        @relation("EventCoverPhoto", fields: [coverPhotoID], references: [id])
-  hostedBy         User               @relation("CreatedEvents", fields: [hostId], references: [id])
+  hostedBy         User?              @relation("CreatedEvents", fields: [hostId], references: [id])
+  vendor           Vendor?            @relation("VendorCreatedEvents", fields: [vendorId], references: [id])
   rsvps            EventRSVP[]
   pricingTiers     EventPricingTier[]
+
+  @@index([vendorId])
 }
 
 model Post {
@@ -172,16 +176,16 @@ model PostLike {
 }
 
 model EventRSVP {
-  id             String            @id @default(cuid())
-  eventId        String
-  userId         String
-  status         RSVPStatus        @default(PENDING)
-  pricingTierId  String?
-  pricePaid      Float?
-  createdAt      DateTime          @default(now())
-  event          Event             @relation(fields: [eventId], references: [id])
-  user           User              @relation(fields: [userId], references: [id])
-  pricingTier    EventPricingTier? @relation(fields: [pricingTierId], references: [id])
+  id            String            @id @default(cuid())
+  eventId       String
+  userId        String
+  status        RSVPStatus        @default(PENDING)
+  pricingTierId String?
+  pricePaid     Float?
+  createdAt     DateTime          @default(now())
+  event         Event             @relation(fields: [eventId], references: [id])
+  user          User              @relation(fields: [userId], references: [id])
+  pricingTier   EventPricingTier? @relation(fields: [pricingTierId], references: [id])
 
   @@unique([eventId, userId])
   @@index([pricingTierId])
@@ -307,6 +311,62 @@ enum RSVPStatus {
 }
 
 enum MemberRole {
+  MEMBER
+  ADMIN
+}
+
+// MARK: - Vendor Models
+
+model Vendor {
+  id                  String       @id @default(cuid())
+  organizationName    String
+  website             String?
+  primaryContactEmail String
+  city                String
+  latitude            Float?
+  longitude           Float?
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+  currentCode         String       @unique
+  codeRotatedAt       DateTime     @default(now())
+  createdById         String // The VendorUser who created the vendor (becomes admin)
+  coverPhotoID        String?      @unique
+  vendorUsers         VendorUser[]
+  createdEvents       Event[]      @relation("VendorCreatedEvents")
+  coverPhoto          VendorImage? @relation("VendorCoverPhoto")
+
+  @@index([currentCode])
+}
+
+model VendorUser {
+  id             String       @id
+  name           String?
+  phone          String       @unique
+  vendorId       String? // Nullable - set during onboarding
+  role           VendorRole   @default(MEMBER)
+  onboarding     Boolean      @default(true)
+  verified       Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  profilePhotoID String?      @unique
+  fcmToken       String?
+  vendor         Vendor?      @relation(fields: [vendorId], references: [id])
+  profilePhoto   VendorImage? @relation("VendorProfilePhoto")
+
+  @@index([vendorId])
+  @@index([phone])
+}
+
+model VendorImage {
+  id           String      @id @default(cuid())
+  vendorUserId String?     @unique
+  vendorId     String?     @unique
+  createdAt    DateTime    @default(now())
+  profileUser  VendorUser? @relation("VendorProfilePhoto", fields: [vendorUserId], references: [id])
+  vendor       Vendor?     @relation("VendorCoverPhoto", fields: [vendorId], references: [id])
+}
+
+enum VendorRole {
   MEMBER
   ADMIN
 }

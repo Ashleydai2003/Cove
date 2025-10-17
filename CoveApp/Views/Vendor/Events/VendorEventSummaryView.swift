@@ -1,0 +1,253 @@
+//
+//  VendorEventSummaryView.swift
+//  Cove
+//
+//  Vendor event summary view matching EventSummaryView
+//
+
+import SwiftUI
+import Kingfisher
+import FirebaseAuth
+
+/// The context in which the event summary is shown (for styling/layout)
+enum VendorEventSummaryType {
+    case cove
+    case feed
+    case calendar
+}
+
+/// VendorEventSummaryView: Displays a single vendor event in the feed, including cover photo and details.
+struct VendorEventSummaryView: View {
+    let event: VendorEvent
+    var type: VendorEventSummaryType = .feed // Default type
+    var disableNavigation: Bool = false
+    @EnvironmentObject private var vendorController: VendorController
+    @State private var imageLoaded = false
+
+    var body: some View {
+        NavigationLink(value: event) {
+            VStack(alignment: .leading, spacing: 0) {
+                // Time-ago label above the photo (always render, but clear for calendar type)
+                HStack {
+                    Spacer()
+                    Text(timeAgo(event.createdAt))
+                        .font(.LibreBodoniBold(size: 14))
+                        .foregroundColor(type == .calendar ? .clear : .black)
+                        .padding(.bottom, 2)
+                }
+                ZStack(alignment: .top) {
+                    // Event cover photo using Kingfisher
+                    if let urlString = event.coverPhotoUrl, let url = URL(string: urlString) {
+                        KFImage(url)
+                            .placeholder {
+                                Rectangle()
+                                    .fill(Color.gray.opacity(0.2))
+                                    .frame(maxWidth: .infinity)
+                                    .aspectRatio(16/10, contentMode: .fit)
+                                    .clipped()
+                                    .overlay(ProgressView().tint(.gray))
+                                    .clipShape(RoundedRectangle(cornerRadius: 18))
+                            }
+                            .onSuccess { result in
+                                withAnimation(.easeIn(duration: 0.3)) {
+                                    imageLoaded = true
+                                }
+                            }
+                            .resizable()
+                            .fade(duration: 0.2)
+                            .cacheOriginalImage()
+                            .cancelOnDisappear(true)
+                            .scaledToFill()
+                            .frame(maxWidth: .infinity)
+                            .frame(height: UIScreen.main.bounds.width * 0.55) // Balanced height
+                            .clipped()
+                            .clipShape(RoundedRectangle(cornerRadius: 18))
+                    } else {
+                        // Default event image
+                        Image("default_event2")
+                            .resizable()
+                            .scaledToFill()
+                            .frame(maxWidth: .infinity)
+                            .frame(height: UIScreen.main.bounds.width * 0.55) // Balanced height
+                            .clipped()
+                            .clipShape(RoundedRectangle(cornerRadius: 18))
+                            .onAppear {
+                                // For default images, set imageLoaded to true immediately
+                                withAnimation(.easeIn(duration: 0.3)) {
+                                    imageLoaded = true
+                                }
+                            }
+                    }
+                    // RSVP overlay if not calendar and user is going or hosting
+                    if type != .calendar && imageLoaded && !(event.eventDate < Date()) {
+                        // Vendor is always hosting their own events
+                        Rectangle()
+                            .fill(Color.black.opacity(0.25))
+                            .clipShape(RoundedRectangle(cornerRadius: 18))
+                        VStack {
+                            Spacer()
+                            Text("you're hosting!")
+                                .font(.LibreBodoniBold(size: 18))
+                                .foregroundColor(.white)
+                                .shadow(color: .black.opacity(0.5), radius: 4, x: 0, y: 2)
+                            Spacer()
+                        }
+                        .opacity(imageLoaded ? 1 : 0)
+                        .animation(.easeIn(duration: 0.3), value: imageLoaded)
+                    }
+                    // Date label overlay (top left, not for calendar type)
+                    if type != .calendar {
+                        HStack {
+                            if let dateLabel = formattedDateLabel(event.date) {
+                                Text(dateLabel)
+                                    .font(.LibreBodoniBold(size: 14))
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 2)
+                                    .background(Colors.primaryDark)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                                    .padding(.top, 10)
+                                    .padding(.leading, 8)
+                            }
+                            Spacer()
+                        }
+                    }
+                    // Past event banner (center) if the event date is in the past
+                    if event.eventDate < Date() {
+                        VStack {
+                            Spacer()
+                            ZStack {
+                                Rectangle()
+                                    .fill(Color.white.opacity(0.7))
+                                    .frame(maxWidth: .infinity, maxHeight: 40)
+                                Text("past event")
+                                    .font(.LibreBodoniBold(size: 18))
+                                    .foregroundColor(Colors.primaryDark)
+                            }
+                            Spacer()
+                        }
+                    }
+                }
+                .padding(.bottom, 4)
+                // Event name
+                Text(event.name)
+                    .font(.LibreBodoniBold(size: 18))
+                    .foregroundColor(.black)
+                    .padding(.top, 4)
+                    .padding(.horizontal, 2)
+
+                // Host info
+                HStack(spacing: 4) {
+                    Text("hosted by")
+                        .font(.LibreBodoniSemiBold(size: 13))
+                        .foregroundColor(.black)
+                    Text(event.vendorName ?? "Your Organization")
+                        .font(.LibreBodoniSemiBold(size: 13))
+                        .foregroundColor(Colors.primaryDark)
+                    if type != .cove {
+                        Text("@")
+                            .font(.LibreBodoniSemiBold(size: 13))
+                            .foregroundColor(.black)
+                        Text(event.vendorName ?? "Your Organization")
+                            .font(.LibreBodoniSemiBold(size: 13))
+                            .foregroundColor(Colors.primaryDark)
+                    }
+                    // TODO: only checkmark if vendor is verified
+                    // This may require backend changes
+                    Image(systemName: "checkmark.circle")
+                        .foregroundColor(Colors.primaryDark)
+                        .font(.system(size: 13))
+                }
+                .padding(.horizontal, 2)
+                .padding(.top, 1)
+
+                // Location and time for calendar type
+                if type == .calendar {
+                    HStack(spacing: 24) {
+                        HStack(spacing: 6) {
+                            Image("locationIcon")
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 16, height: 16)
+                                .foregroundColor(Colors.primaryDark)
+                            Text(firstLocationPart(event.location))
+                                .font(.LibreBodoniSemiBold(size: 13))
+                                .foregroundColor(.black)
+                        }
+                        HStack(spacing: 6) {
+                            Image(systemName: "clock")
+                                .foregroundColor(Colors.primaryDark)
+                            Text(formattedTime(event.date))
+                                .font(.LibreBodoniSemiBold(size: 13))
+                                .foregroundColor(.black)
+                        }
+                    }
+                    .padding(.top, 6)
+                    .padding(.horizontal, 2)
+                }
+            }
+        }
+        .disabled(disableNavigation)
+        .padding(.vertical, 5)
+    }
+    
+    /// Returns a human-readable time-ago string for the event date.
+    private func timeAgo(_ dateString: String) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
+        guard let date = formatter.date(from: dateString) else { return "" }
+        let interval = Date().timeIntervalSince(date)
+        let minutes = Int(interval / 60)
+        let hours = Int(interval / 3600)
+        let days = Int(interval / 86400)
+        let weeks = Int(interval / 604800)
+        let months = Int(interval / 2592000)
+        if minutes < 1 {
+            return "just now"
+        } else if hours < 1 {
+            return "\(minutes)m"
+        } else if days < 1 {
+            return "\(hours)h"
+        } else if weeks < 1 {
+            return "\(days)d"
+        } else if months < 1 {
+            return "\(weeks)w"
+        } else {
+            return "\(months)mo"
+        }
+    }
+    
+    /// Returns a formatted date label for the overlay (e.g., "Saturday July 18th")
+    private func formattedDateLabel(_ dateString: String) -> String? {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
+        guard let date = formatter.date(from: dateString) else { return nil }
+        let labelFormatter = DateFormatter()
+        labelFormatter.dateFormat = "EEEE MMMM d"
+        return labelFormatter.string(from: date)
+    }
+    
+    /// Returns the first part of the location for display
+    private func firstLocationPart(_ location: String?) -> String {
+        guard let location = location else { return "" }
+        let parts = location.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }
+        // Heuristic: return the first segment that DOES NOT contain digits (avoids street numbers)
+        // and is not empty. If none found, fallback to the first segment.
+        for part in parts {
+            if part.rangeOfCharacter(from: CharacterSet.decimalDigits) == nil && !part.isEmpty {
+                return String(part)
+            }
+        }
+        return parts.first.map { String($0) } ?? ""
+    }
+    
+    /// Returns the formatted time for display
+    private func formattedTime(_ dateString: String) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
+        guard let date = formatter.date(from: dateString) else { return "" }
+        let labelFormatter = DateFormatter()
+        labelFormatter.dateFormat = "h:mm a"
+        return labelFormatter.string(from: date)
+    }
+}
