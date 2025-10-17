@@ -303,6 +303,7 @@ model MessageRead {
 enum RSVPStatus {
   GOING
   PENDING
+  WAITLIST
 }
 
 enum MemberRole {
