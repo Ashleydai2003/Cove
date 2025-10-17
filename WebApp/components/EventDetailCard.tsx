@@ -89,11 +89,21 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
         return;
       } else {
         // Check if event is at capacity (waitlist)
-        const isAtCapacity = event.memberCap !== null && 
-                             event.memberCap !== undefined && 
-                             event.goingCount !== null && 
-                             event.goingCount !== undefined && 
-                             event.goingCount >= event.memberCap;
+        let isAtCapacity = false;
+        
+        if (event.useTieredPricing && event.pricingTiers) {
+          // For tiered pricing, check if ALL tiers are sold out
+          const allTiersSoldOut = event.pricingTiers.every(tier => 
+            tier.spotsLeft !== undefined && tier.spotsLeft <= 0
+          );
+          isAtCapacity = allTiersSoldOut && event.pricingTiers.length > 0;
+        } else {
+          // For non-tiered events, check memberCap against total count (going + pending)
+          const totalCount = (event.goingCount || 0) + (event.pendingCount || 0);
+          isAtCapacity = event.memberCap !== null && 
+                         event.memberCap !== undefined && 
+                         totalCount >= event.memberCap;
+        }
         
         // Check if event requires payment (single price or any tier has price)
         // Skip payment modal for waitlist (when at capacity)
@@ -212,11 +222,21 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
       // Small delay to ensure state updates are processed
       setTimeout(async () => {
         // Check if event is at capacity (waitlist)
-        const isAtCapacity = event.memberCap !== null && 
-                             event.memberCap !== undefined && 
-                             event.goingCount !== null && 
-                             event.goingCount !== undefined && 
-                             event.goingCount >= event.memberCap;
+        let isAtCapacity = false;
+        
+        if (event.useTieredPricing && event.pricingTiers) {
+          // For tiered pricing, check if ALL tiers are sold out
+          const allTiersSoldOut = event.pricingTiers.every(tier => 
+            tier.spotsLeft !== undefined && tier.spotsLeft <= 0
+          );
+          isAtCapacity = allTiersSoldOut && event.pricingTiers.length > 0;
+        } else {
+          // For non-tiered events, check memberCap against total count (going + pending)
+          const totalCount = (event.goingCount || 0) + (event.pendingCount || 0);
+          isAtCapacity = event.memberCap !== null && 
+                         event.memberCap !== undefined && 
+                         totalCount >= event.memberCap;
+        }
         
         // Check if event requires payment (single price or any tier has price)
         // Skip payment modal for waitlist (when at capacity)
@@ -522,11 +542,21 @@ export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) 
               </button>
             ) : (() => {
               // Check if event is at capacity (only for users not already going/pending)
-              const isAtCapacity = event.memberCap !== null && 
-                                   event.memberCap !== undefined && 
-                                   event.goingCount !== null && 
-                                   event.goingCount !== undefined && 
-                                   event.goingCount >= event.memberCap;
+              let isAtCapacity = false;
+              
+              if (event.useTieredPricing && event.pricingTiers) {
+                // For tiered pricing, check if ALL tiers are sold out
+                const allTiersSoldOut = event.pricingTiers.every(tier => 
+                  tier.spotsLeft !== undefined && tier.spotsLeft <= 0
+                );
+                isAtCapacity = allTiersSoldOut && event.pricingTiers.length > 0;
+              } else {
+                // For non-tiered events, check memberCap against total count (going + pending)
+                const totalCount = (event.goingCount || 0) + (event.pendingCount || 0);
+                isAtCapacity = event.memberCap !== null && 
+                               event.memberCap !== undefined && 
+                               totalCount >= event.memberCap;
+              }
               
               const buttonText = isAtCapacity ? 'join the waitlist' : 'rsvp';
               
