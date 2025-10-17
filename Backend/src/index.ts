@@ -195,8 +195,12 @@ export const handler = async (
         return handleApproveDeclineRSVP(event);
       case '/universities':
         return handleGetUniversities(event);
+      // SMS webhook disabled for now - can be re-enabled later
+      // TODO: Uncomment when ready to enable SMS webhook
+      /*
       case '/sms-webhook':
         return handleSMSWebhook(event);
+      */
       // Vendor routes
       case '/vendor/login':
         return handleVendorLogin(event);
