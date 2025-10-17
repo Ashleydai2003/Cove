@@ -974,11 +974,11 @@ export const handleUpdateEventRSVP = async (event: APIGatewayProxyEvent): Promis
     }
 
     // Validate RSVP status
-    if (!['GOING', 'PENDING'].includes(status)) {
+    if (!['GOING', 'PENDING', 'WAITLIST'].includes(status)) {
       return {
         statusCode: 400,
         body: JSON.stringify({
-          message: 'Invalid RSVP status. Must be one of: GOING, PENDING'
+          message: 'Invalid RSVP status. Must be one of: GOING, PENDING, WAITLIST'
         })
       };
     }
@@ -1035,11 +1035,13 @@ export const handleUpdateEventRSVP = async (event: APIGatewayProxyEvent): Promis
       }
     });
 
-    // If user already has GOING or PENDING status, no action needed
-    if (existingRSVP && (existingRSVP.status === 'GOING' || existingRSVP.status === 'PENDING')) {
+    // If user already has GOING, PENDING, or WAITLIST status, no action needed
+    if (existingRSVP && (existingRSVP.status === 'GOING' || existingRSVP.status === 'PENDING' || existingRSVP.status === 'WAITLIST')) {
       const statusMessage = existingRSVP.status === 'GOING' 
         ? 'User is already going to this event'
-        : 'User already has a pending RSVP for this event';
+        : existingRSVP.status === 'PENDING'
+        ? 'User already has a pending RSVP for this event'
+        : 'User is already on the waitlist for this event';
       
       return {
         statusCode: 200,
@@ -1058,9 +1060,24 @@ export const handleUpdateEventRSVP = async (event: APIGatewayProxyEvent): Promis
 
     // When a user RSVPs, they start with PENDING status (awaiting host approval)
     // Exception: Hosts can automatically approve themselves to GOING status
+    // If event is at capacity, non-hosts get WAITLIST status
     const isHost = eventData.hostId === user.uid;
-    const finalStatus = isHost ? 'GOING' : 'PENDING';
-    console.log('RSVP details:', { isHost, finalStatus, eventHostId: eventData.hostId, userId: user.uid });
+    
+    // Check if event is at capacity for non-hosts
+    let isAtCapacity = false;
+    if (!isHost && eventData.memberCap) {
+      // Count current RSVPs to check capacity
+      const currentRSVPs = await prisma.eventRSVP.count({
+        where: {
+          eventId: eventId,
+          status: { in: ['GOING', 'PENDING'] }
+        }
+      });
+      isAtCapacity = currentRSVPs >= eventData.memberCap;
+    }
+    
+    const finalStatus = isHost ? 'GOING' : (isAtCapacity ? 'WAITLIST' : 'PENDING');
+    console.log('RSVP details:', { isHost, isAtCapacity, finalStatus, eventHostId: eventData.hostId, userId: user.uid });
     
     // Update or create RSVP using upsert
     let rsvp: any = null;
@@ -1075,8 +1092,8 @@ export const handleUpdateEventRSVP = async (event: APIGatewayProxyEvent): Promis
           userId: user.uid
         }
       },
-      update: { status: finalStatus },
-      create: { eventId, userId: user.uid, status: finalStatus }
+      update: { status: finalStatus as any },
+      create: { eventId, userId: user.uid, status: finalStatus as any }
     });
           rsvpResponse = {
         id: rsvp.id,
@@ -1098,7 +1115,7 @@ export const handleUpdateEventRSVP = async (event: APIGatewayProxyEvent): Promis
         if (hostToken) {
           const rsvperName = rsvper?.name || 'Someone';
           const eventName = eventDataFull.name;
-          const statusText = status === 'GOING' ? 'going' : 'pending';
+          const statusText = status === 'GOING' ? 'going' : status === 'PENDING' ? 'pending' : 'waitlist';
           if (process.env.NODE_ENV === 'production') {
             await admin.messaging().send({
               token: hostToken,
