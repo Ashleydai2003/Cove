@@ -1,10 +1,8 @@
 // /Backend/src/routes/matching.ts
 
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { PrismaClient } from '@prisma/client';
 import { authMiddleware } from '../middleware/auth';
-
-const prisma = new PrismaClient();
+import { initializeDatabase } from '../config/database';
 
 // MARK: - Survey Endpoints
 
@@ -38,6 +36,8 @@ export async function handleSurveySubmit(
       return authResult;
     }
     const userId = authResult.user.uid;
+    
+    const prisma = await initializeDatabase();
     console.log('✅ [DEBUG] User authenticated:', userId);
 
     const body = JSON.parse(event.body || '{}');
@@ -126,6 +126,8 @@ export async function handleGetSurvey(
       return authResult;
     }
     const userId = authResult.user.uid;
+    
+    const prisma = await initializeDatabase();
 
     const responses = await prisma.surveyResponse.findMany({
       where: { userId },
@@ -184,6 +186,8 @@ export async function handleCreateIntention(
       return authResult;
     }
     const userId = authResult.user.uid;
+    
+    const prisma = await initializeDatabase();
 
     const body = JSON.parse(event.body || '{}');
     const { text, chips } = body;
@@ -291,6 +295,8 @@ export async function handleGetIntentionStatus(
       return authResult;
     }
     const userId = authResult.user.uid;
+    
+    const prisma = await initializeDatabase();
 
     const intention = await prisma.intention.findFirst({
       where: {
@@ -377,6 +383,8 @@ export async function handleDeleteIntention(
       return authResult;
     }
     const userId = authResult.user.uid;
+    
+    const prisma = await initializeDatabase();
 
     const intentionId = event.pathParameters?.id;
     
@@ -442,6 +450,8 @@ export async function handleGetCurrentMatch(
       return authResult;
     }
     const userId = authResult.user.uid;
+    
+    const prisma = await initializeDatabase();
 
     // Find active match
     const match = await prisma.match.findFirst({
@@ -587,6 +597,8 @@ export async function handleAcceptMatch(
       return authResult;
     }
     const userId = authResult.user.uid;
+    
+    const prisma = await initializeDatabase();
 
     const matchId = event.pathParameters?.id;
     
@@ -696,6 +708,8 @@ export async function handleDeclineMatch(
       return authResult;
     }
     const userId = authResult.user.uid;
+    
+    const prisma = await initializeDatabase();
 
     const matchId = event.pathParameters?.id;
     
@@ -764,6 +778,8 @@ export async function handleMatchFeedback(
       return authResult;
     }
     const userId = authResult.user.uid;
+    
+    const prisma = await initializeDatabase();
 
     const matchId = event.pathParameters?.id;
     

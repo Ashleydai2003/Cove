@@ -35,7 +35,7 @@ struct UpcomingView: View {
                             // Top anchor for programmatic scrolling
                             Color.clear.frame(height: 0).id("topAnchor")
 
-                            // Fading header shown across tabs; fades only when on Updates
+                            // Fading header shown across tabs; fades only when on Discovery
                             CoveBannerView()
                                 .background(Colors.background)
                                 .opacity(headerOpacity)
@@ -70,7 +70,7 @@ struct UpcomingView: View {
                                         }
                                         .zIndex(0)
                                     } else {
-                                        DiscoverTabView()
+                                        CalendarView(navigationPath: $navigationPath)
                                     }
                                 }
                             }
@@ -213,8 +213,28 @@ struct UpcomingView: View {
 
     @ViewBuilder
     private var contentView: some View {
-        VStack(spacing: 16) {
-            ForEach(Array(sortedItems.enumerated()), id: \.element.id) { idx, item in
+        if sortedItems.isEmpty {
+            // Empty state for discover tab
+            VStack(spacing: 16) {
+                Image(systemName: "sparkles")
+                    .font(.system(size: 40))
+                    .foregroundColor(Colors.primaryDark)
+                
+                Text("no updates yet")
+                    .font(.LibreBodoniBold(size: 20))
+                    .foregroundColor(Colors.primaryDark)
+                
+                Text("when events and posts are shared, they'll appear here")
+                    .font(.LibreBodoni(size: 16))
+                    .foregroundColor(.gray)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 32)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .frame(minHeight: UIScreen.main.bounds.height - 200)
+        } else {
+            VStack(spacing: 16) {
+                ForEach(Array(sortedItems.enumerated()), id: \.element.id) { idx, item in
                 switch item {
                 case .event(let event):
                     let calendarEvent = CalendarEvent(
@@ -268,6 +288,7 @@ struct UpcomingView: View {
             if upcomingFeed.isLoading && !upcomingFeed.items.isEmpty {
                 LoadingIndicatorView()
             }
+            }
         }
     }
 
@@ -318,13 +339,13 @@ private struct HomeTopTabs: View {
 
     var body: some View {
         HStack {
-            // Updates tab (default)
+            // Discovery tab (default)
             Button(action: {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 withAnimation(.easeInOut(duration: 0.22)) { selected = .updates }
             }) {
                 VStack(spacing: 6) {
-                    Text("updates 🎉")
+                    Text("discovery 🔎")
                         .font(.LibreBodoni(size: 16))
                         .foregroundStyle(Colors.primaryDark)
                     Group {
@@ -340,17 +361,17 @@ private struct HomeTopTabs: View {
                     .opacity(isDragging ? 0 : 1)
                 }
             }
-            .anchorPreference(key: HomeTabBoundsKey.self, value: .bounds) { ["updates": $0] }
+            .anchorPreference(key: HomeTabBoundsKey.self, value: .bounds) { ["discovery": $0] }
 
             Spacer()
 
-            // Discover tab
+            // Calendar tab
             Button(action: {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 withAnimation(.easeInOut(duration: 0.22)) { selected = .discover }
             }) {
                 VStack(spacing: 6) {
-                    Text("discover 🔎")
+                    Text("calendar 📅")
                         .font(.LibreBodoni(size: 16))
                         .foregroundStyle(Colors.primaryDark)
                     Group {
@@ -366,7 +387,7 @@ private struct HomeTopTabs: View {
                     .opacity(isDragging ? 0 : 1)
                 }
             }
-            .anchorPreference(key: HomeTabBoundsKey.self, value: .bounds) { ["discover": $0] }
+            .anchorPreference(key: HomeTabBoundsKey.self, value: .bounds) { ["calendar": $0] }
         }
         .padding(.horizontal, 30)
         .padding(.top, 6)
@@ -391,7 +412,7 @@ private struct HomeTopTabs: View {
         )
         .overlayPreferenceValue(HomeTabBoundsKey.self) { prefs in
             GeometryReader { proxy in
-                if let leftAnchor = prefs["updates"], let rightAnchor = prefs["discover"] {
+                if let leftAnchor = prefs["discovery"], let rightAnchor = prefs["calendar"] {
                     let leftFrame = proxy[leftAnchor]
                     let rightFrame = proxy[rightAnchor]
                     let leftCenterX = leftFrame.midX
@@ -584,20 +605,3 @@ struct UpcomingView_Previews: PreviewProvider {
     }
 }
 
-// MARK: - DiscoverTabView (placeholder)
-struct DiscoverTabView: View {
-    var body: some View {
-        VStack(spacing: 16) {
-            Spacer()
-            Image(systemName: "sparkles")
-                .font(.system(size: 40))
-                .foregroundColor(Colors.primaryDark)
-            Text("discover coming soon")
-                .font(.LibreBodoni(size: 18))
-                .foregroundColor(Colors.primaryDark)
-            Spacer()
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Colors.background.ignoresSafeArea())
-    }
-}

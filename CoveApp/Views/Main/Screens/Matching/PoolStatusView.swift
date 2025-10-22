@@ -15,7 +15,7 @@ struct PoolStatusView: View {
     var body: some View {
         ZStack {
             // Background
-            Color(red: 0.96, green: 0.95, blue: 0.93)
+            Colors.background
                 .ignoresSafeArea()
             
             VStack(spacing: 0) {
@@ -33,12 +33,13 @@ struct PoolStatusView: View {
                         .fill(Colors.primaryDark)
                         .overlay(
                             VStack(alignment: .leading, spacing: 24) {
-                                // Loading indicator and message
+                                // Heart icon and message
                                 VStack(spacing: 20) {
-                                    // Bigger animated loading icon
-                                    ProgressView()
-                                        .tint(.white)
-                                        .scaleEffect(2.5)
+                                    // Heart icon instead of spinning loader
+                                    Image("sparkle")
+                                        .font(.system(size: 48, weight: .medium))
+                                        .foregroundColor(.white)
+                                        .scaleEffect(1.2)
                                     
                                     Text(currentUserName.isEmpty ? 
                                          "We are finding your\nmatch. We will notify you when we have one!" :

@@ -42,7 +42,7 @@ struct IntentionComposerView: View {
     var body: some View {
         ZStack {
             // Background
-            Color(red: 0.96, green: 0.95, blue: 0.93)
+            Colors.background
                 .ignoresSafeArea()
             
             ScrollViewReader { proxy in

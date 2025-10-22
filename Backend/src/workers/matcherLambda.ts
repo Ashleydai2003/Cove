@@ -6,64 +6,11 @@
 //
 
 import { PrismaClient } from '@prisma/client';
-import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
+import { initializeDatabase } from '../config/database';
 import { runBatchMatcher } from './batchMatcher';
 
 // Advisory lock ID for preventing concurrent runs
 const MATCHER_LOCK_ID = 911911;
-
-/**
- * Initialize database connection with credentials from Secrets Manager
- */
-async function initializeDatabase(): Promise<PrismaClient> {
-  const isDevelopment = process.env.NODE_ENV === 'development';
-
-  if (isDevelopment) {
-    // In dev, use DATABASE_URL from environment
-    console.log('📍 Using development database configuration');
-    return new PrismaClient({ log: ['error'] });
-  }
-
-  // Production: Fetch credentials from AWS Secrets Manager
-  console.log('📍 Using production database configuration...');
-  
-  // AWS_REGION is automatically set by Lambda runtime
-  const secretsManager = new SecretsManagerClient({
-    region: process.env.AWS_REGION || 'us-west-1'
-  });
-
-  try {
-    console.log('🔑 Retrieving database password from Secrets Manager...');
-    
-    if (!process.env.RDS_MASTER_SECRET_ARN) {
-      throw new Error("RDS_MASTER_SECRET_ARN environment variable is not set");
-    }
-
-    const dbResponse = await secretsManager.send(
-      new GetSecretValueCommand({
-        SecretId: process.env.RDS_MASTER_SECRET_ARN
-      })
-    );
-    
-    console.log('✅ Successfully retrieved database password');
-    
-    const { password } = JSON.parse(dbResponse.SecretString || '{}');
-    const encodedPassword = encodeURIComponent(password);
-
-    // Construct database URL for Prisma
-    const databaseUrl = `postgresql://${process.env.DB_USER}:${encodedPassword}@${process.env.DB_HOST}:5432/${process.env.DB_NAME}?schema=public&sslmode=require&connection_limit=5`;
-    
-    // Set the DATABASE_URL for Prisma
-    process.env.DATABASE_URL = databaseUrl;
-    
-    console.log('✅ Database connection configured');
-    return new PrismaClient({ log: ['error'] });
-    
-  } catch (error) {
-    console.error('❌ Error initializing database:', error);
-    throw error;
-  }
-}
 
 export const handler = async (event: any) => {
   console.log('🚀 Batch matcher Lambda triggered');
