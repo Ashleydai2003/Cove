@@ -8,6 +8,7 @@
     "test:watch": "jest --watch",
     "build": "rm -rf dist && prisma generate && esbuild ./src --bundle --platform=node --target=node18 --outfile=dist/index.js --format=cjs && cd dist && cp -r ../node_modules/.prisma . && cp ../node_modules/prisma/build/index.js prisma.js && zip -r index.zip index.js .prisma prisma.js",
     "build:socket": "rm -rf dist && prisma generate && esbuild ./src/socket-server.ts --bundle --platform=node --target=node18 --outfile=dist/socket-server.js --format=cjs && cd dist && cp -r ../node_modules/.prisma . && cp ../node_modules/prisma/build/index.js prisma.js",
+    "build:matcher": "rm -rf dist && prisma generate && esbuild ./src/workers/matcherLambda.ts --bundle --platform=node --target=node18 --outfile=dist/matcherLambda.js --format=cjs && cd dist && cp -r ../node_modules/.prisma . && cp ../node_modules/prisma/build/index.js prisma.js && zip -r matcher.zip matcherLambda.js .prisma prisma.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate:dev": "dotenv -e env.development -- prisma migrate dev",
     "prisma:migrate:deploy": "NODE_ENV=production ts-node src/scripts/migrate.ts",
@@ -29,7 +30,10 @@
     "emulators:start": "firebase emulators:start --only auth --import=./firebase-data --export-on-exit=./firebase-data",
     "emulators:stop": "pkill -f 'firebase emulators:start' || echo 'Emulator not running'",
     "socket:dev": "dotenv -e env.development -- ts-node src/socket-server.ts",
-    "socket:prod": "dotenv -e env.production -- ts-node src/socket-server.ts"
+    "socket:prod": "dotenv -e env.production -- ts-node src/socket-server.ts",
+    "matcher:run": "dotenv -e env.development -- ts-node src/workers/batchMatcher.ts",
+    "matcher:prod": "dotenv -e env.production -- ts-node src/workers/batchMatcher.ts",
+    "test:seed": "dotenv -e env.development -- ts-node src/scripts/seed-test-matching.ts"
   },
   "keywords": [],
   "author": "",

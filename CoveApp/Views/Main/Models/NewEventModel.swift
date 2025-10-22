@@ -272,14 +272,23 @@ class NewEventModel: ObservableObject {
             parameters: params
         ) { (result: Result<CreateEventResponse, NetworkError>) in
             DispatchQueue.main.async {
+                print("🔄 NewEventModel: Network response received, setting isSubmitting = false")
                 self.isSubmitting = false
 
                 switch result {
                 case .success(let response):
+                    print("✅ NewEventModel: Event created successfully: \(response)")
+                    if let coverPhoto = response.event.coverPhoto {
+                        print("✅ NewEventModel: Cover photo received: \(coverPhoto.url)")
+                    } else {
+                        print("⚠️ NewEventModel: No cover photo in response")
+                    }
                     Log.debug("✅ Event created successfully: \(response)")
                     self.resetForm()
+                    print("✅ NewEventModel: Form reset, calling completion(true)")
                     completion(true)
                 case .failure(let error):
+                    print("❌ NewEventModel: Event creation failed: \(error)")
                     Log.error("Event creation failed: \(error)")
                     self.errorMessage = "Failed to create event: \(error.localizedDescription)"
                     completion(false)
@@ -329,6 +338,7 @@ struct CreatedEvent: Decodable {
     let memberCap: Int?
     let ticketPrice: Double?
     let coveId: String
+    let coverPhoto: CoverPhoto?
     let createdAt: String
 }
 

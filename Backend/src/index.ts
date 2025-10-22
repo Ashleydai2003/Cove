@@ -67,7 +67,16 @@ import {
   handleGetVendorEvents,
   handleVendorImageUpload,
   handleVendorImageUpdate,
-  // handleSMSWebhook, // Disabled for now
+  // AI Matching routes
+  handleSurveySubmit,
+  handleGetSurvey,
+  handleCreateIntention,
+  handleGetIntentionStatus,
+  handleDeleteIntention,
+  handleGetCurrentMatch,
+  handleAcceptMatch,
+  handleDeclineMatch,
+  handleMatchFeedback,
 } from './routes';
 
 export const handler = async (
@@ -196,12 +205,8 @@ export const handler = async (
         return handleApproveDeclineRSVP(event);
       case '/universities':
         return handleGetUniversities(event);
-      // SMS webhook disabled for now - can be re-enabled later
-      // TODO: Uncomment when ready to enable SMS webhook
-      /*
       case '/sms-webhook':
         return handleSMSWebhook(event);
-      */
       // Vendor routes
       case '/vendor/login':
         return handleVendorLogin(event);
@@ -228,7 +233,40 @@ export const handler = async (
         return handleVendorImageUpload(event);
       case '/vendor/image/update':
         return handleVendorImageUpdate(event);
+      // AI Matching routes
+      case '/survey/submit':
+        return handleSurveySubmit(event);
+      case '/survey':
+        return handleGetSurvey(event);
+      case '/intention':
+        return handleCreateIntention(event);
+      case '/intention/status':
+        return handleGetIntentionStatus(event);
+      case '/match/current':
+        return handleGetCurrentMatch(event);
       default:
+        // Handle dynamic AI Matching routes with path parameters
+        if (event.path.startsWith('/intention/') && event.httpMethod === 'DELETE') {
+          const intentionId = event.path.split('/')[2];
+          event.pathParameters = { id: intentionId };
+          return handleDeleteIntention(event);
+        }
+        if (event.path.startsWith('/match/') && event.path.endsWith('/accept')) {
+          const matchId = event.path.split('/')[2];
+          event.pathParameters = { id: matchId };
+          return handleAcceptMatch(event);
+        }
+        if (event.path.startsWith('/match/') && event.path.endsWith('/decline')) {
+          const matchId = event.path.split('/')[2];
+          event.pathParameters = { id: matchId };
+          return handleDeclineMatch(event);
+        }
+        if (event.path.startsWith('/match/') && event.path.endsWith('/feedback')) {
+          const matchId = event.path.split('/')[2];
+          event.pathParameters = { id: matchId };
+          return handleMatchFeedback(event);
+        }
+        
         // Handle common web standard files
         switch (event.path) {
           case '/robots.txt':

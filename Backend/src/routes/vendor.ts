@@ -7,9 +7,9 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { authMiddleware } from '../middleware/auth';
 import { initializeDatabase } from '../config/database';
 import { PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { getAuth } from 'firebase-admin/auth';
 import { s3Client } from '../config/s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { generateVendorCode, isValidVendorCodeFormat } from '../utils/vendorCode';
 
 // MARK: - Helper Functions
@@ -850,39 +850,39 @@ export const handleCreateVendorEvent = async (event: APIGatewayProxyEvent): Prom
       return evt;
     });
 
-    // Upload cover photo if provided
-    let uploadedImageId: string | null = null;
-    if (coverPhoto && typeof coverPhoto === 'string') {
-      try {
-        const matches = coverPhoto.match(/^data:([A-Za-z-+/]+);base64,(.+)$/);
-        if (matches && matches.length === 3) {
-          const contentType = matches[1];
-          const imageData = matches[2];
-          const buffer = Buffer.from(imageData, 'base64');
-          const imageId = `vendor-event-${newEvent.id}-${Date.now()}`;
-          const bucketName = process.env.EVENT_IMAGE_BUCKET_NAME || process.env.USER_IMAGE_BUCKET_NAME;
-
-          await s3Client.send(new PutObjectCommand({
-            Bucket: bucketName,
-            Key: `vendor-events/${imageId}`,
-            Body: buffer,
-            ContentType: contentType
-          }));
-
-          const eventImage = await prisma.eventImage.create({
-            data: { id: imageId, eventId: newEvent.id }
-          });
-
-          uploadedImageId = eventImage.id;
-
-          await prisma.event.update({
-            where: { id: newEvent.id },
-            data: { coverPhotoID: uploadedImageId }
-          });
+    // Handle cover photo upload if provided (exactly like user app)
+    if (coverPhoto) {
+      // Create a record for the cover photo in the database
+      const eventImage = await prisma.eventImage.create({
+        data: {
+          eventId: newEvent.id
         }
-      } catch (uploadError) {
-        console.error('Cover photo upload error:', uploadError);
+      });
+
+      // Get S3 bucket name from environment variables
+      const bucketName = process.env.EVENT_IMAGE_BUCKET_NAME;
+      if (!bucketName) {
+        throw new Error('EVENT_IMAGE_BUCKET_NAME environment variable is not set');
       }
+
+      // Prepare image for S3 upload (exactly like user app)
+      const s3Key = `${newEvent.id}/${eventImage.id}.jpg`;
+      const imageBuffer = Buffer.from(coverPhoto, 'base64');
+
+      // Upload image to S3
+      const command = new PutObjectCommand({
+        Bucket: bucketName,
+        Key: s3Key,
+        Body: imageBuffer,
+        ContentType: 'image/jpeg'
+      });
+      await s3Client.send(command);
+
+      // Update event with the cover photo reference
+      await prisma.event.update({
+        where: { id: newEvent.id },
+        data: { coverPhotoID: eventImage.id }
+      });
     }
 
     return {
@@ -896,7 +896,7 @@ export const handleCreateVendorEvent = async (event: APIGatewayProxyEvent): Prom
           location: newEvent.location,
           isPublic: newEvent.isPublic,
           vendorId: newEvent.vendorId,
-          coverPhotoID: uploadedImageId
+          coverPhotoID: newEvent.coverPhotoID
         }
       })
     };
@@ -971,16 +971,16 @@ export const handleGetVendorEvents = async (event: APIGatewayProxyEvent): Promis
       }
     });
 
-    // Format events for response
-    const bucketUrl = process.env.EVENT_IMAGE_BUCKET_URL;
-    if (!bucketUrl) {
-      throw new Error('EVENT_IMAGE_BUCKET_URL environment variable is not set');
-    }
-
-    const formattedEvents = events.map(ev => {
-      const coverPhotoUrl = ev.coverPhoto
-        ? `${bucketUrl}/vendor-events/${ev.coverPhoto.id}`
-        : null;
+    // Format events for response (exactly like user app)
+    const formattedEvents = await Promise.all(events.map(async ev => {
+      // Generate cover photo URL if it exists (exactly like user app)
+      const coverPhoto = ev.coverPhoto ? {
+        id: ev.coverPhoto.id,
+        url: await getSignedUrl(s3Client, new GetObjectCommand({
+          Bucket: process.env.EVENT_IMAGE_BUCKET_NAME,
+          Key: `${ev.id}/${ev.coverPhoto.id}.jpg`
+        }), { expiresIn: 3600 })
+      } : null;
 
       const rsvpCounts = {
         going: ev.rsvps.filter((r: any) => r.status === 'GOING').length,
@@ -1000,7 +1000,7 @@ export const handleGetVendorEvents = async (event: APIGatewayProxyEvent): Promis
         isPublic: ev.isPublic,
         vendorId: ev.vendorId,
         vendorName: ev.vendor?.organizationName || null,
-        coverPhotoUrl,
+        coverPhotoUrl: coverPhoto?.url,
         useTieredPricing: ev.useTieredPricing,
         pricingTiers: ev.pricingTiers?.map((tier: any) => ({
           tierType: tier.tierType,
@@ -1011,7 +1011,7 @@ export const handleGetVendorEvents = async (event: APIGatewayProxyEvent): Promis
         rsvpCounts,
         createdAt: ev.createdAt
       };
-    });
+    }));
 
     return {
       statusCode: 200,

@@ -174,7 +174,6 @@ class VendorNetworkManager {
         if let paymentHandle = paymentHandle { body["paymentHandle"] = paymentHandle }
         if let coverPhoto = coverPhoto { body["coverPhoto"] = coverPhoto }
         if let pricingTiers = pricingTiers { body["pricingTiers"] = pricingTiers }
-        
         makeAuthenticatedRequest(url: url, method: "POST", body: body, completion: completion)
     }
     

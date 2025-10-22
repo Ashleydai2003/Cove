@@ -87,7 +87,7 @@ struct CoveApp: App {
                         }
                     } else {
                         // User flow
-                        if appController.isLoggedIn {
+                        if appController.isLoggedIn && appController.hasCompletedOnboarding {
                             // Main app flow - tab-based navigation
                             HomeView()
                                 .environmentObject(appController)
@@ -131,7 +131,7 @@ struct CoveApp: App {
                     }
                 } else {
                     // User flow
-                    if appController.isLoggedIn {
+                    if appController.isLoggedIn && appController.hasCompletedOnboarding {
                         // Main app flow - tab-based navigation
                         HomeView()
                             .environmentObject(appController)

@@ -217,27 +217,10 @@ struct HomeView: View {
         .environmentObject(AppController.shared)
 }
 
-// MARK: - ChatView (placeholder for navbar tab)
+// MARK: - ChatView is now MatchingTabView (defined in separate file)
 struct ChatView: View {
     @Binding var navigationPath: NavigationPath
     var body: some View {
-        NavigationStack(path: $navigationPath) {
-            ZStack {
-                Colors.background.ignoresSafeArea()
-
-                VStack(spacing: 12) {
-                    Spacer()
-                    Image(systemName: "bubble.left.and.bubble.right")
-                        .font(.system(size: 40))
-                        .foregroundColor(Colors.primaryDark)
-                    Text("chat is coming soon!")
-                        .font(.LibreBodoniSemiBold(size: 24))
-                        .foregroundColor(Colors.primaryDark)
-                    Spacer()
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-        }
-        .navigationBarBackButtonHidden()
+        MatchingTabView(navigationPath: $navigationPath)
     }
 }

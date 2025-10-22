@@ -782,15 +782,24 @@ extension CreateEventView {
     private var createButtonView: some View {
         Button {
             viewModel.submitEvent { success in
-                if success {
-                    // Refresh calendar and upcoming feeds to show the new event
-                    appController.refreshFeedsAfterEventCreation()
-                    // If event was created in a specific cove, refresh that cove's data too
-                    if !viewModel.coveId.isEmpty {
-                        appController.refreshCoveAfterEventCreation(coveId: viewModel.coveId)
+                DispatchQueue.main.async {
+                    if success {
+                        print("✅ Event created successfully, refreshing feeds...")
+                        // Refresh calendar and upcoming feeds to show the new event
+                        appController.refreshFeedsAfterEventCreation()
+                        // If event was created in a specific cove, refresh that cove's data too
+                        if !viewModel.coveId.isEmpty {
+                            appController.refreshCoveAfterEventCreation(coveId: viewModel.coveId)
+                        }
+                        
+                        // Call the completion callback first
+                        onEventCreated?()
+                        
+                        // Then dismiss the view
+                        dismiss()
+                    } else {
+                        print("❌ Event creation failed")
                     }
-                    onEventCreated?()
-                    dismiss()
                 }
             }
         } label: {
