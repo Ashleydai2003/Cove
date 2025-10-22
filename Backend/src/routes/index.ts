@@ -33,3 +33,16 @@ export {
   handleVendorImageUpload,
   handleVendorImageUpdate
 } from './vendor';
+
+// AI Matching routes
+export {
+  handleSurveySubmit,
+  handleGetSurvey,
+  handleCreateIntention,
+  handleGetIntentionStatus,
+  handleDeleteIntention,
+  handleGetCurrentMatch,
+  handleAcceptMatch,
+  handleDeclineMatch,
+  handleMatchFeedback
+} from './matching';

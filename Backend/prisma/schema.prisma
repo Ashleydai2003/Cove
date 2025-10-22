@@ -42,6 +42,11 @@ model User {
   profilePhoto           UserImage?      @relation("ProfilePhoto", fields: [profilePhotoID], references: [id])
   photos                 UserImage[]     @relation("UserPhotos")
   profile                UserProfile?
+  surveyResponses        SurveyResponse[] @relation("UserSurveyResponses")
+  intentions             Intention[]     @relation("UserIntention")
+  matchesAsA             Match[]         @relation("MatchUserA")
+  matchesAsB             Match[]         @relation("MatchUserB")
+  matchFeedback          MatchFeedback[] @relation("UserMatchFeedback")
 }
 
 model UserProfile {
@@ -52,6 +57,7 @@ model UserProfile {
   interests      String[]
   latitude       Float?
   longitude      Float?
+  city           String?   // City for matching system (e.g., "Palo Alto", "SF", "South Bay", "Peninsula")
   almaMater      String?
   job            String?
   workLocation   String?
@@ -61,6 +67,8 @@ model UserProfile {
   gender         String?
   gradYear       String?
   user           User      @relation(fields: [userId], references: [id])
+
+  @@index([city])
 }
 
 model Friendship {
@@ -313,6 +321,108 @@ enum RSVPStatus {
 enum MemberRole {
   MEMBER
   ADMIN
+}
+
+// MARK: - AI Matching System Models
+
+model SurveyResponse {
+  id         String   @id @default(cuid())
+  userId     String
+  questionId String   // e.g., "alumni_network", "age_band", "city", "availability", "activities", "vibe", "dealbreakers"
+  value      Json     // JSON for multi-select answers or single values
+  isMustHave Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  user       User     @relation("UserSurveyResponses", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questionId])
+  @@index([userId])
+  @@index([questionId])
+}
+
+model Intention {
+  id              String          @id @default(cuid())
+  userId          String          // Allow many intentions per user
+  text            String          // Short natural language text (≤140 chars)
+  parsedJson      Json            // Structured chips: { who, what, when, where, vibe, mustHaves, dealbreakers }
+  intentEmbedding Unsupported("vector")? // pgvector embedding for semantic matching
+  validFrom       DateTime        @default(now())
+  validUntil      DateTime        // Expiration time for intention
+  status          IntentionStatus @default(active)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  user            User            @relation("UserIntention", fields: [userId], references: [id], onDelete: Cascade)
+  poolEntry       PoolEntry?
+  matchesAsA      Match[]         @relation("MatchIntentionA")
+  matchesAsB      Match[]         @relation("MatchIntentionB")
+
+  @@index([userId])
+  @@index([status])
+  @@index([validUntil])
+}
+
+model PoolEntry {
+  id          String    @id @default(cuid())
+  intentionId String    @unique
+  tier        Int       @default(0) // 0 = strict (0-24h), 1 = relaxed (24-48h), 2 = very relaxed (48-72h)
+  joinedAt    DateTime  @default(now())
+  lastBatchAt DateTime  @default(now())
+  intention   Intention @relation(fields: [intentionId], references: [id], onDelete: Cascade)
+
+  @@index([tier])
+  @@index([lastBatchAt])
+}
+
+model Match {
+  id           String        @id @default(cuid())
+  userAId      String
+  userBId      String
+  intentionAId String
+  intentionBId String
+  score        Float         // Compatibility score (0.0-1.0)
+  tierUsed     Int           // Which tier produced this match (0, 1, or 2)
+  createdAt    DateTime      @default(now())
+  expiresAt    DateTime      // 7 days from creation
+  status       MatchStatus   @default(active)
+  threadId     String?       // If match is accepted, links to messaging thread
+  userA        User          @relation("MatchUserA", fields: [userAId], references: [id], onDelete: Cascade)
+  userB        User          @relation("MatchUserB", fields: [userBId], references: [id], onDelete: Cascade)
+  intentionA   Intention     @relation("MatchIntentionA", fields: [intentionAId], references: [id])
+  intentionB   Intention     @relation("MatchIntentionB", fields: [intentionBId], references: [id])
+  feedback     MatchFeedback[]
+
+  // Note: Unique pair constraint enforced via SQL CHECK and unique index (see migration)
+  @@index([userAId])
+  @@index([userBId])
+  @@index([status])
+  @@index([expiresAt])
+}
+
+model MatchFeedback {
+  id          String   @id @default(cuid())
+  matchId     String
+  userId      String
+  matchedOn   String[] // e.g., ["interests", "alumni", "vibe"]
+  wasAccurate Boolean? // Did the match meet expectations?
+  createdAt   DateTime @default(now())
+  match       Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  user        User     @relation("UserMatchFeedback", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([matchId])
+  @@index([userId])
+}
+
+enum IntentionStatus {
+  active
+  matched
+  expired
+}
+
+enum MatchStatus {
+  active
+  accepted
+  declined
+  expired
 }
 
 // MARK: - Vendor Models

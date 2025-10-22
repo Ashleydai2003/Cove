@@ -11,7 +11,9 @@ This guide walks you through setting up the complete CI/CD pipeline for the Cove
 - **Testing**: PostgreSQL service container for database tests
 - **Smart Migrations**: Only runs migrations when `schema.prisma` changes are detected
 - **Migration Process**: EC2 instance with SSM, matches your manual workflow exactly
-- **Deployment**: AWS Lambda function updates
+- **Deployment**: 
+  - Main API Lambda function updates
+  - Batch Matcher Lambda function updates (automated)
 - **Environments**: Production (`main`) and Staging (`develop`)
 - **Cost Optimization**: EC2 instance only starts when schema changes detected
 
@@ -158,9 +160,23 @@ Update your GitHub Actions IAM role trust policy to include the correct reposito
    - **Check for schema changes**: Only proceed with migrations if `schema.prisma` was modified
    - **If schema changed**: Start EC2 instance, run your exact migration workflow via SSM
    - **Migration steps**: `source /etc/profile` → `cd ~/cove` → `git pull` → `npm run prisma:dev` → `npm run prisma:migrate`
-   - Deploy Lambda function (always runs)
+   - Deploy main API Lambda function (always runs)
    - Run smoke tests
    - Stop EC2 instance (only if it was started)
+
+### Batch Matcher Deployment (Automated)
+1. **Triggers on**:
+   - Changes to `Backend/src/workers/**`
+   - Changes to `Backend/prisma/schema.prisma`
+   - Changes to `package.json` or `package-lock.json`
+   - Manual workflow dispatch
+2. **Deployment Process**:
+   - Install dependencies
+   - Build matcher Lambda package (`npm run build:matcher`)
+   - Update Lambda function code (assumes Lambda already exists from initial setup)
+   - Test invocation
+   - View recent logs
+3. **Initial Setup**: Run `./scripts/deploy-matcher.sh` once to create the Lambda infrastructure
 
 ### iOS Deployment
 1. **Push to `develop`**: Builds and uploads to TestFlight

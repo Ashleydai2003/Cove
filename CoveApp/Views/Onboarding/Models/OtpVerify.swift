@@ -118,9 +118,9 @@ struct OtpVerify {
                         AppController.shared.profileModel.verified = loginResponse.user.verified
 
                         if loginResponse.user.onboarding {
-                            // User needs to complete onboarding - push forward to user details
-                            Log.debug("User needs onboarding, starting onboarding flow")
-                            // Ensure forward animation by appending rather than resetting
+                            // User needs to complete onboarding - continue with the next step in sequence
+                            Log.debug("User needs onboarding, continuing onboarding flow")
+                            // The user has already completed phone number and OTP, so continue to user details
                             AppController.shared.path.append(.userDetails)
                             AppController.shared.hasCompletedOnboarding = false
                         } else {
