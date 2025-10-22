@@ -37,6 +37,20 @@ Make sure these secrets are configured in your GitHub repository:
 
 **Note:** The matcher deployment uses the same AWS OIDC role as your main backend deployment.
 
+### 4. Update IAM Permissions
+
+The GitHub Actions IAM role needs permissions for the batch matcher Lambda. If you see "Lambda function not found" errors in CI/CD, update the policy:
+
+```bash
+# The policy has been updated to include:
+# - lambda:GetFunction on cove-batch-matcher
+# - lambda:UpdateFunctionCode on cove-batch-matcher
+# - lambda:InvokeFunction on cove-batch-matcher
+# - logs:* on /aws/lambda/cove-batch-matcher
+```
+
+**Already configured! ✅** The policy `GithubActionsPolicy` now includes both `hello-lambda` and `cove-batch-matcher`.
+
 ## How It Works
 
 ### Automated Workflow
