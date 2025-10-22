@@ -30,7 +30,10 @@ struct CoveFeedView: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
-                // Top tabs under safe area
+                // Cove banner at top
+                CoveBannerView()
+                
+                // Top tabs under banner
                 CoveTopTabs(selected: $topTabSelection)
 
                 // Content switcher with full-area swipe

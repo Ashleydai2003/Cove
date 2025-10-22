@@ -12,8 +12,8 @@ struct MatchingOptInView: View {
     
     var body: some View {
         ZStack {
-            // Beige background
-            Color(red: 0.96, green: 0.95, blue: 0.93)
+            // Background
+            Colors.background
                 .ignoresSafeArea()
             
             // Full-screen card with small edge padding
@@ -59,7 +59,7 @@ struct MatchingOptInView: View {
                                 .padding(.vertical, 16)
                                 .background(
                                     RoundedRectangle(cornerRadius: 20)
-                                        .fill(Color(red: 0.96, green: 0.95, blue: 0.93))
+                                        .fill(Colors.background)
                                 )
                         }
                         .padding(.horizontal, 60)

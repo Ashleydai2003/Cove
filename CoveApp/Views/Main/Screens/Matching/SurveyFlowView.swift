@@ -11,7 +11,7 @@ struct SurveyFlowView: View {
     @ObservedObject var model: SurveyModel
     @State private var currentQuestionIndex = 0
     @State private var showingError = false
-    @State private var cardRotation: Double = 0
+    @State private var cardOpacity: Double = 1.0
     @State private var isAnimating = false
     
     private var currentQuestion: SurveyQuestion {
@@ -21,7 +21,7 @@ struct SurveyFlowView: View {
     var body: some View {
         ZStack {
             // Simple background
-            Color(red: 0.96, green: 0.95, blue: 0.93)
+            Colors.background
                 .ignoresSafeArea()
             
             VStack(spacing: 0) {
@@ -46,37 +46,17 @@ struct SurveyFlowView: View {
                 
                 Spacer()
                 
-                // Card container
-                ZStack {
-                    // Next card (peeking out)
-                    if currentQuestionIndex < model.questions.count - 1 {
-                        SurveyCardView(
-                            question: model.questions[currentQuestionIndex + 1],
-                            model: model,
-                            isActive: false,
-                            onAnswer: { _ in }
-                        )
-                        .scaleEffect(0.9)
-                        .offset(x: 50, y: 20)
-                        .opacity(0.7)
+                // Card container - single card only
+                SurveyCardView(
+                    question: currentQuestion,
+                    model: model,
+                    isActive: true,
+                    onAnswer: { answer in
+                        handleAnswer(answer)
                     }
-                    
-                    // Current card
-                    SurveyCardView(
-                        question: currentQuestion,
-                        model: model,
-                        isActive: true,
-                        onAnswer: { answer in
-                            handleAnswer(answer)
-                        }
-                    )
-                    .rotation3DEffect(
-                        .degrees(cardRotation),
-                        axis: (x: 0, y: 1, z: 0)
-                    )
-                    .scaleEffect(isAnimating ? 0.95 : 1.0)
-                    .animation(.easeInOut(duration: 0.6), value: isAnimating)
-                }
+                )
+                .opacity(cardOpacity)
+                .animation(.easeInOut(duration: 0.4), value: cardOpacity)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 
                 Spacer()
@@ -97,6 +77,8 @@ struct SurveyFlowView: View {
     private func handleAnswer(_ answer: String) {
         guard !isAnimating else { return }
         
+        isAnimating = true
+        
         // Set the answer
         model.setResponse(
             for: currentQuestion.id,
@@ -104,19 +86,26 @@ struct SurveyFlowView: View {
             isMustHave: false
         )
         
-        // Beautiful, slower card flip animation
-        withAnimation(.easeInOut(duration: 1.2)) {
-            cardRotation += 180
-            isAnimating = true
+        // Fade out animation
+        withAnimation(.easeOut(duration: 0.3)) {
+            cardOpacity = 0.0
         }
         
-        // Move to next question after animation completes
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+        // Move to next question after fade out
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             if currentQuestionIndex < model.questions.count - 1 {
-                withAnimation(.easeInOut(duration: 0.8)) {
-                    currentQuestionIndex += 1
-                    cardRotation = 0
-                    isAnimating = false
+                // Update question
+                currentQuestionIndex += 1
+                
+                // Fade in new card
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    withAnimation(.easeIn(duration: 0.3)) {
+                        cardOpacity = 1.0
+                    }
+                    
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        isAnimating = false
+                    }
                 }
             } else {
                 // Submit survey
@@ -124,6 +113,7 @@ struct SurveyFlowView: View {
                     if !success {
                         showingError = true
                     }
+                    isAnimating = false
                 }
             }
         }

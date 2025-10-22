@@ -46,7 +46,7 @@ struct TabBarView: View {
 
             // Chat Tab
             Button(action: { selectedTab = 2 }) {
-                Image(selectedTab == 2 ? "chat_selected" : "chat_unselected")
+                Image(selectedTab == 2 ? "match_selected" : "match_unselected")
                     .tabBarIcon(isSelected: selectedTab == 2, isMiddleButton: false)
                     .animation(.none, value: selectedTab)
                     .padding(.top, 2)
@@ -74,7 +74,7 @@ struct TabBarView: View {
 
             Spacer()
 
-            // Friends Tab
+            // Home Tab (moved from tab 1)
             Button(action: { selectedTab = 4 }) {
                 ZStack(alignment: .topTrailing) {
                     Image(selectedTab == 4 ? "calendar_selected" : "calendar_unselected")
@@ -134,10 +134,10 @@ struct HomeView: View {
                 ZStack {
                     // Main content area - switch instead of TabView to prevent rebuilding
                     switch tabSelection {
-                    case 1: UpcomingView(navigationPath: $upcomingPath)
+                    case 1: PlacetobeView(navigationPath: $upcomingPath)
                     case 2: ChatView(navigationPath: $chatPath)
                     case 3: CoveFeedView(navigationPath: $covePath)
-                    case 4: CalendarView(navigationPath: $calendarPath)
+                    case 4: UpcomingView(navigationPath: $upcomingPath) // Home moved to calendar tab
                     case 5: ProfileView(navigationPath: $profilePath)
                     default: ChatView(navigationPath: $chatPath)
                     }

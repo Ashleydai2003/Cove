@@ -193,7 +193,6 @@ private struct CalendarErrorStateView: View {
 // MARK: - Empty State
 private struct CalendarEmptyStateView: View {
     var body: some View {
-        Spacer()
         VStack(spacing: 16) {
             Image(systemName: "calendar")
                 .font(.system(size: 40))
@@ -209,7 +208,8 @@ private struct CalendarEmptyStateView: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
         }
-        Spacer()
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(minHeight: UIScreen.main.bounds.height - 200)
     }
 }
 
