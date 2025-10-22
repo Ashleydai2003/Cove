@@ -41,13 +41,13 @@ jobs:
         uses: actions/cache@v3
         with:
           path: Backend/node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('Backend/package-lock.json') }}
+          key: ${{ runner.os }}-node-${{ hashFiles('Backend/package.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
 
       - name: Install dependencies
         working-directory: Backend
-        run: npm ci
+        run: npm install --no-save
 
       - name: Build matcher Lambda package
         working-directory: Backend
