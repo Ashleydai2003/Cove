@@ -86,10 +86,11 @@ jobs:
 
       - name: Test Lambda invocation
         run: |
-          echo "🧪 Testing Lambda function..."
+          echo "Testing Lambda function..."
           aws lambda invoke \
             --function-name cove-batch-matcher \
-            --payload '{"trigger":"github-actions"}' \
+            --payload '{}' \
+            --region ${{ env.AWS_REGION }} \
             response.json
           
           cat response.json
@@ -97,9 +98,9 @@ jobs:
           
           # Check if invocation was successful
           if grep -q "statusCode.*200" response.json; then
-            echo "✅ Lambda test invocation successful!"
+            echo "Lambda test invocation successful"
           else
-            echo "⚠️  Lambda invocation returned non-200 status"
+            echo "Lambda invocation returned non-200 status"
             exit 1
           fi
 
