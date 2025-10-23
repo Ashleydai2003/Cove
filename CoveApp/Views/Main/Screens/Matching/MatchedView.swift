@@ -146,7 +146,7 @@ struct MatchedView: View {
     
     private var matchDescription: String {
         // Generic placeholder for now - will be AI-generated in the future
-        return "these folks share your vibe and want to meet you. let's make it happen!"
+        return "you look so good together! now dont be shy... make it happen!"
     }
 }
 
