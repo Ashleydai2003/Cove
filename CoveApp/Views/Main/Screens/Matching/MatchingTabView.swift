@@ -46,7 +46,7 @@ struct MatchingTabView: View {
                         SurveyFlowView(model: surveyModel)
                             .transition(.opacity)
                     } else if matchModel.currentMatch != nil {
-                        MatchCardView(model: matchModel, intentionModel: intentionModel)
+                        MatchedView(match: matchModel.currentMatch!)
                             .transition(.opacity)
                     } else if intentionModel.currentIntention == nil {
                         IntentionComposerView(model: intentionModel)

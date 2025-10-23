@@ -62,15 +62,15 @@ struct SurveyFlowView: View {
                 Spacer()
             }
         }
-        .alert("Survey Complete", isPresented: $model.isComplete) {
-            Button("OK") {}
+        .alert("survey complete", isPresented: $model.isComplete) {
+            Button("ok") {}
         } message: {
-            Text("Thank you for completing the survey!")
+            Text("thank you for completing the survey!")
         }
-        .alert("Error", isPresented: $showingError) {
-            Button("OK") {}
+        .alert("error", isPresented: $showingError) {
+            Button("ok") {}
         } message: {
-            Text(model.errorMessage ?? "An error occurred")
+            Text(model.errorMessage ?? "an error occurred")
         }
     }
     

@@ -332,10 +332,11 @@ export async function handleGetIntentionStatus(
     // Check if user has a match
     const match = await prisma.match.findFirst({
       where: {
-        OR: [
-          { userAId: userId },
-          { userBId: userId }
-        ],
+        members: {
+          some: {
+            userId: userId
+          }
+        },
         status: 'active'
       }
     });
@@ -347,12 +348,12 @@ export async function handleGetIntentionStatus(
         intention: {
           id: intention.id,
           text: intention.text,
-          validUntil: intention.validUntil,
+          validUntil: intention.validUntil.toISOString(),
           status: intention.status
         },
         poolEntry: intention.poolEntry ? {
           tier: intention.poolEntry.tier,
-          joinedAt: intention.poolEntry.joinedAt,
+          joinedAt: intention.poolEntry.joinedAt?.toISOString() || null,
           nextBatchEta: nextBatchEta.toISOString()
         } : null,
         hasMatch: !!match
@@ -456,27 +457,25 @@ export async function handleGetCurrentMatch(
     // Find active match
     const match = await prisma.match.findFirst({
       where: {
-        OR: [
-          { userAId: userId },
-          { userBId: userId }
-        ],
+        members: {
+          some: {
+            userId: userId
+          }
+        },
         status: 'active'
       },
       include: {
-        userA: {
+        members: {
           include: {
-            profile: true,
-            profilePhoto: true
+            user: {
+              include: {
+                profile: true,
+                profilePhoto: true
+              }
+            },
+            intention: true
           }
-        },
-        userB: {
-          include: {
-            profile: true,
-            profilePhoto: true
-          }
-        },
-        intentionA: true,
-        intentionB: true
+        }
       }
     });
 
@@ -490,11 +489,20 @@ export async function handleGetCurrentMatch(
       };
     }
 
-    // Determine which user is the match (not the current user)
-    const isUserA = match.userAId === userId;
-    const matchedUser = isUserA ? match.userB : match.userA;
-    const matchedIntention = isUserA ? match.intentionB : match.intentionA;
-    const currentIntention = isUserA ? match.intentionA : match.intentionB;
+    // Find the matched user (not the current user)
+    const currentUserMember = match.members.find(member => member.userId === userId);
+    const matchedUserMember = match.members.find(member => member.userId !== userId);
+    
+    if (!matchedUserMember) {
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ message: 'Match data corrupted' })
+      };
+    }
+    
+    const matchedUser = matchedUserMember.user;
+    const matchedIntention = matchedUserMember.intention;
+    const currentIntention = currentUserMember?.intention;
 
     // Get profile photo URL
     let profilePhotoUrl = null;
@@ -506,7 +514,7 @@ export async function handleGetCurrentMatch(
 
     // Build "matched on" array
     const matchedOn: string[] = [];
-    const currentChips = currentIntention.parsedJson as any;
+    const currentChips = currentIntention?.parsedJson as any;
     const matchedChips = matchedIntention.parsedJson as any;
 
     // Compare activities
@@ -559,8 +567,9 @@ export async function handleGetCurrentMatch(
           tierUsed: match.tierUsed,
           matchedOn,
           relaxedConstraints,
-          createdAt: match.createdAt,
-          expiresAt: match.expiresAt,
+          createdAt: match.createdAt.toISOString(),
+          expiresAt: match.expiresAt.toISOString(),
+          groupSize: match.groupSize,
           user: {
             name: matchedUser.name,
             age: matchedUser.profile?.age,
@@ -611,7 +620,10 @@ export async function handleAcceptMatch(
 
     // Verify match exists and user is part of it
     const match = await prisma.match.findUnique({
-      where: { id: matchId }
+      where: { id: matchId },
+      include: {
+        members: true
+      }
     });
 
     if (!match) {
@@ -621,15 +633,31 @@ export async function handleAcceptMatch(
       };
     }
 
-    if (match.userAId !== userId && match.userBId !== userId) {
+    const userMember = match.members.find(member => member.userId === userId);
+    if (!userMember) {
       return {
         statusCode: 403,
         body: JSON.stringify({ message: 'Not authorized to accept this match' })
       };
     }
 
+    // For now, only support 1-on-1 matches (groupSize = 2)
+    if (match.groupSize !== 2) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ message: 'Group matches not yet supported for acceptance' })
+      };
+    }
+
     // Determine the other user
-    const otherUserId = match.userAId === userId ? match.userBId : match.userAId;
+    const otherUserMember = match.members.find(member => member.userId !== userId);
+    if (!otherUserMember) {
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ message: 'Match data corrupted' })
+      };
+    }
+    const otherUserId = otherUserMember.userId;
 
     // Create or get existing thread
     let thread = await prisma.thread.findFirst({
@@ -664,11 +692,12 @@ export async function handleAcceptMatch(
       }
     });
 
-    // Update both intentions to matched status
+    // Update all intentions to matched status
+    const intentionIds = match.members.map(member => member.intentionId);
     await prisma.intention.updateMany({
       where: {
         id: {
-          in: [match.intentionAId, match.intentionBId]
+          in: intentionIds
         }
       },
       data: {
@@ -722,7 +751,10 @@ export async function handleDeclineMatch(
 
     // Verify match exists and user is part of it
     const match = await prisma.match.findUnique({
-      where: { id: matchId }
+      where: { id: matchId },
+      include: {
+        members: true
+      }
     });
 
     if (!match) {
@@ -732,7 +764,8 @@ export async function handleDeclineMatch(
       };
     }
 
-    if (match.userAId !== userId && match.userBId !== userId) {
+    const userMember = match.members.find(member => member.userId === userId);
+    if (!userMember) {
       return {
         statusCode: 403,
         body: JSON.stringify({ message: 'Not authorized to decline this match' })
@@ -802,7 +835,10 @@ export async function handleMatchFeedback(
 
     // Verify match exists and user is part of it
     const match = await prisma.match.findUnique({
-      where: { id: matchId }
+      where: { id: matchId },
+      include: {
+        members: true
+      }
     });
 
     if (!match) {
@@ -812,7 +848,8 @@ export async function handleMatchFeedback(
       };
     }
 
-    if (match.userAId !== userId && match.userBId !== userId) {
+    const userMember = match.members.find(member => member.userId === userId);
+    if (!userMember) {
       return {
         statusCode: 403,
         body: JSON.stringify({ message: 'Not authorized to provide feedback for this match' })
