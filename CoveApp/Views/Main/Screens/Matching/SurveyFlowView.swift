@@ -13,6 +13,7 @@ struct SurveyFlowView: View {
     @State private var showingError = false
     @State private var cardOpacity: Double = 1.0
     @State private var isAnimating = false
+    @State private var selectedOptions: Set<String> = []
     
     private var currentQuestion: SurveyQuestion {
         model.questions[currentQuestionIndex]
@@ -51,8 +52,12 @@ struct SurveyFlowView: View {
                     question: currentQuestion,
                     model: model,
                     isActive: true,
+                    selectedOptions: $selectedOptions,
                     onAnswer: { answer in
                         handleAnswer(answer)
+                    },
+                    onContinue: {
+                        handleContinue()
                     }
                 )
                 .opacity(cardOpacity)
@@ -75,17 +80,54 @@ struct SurveyFlowView: View {
     }
     
     private func handleAnswer(_ answer: String) {
+        // For single select questions, immediately move to next
+        if currentQuestion.type == .singleSelect {
+            guard !isAnimating else { return }
+            isAnimating = true
+            
+            // Set the answer
+            model.setResponse(
+                for: currentQuestion.id,
+                value: answer,
+                isMustHave: false
+            )
+            
+            moveToNextQuestion()
+        } else {
+            // For multiselect, toggle the selection
+            if selectedOptions.contains(answer) {
+                selectedOptions.remove(answer)
+            } else {
+                // Check if we've hit the max selection limit
+                if let maxSelection = currentQuestion.maxSelection, selectedOptions.count >= maxSelection {
+                    // Don't allow more selections
+                    return
+                }
+                selectedOptions.insert(answer)
+            }
+        }
+    }
+    
+    private func handleContinue() {
         guard !isAnimating else { return }
+        guard !selectedOptions.isEmpty else { return }
         
         isAnimating = true
         
-        // Set the answer
+        // Set the multiselect answer
         model.setResponse(
             for: currentQuestion.id,
-            value: answer,
+            value: Array(selectedOptions),
             isMustHave: false
         )
         
+        // Clear selections for next question
+        selectedOptions.removeAll()
+        
+        moveToNextQuestion()
+    }
+    
+    private func moveToNextQuestion() {
         // Fade out animation
         withAnimation(.easeOut(duration: 0.3)) {
             cardOpacity = 0.0
@@ -125,7 +167,9 @@ struct SurveyCardView: View {
     let question: SurveyQuestion
     @ObservedObject var model: SurveyModel
     let isActive: Bool
+    @Binding var selectedOptions: Set<String>
     let onAnswer: (String) -> Void
+    let onContinue: () -> Void
     
     var body: some View {
         VStack(spacing: 0) {
@@ -166,6 +210,8 @@ struct SurveyCardView: View {
                                             text: option,
                                             totalOptions: question.options.count,
                                             icon: getIconForOption(option, questionId: question.id),
+                                            isSelected: selectedOptions.contains(option),
+                                            isMultiSelect: question.type == .multiSelect,
                                             action: {
                                                 if isActive {
                                                     onAnswer(option)
@@ -184,6 +230,8 @@ struct SurveyCardView: View {
                                         text: option,
                                         totalOptions: question.options.count,
                                         icon: getIconForOption(option, questionId: question.id),
+                                        isSelected: selectedOptions.contains(option),
+                                        isMultiSelect: question.type == .multiSelect,
                                         action: {
                                             if isActive {
                                                 onAnswer(option)
@@ -193,6 +241,21 @@ struct SurveyCardView: View {
                                 }
                             }
                             .padding(.horizontal, 20)
+                        }
+                        
+                        // Continue button for multiselect questions
+                        if question.type == .multiSelect && !selectedOptions.isEmpty {
+                            Button(action: onContinue) {
+                                Text("continue")
+                                    .font(.LibreBodoniSemiBold(size: 18))
+                                    .foregroundColor(Colors.primaryDark)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 14)
+                                    .background(Color.white)
+                                    .cornerRadius(20)
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.top, 8)
                         }
                         
                         Spacer()
@@ -260,6 +323,8 @@ struct ConsistentAnswerButton: View {
     let text: String
     let totalOptions: Int
     let icon: String?
+    let isSelected: Bool
+    let isMultiSelect: Bool
     let action: () -> Void
     
     private var pillHeight: CGFloat {
@@ -279,19 +344,23 @@ struct ConsistentAnswerButton: View {
                     Image(icon)
                         .resizable()
                         .scaledToFit()
-                        .foregroundColor(.white)
+                        .foregroundColor(isSelected ? Colors.primaryDark : .white)
                         .frame(width: 24, height: 24)
                 }
                 
                 Text(text)
                     .font(Fonts.libreBodoni(size: 14))
-                    .foregroundColor(.white)
+                    .foregroundColor(isSelected ? Colors.primaryDark : .white)
                     .multilineTextAlignment(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             .frame(height: pillHeight)
             .padding(.horizontal, 16)
             .background(
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(isSelected ? Color.white : Color.clear)
+            )
+            .overlay(
                 RoundedRectangle(cornerRadius: 20)
                     .stroke(Color.white, lineWidth: 1)
             )

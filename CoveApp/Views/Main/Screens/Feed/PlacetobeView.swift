@@ -49,7 +49,7 @@ struct PlacetobeView: View {
                             
                             // Event details below image
                             VStack(spacing: 8) {
-                                Text("This Saturday 7pm")
+                                Text("this saturday 7pm")
                                     .font(.LibreBodoniBold(size: 18))
                                     .foregroundColor(Colors.primaryDark)
                                     .multilineTextAlignment(.center)

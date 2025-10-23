@@ -222,7 +222,7 @@ class SurveyModel: ObservableObject {
             type: .multiSelect,
             options: ["hip-hop / rap", "edm / house / techno", "pop / top 40", "r&b / soul", "rock / alternative / indie", "latin / reggaeton", "country", "jazz / blues", "classical", "i'm open to everything"],
             canBeMustHave: false,
-            maxSelection: 3
+            maxSelection: 5
         ),
         SurveyQuestion(
             id: .drinkingHabits,
