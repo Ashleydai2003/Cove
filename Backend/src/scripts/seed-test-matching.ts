@@ -112,10 +112,11 @@ async function main() {
   console.log('🗑️  Cleaning up existing test data...');
   await prisma.match.deleteMany({
     where: {
-      OR: [
-        { userAId: { in: TEST_USERS.map(u => u.id) } },
-        { userBId: { in: TEST_USERS.map(u => u.id) } }
-      ]
+      members: {
+        some: {
+          userId: { in: TEST_USERS.map(u => u.id) }
+        }
+      }
     }
   });
   

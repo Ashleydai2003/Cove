@@ -31,7 +31,7 @@
     "emulators:stop": "pkill -f 'firebase emulators:start' || echo 'Emulator not running'",
     "socket:dev": "dotenv -e env.development -- ts-node src/socket-server.ts",
     "socket:prod": "dotenv -e env.production -- ts-node src/socket-server.ts",
-    "matcher:run": "dotenv -e env.development -- ts-node src/workers/batchMatcher.ts",
+    "matcher:run": "npx dotenv -f env.development -- ts-node src/workers/batchMatcher.ts",
     "matcher:prod": "dotenv -e env.production -- ts-node src/workers/batchMatcher.ts",
     "test:seed": "dotenv -e env.development -- ts-node src/scripts/seed-test-matching.ts"
   },

@@ -68,7 +68,7 @@ struct MatchCardView: View {
                         
                         // Name + basics
                         VStack(spacing: 4) {
-                            Text(match.user.name ?? "Your Match")
+                            Text(match.user.name ?? "your match")
                                 .font(.LibreBodoniSemiBold(size: 28))
                                 .foregroundColor(Colors.primaryDark)
                             
@@ -108,7 +108,7 @@ struct MatchCardView: View {
                     
                     // Matched on
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("You matched on:")
+                        Text("you matched on:")
                             .font(.LibreBodoniSemiBold(size: 18))
                             .foregroundColor(Colors.primaryDark)
                         
@@ -130,7 +130,7 @@ struct MatchCardView: View {
                     // Relaxed constraints (if any)
                     if !match.relaxedConstraints.isEmpty {
                         VStack(alignment: .leading, spacing: 12) {
-                            Text("We relaxed:")
+                            Text("we relaxed:")
                                 .font(.LibreBodoniSemiBold(size: 18))
                                 .foregroundColor(Colors.primaryDark)
                             
@@ -160,7 +160,7 @@ struct MatchCardView: View {
                                     .tint(Colors.primaryDark)
                             } else {
                                 Image(systemName: "xmark")
-                                Text("Pass")
+                                Text("pass")
                             }
                         }
                         .font(.system(size: 16, weight: .semibold))
@@ -183,7 +183,7 @@ struct MatchCardView: View {
                                     .tint(.white)
                             } else {
                                 Image(systemName: "heart.fill")
-                                Text("Start Chatting")
+                                Text("start chatting")
                             }
                         }
                         .font(.system(size: 16, weight: .semibold))
@@ -198,10 +198,10 @@ struct MatchCardView: View {
             }
             .padding()
         }
-        .alert("Error", isPresented: $showingError) {
-            Button("OK") {}
+        .alert("error", isPresented: $showingError) {
+            Button("ok") {}
         } message: {
-            Text(model.errorMessage ?? "An error occurred")
+            Text(model.errorMessage ?? "an error occurred")
         }
     }
     
@@ -212,7 +212,7 @@ struct MatchCardView: View {
                 
                 // TODO: Navigate to messaging thread
                 // For now, just show a success message
-                Log.debug("Match accepted! Thread ID: \(threadId)")
+                Log.debug("match accepted! thread id: \(threadId)")
                 
                 // Refresh intention model to clear the matched intention
                 intentionModel.refresh()

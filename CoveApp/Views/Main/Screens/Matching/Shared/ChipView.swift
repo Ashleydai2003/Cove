@@ -66,7 +66,7 @@ struct ChipSelector: View {
                             HStack(spacing: 4) {
                                 Image(systemName: isMustHave ? "checkmark.circle.fill" : "circle")
                                     .foregroundColor(isMustHave ? Colors.primaryDark : .gray)
-                                Text("Must-have")
+                                Text("must-have")
                                     .font(.system(size: 12))
                                     .foregroundColor(.gray)
                             }
@@ -163,8 +163,8 @@ struct FlowLayout: Layout {
 #Preview {
     VStack {
         ChipSelector(
-            title: "Activities",
-            options: ["Coffee", "Live music", "Art walk"],
+            title: "activities",
+            options: ["coffee", "live music", "art walk"],
             selected: .constant(["Coffee"]),
             maxSelection: 2
         )

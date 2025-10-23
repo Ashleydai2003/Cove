@@ -53,6 +53,7 @@ struct MatchData: Codable {
     let relaxedConstraints: [String]
     let createdAt: String
     let expiresAt: String
+    let groupSize: Int?
     let user: MatchedUserData
 }
 
@@ -161,73 +162,73 @@ class SurveyModel: ObservableObject {
     let questions: [SurveyQuestion] = [
         SurveyQuestion(
             id: .energySource,
-            question: "Where do you get your energy?",
+            question: "where do you get your energy?",
             type: .singleSelect,
-            options: ["Introvert—I recharge alone", "Ambivert—Somewhere in between", "Extrovert—I recharge with people"],
+            options: ["introvert—i recharge alone", "ambivert—somewhere in between", "extrovert—i recharge with people"],
             canBeMustHave: true,
             maxSelection: nil
         ),
         SurveyQuestion(
             id: .groupSize,
-            question: "What's your ideal group size when hanging out?",
+            question: "what's your ideal group size when hanging out?",
             type: .singleSelect,
-            options: ["One-on-one or small group (2-3 people)", "Medium group (5-8 people)", "Large group (8+ people)", "I'm flexible; depends on activity"],
+            options: ["one-on-one or small group (2-3 people)", "medium group (5-8 people)", "large group (8+ people)", "i'm flexible; depends on activity"],
             canBeMustHave: true,
             maxSelection: nil
         ),
         SurveyQuestion(
             id: .valuedTraits,
-            question: "What traits do you value most in people?",
+            question: "what traits do you value most in people?",
             type: .multiSelect,
-            options: ["Funny & playful", "Loyal & dependable", "Adventurous & driven", "Chill & easygoing", "Thoughtful & empathetic", "Outgoing & social", "Deep & intellectual", "Creative & artistic", "Open-minded", "Honest & authentic"],
+            options: ["funny & playful", "loyal & dependable", "adventurous & driven", "chill & easygoing", "thoughtful & empathetic", "outgoing & social", "deep & intellectual", "creative & artistic", "open-minded", "honest & authentic"],
             canBeMustHave: true,
             maxSelection: 4
         ),
         SurveyQuestion(
             id: .idealConnection,
-            question: "My ideal connection involves:",
+            question: "my ideal connection involves:",
             type: .multiSelect,
-            options: ["Deep conversations & emotional support", "Fun & lighthearted energy", "Shared activities & hobbies", "Going out together", "Intellectual discussions", "Adventure & trying new things", "Low-key, chill vibes", "Ambitious / growth-minded conversations"],
+            options: ["deep conversations & emotional support", "fun & lighthearted energy", "shared activities & hobbies", "going out together", "intellectual discussions", "adventure & trying new things", "low-key, chill vibes", "ambitious / growth-minded conversations"],
             canBeMustHave: false,
             maxSelection: nil
         ),
         SurveyQuestion(
             id: .industry,
-            question: "What industry are you in?",
+            question: "what industry are you in?",
             type: .singleSelect,
-            options: ["Tech / Startups", "Finance / Consulting", "Creative / Media / Entertainment", "Healthcare / Medicine", "Education / Academia", "Legal", "Sales / Marketing", "Service / Hospitality", "Trades", "Student", "Between jobs / Exploring", "Other"],
+            options: ["tech / startups", "finance / consulting", "creative / media / entertainment", "healthcare / medicine", "education / academia", "legal", "sales / marketing", "service / hospitality", "trades", "student", "between jobs / exploring", "other"],
             canBeMustHave: false,
             maxSelection: nil
         ),
         SurveyQuestion(
             id: .relationshipStatus,
-            question: "Relationship status:",
+            question: "relationship status:",
             type: .singleSelect,
-            options: ["Single", "Casually dating", "In a relationship", "It's complicated"],
+            options: ["single", "casually dating", "in a relationship", "it's complicated"],
             canBeMustHave: true,
             maxSelection: nil
         ),
         SurveyQuestion(
             id: .sexualOrientation,
-            question: "Sexual orientation:",
+            question: "sexual orientation:",
             type: .singleSelect,
-            options: ["Straight", "Gay / Lesbian", "Bisexual", "Pansexual", "Questioning", "Prefer not to say"],
+            options: ["straight", "gay / lesbian", "bisexual", "pansexual", "questioning", "prefer not to say"],
             canBeMustHave: false,
             maxSelection: nil
         ),
         SurveyQuestion(
             id: .musicGenres,
-            question: "Music genres you enjoy:",
+            question: "music genres you enjoy:",
             type: .multiSelect,
-            options: ["Hip-hop / Rap", "EDM / House / Techno", "Pop / Top 40", "R&B / Soul", "Rock / Alternative / Indie", "Latin / Reggaeton", "Country", "Jazz / Blues", "Classical", "I'm open to everything"],
+            options: ["hip-hop / rap", "edm / house / techno", "pop / top 40", "r&b / soul", "rock / alternative / indie", "latin / reggaeton", "country", "jazz / blues", "classical", "i'm open to everything"],
             canBeMustHave: false,
             maxSelection: 3
         ),
         SurveyQuestion(
             id: .drinkingHabits,
-            question: "Drinking habits:",
+            question: "drinking habits:",
             type: .singleSelect,
-            options: ["I drink regularly and enjoy going out", "Social drinker — Occasional nights out", "Drink rarely", "Don't drink", "Sober lifestyle"],
+            options: ["i drink regularly and enjoy going out", "social drinker — occasional nights out", "drink rarely", "don't drink", "sober lifestyle"],
             canBeMustHave: true,
             maxSelection: nil
         )
@@ -267,8 +268,8 @@ class SurveyModel: ObservableObject {
                     // Check if all questions are answered
                     self?.isComplete = self?.responses.count == self?.questions.count
                 case .failure(let error):
-                    Log.error("Failed to load survey: \(error)")
-                    self?.errorMessage = "Failed to load survey"
+                    Log.error("failed to load survey: \(error)")
+                    self?.errorMessage = "failed to load survey"
                 }
             }
         }
@@ -309,11 +310,11 @@ class SurveyModel: ObservableObject {
                 switch result {
                 case .success:
                     self?.isComplete = true
-                    Log.debug("Survey submitted successfully")
+                    Log.debug("survey submitted successfully")
                     completion(true)
                 case .failure(let error):
-                    Log.error("Failed to submit survey: \(error)")
-                    self?.errorMessage = "Failed to submit survey"
+                    Log.error("failed to submit survey: \(error)")
+                    self?.errorMessage = "failed to submit survey"
                     completion(false)
                 }
             }

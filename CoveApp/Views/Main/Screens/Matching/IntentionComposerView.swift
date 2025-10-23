@@ -33,10 +33,10 @@ struct IntentionComposerView: View {
     ]
     
     let timeWindowOptions = [
-        "Friday evening",
-        "Saturday daytime",
-        "Saturday evening",
-        "Sunday daytime"
+        "friday evening",
+        "saturday daytime",
+        "saturday evening",
+        "sunday daytime"
     ]
     
     var body: some View {
@@ -58,7 +58,7 @@ struct IntentionComposerView: View {
                         
                         // Second message from Cove
                         if showSecondMessage {
-                            CoveChatBubble(text: "First things first, what are you looking for?")
+                            CoveChatBubble(text: "first things first, what are you looking for?")
                                 .transition(.opacity.combined(with: .move(edge: .top)))
                                 .id("question1")
                         }
@@ -102,7 +102,7 @@ struct IntentionComposerView: View {
                         
                         // Activities prompt
                         if showActivitiesPrompt {
-                            CoveChatBubble(text: "Fantastic. Now select the activity that excites you most, and we will match you with people who are on the same wavelength.")
+                            CoveChatBubble(text: "fantastic. now select the activity that excites you most, and we will match you with people who are on the same wavelength.")
                                 .transition(.opacity.combined(with: .move(edge: .top)))
                                 .id("activities")
                         }
@@ -143,7 +143,7 @@ struct IntentionComposerView: View {
                         
                         // Time window question
                         if showTimeQuestion {
-                            CoveChatBubble(text: "Great! When are you free to meet up?")
+                            CoveChatBubble(text: "great! when are you free to meet up?")
                                 .transition(.opacity.combined(with: .move(edge: .top)))
                                 .id("timeQuestion")
                         }
@@ -344,8 +344,8 @@ struct IntentionComposerView: View {
         var intentionParts: [String] = []
         
         if let connection = connectionType {
-            // Short version: "Friends" or "Dating"
-            let connectionText = connection == "friends" ? "Friends" : "Dating"
+            // Short version: "friends" or "dating"
+            let connectionText = connection == "friends" ? "friends" : "dating"
             intentionParts.append(connectionText)
         }
         
@@ -369,7 +369,7 @@ struct IntentionComposerView: View {
         
         intentionParts.append(model.userCity)
         
-        // Build natural text: "Friends, music, Saturday evening, Sunday daytime, Palo Alto"
+        // Build natural text: "friends, music, saturday evening, sunday daytime, palo alto"
         let intentionText = intentionParts.joined(separator: ", ")
         
         print("📝 [IntentionComposer] Built intention text (\(intentionText.count) chars): \(intentionText)")

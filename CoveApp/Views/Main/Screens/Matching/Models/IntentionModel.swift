@@ -67,12 +67,12 @@ class IntentionModel: ObservableObject {
     @Published var selectedTimeWindows: [String] = []
     @Published var selectedVibe: [String] = []
     @Published var notesText: String = ""
-    @Published var userCity: String = "Palo Alto" // Will load from profile
+    @Published var userCity: String = "palo alto" // Will load from profile
     
     // Available options
-    let activityOptions = ["Coffee", "Live music", "Art walk", "Dinner", "Outdoors"]
-    let timeWindowOptions = ["Fri evening", "Sat daytime", "Sat evening", "Sun daytime"]
-    let vibeOptions = ["Low-key", "Outgoing", "Intellectual", "Adventurous"]
+    let activityOptions = ["coffee", "live music", "art walk", "dinner", "outdoors"]
+    let timeWindowOptions = ["fri evening", "sat daytime", "sat evening", "sun daytime"]
+    let vibeOptions = ["low-key", "outgoing", "intellectual", "adventurous"]
     
     var currentTier: Int {
         return poolEntry?.tier ?? 0
@@ -125,8 +125,8 @@ class IntentionModel: ObservableObject {
                     self?.loadUserCity()
                     
                 case .failure(let error):
-                    Log.error("Failed to load intention status: \(error)")
-                    self?.errorMessage = "Failed to load status"
+                    Log.error("failed to load intention status: \(error)")
+                    self?.errorMessage = "failed to load status"
                 }
             }
         }
@@ -145,7 +145,7 @@ class IntentionModel: ObservableObject {
                         self?.userCity = city
                     }
                 case .failure(let error):
-                    Log.error("Failed to load user city: \(error)")
+                    Log.error("failed to load user city: \(error)")
                 }
             }
         }
@@ -230,7 +230,7 @@ class IntentionModel: ObservableObject {
                     completion(true)
                 case .failure(let error):
                     print("❌ [IntentionModel] POST /intention failed: \(error)")
-                    self?.errorMessage = "Failed to submit intention"
+                    self?.errorMessage = "failed to submit intention"
                     completion(false)
                 }
             }
@@ -265,11 +265,11 @@ class IntentionModel: ObservableObject {
                     self?.selectedVibe = []
                     self?.notesText = ""
                     
-                    Log.debug("Intention deleted successfully")
+                    Log.debug("intention deleted successfully")
                     completion(true)
                 case .failure(let error):
-                    Log.error("Failed to delete intention: \(error)")
-                    self?.errorMessage = "Failed to delete intention"
+                    Log.error("failed to delete intention: \(error)")
+                    self?.errorMessage = "failed to delete intention"
                     completion(false)
                 }
             }

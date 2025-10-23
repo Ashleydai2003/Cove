@@ -42,8 +42,8 @@ struct PoolStatusView: View {
                                         .scaleEffect(1.2)
                                     
                                     Text(currentUserName.isEmpty ? 
-                                         "We are finding your\nmatch. We will notify you when we have one!" :
-                                         "\(currentUserName), we are finding your\n match. We will notify you when we have one!")
+                                         "we are finding your\nmatch. we will notify you when we have one!" :
+                                         "\(currentUserName), we are finding your\n match. we will notify you when we have one!")
                                         .font(.LibreBodoniSemiBold(size: 22))
                                         .foregroundColor(.white)
                                         .multilineTextAlignment(.center)
@@ -256,7 +256,7 @@ struct IntentionItemRow: View {
                         .fill(Color.yellow)
                         .frame(width: 30, height: 30)
                         .overlay(
-                            Text("A")
+                            Text("a")
                                 .font(.system(size: 16, weight: .bold))
                                 .foregroundColor(.white)
                         )

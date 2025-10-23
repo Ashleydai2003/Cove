@@ -17,6 +17,7 @@ struct Match: Codable, Identifiable {
     let relaxedConstraints: [String]
     let createdAt: String
     let expiresAt: String
+    let groupSize: Int?
     let user: MatchedUser
     
     struct MatchedUser: Codable {
@@ -64,6 +65,7 @@ class MatchModel: ObservableObject {
                             relaxedConstraints: matchData.relaxedConstraints,
                             createdAt: matchData.createdAt,
                             expiresAt: matchData.expiresAt,
+                            groupSize: matchData.groupSize,
                             user: Match.MatchedUser(
                                 name: matchData.user.name,
                                 age: matchData.user.age,
@@ -77,8 +79,8 @@ class MatchModel: ObservableObject {
                         self?.currentMatch = nil
                     }
                 case .failure(let error):
-                    Log.error("Failed to load current match: \(error)")
-                    self?.errorMessage = "Failed to load match"
+                    Log.error("failed to load current match: \(error)")
+                    self?.errorMessage = "failed to load match"
                 }
             }
         }
@@ -105,11 +107,11 @@ class MatchModel: ObservableObject {
                     // Clear current match
                     self?.currentMatch = nil
                     
-                    Log.debug("Match accepted, thread created: \(data.threadId)")
+                    Log.debug("match accepted, thread created: \(data.threadId)")
                     completion(data.threadId)
                 case .failure(let error):
-                    Log.error("Failed to accept match: \(error)")
-                    self?.errorMessage = "Failed to accept match"
+                    Log.error("failed to accept match: \(error)")
+                    self?.errorMessage = "failed to accept match"
                     completion(nil)
                 }
             }
@@ -137,11 +139,11 @@ class MatchModel: ObservableObject {
                     // Clear current match
                     self?.currentMatch = nil
                     
-                    Log.debug("Match declined")
+                    Log.debug("match declined")
                     completion(true)
                 case .failure(let error):
-                    Log.error("Failed to decline match: \(error)")
-                    self?.errorMessage = "Failed to decline match"
+                    Log.error("failed to decline match: \(error)")
+                    self?.errorMessage = "failed to decline match"
                     completion(false)
                 }
             }
@@ -167,10 +169,10 @@ class MatchModel: ObservableObject {
             DispatchQueue.main.async {
                 switch result {
                 case .success:
-                    Log.debug("Match feedback submitted")
+                    Log.debug("match feedback submitted")
                     completion(true)
                 case .failure(let error):
-                    Log.error("Failed to submit feedback: \(error)")
+                    Log.error("failed to submit feedback: \(error)")
                     completion(false)
                 }
             }
@@ -200,6 +202,8 @@ class MatchModel: ObservableObject {
             profilePhotoUrl: userDict["profilePhotoUrl"] as? String
         )
         
+        let groupSize = dict["groupSize"] as? Int
+        
         return Match(
             id: id,
             matchedUserId: matchedUserId,
@@ -209,6 +213,7 @@ class MatchModel: ObservableObject {
             relaxedConstraints: relaxedConstraints,
             createdAt: createdAt,
             expiresAt: expiresAt,
+            groupSize: groupSize,
             user: user
         )
     }
@@ -223,9 +228,9 @@ enum MatchError: Error, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .noCurrentMatch:
-            return "No current match available"
+            return "no current match available"
         case .invalidResponse:
-            return "Invalid response from server"
+            return "invalid response from server"
         case .networkError(let message):
             return message
         }
