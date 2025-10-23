@@ -47,7 +47,9 @@ struct MatchedView: View {
                                 HStack {
                                     Spacer()
                                     Image("matchIcon")
-                                        .font(.system(size: 60, weight: .light))
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(width: 50, height: 50)
                                         .foregroundColor(.white)
                                     Spacer()
                                 }
