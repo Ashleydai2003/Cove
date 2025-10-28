@@ -37,9 +37,9 @@ if (typeof window !== 'undefined') {
 }
 
 // Connect to Firebase Auth emulator in development
-if (process.env.NODE_ENV === 'development') {
-  // Note: Uncomment the line below if you want to use Firebase Auth emulator
-  // connectAuthEmulator(auth, 'http://localhost:9099');
+if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_USE_EMULATOR === 'true') {
+  console.log('🔧 Connecting to Firebase Auth emulator at http://localhost:9099');
+  connectAuthEmulator(auth, 'http://localhost:9099');
 }
 
 export default app; 
