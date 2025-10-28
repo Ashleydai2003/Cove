@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+const BACKEND_URL = process.env.BACKEND_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
 
 // POST /api/match/intention - Submit intention
 export async function POST(request: NextRequest) {
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Call backend API to submit intention
-    const backendResponse = await fetch(`${process.env.BACKEND_API_URL}/intention/submit`, {
+    const backendResponse = await fetch(`${BACKEND_URL}/intention/submit`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

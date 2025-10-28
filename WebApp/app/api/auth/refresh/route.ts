@@ -21,7 +21,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify the token with the backend
-    const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+    // Use BACKEND_API_URL for server-side calls, fallback to NEXT_PUBLIC for local dev
+    const BACKEND_URL = process.env.BACKEND_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+    console.log('[Auth Refresh] Using backend URL:', BACKEND_URL);
+    
     const backendResponse = await fetch(`${BACKEND_URL}/profile`, {
       method: 'GET',
       headers: {
