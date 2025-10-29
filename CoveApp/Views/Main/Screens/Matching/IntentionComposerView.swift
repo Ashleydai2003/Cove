@@ -98,11 +98,12 @@ struct IntentionComposerView: View {
                                 UserSentMessage(text: connection == "friends" ? "new friends & connections" : "romantic connection")
                             }
                             .transition(.opacity.combined(with: .move(edge: .trailing)))
+                            .id("connectionResponse")
                         }
                         
                         // Activities prompt
                         if showActivitiesPrompt {
-                            CoveChatBubble(text: "fantastic. now select the activity that excites you most, and we will match you with people who are on the same wavelength.")
+                            CoveChatBubble(text: "fantastic. now select the activities that excite you, and we will match you with people who are on the same wavelength.")
                                 .transition(.opacity.combined(with: .move(edge: .top)))
                                 .id("activities")
                         }
@@ -120,6 +121,24 @@ struct IntentionComposerView: View {
                                                 toggleActivity(activity)
                                             }
                                         )
+                                    }
+                                    
+                                    // Continue button (only show if at least one activity selected)
+                                    if !selectedActivities.isEmpty {
+                                        Button(action: {
+                                            showActivitiesAfterSelection()
+                                        }) {
+                                            Text("continue")
+                                                .font(.LibreBodoniSemiBold(size: 18))
+                                                .foregroundColor(.white)
+                                                .frame(maxWidth: .infinity)
+                                                .padding(.vertical, 14)
+                                                .background(
+                                                    RoundedRectangle(cornerRadius: 16)
+                                                        .fill(Colors.primaryDark)
+                                                )
+                                        }
+                                        .padding(.top, 8)
                                     }
                                 }
                                 .frame(maxWidth: 280)
@@ -139,6 +158,7 @@ struct IntentionComposerView: View {
                                 }
                             }
                             .transition(.opacity.combined(with: .move(edge: .trailing)))
+                            .id("activitiesResponse")
                         }
                         
                         // Time window question
@@ -198,6 +218,7 @@ struct IntentionComposerView: View {
                                 }
                             }
                             .transition(.opacity.combined(with: .move(edge: .trailing)))
+                            .id("timeResponse")
                         }
                         
                         // Final message
@@ -213,21 +234,56 @@ struct IntentionComposerView: View {
                 }
                 .onChange(of: showSecondMessage) { _, newValue in
                     if newValue {
-                        withAnimation {
+                        withAnimation(.easeInOut(duration: 0.5)) {
                             proxy.scrollTo("question1", anchor: .bottom)
+                        }
+                    }
+                }
+                .onChange(of: showFirstQuestion) { _, newValue in
+                    if newValue {
+                        withAnimation(.easeInOut(duration: 0.5)) {
+                            proxy.scrollTo("question1", anchor: .bottom)
+                        }
+                    }
+                }
+                .onChange(of: showConnectionResponse) { _, newValue in
+                    if newValue {
+                        withAnimation(.easeInOut(duration: 0.5)) {
+                            proxy.scrollTo("connectionResponse", anchor: .bottom)
                         }
                     }
                 }
                 .onChange(of: showActivitiesPrompt) { _, newValue in
                     if newValue {
-                        withAnimation {
+                        withAnimation(.easeInOut(duration: 0.5)) {
                             proxy.scrollTo("activities", anchor: .bottom)
+                        }
+                    }
+                }
+                .onChange(of: showActivitiesResponse) { _, newValue in
+                    if newValue {
+                        withAnimation(.easeInOut(duration: 0.5)) {
+                            proxy.scrollTo("activitiesResponse", anchor: .bottom)
+                        }
+                    }
+                }
+                .onChange(of: showTimeQuestion) { _, newValue in
+                    if newValue {
+                        withAnimation(.easeInOut(duration: 0.5)) {
+                            proxy.scrollTo("timeQuestion", anchor: .bottom)
+                        }
+                    }
+                }
+                .onChange(of: showTimeResponse) { _, newValue in
+                    if newValue {
+                        withAnimation(.easeInOut(duration: 0.5)) {
+                            proxy.scrollTo("timeResponse", anchor: .bottom)
                         }
                     }
                 }
                 .onChange(of: showFinalMessage) { _, newValue in
                     if newValue {
-                        withAnimation {
+                        withAnimation(.easeInOut(duration: 0.5)) {
                             proxy.scrollTo("final", anchor: .bottom)
                         }
                     }
@@ -276,16 +332,11 @@ struct IntentionComposerView: View {
     }
     
     private func toggleActivity(_ activity: String) {
-        if selectedActivities.contains(activity) {
-            selectedActivities.remove(activity)
-        } else {
-            selectedActivities.insert(activity)
-        }
-        
-        // Move to time question after selecting at least one activity
-        if selectedActivities.count > 0 {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                showActivitiesAfterSelection()
+        withAnimation(.easeInOut(duration: 0.2)) {
+            if selectedActivities.contains(activity) {
+                selectedActivities.remove(activity)
+            } else {
+                selectedActivities.insert(activity)
             }
         }
     }
