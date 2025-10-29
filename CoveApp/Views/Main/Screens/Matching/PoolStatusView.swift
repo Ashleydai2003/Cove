@@ -65,7 +65,7 @@ struct PoolStatusView: View {
                                     // Activities - render as a single bold line
                                     let activities = getNormalizedActivities()
                                     if !activities.isEmpty {
-                                        Text(activities.joined(separator: ", "))
+                                        Text(activities.joined(separator: " or "))
                                             .font(.LibreBodoniSemiBold(size: 24))
                                             .foregroundColor(.white)
                                             .frame(maxWidth: .infinity, alignment: .leading)
