@@ -152,14 +152,17 @@ export default function SurveyView({ onComplete }: SurveyViewProps) {
       });
 
       if (response.ok) {
-        onComplete();
+        // Add a delay to show the loading screen for a bit before transitioning
+        setTimeout(() => {
+          onComplete();
+        }, 2000); // 2 second delay to show the loading screen
       } else {
         const data = await response.json();
         setError(data.message || 'failed to submit survey');
+        setIsSubmitting(false);
       }
     } catch (err) {
       setError('network error. please try again.');
-    } finally {
       setIsSubmitting(false);
     }
   };
