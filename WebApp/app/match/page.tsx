@@ -13,6 +13,7 @@ export default function MatchPage() {
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showOptIn, setShowOptIn] = useState(true); // Show opt-in by default
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -47,6 +48,7 @@ export default function MatchPage() {
               // User needs to complete onboarding
               console.log('⚠️ [MatchPage] User needs onboarding');
               setShowOnboarding(true);
+              setShowOptIn(false);
               setIsAuthenticated(false);
               setHasCompletedOnboarding(false);
             } else {
@@ -55,23 +57,27 @@ export default function MatchPage() {
               setIsAuthenticated(true);
               setHasCompletedOnboarding(true);
               setShowOnboarding(false);
+              setShowOptIn(false); // Hide opt-in, show matching flow
             }
           } else {
             console.error('❌ [MatchPage] Auth refresh failed:', response.status);
             setShowOnboarding(true);
+            setShowOptIn(false);
             setIsAuthenticated(false);
             setHasCompletedOnboarding(false);
           }
         } catch (error) {
           console.error('❌ [MatchPage] Auth error:', error);
           setShowOnboarding(true);
+          setShowOptIn(false);
           setIsAuthenticated(false);
           setHasCompletedOnboarding(false);
         }
       } else {
-        // User is not signed in
-        console.log('❌ [MatchPage] No Firebase user, showing onboarding');
-        setShowOnboarding(true);
+        // User is not signed in - show opt-in screen
+        console.log('❌ [MatchPage] No Firebase user, showing opt-in');
+        setShowOptIn(true);
+        setShowOnboarding(false);
         setIsAuthenticated(false);
         setHasCompletedOnboarding(false);
       }
@@ -89,6 +95,12 @@ export default function MatchPage() {
     setHasCompletedOnboarding(true);
   };
 
+  const handleOptInClick = () => {
+    console.log('🎯 [MatchPage] User clicked get started, triggering auth flow');
+    setShowOptIn(false);
+    setShowOnboarding(true);
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#F5F0E6] flex items-center justify-center">
@@ -100,19 +112,42 @@ export default function MatchPage() {
     );
   }
 
-  // Only show matching flow if fully authenticated and onboarded
-  if (!isAuthenticated || !hasCompletedOnboarding) {
+  // Show opt-in screen for unauthenticated users
+  if (showOptIn) {
     return (
-      <>
-        {showOnboarding && (
-          <OnboardingModal
-            isOpen={showOnboarding}
-            onClose={() => router.push('/')}
-            onComplete={handleOnboardingComplete}
-            originalAction="match with compatible people"
-          />
-        )}
-      </>
+      <div className="min-h-screen bg-[#F5F0E6] flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <h1 className="text-6xl font-libre-bodoni text-[#5E1C1D] text-center font-bold mb-8">
+            cove
+          </h1>
+          <div className="bg-white rounded-3xl p-8 shadow-sm">
+            <h2 className="font-libre-bodoni text-2xl text-[#5E1C1D] font-semibold mb-4 text-center">
+              welcome to matching
+            </h2>
+            <p className="font-libre-bodoni text-base text-[#5E1C1D] mb-6 text-center">
+              let's find your perfect match! we'll ask you a few questions to understand your preferences and then match you with like-minded people.
+            </p>
+            <button
+              onClick={handleOptInClick}
+              className="w-full bg-[#5E1C1D] text-white font-libre-bodoni text-lg font-medium py-4 rounded-2xl hover:bg-opacity-90 transition-all"
+            >
+              get started
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show onboarding modal if needed
+  if (showOnboarding) {
+    return (
+      <OnboardingModal
+        isOpen={showOnboarding}
+        onClose={() => router.push('/')}
+        onComplete={handleOnboardingComplete}
+        originalAction="match with compatible people"
+      />
     );
   }
 

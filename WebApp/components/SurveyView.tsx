@@ -164,6 +164,36 @@ export default function SurveyView({ onComplete }: SurveyViewProps) {
     }
   };
 
+  // Show loading screen when submitting
+  if (isSubmitting) {
+    return (
+      <div className="min-h-screen bg-[#F5F0E6] flex items-center justify-center p-4">
+        <div className="w-full max-w-md text-center">
+          {/* Cove logo */}
+          <h1 className="text-6xl font-libre-bodoni text-[#5E1C1D] text-center font-bold mb-8">
+            cove
+          </h1>
+
+          {/* Loading card */}
+          <div className="bg-[#5E1C1D] rounded-3xl p-8 min-h-[500px] flex flex-col items-center justify-center">
+            <div className="flex flex-col items-center">
+              {/* Loading spinner */}
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-white border-t-transparent mb-6"></div>
+              
+              {/* Loading text */}
+              <h2 className="font-libre-bodoni text-2xl text-white font-semibold mb-2">
+                submitting your responses...
+              </h2>
+              <p className="font-libre-bodoni text-base text-white opacity-80">
+                thank you for completing the survey!
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#F5F0E6] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
