@@ -139,7 +139,7 @@ export default function PoolStatusView({ onMatchFound }: PoolStatusViewProps) {
           <div className="text-center mb-8">
             <p className="font-libre-bodoni text-xl text-[#5E1C1D] mb-2">
               {userName
-                ? `${userName}, we are finding your match. we will notify you if we find a good one!`
+                ? `${userName.split(' ')[0]}, we are finding your match. we will notify you if we find a good one!`
                 : 'we are finding your match. we will notify you if we find a good one!'}
             </p>
           </div>
