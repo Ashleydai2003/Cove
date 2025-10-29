@@ -43,7 +43,7 @@ struct PoolStatusView: View {
                                     
                                     Text(currentUserName.isEmpty ? 
                                          "we are finding your\nmatch. we will notify you when we have one!" :
-                                         "\(currentUserName), we are finding your\n match. we will notify you when we have one!")
+                                         "\(currentUserName.split(separator: " ").first ?? currentUserName), we are finding your\n match. we will notify you when we have one!")
                                         .font(.LibreBodoniSemiBold(size: 22))
                                         .foregroundColor(.white)
                                         .multilineTextAlignment(.center)
