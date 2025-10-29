@@ -55,26 +55,59 @@ export default function PoolStatusView({ onMatchFound }: PoolStatusViewProps) {
   };
 
   const parseIntention = () => {
-    if (!intention?.parsedJson) return { activity: '', timeAndLocation: '' };
+    // Try to parse from parsedJson first
+    if (intention?.parsedJson) {
+      const chips = typeof intention.parsedJson === 'string' 
+        ? JSON.parse(intention.parsedJson) 
+        : intention.parsedJson;
 
-    const chips = typeof intention.parsedJson === 'string' 
-      ? JSON.parse(intention.parsedJson) 
-      : intention.parsedJson;
+      // Get the first activity
+      const activities = chips.what?.activities || [];
+      const activity = activities[0] || '';
 
-    // Get the first activity
-    const activities = chips.what?.activities || [];
-    const activity = activities[0] || '';
+      // Format time windows
+      const timeWindows = chips.when || [];
+      const formattedTime = timeWindows.join(', ');
 
-    // Format time windows
-    const timeWindows = chips.when || [];
-    const formattedTime = timeWindows.join(', ');
+      // Get location
+      const location = chips.where || chips.location || '';
 
-    // Get location
-    const location = chips.where || chips.location || '';
+      const timeAndLocation = `${formattedTime}${location ? ` near ${location}` : ''}`;
 
-    const timeAndLocation = `${formattedTime}${location ? ` near ${location}` : ''}`;
+      return { activity, timeAndLocation };
+    }
 
-    return { activity, timeAndLocation };
+    // Fallback: parse from text field
+    if (intention?.text) {
+      const parts = intention.text.split(', ').map(p => p.trim());
+      
+      // Find activities (look for common activity keywords)
+      const activityKeywords = [
+        'sports', 'recreation', 'outdoors', 'music', 'performances', 
+        'cocktails', 'bars', 'food', 'fashion', 'arts', 'crafts'
+      ];
+      
+      const activities = parts.filter(part => 
+        activityKeywords.some(keyword => part.toLowerCase().includes(keyword))
+      );
+      
+      // Find time windows
+      const timeKeywords = ['friday', 'saturday', 'sunday', 'daytime', 'evening'];
+      const timeWindows = parts.filter(part => 
+        timeKeywords.some(keyword => part.toLowerCase().includes(keyword))
+      );
+      
+      // Find location (usually the last part that's not an activity or time)
+      const location = parts[parts.length - 1] || '';
+      
+      const activity = activities[0] || '';
+      const formattedTime = timeWindows.join(', ');
+      const timeAndLocation = `${formattedTime}${location ? ` near ${location}` : ''}`;
+
+      return { activity, timeAndLocation };
+    }
+
+    return { activity: '', timeAndLocation: '' };
   };
 
   const { activity, timeAndLocation } = parseIntention();
