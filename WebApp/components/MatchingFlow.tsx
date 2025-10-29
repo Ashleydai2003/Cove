@@ -10,7 +10,7 @@ interface MatchingFlowProps {
   userId: string;
 }
 
-type FlowState = 'loading' | 'optin' | 'survey' | 'intention' | 'pool' | 'matched';
+type FlowState = 'loading' | 'survey' | 'intention' | 'pool' | 'matched';
 
 export default function MatchingFlow({ userId }: MatchingFlowProps) {
   const [flowState, setFlowState] = useState<FlowState>('loading');
@@ -73,8 +73,8 @@ export default function MatchingFlow({ userId }: MatchingFlowProps) {
       if (hasCurrentMatch) {
         nextState = 'matched';
       } else if (!isSurveyComplete) {
-        // Show opt-in only if no survey completed AND no intention exists
-        nextState = hasActiveIntention ? 'pool' : 'optin';
+        // Show survey if not completed
+        nextState = 'survey';
       } else if (hasActiveIntention) {
         nextState = 'pool';
       } else {
@@ -117,10 +117,6 @@ export default function MatchingFlow({ userId }: MatchingFlowProps) {
     loadInitialState();
   };
 
-  const handleOptInComplete = () => {
-    console.log('✅ [MatchingFlow] Opt-in completed, showing survey');
-    setFlowState('survey');
-  };
 
   if (flowState === 'loading') {
     return (
@@ -135,30 +131,6 @@ export default function MatchingFlow({ userId }: MatchingFlowProps) {
 
   return (
     <div className="min-h-screen bg-[#F5F0E6]">
-      {flowState === 'optin' && (
-        <div className="min-h-screen bg-[#F5F0E6] flex items-center justify-center p-4">
-          <div className="w-full max-w-md">
-            <h1 className="text-6xl font-libre-bodoni text-[#5E1C1D] text-center font-bold mb-8">
-              cove
-            </h1>
-            <div className="bg-white rounded-3xl p-8 shadow-sm">
-              <h2 className="font-libre-bodoni text-2xl text-[#5E1C1D] font-semibold mb-4 text-center">
-                welcome to matching
-              </h2>
-              <p className="font-libre-bodoni text-base text-[#5E1C1D] mb-6 text-center">
-                let's find your perfect match! we'll ask you a few questions to understand your preferences and then match you with like-minded people.
-              </p>
-              <button
-                onClick={handleOptInComplete}
-                className="w-full bg-[#5E1C1D] text-white font-libre-bodoni text-lg font-medium py-4 rounded-2xl hover:bg-opacity-90 transition-all"
-              >
-                get started
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      
       {flowState === 'survey' && (
         <SurveyView onComplete={handleSurveyComplete} />
       )}

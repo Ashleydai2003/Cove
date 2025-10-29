@@ -15,34 +15,27 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { activities, timeWindows, vibe, notes } = body;
+    const { text, parsedJson } = body;
 
-    if (!activities || !Array.isArray(activities) || activities.length === 0) {
+    console.log('[Intention API] Request body:', { text, parsedJson });
+
+    if (!text || !parsedJson) {
       return NextResponse.json(
-        { message: 'invalid request: activities required' },
+        { message: 'invalid request: text and parsedJson required' },
         { status: 400 }
       );
     }
 
-    if (!timeWindows || !Array.isArray(timeWindows) || timeWindows.length === 0) {
-      return NextResponse.json(
-        { message: 'invalid request: time windows required' },
-        { status: 400 }
-      );
-    }
-
-    // Call backend API to submit intention
-    const backendResponse = await fetch(`${BACKEND_URL}/intention/submit`, {
+    // Call backend API to submit intention (backend expects "chips" not "parsedJson")
+    const backendResponse = await fetch(`${BACKEND_URL}/intention`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${authToken}`,
       },
       body: JSON.stringify({
-        activities,
-        timeWindows,
-        vibe: vibe || [],
-        notes: notes || ''
+        text,
+        chips: parsedJson  // Backend expects "chips" field
       }),
     });
 
