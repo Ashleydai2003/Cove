@@ -76,13 +76,6 @@ export default function IntentionComposer({ userCity, onComplete }: IntentionCom
         return [...prev, activity];
       }
     });
-    
-    // Move to time question after selecting at least one activity
-    if (!selectedActivities.includes(activity)) {
-      setTimeout(() => {
-        showActivitiesAfterSelection();
-      }, 500);
-    }
   };
 
   const showActivitiesAfterSelection = () => {
@@ -229,7 +222,7 @@ export default function IntentionComposer({ userCity, onComplete }: IntentionCom
               <div className="flex justify-start animate-fade-in">
                 <div className="max-w-[75%] px-6 py-4 rounded-2xl bg-[#5E1C1D] text-white shadow-sm">
                   <p className="font-libre-bodoni text-base">
-                    fantastic. now select the activity that excites you most, and we will match you with people who are on the same wavelength.
+                    fantastic. now select the activities that excite you, and we will match you with people who are on the same wavelength.
                   </p>
                 </div>
               </div>
@@ -252,6 +245,16 @@ export default function IntentionComposer({ userCity, onComplete }: IntentionCom
                       {activity}
                     </button>
                   ))}
+                  
+                  {/* Continue button (only show if at least one activity selected) */}
+                  {selectedActivities.length > 0 && (
+                    <button
+                      onClick={showActivitiesAfterSelection}
+                      className="w-full px-6 py-4 rounded-2xl font-libre-bodoni text-lg font-semibold bg-[#5E1C1D] text-white hover:bg-opacity-90 transition-all duration-200 mt-2"
+                    >
+                      continue
+                    </button>
+                  )}
                 </div>
               </div>
             )}

@@ -304,7 +304,12 @@ export async function handleGetIntentionStatus(
         status: 'active'
       },
       include: {
-        poolEntry: true
+        poolEntry: true,
+        user: {
+          include: {
+            profile: true
+          }
+        }
       }
     });
 
@@ -345,9 +350,11 @@ export async function handleGetIntentionStatus(
       statusCode: 200,
       body: JSON.stringify({
         hasIntention: true,
+        userName: intention.user.profile?.name || intention.user.name || 'there',
         intention: {
           id: intention.id,
           text: intention.text,
+          parsedJson: intention.parsedJson,
           validUntil: intention.validUntil.toISOString(),
           status: intention.status
         },
