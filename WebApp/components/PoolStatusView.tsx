@@ -79,7 +79,7 @@ export default function PoolStatusView({ onMatchFound }: PoolStatusViewProps) {
 
     // Fallback: parse from text field
     if (intention?.text) {
-      const parts = intention.text.split(', ').map(p => p.trim());
+      const parts = intention.text.split(', ').map((p: string) => p.trim());
       
       // Find activities (look for common activity keywords)
       const activityKeywords = [
