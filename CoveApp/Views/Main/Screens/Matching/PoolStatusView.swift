@@ -62,19 +62,21 @@ struct PoolStatusView: View {
                                 
                                 // User's chosen activities (bigger, bold font)
                                 VStack(alignment: .leading, spacing: 12) {
-                                    // Activities - render with smaller "or" separators
+                                    // Activities - render as bullet points
                                     let activities = getNormalizedActivities()
                                     if !activities.isEmpty {
-                                        HStack(alignment: .bottom, spacing: 0) {
+                                        VStack(alignment: .leading, spacing: 8) {
                                             ForEach(Array(activities.enumerated()), id: \.offset) { index, activity in
-                                                Text(activity)
-                                                    .font(.LibreBodoniSemiBold(size: 24))
-                                                    .foregroundColor(.white)
-                                                
-                                                if index < activities.count - 1 {
-                                                    Text(" or ")
-                                                        .font(.LibreBodoniRegular(size: 18))
-                                                        .foregroundColor(.white.opacity(0.6))
+                                                HStack(alignment: .top, spacing: 8) {
+                                                    Text("•")
+                                                        .font(.LibreBodoniRegular(size: 20))
+                                                        .foregroundColor(.white)
+                                                        .padding(.top, 2)
+                                                    
+                                                    Text(activity)
+                                                        .font(.LibreBodoniRegular(size: 20))
+                                                        .foregroundColor(.white)
+                                                        .multilineTextAlignment(.leading)
                                                 }
                                             }
                                         }
