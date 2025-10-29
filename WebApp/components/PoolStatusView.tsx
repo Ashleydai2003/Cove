@@ -150,20 +150,19 @@ export default function PoolStatusView({ onMatchFound }: PoolStatusViewProps) {
           {/* Intention details */}
           <div>
             <h3 className="font-libre-bodoni text-lg text-[#5E1C1D] font-semibold mb-4">
-              chosen intention & activity
+              chosen intention & activities
             </h3>
 
             {activity && (
               <div className="mb-4">
-                <div className="font-libre-bodoni text-2xl text-[#5E1C1D] font-bold mb-2">
-                  {activity.split(' or ').map((part: string, index: number) => (
-                    <span key={index}>
-                      {part}
-                      {index < activity.split(' or ').length - 1 && (
-                        <span className="text-lg font-normal opacity-60"> or </span>
-                      )}
-                    </span>
-                  ))}
+                <div className="font-libre-bodoni text-xl text-[#5E1C1D] font-medium mb-2">
+                  <ul className="list-disc list-inside space-y-1">
+                    {activity.split(' or ').map((part: string, index: number) => (
+                      <li key={index} className="ml-2">
+                        {part}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
                 <p className="font-libre-bodoni text-base text-[#5E1C1D] opacity-70">
                   {timeAndLocation}
