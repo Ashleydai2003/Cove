@@ -62,13 +62,23 @@ struct PoolStatusView: View {
                                 
                                 // User's chosen activities (bigger, bold font)
                                 VStack(alignment: .leading, spacing: 12) {
-                                    // Activities - render as a single bold line
+                                    // Activities - render with smaller "or" separators
                                     let activities = getNormalizedActivities()
                                     if !activities.isEmpty {
-                                        Text(activities.joined(separator: " or "))
-                                            .font(.LibreBodoniSemiBold(size: 24))
-                                            .foregroundColor(.white)
-                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                        HStack(alignment: .bottom, spacing: 0) {
+                                            ForEach(Array(activities.enumerated()), id: \.offset) { index, activity in
+                                                Text(activity)
+                                                    .font(.LibreBodoniSemiBold(size: 24))
+                                                    .foregroundColor(.white)
+                                                
+                                                if index < activities.count - 1 {
+                                                    Text(" or ")
+                                                        .font(.LibreBodoniRegular(size: 18))
+                                                        .foregroundColor(.white.opacity(0.6))
+                                                }
+                                            }
+                                        }
+                                        .frame(maxWidth: .infinity, alignment: .leading)
                                     }
 
                                     // Time windows + location - one concise line

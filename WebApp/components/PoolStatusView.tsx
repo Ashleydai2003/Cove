@@ -139,8 +139,8 @@ export default function PoolStatusView({ onMatchFound }: PoolStatusViewProps) {
           <div className="text-center mb-8">
             <p className="font-libre-bodoni text-xl text-[#5E1C1D] mb-2">
               {userName
-                ? `${userName}, we are finding your match. we will notify you when we have one!`
-                : 'we are finding your match. we will notify you when we have one!'}
+                ? `${userName}, we are finding your match. we will notify you if we find a good one!`
+                : 'we are finding your match. we will notify you if we find a good one!'}
             </p>
           </div>
 
@@ -155,9 +155,16 @@ export default function PoolStatusView({ onMatchFound }: PoolStatusViewProps) {
 
             {activity && (
               <div className="mb-4">
-                <p className="font-libre-bodoni text-2xl text-[#5E1C1D] font-bold mb-2">
-                  {activity}
-                </p>
+                <div className="font-libre-bodoni text-2xl text-[#5E1C1D] font-bold mb-2">
+                  {activity.split(' or ').map((part: string, index: number) => (
+                    <span key={index}>
+                      {part}
+                      {index < activity.split(' or ').length - 1 && (
+                        <span className="text-lg font-normal opacity-60"> or </span>
+                      )}
+                    </span>
+                  ))}
+                </div>
                 <p className="font-libre-bodoni text-base text-[#5E1C1D] opacity-70">
                   {timeAndLocation}
                 </p>
