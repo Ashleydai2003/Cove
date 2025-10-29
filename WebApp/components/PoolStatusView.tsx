@@ -87,13 +87,13 @@ export default function PoolStatusView({ onMatchFound }: PoolStatusViewProps) {
         'cocktails', 'bars', 'food', 'fashion', 'arts', 'crafts'
       ];
       
-      const activities = parts.filter(part => 
+      const activities = parts.filter((part: string) => 
         activityKeywords.some(keyword => part.toLowerCase().includes(keyword))
       );
       
       // Find time windows
       const timeKeywords = ['friday', 'saturday', 'sunday', 'daytime', 'evening'];
-      const timeWindows = parts.filter(part => 
+      const timeWindows = parts.filter((part: string) => 
         timeKeywords.some(keyword => part.toLowerCase().includes(keyword))
       );
       
