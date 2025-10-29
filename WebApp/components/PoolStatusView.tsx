@@ -61,9 +61,9 @@ export default function PoolStatusView({ onMatchFound }: PoolStatusViewProps) {
         ? JSON.parse(intention.parsedJson) 
         : intention.parsedJson;
 
-      // Get the first activity
+      // Get all activities
       const activities = chips.what?.activities || [];
-      const activity = activities[0] || '';
+      const activity = activities.join(' or ');
 
       // Format time windows
       const timeWindows = chips.when || [];
@@ -100,7 +100,7 @@ export default function PoolStatusView({ onMatchFound }: PoolStatusViewProps) {
       // Find location (usually the last part that's not an activity or time)
       const location = parts[parts.length - 1] || '';
       
-      const activity = activities[0] || '';
+      const activity = activities.join(' or ');
       const formattedTime = timeWindows.join(', ');
       const timeAndLocation = `${formattedTime}${location ? ` near ${location}` : ''}`;
 
