@@ -314,23 +314,17 @@ export async function handleCreateIntention(
       nextBatchEta.setUTCHours(nextBatchEta.getUTCHours() + 3);
     }
 
-    // Ensure parsedJson is properly serialized
-    const responseIntention = {
-      id: result.intention.id,
-      text: result.intention.text,
-      parsedJson: result.intention.parsedJson, // This is already a JS object from Prisma
-      validUntil: result.intention.validUntil.toISOString(),
-      status: result.intention.status
-    };
-
-    console.log('📤 [Intention] Response parsedJson type:', typeof result.intention.parsedJson);
-    console.log('📤 [Intention] Response parsedJson value:', JSON.stringify(result.intention.parsedJson));
-
     return {
       statusCode: 201,
       body: JSON.stringify({
         message: 'Intention created successfully',
-        intention: responseIntention,
+        intention: {
+          id: result.intention.id,
+          text: result.intention.text,
+          parsedJson: result.intention.parsedJson,
+          validUntil: result.intention.validUntil.toISOString(),
+          status: result.intention.status
+        },
         poolEntry: {
           tier: result.poolEntry.tier,
           nextBatchEta: nextBatchEta.toISOString()
@@ -413,9 +407,6 @@ export async function handleGetIntentionStatus(
       }
     });
 
-    console.log('📤 [IntentionStatus] parsedJson type:', typeof intention.parsedJson);
-    console.log('📤 [IntentionStatus] parsedJson value:', JSON.stringify(intention.parsedJson));
-
     return {
       statusCode: 200,
       body: JSON.stringify({
@@ -424,7 +415,7 @@ export async function handleGetIntentionStatus(
         intention: {
           id: intention.id,
           text: intention.text,
-          parsedJson: intention.parsedJson, // Already a JS object from Prisma
+          parsedJson: intention.parsedJson,
           validUntil: intention.validUntil.toISOString(),
           status: intention.status
         },

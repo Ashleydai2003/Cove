@@ -210,39 +210,34 @@ struct PoolStatusView: View {
     }
     
     private func parseIntentionFromParsedJson(_ intention: Intention) -> (intention: String, activities: [String], availability: [String], location: String)? {
-        if let json = intention.parsedJson?.value as? [String: Any] {
-            var intentionType: String?
-            var activities: [String] = []
-            var availability: [String] = []
-            var location: String = ""
-            
-            // CURRENT STRUCTURE: { who: {}, what: { intention, activities }, when: [], where: "" }
-            if let what = json["what"] as? [String: Any],
-               let intent = what["intention"] as? String,
-               let acts = what["activities"] as? [String] {
-                intentionType = intent
-                activities = acts
-                availability = json["when"] as? [String] ?? []
-                location = json["where"] as? String ?? ""
-            }
-            // LEGACY SUPPORT: Old format with what.notes
-            // { who: {}, what: { notes, activities }, when: [], location: "" }
-            else if let what = json["what"] as? [String: Any],
-                    let notes = what["notes"] as? String,
-                    let acts = what["activities"] as? [String] {
-                // Extract intention from notes
-                intentionType = notes.lowercased().contains("dating") || notes.lowercased().contains("romantic") ? "romantic" : "friends"
-                activities = acts
-                availability = json["when"] as? [String] ?? []
-                location = json["location"] as? String ?? ""
-            }
-            
-            if let finalIntention = intentionType, !activities.isEmpty {
-                return (finalIntention, activities, availability, location)
-            }
+        guard let json = intention.parsedJson?.value as? [String: Any] else { return nil }
+        
+        var intentionType: String?
+        var activities: [String] = []
+        var availability: [String] = []
+        var location: String = ""
+        
+        // Current format: { who: {}, what: { intention, activities }, when: [], where: "" }
+        if let what = json["what"] as? [String: Any],
+           let intent = what["intention"] as? String,
+           let acts = what["activities"] as? [String] {
+            intentionType = intent
+            activities = acts
+            availability = json["when"] as? [String] ?? []
+            location = json["where"] as? String ?? ""
+        }
+        // Legacy format: { who: {}, what: { notes, activities }, when: [], location: "" }
+        else if let what = json["what"] as? [String: Any],
+                let notes = what["notes"] as? String,
+                let acts = what["activities"] as? [String] {
+            intentionType = notes.lowercased().contains("dating") || notes.lowercased().contains("romantic") ? "romantic" : "friends"
+            activities = acts
+            availability = json["when"] as? [String] ?? []
+            location = json["location"] as? String ?? ""
         }
         
-        return nil
+        guard let finalIntention = intentionType, !activities.isEmpty else { return nil }
+        return (finalIntention, activities, availability, location)
     }
 
 }

@@ -52,5 +52,6 @@ export {
   handleGetAllUsers,
   handleToggleSuperadmin,
   handleGetAllMatches,
-  handleGetUserMatchingDetails
+  handleGetUserMatchingDetails,
+  handleGetUnmatchedUsers
 } from './admin';

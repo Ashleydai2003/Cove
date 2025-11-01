@@ -7,22 +7,53 @@ class AdminModel: ObservableObject {
     @Published var matches: [AdminMatch] = []
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
+    @Published var hasMoreUsers: Bool = true
+    @Published var hasMoreMatches: Bool = true
     
-    /// Fetch all users (superadmin only)
-    func fetchUsers() {
+    private var currentUserPage = 0
+    private var currentMatchPage = 0
+    private let pageSize = 20
+    
+    /// Fetch users with pagination (superadmin only)
+    func fetchUsers(refresh: Bool = false) {
+        // If refreshing, reset pagination
+        if refresh {
+            currentUserPage = 0
+            users = []
+            hasMoreUsers = true
+        }
+        
+        // Don't fetch if already loading or no more data
+        guard !isLoading && hasMoreUsers else { return }
+        
         isLoading = true
         errorMessage = nil
         
+        let parameters: [String: Any] = [
+            "page": currentUserPage,
+            "limit": pageSize
+        ]
+        
         NetworkManager.shared.get(
-            endpoint: "/admin/users"
+            endpoint: "/admin/users",
+            parameters: parameters
         ) { (result: Result<AdminUsersResponse, NetworkError>) in
             DispatchQueue.main.async {
                 self.isLoading = false
                 
                 switch result {
                 case .success(let response):
-                    self.users = response.users
-                    print("✅ Fetched \(response.count) users")
+                    if refresh {
+                        self.users = response.users
+                    } else {
+                        self.users.append(contentsOf: response.users)
+                    }
+                    
+                    // Check if there are more users to load
+                    self.hasMoreUsers = response.users.count == self.pageSize
+                    self.currentUserPage += 1
+                    
+                    print("✅ Fetched \(response.users.count) users (page \(self.currentUserPage), total: \(self.users.count))")
                 case .failure(let error):
                     self.errorMessage = "Failed to load users: \(error.localizedDescription)"
                     print("❌ Failed to fetch users: \(error)")
@@ -60,21 +91,46 @@ class AdminModel: ObservableObject {
         }
     }
     
-    /// Fetch all matches (superadmin only)
-    func fetchMatches() {
+    /// Fetch matches with pagination (superadmin only)
+    func fetchMatches(refresh: Bool = false) {
+        // If refreshing, reset pagination
+        if refresh {
+            currentMatchPage = 0
+            matches = []
+            hasMoreMatches = true
+        }
+        
+        // Don't fetch if already loading or no more data
+        guard !isLoading && hasMoreMatches else { return }
+        
         isLoading = true
         errorMessage = nil
         
+        let parameters: [String: Any] = [
+            "page": currentMatchPage,
+            "limit": pageSize
+        ]
+        
         NetworkManager.shared.get(
-            endpoint: "/admin/matches"
+            endpoint: "/admin/matches",
+            parameters: parameters
         ) { (result: Result<AdminMatchesResponse, NetworkError>) in
             DispatchQueue.main.async {
                 self.isLoading = false
                 
                 switch result {
                 case .success(let response):
-                    self.matches = response.matches
-                    print("✅ Fetched \(response.count) matches")
+                    if refresh {
+                        self.matches = response.matches
+                    } else {
+                        self.matches.append(contentsOf: response.matches)
+                    }
+                    
+                    // Check if there are more matches to load
+                    self.hasMoreMatches = response.matches.count == self.pageSize
+                    self.currentMatchPage += 1
+                    
+                    print("✅ Fetched \(response.matches.count) matches (page \(self.currentMatchPage), total: \(self.matches.count))")
                 case .failure(let error):
                     self.errorMessage = "Failed to load matches: \(error.localizedDescription)"
                     print("❌ Failed to fetch matches: \(error)")
@@ -183,6 +239,18 @@ struct AdminMatchMember: Codable, Identifiable {
 
 struct AdminMatchesResponse: Codable {
     let matches: [AdminMatch]
+    let count: Int
+}
+
+// MARK: - Unmatched Users Response
+
+struct UnmatchedUserInfo: Codable {
+    let user: AdminUserInfo
+    let activeIntention: AdminIntention?
+}
+
+struct UnmatchedUsersResponse: Codable {
+    let users: [UnmatchedUserInfo]
     let count: Int
 }
 

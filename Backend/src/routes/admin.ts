@@ -59,7 +59,14 @@ export const handleGetAllUsers = async (event: APIGatewayProxyEvent): Promise<AP
 
     console.log(`[Admin] Superadmin ${userId} accessing user list`);
 
-    // Step 5: Fetch all users with relevant info
+    // Step 5: Get pagination parameters
+    const page = parseInt(event.queryStringParameters?.page || '0');
+    const limit = parseInt(event.queryStringParameters?.limit || '20');
+    const skip = page * limit;
+
+    console.log(`[Admin] Fetching users - page: ${page}, limit: ${limit}, skip: ${skip}`);
+
+    // Step 6: Fetch users with pagination
     const users = await prisma.user.findMany({
       select: {
         id: true,
@@ -79,10 +86,12 @@ export const handleGetAllUsers = async (event: APIGatewayProxyEvent): Promise<AP
       },
       orderBy: {
         createdAt: 'desc'
-      }
+      },
+      skip,
+      take: limit
     });
 
-    // Step 6: Format the response
+    // Step 7: Format the response
     const formattedUsers = users.map(user => ({
       id: user.id,
       name: user.name || 'N/A',
@@ -246,7 +255,14 @@ export const handleGetAllMatches = async (event: APIGatewayProxyEvent): Promise<
 
     console.log(`[Admin] Superadmin ${userId} accessing matches list`);
 
-    // Step 4: Fetch all matches with members
+    // Step 4: Get pagination parameters
+    const page = parseInt(event.queryStringParameters?.page || '0');
+    const limit = parseInt(event.queryStringParameters?.limit || '20');
+    const skip = page * limit;
+
+    console.log(`[Admin] Fetching matches - page: ${page}, limit: ${limit}, skip: ${skip}`);
+
+    // Step 5: Fetch matches with pagination
     const matches = await prisma.match.findMany({
       include: {
         members: {
@@ -270,7 +286,9 @@ export const handleGetAllMatches = async (event: APIGatewayProxyEvent): Promise<
       },
       orderBy: {
         createdAt: 'desc'
-      }
+      },
+      skip,
+      take: limit
     });
 
     // Step 5: Format the response
@@ -426,9 +444,6 @@ export const handleGetUserMatchingDetails = async (event: APIGatewayProxyEvent):
     });
 
     // Step 9: Format the response
-    console.log('📤 [AdminUserDetails] Active intention parsedJson type:', typeof activeIntention?.parsedJson);
-    console.log('📤 [AdminUserDetails] Active intention parsedJson value:', JSON.stringify(activeIntention?.parsedJson));
-
     const response = {
       user: {
         id: user.id,
@@ -446,7 +461,7 @@ export const handleGetUserMatchingDetails = async (event: APIGatewayProxyEvent):
       activeIntention: activeIntention ? {
         id: activeIntention.id,
         text: activeIntention.text,
-        parsedJson: activeIntention.parsedJson, // Already a JS object from Prisma
+        parsedJson: activeIntention.parsedJson,
         status: activeIntention.status,
         createdAt: activeIntention.createdAt.toISOString(),
         validUntil: activeIntention.validUntil.toISOString(),
@@ -458,7 +473,7 @@ export const handleGetUserMatchingDetails = async (event: APIGatewayProxyEvent):
       pastIntentions: pastIntentions.map(i => ({
         id: i.id,
         text: i.text,
-        parsedJson: i.parsedJson, // Already a JS object from Prisma
+        parsedJson: i.parsedJson,
         status: i.status,
         createdAt: i.createdAt.toISOString(),
         validUntil: i.validUntil.toISOString()
@@ -475,6 +490,146 @@ export const handleGetUserMatchingDetails = async (event: APIGatewayProxyEvent):
       statusCode: 500,
       body: JSON.stringify({
         message: 'Error fetching user matching details',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      })
+    };
+  }
+};
+
+/**
+ * GET /admin/unmatched-users
+ * Fetch users with active intentions but no matches (paginated)
+ */
+export const handleGetUnmatchedUsers = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+  try {
+    if (event.httpMethod !== 'GET') {
+      return {
+        statusCode: 405,
+        body: JSON.stringify({
+          message: 'Method not allowed. Only GET requests are accepted.'
+        })
+      };
+    }
+
+    // Authenticate the request
+    const authResult = await authMiddleware(event);
+    if ('statusCode' in authResult) {
+      return authResult;
+    }
+
+    const userId = authResult.user.uid;
+
+    // Initialize database connection
+    const prisma = await initializeDatabase();
+
+    // STRICT CHECK - Verify user is superadmin
+    const isSuperadmin = await verifySuperadmin(userId);
+    if (!isSuperadmin) {
+      console.log(`[Admin] Unauthorized unmatched users access attempt by user ${userId}`);
+      return {
+        statusCode: 403,
+        body: JSON.stringify({
+          message: 'Forbidden. Superadmin access required.'
+        })
+      };
+    }
+
+    console.log(`[Admin] Superadmin ${userId} accessing unmatched users`);
+
+    // Get pagination parameters
+    const page = parseInt(event.queryStringParameters?.page || '0');
+    const limit = parseInt(event.queryStringParameters?.limit || '20');
+    const skip = page * limit;
+
+    console.log(`[Admin] Fetching unmatched users - page: ${page}, limit: ${limit}, skip: ${skip}`);
+
+    console.log(`[Admin] Querying pool entries...`);
+    
+    // Fetch pool entries with pagination - having a pool entry means they're unmatched
+    const poolEntries = await prisma.poolEntry.findMany({
+      select: {
+        intentionId: true,
+        tier: true,
+        joinedAt: true,
+        intention: {
+          select: {
+            id: true,
+            userId: true,
+            text: true,
+            parsedJson: true,
+            status: true,
+            createdAt: true,
+            validUntil: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+                phone: true,
+                profile: {
+                  select: {
+                    age: true,
+                    city: true,
+                    almaMater: true
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      where: {
+        intention: {
+          status: 'active'
+        }
+      },
+      orderBy: {
+        tier: 'desc'
+      },
+      skip,
+      take: limit
+    });
+
+    console.log(`[Admin] Found ${poolEntries.length} pool entries`);
+    
+    // Format the response
+    const formattedUsers = poolEntries.map(entry => ({
+      user: {
+        id: entry.intention.user.id,
+        name: entry.intention.user.name || 'N/A',
+        phone: entry.intention.user.phone,
+        age: entry.intention.user.profile?.age || null,
+        city: entry.intention.user.profile?.city || null,
+        almaMater: entry.intention.user.profile?.almaMater || null
+      },
+      activeIntention: {
+        id: entry.intention.id,
+        text: entry.intention.text,
+        parsedJson: entry.intention.parsedJson,
+        status: entry.intention.status,
+        createdAt: entry.intention.createdAt.toISOString(),
+        validUntil: entry.intention.validUntil.toISOString(),
+        poolEntry: {
+          tier: entry.tier,
+          joinedAt: entry.joinedAt.toISOString()
+        }
+      }
+    }));
+
+    console.log(`[Admin] Returning ${formattedUsers.length} unmatched users`);
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        users: formattedUsers,
+        count: formattedUsers.length
+      })
+    };
+  } catch (error) {
+    console.error('Admin get unmatched users error:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        message: 'Error fetching unmatched users',
         error: error instanceof Error ? error.message : 'Unknown error'
       })
     };

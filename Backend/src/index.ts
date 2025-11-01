@@ -82,6 +82,7 @@ import {
   handleToggleSuperadmin,
   handleGetAllMatches,
   handleGetUserMatchingDetails,
+  handleGetUnmatchedUsers,
 } from './routes';
 
 export const handler = async (
@@ -258,6 +259,8 @@ export const handler = async (
         return handleGetAllMatches(event);
       case '/admin/user-details':
         return handleGetUserMatchingDetails(event);
+      case '/admin/unmatched-users':
+        return handleGetUnmatchedUsers(event);
       default:
         // Handle dynamic AI Matching routes with path parameters
         if (event.path.startsWith('/intention/') && event.httpMethod === 'DELETE') {

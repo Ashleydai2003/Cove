@@ -6,7 +6,7 @@ struct AdminPanelView: View {
     @State private var selectedTab: AdminTab = .users
     @State private var selectedUserId: String?
     @State private var showingUserDetails = false
-    @State private var showingUnmatchedUsers = false
+    @State private var showingUnmatchedUsersPage = false
     
     enum AdminTab: String, CaseIterable {
         case users = "users"
@@ -38,9 +38,9 @@ struct AdminPanelView: View {
                     
                     Button(action: {
                         if selectedTab == .users {
-                            adminModel.fetchUsers()
+                            adminModel.fetchUsers(refresh: true)
                         } else {
-                            adminModel.fetchMatches()
+                            adminModel.fetchMatches(refresh: true)
                         }
                     }) {
                         Image(systemName: "arrow.clockwise")
@@ -89,14 +89,8 @@ struct AdminPanelView: View {
                 UserDetailsSheet(userId: userId, adminModel: adminModel)
             }
         }
-        .sheet(isPresented: $showingUnmatchedUsers) {
-            UnmatchedUsersSheet(adminModel: adminModel, onUserTap: { userId in
-                showingUnmatchedUsers = false
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                    selectedUserId = userId
-                    showingUserDetails = true
-                }
-            })
+        .fullScreenCover(isPresented: $showingUnmatchedUsersPage) {
+            UnmatchedUsersPage(adminModel: adminModel)
         }
         .onAppear {
             adminModel.fetchUsers()
@@ -128,7 +122,7 @@ struct AdminPanelView: View {
                     .padding(.horizontal, 32)
                 
                 Button(action: {
-                    adminModel.fetchUsers()
+                    adminModel.fetchUsers(refresh: true)
                 }) {
                     Text("retry")
                         .font(Fonts.libreBodoni(size: 16))
@@ -152,6 +146,21 @@ struct AdminPanelView: View {
                 LazyVStack(spacing: 12) {
                     ForEach(adminModel.users) { user in
                         UserCard(user: user, adminModel: adminModel)
+                            .onAppear {
+                                // Load more when reaching the last item
+                                let currentIndex = adminModel.users.firstIndex(where: { $0.id == user.id }) ?? 0
+                                let lastIndex = adminModel.users.count - 1
+                                
+                                if currentIndex == lastIndex && adminModel.hasMoreUsers && !adminModel.isLoading {
+                                    adminModel.fetchUsers()
+                                }
+                            }
+                    }
+                    
+                    // Loading indicator at the bottom
+                    if adminModel.isLoading && !adminModel.users.isEmpty {
+                        ProgressView()
+                            .padding()
                     }
                 }
                 .padding(.horizontal, 16)
@@ -169,7 +178,7 @@ struct AdminPanelView: View {
         VStack(spacing: 0) {
             // Unmatched Users Button
             Button(action: {
-                showingUnmatchedUsers = true
+                showingUnmatchedUsersPage = true
             }) {
                 HStack {
                     Image(systemName: "person.2.slash")
@@ -215,7 +224,7 @@ struct AdminPanelView: View {
                     .padding(.horizontal, 32)
                 
                 Button(action: {
-                    adminModel.fetchMatches()
+                    adminModel.fetchMatches(refresh: true)
                 }) {
                     Text("retry")
                         .font(Fonts.libreBodoni(size: 16))
@@ -248,6 +257,21 @@ struct AdminPanelView: View {
                                 showingUserDetails = true
                             }
                         )
+                        .onAppear {
+                            // Load more when reaching the last item
+                            let currentIndex = adminModel.matches.firstIndex(where: { $0.id == match.id }) ?? 0
+                            let lastIndex = adminModel.matches.count - 1
+                            
+                            if currentIndex == lastIndex && adminModel.hasMoreMatches && !adminModel.isLoading {
+                                adminModel.fetchMatches()
+                            }
+                        }
+                    }
+                    
+                    // Loading indicator at the bottom
+                    if adminModel.isLoading && !adminModel.matches.isEmpty {
+                        ProgressView()
+                            .padding()
                     }
                 }
                 .padding(.horizontal, 16)
@@ -695,41 +719,6 @@ private struct UserDetailsSheet: View {
             switch result {
             case .success(let details):
                 userDetails = details
-                
-                // DEBUG: Log intention data
-                if let activeIntention = details.activeIntention {
-                    print("🔍 [AdminPanel] Active Intention Debug:")
-                    print("  - ID: \(activeIntention.id)")
-                    print("  - Text: \(activeIntention.text)")
-                    print("  - Status: \(activeIntention.status)")
-                    print("  - ParsedJson: \(String(describing: activeIntention.parsedJson))")
-                    
-                    if let json = activeIntention.parsedJson?.value {
-                        print("  - ParsedJson Type: \(type(of: json))")
-                        print("  - ParsedJson Value: \(json)")
-                        
-                        if let jsonString = json as? String {
-                            print("  ⚠️  ParsedJson is a STRING (likely empty or legacy format): '\(jsonString)'")
-                            if jsonString.isEmpty {
-                                print("  ℹ️  This is an OLD intention created before the new format.")
-                                print("  ℹ️  Delete and recreate the intention to see structured data.")
-                            }
-                        } else if let dict = json as? [String: Any] {
-                            print("  ✅ ParsedJson is a DICT (new format):")
-                            for (key, value) in dict {
-                                print("    - \(key): \(value) [\(type(of: value))]")
-                            }
-                        }
-                    }
-                    
-                    if let poolEntry = activeIntention.poolEntry {
-                        print("  - Pool Entry Tier: \(poolEntry.tier)")
-                        print("  - Pool Entry Joined At: \(poolEntry.joinedAt)")
-                    }
-                } else {
-                    print("🔍 [AdminPanel] No active intention")
-                }
-                
             case .failure(let error):
                 errorMessage = "Failed to load details: \(error.localizedDescription)"
                 print("❌ [AdminPanel] Failed to load user details: \(error)")
@@ -868,39 +857,34 @@ private struct ActiveIntentionCard: View {
     }
     
     private func parseIntentionJson(_ parsedJson: AnyCodable?, textFallback: String) -> (intention: String, activities: [String], timeWindows: [String], location: String)? {
-        if let json = parsedJson?.value as? [String: Any] {
-            var intentionType: String?
-            var activities: [String] = []
-            var availability: [String] = []
-            var location: String = ""
-            
-            // CURRENT STRUCTURE: { who: {}, what: { intention, activities }, when: [], where: "" }
-            if let what = json["what"] as? [String: Any],
-               let intent = what["intention"] as? String,
-               let acts = what["activities"] as? [String] {
-                intentionType = intent
-                activities = acts
-                availability = json["when"] as? [String] ?? []
-                location = json["where"] as? String ?? ""
-            }
-            // LEGACY SUPPORT: Old format with what.notes
-            // { who: {}, what: { notes, activities }, when: [], location: "" }
-            else if let what = json["what"] as? [String: Any],
-                    let notes = what["notes"] as? String,
-                    let acts = what["activities"] as? [String] {
-                // Extract intention from notes
-                intentionType = notes.lowercased().contains("dating") || notes.lowercased().contains("romantic") ? "romantic" : "friends"
-                activities = acts
-                availability = json["when"] as? [String] ?? []
-                location = json["location"] as? String ?? ""
-            }
-            
-            if let finalIntention = intentionType {
-                return (finalIntention, activities, availability, location)
-            }
+        guard let json = parsedJson?.value as? [String: Any] else { return nil }
+        
+        var intentionType: String?
+        var activities: [String] = []
+        var availability: [String] = []
+        var location: String = ""
+        
+        // Current format: { who: {}, what: { intention, activities }, when: [], where: "" }
+        if let what = json["what"] as? [String: Any],
+           let intent = what["intention"] as? String,
+           let acts = what["activities"] as? [String] {
+            intentionType = intent
+            activities = acts
+            availability = json["when"] as? [String] ?? []
+            location = json["where"] as? String ?? ""
+        }
+        // Legacy format: { who: {}, what: { notes, activities }, when: [], location: "" }
+        else if let what = json["what"] as? [String: Any],
+                let notes = what["notes"] as? String,
+                let acts = what["activities"] as? [String] {
+            intentionType = notes.lowercased().contains("dating") || notes.lowercased().contains("romantic") ? "romantic" : "friends"
+            activities = acts
+            availability = json["when"] as? [String] ?? []
+            location = json["location"] as? String ?? ""
         }
         
-        return nil
+        guard let finalIntention = intentionType else { return nil }
+        return (finalIntention, activities, availability, location)
     }
 }
 
@@ -958,13 +942,17 @@ private struct UserInfoRow: View {
 
 // MARK: - Unmatched Users Sheet
 
-private struct UnmatchedUsersSheet: View {
+private struct UnmatchedUsersPage: View {
     @ObservedObject var adminModel: AdminModel
-    let onUserTap: (String) -> Void
     @Environment(\.dismiss) var dismiss
-    @State private var unmatchedUsers: [AdminUserDetails] = []
-    @State private var isLoading = true
+    @State private var unmatchedUsers: [UnmatchedUserInfo] = []
+    @State private var isLoading = false
     @State private var errorMessage: String?
+    @State private var hasMoreUsers = true
+    @State private var currentPage = 0
+    @State private var selectedUserId: String?
+    @State private var showingUserDetails = false
+    private let pageSize = 20
     
     var body: some View {
         ZStack {
@@ -973,27 +961,38 @@ private struct UnmatchedUsersSheet: View {
             VStack(spacing: 0) {
                 // Header
                 HStack {
+                    Button(action: {
+                        dismiss()
+                    }) {
+                        Image(systemName: "arrow.left")
+                            .font(.system(size: 20))
+                            .foregroundColor(Colors.primaryDark)
+                    }
+                    
                     Spacer()
+                    
                     Text("unmatched users in pool")
                         .font(.LibreBodoniSemiBold(size: 20))
                         .foregroundColor(Colors.primaryDark)
+                    
                     Spacer()
+                    
+                    Button(action: {
+                        loadUnmatchedUsers(refresh: true)
+                    }) {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.system(size: 20))
+                            .foregroundColor(Colors.primaryDark)
+                    }
+                    .disabled(isLoading)
                 }
                 .padding(.horizontal, 20)
-                .padding(.top, 20)
+                .padding(.top, 60)
                 .padding(.bottom, 20)
                 .background(Colors.background)
-                .overlay(alignment: .topTrailing) {
-                    Button("done") {
-                        dismiss()
-                    }
-                    .foregroundColor(Colors.primaryDark)
-                    .padding(.trailing, 20)
-                    .padding(.top, 20)
-                }
                 
                 // Content
-                if isLoading {
+                if isLoading && unmatchedUsers.isEmpty {
                     VStack(spacing: 20) {
                         ProgressView()
                             .scaleEffect(1.5)
@@ -1029,7 +1028,7 @@ private struct UnmatchedUsersSheet: View {
                     .frame(maxHeight: .infinity)
                 } else {
                     ScrollView {
-                        VStack(alignment: .leading, spacing: 16) {
+                        LazyVStack(alignment: .leading, spacing: 16) {
                             Text("\(unmatchedUsers.count) user\(unmatchedUsers.count == 1 ? "" : "s") waiting for matches")
                                 .font(.LibreBodoniItalic(size: 14))
                                 .foregroundColor(Colors.primaryDark.opacity(0.7))
@@ -1040,9 +1039,25 @@ private struct UnmatchedUsersSheet: View {
                                 UnmatchedUserCard(
                                     userDetails: details,
                                     onTap: {
-                                        onUserTap(details.user.id)
+                                        selectedUserId = details.user.id
+                                        showingUserDetails = true
                                     }
                                 )
+                                .onAppear {
+                                    // Load more when reaching the last item
+                                    let currentIndex = unmatchedUsers.firstIndex(where: { $0.user.id == details.user.id }) ?? 0
+                                    let lastIndex = unmatchedUsers.count - 1
+                                    
+                                    if currentIndex == lastIndex && hasMoreUsers && !isLoading {
+                                        loadUnmatchedUsers(refresh: false)
+                                    }
+                                }
+                            }
+                            
+                            // Loading indicator at the bottom
+                            if isLoading && !unmatchedUsers.isEmpty {
+                                ProgressView()
+                                    .padding()
                             }
                         }
                         .padding(.horizontal, 16)
@@ -1052,44 +1067,66 @@ private struct UnmatchedUsersSheet: View {
                 }
             }
         }
+        .sheet(isPresented: $showingUserDetails) {
+            if let userId = selectedUserId {
+                UserDetailsSheet(userId: userId, adminModel: adminModel)
+            }
+        }
         .onAppear {
-            loadUnmatchedUsers()
+            loadUnmatchedUsers(refresh: true)
         }
     }
     
-    private func loadUnmatchedUsers() {
+    private func loadUnmatchedUsers(refresh: Bool = true) {
+        // If refreshing, reset pagination
+        if refresh {
+            currentPage = 0
+            unmatchedUsers = []
+            hasMoreUsers = true
+        }
+        
+        // Don't fetch if already loading or no more data
+        guard !isLoading && hasMoreUsers else { 
+            print("⚠️ Skipping fetch - isLoading: \(isLoading), hasMoreUsers: \(hasMoreUsers)")
+            return 
+        }
+        
         isLoading = true
         errorMessage = nil
         
-        // Fetch all users with active intentions but no matches
-        Task {
-            var allUnmatched: [AdminUserDetails] = []
-            
-            for user in adminModel.users {
-                await withCheckedContinuation { continuation in
-                    adminModel.fetchUserDetails(userId: user.id) { result in
-                        switch result {
-                        case .success(let details):
-                            // Check if user has active intention but no match
-                            if details.activeIntention != nil && details.activeIntention?.poolEntry != nil {
-                                allUnmatched.append(details)
-                            }
-                        case .failure:
-                            break
-                        }
-                        continuation.resume()
+        let parameters: [String: Any] = [
+            "page": currentPage,
+            "limit": pageSize
+        ]
+        
+        print("🔄 Fetching unmatched users - page: \(currentPage), limit: \(pageSize)")
+        
+        NetworkManager.shared.get(
+            endpoint: "/admin/unmatched-users",
+            parameters: parameters
+        ) { [self] (result: Result<UnmatchedUsersResponse, NetworkError>) in
+            DispatchQueue.main.async { [self] in
+                self.isLoading = false
+                
+                switch result {
+                case .success(let response):
+                    print("✅ Received \(response.users.count) unmatched users from backend")
+                    
+                    if refresh {
+                        self.unmatchedUsers = response.users
+                    } else {
+                        self.unmatchedUsers.append(contentsOf: response.users)
                     }
+                    
+                    // Check if there are more users to load
+                    self.hasMoreUsers = response.users.count == self.pageSize
+                    self.currentPage += 1
+                    
+                    print("✅ Total unmatched users: \(self.unmatchedUsers.count), hasMore: \(self.hasMoreUsers)")
+                case .failure(let error):
+                    print("❌ Failed to fetch unmatched users: \(error)")
+                    self.errorMessage = "Failed to load unmatched users: \(error.localizedDescription)"
                 }
-            }
-            
-            await MainActor.run {
-                unmatchedUsers = allUnmatched.sorted { a, b in
-                    // Sort by tier (higher tier = waiting longer)
-                    let tierA = a.activeIntention?.poolEntry?.tier ?? 0
-                    let tierB = b.activeIntention?.poolEntry?.tier ?? 0
-                    return tierA > tierB
-                }
-                isLoading = false
             }
         }
     }
@@ -1098,7 +1135,7 @@ private struct UnmatchedUsersSheet: View {
 // MARK: - Unmatched User Card
 
 private struct UnmatchedUserCard: View {
-    let userDetails: AdminUserDetails
+    let userDetails: UnmatchedUserInfo
     let onTap: () -> Void
     
     var body: some View {
@@ -1252,3 +1289,4 @@ private struct UnmatchedUserCard: View {
 #Preview {
     AdminPanelView()
 }
+

@@ -55,46 +55,42 @@ export default function PoolStatusView({ onMatchFound }: PoolStatusViewProps) {
   };
 
   const parseIntention = () => {
-        if (intention?.parsedJson) {
-          try {
-            const chips = typeof intention.parsedJson === 'string' 
-              ? JSON.parse(intention.parsedJson) 
-              : intention.parsedJson;
+    if (!intention?.parsedJson) return { activity: '', timeAndLocation: '' };
+    
+    try {
+      const chips = typeof intention.parsedJson === 'string' 
+        ? JSON.parse(intention.parsedJson) 
+        : intention.parsedJson;
 
-            let activities: string[] = [];
-            let availability: string[] = [];
-            let location = '';
+      let activities: string[] = [];
+      let availability: string[] = [];
+      let location = '';
 
-            // CURRENT STRUCTURE: { who: {}, what: { intention, activities }, when: [], where: "" }
-            if (chips.what && chips.what.activities) {
-              activities = chips.what.activities;
-              availability = chips.when || [];
-              location = chips.where || '';
-            } 
-            // LEGACY SUPPORT: Old format with what.notes
-            // { who: {}, what: { notes, activities }, when: [], location: "" }
-            else if (chips.what && chips.what.notes && chips.what.activities) {
-              const notes = chips.what.notes.toLowerCase();
-              // intentionType = notes.includes('dating') || notes.includes('romantic') ? 'romantic' : 'friends';
-              activities = chips.what.activities;
-              availability = chips.when || [];
-              location = chips.location || '';
-            }
+      // Current format: { who: {}, what: { intention, activities }, when: [], where: "" }
+      if (chips.what?.activities) {
+        activities = chips.what.activities;
+        availability = chips.when || [];
+        location = chips.where || '';
+      } 
+      // Legacy format: { who: {}, what: { notes, activities }, when: [], location: "" }
+      else if (chips.what?.notes && chips.what?.activities) {
+        activities = chips.what.activities;
+        availability = chips.when || [];
+        location = chips.location || '';
+      }
 
-            if (activities.length > 0 || availability.length > 0) {
-              const activity = activities.join(' or ');
-              const formattedTime = availability.map((t: string) => t.toLowerCase()).join(', ');
-              const timeAndLocation = `${formattedTime}${location ? ` near ${location}` : ''}`;
+      if (activities.length > 0 || availability.length > 0) {
+        const activity = activities.join(' or ');
+        const formattedTime = availability.map((t: string) => t.toLowerCase()).join(', ');
+        const timeAndLocation = `${formattedTime}${location ? ` near ${location}` : ''}`;
+        return { activity, timeAndLocation };
+      }
+    } catch (e) {
+      console.error('Failed to parse parsedJson:', e);
+    }
 
-              return { activity, timeAndLocation };
-            }
-          } catch (e) {
-            console.log('Failed to parse parsedJson:', e);
-          }
-        }
-
-        return { activity: '', timeAndLocation: '' };
-      };
+    return { activity: '', timeAndLocation: '' };
+  };
 
   const { activity, timeAndLocation } = parseIntention();
 
