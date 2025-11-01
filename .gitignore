@@ -119,6 +119,8 @@ terraform.tfstate.backup
 **/firebase-data/
 **/firebase-debug.log*
 **/.firebaserc
+**/firebase-export-*/
+**/auth_export/
 
 # Backend specific
 **/build/Release
