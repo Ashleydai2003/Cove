@@ -61,10 +61,8 @@ struct CreateEventView: View {
                             dateTimeSection
                             locationSection
                                 .id("locationSection")
-                            ticketPriceSection
-                            paymentHandleSection
-                            spotsSection
                             visibilitySection
+                            advancedOptionsSection
                             // TODO: in the future we also want to have a privacy section
                             createButtonView
                         }
@@ -331,8 +329,9 @@ extension CreateEventView {
                                 .keyboardType(.alphabet)
                                 .focused($isAddressFocused)
                                 .onChange(of: searchAddress) { oldValue, newValue in
-                                    let trimmed = newValue.trimmingCharacters(in: .whitespaces)
-                                    searchAddress = trimmed
+                                    // Only trim leading and trailing whitespace, preserve internal spaces
+                                    let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
+                                    searchAddress = newValue // Keep the original input with spaces
                                     addressVM.searchQuery = trimmed
                                     showAddressDropdown = !trimmed.isEmpty
                                 }
@@ -447,10 +446,6 @@ extension CreateEventView {
         )
     }
 
-    // MARK: - Number of Spots Section
-    private var spotsSection: some View {
-        numberOfSpotsView
-    }
 
     // MARK: - Visibility Section
     private var visibilitySection: some View {
@@ -506,19 +501,305 @@ extension CreateEventView {
         }
     }
 
+    // MARK: - Advanced Options Section
+    private var advancedOptionsSection: some View {
+        VStack(spacing: 12) {
+            // Advanced Options Toggle
+            Button(action: {
+                viewModel.showAdvancedOptions.toggle()
+            }) {
+                HStack {
+                    Text("Advanced Options")
+                        .font(.LibreBodoniBold(size: 16))
+                        .foregroundColor(Colors.primaryDark)
+                    
+                    Spacer()
+                    
+                    Image(systemName: viewModel.showAdvancedOptions ? "chevron.up" : "chevron.down")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(Colors.primaryDark)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .background(
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(Color.white.opacity(0.6))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(Color.black.opacity(0.12), lineWidth: 1)
+                        )
+                )
+            }
+            .buttonStyle(.plain)
+            
+            // Advanced Options Content
+            Group {
+                if viewModel.showAdvancedOptions {
+                    VStack(spacing: 16) {
+                        // Payment Settings Section
+                        paymentSettingsSection
+                        
+                        // Tiered Pricing Toggle
+                        tieredPricingToggleSection
+                        
+                        // Tiered Pricing Options
+                        Group {
+                            if viewModel.useTieredPricing {
+                                tieredPricingSection
+                            }
+                        }
+                        .animation(.easeInOut(duration: 0.3), value: viewModel.useTieredPricing)
+                        
+                        // Number of Spots Section (only show if NOT using tiered pricing)
+                        Group {
+                            if !viewModel.useTieredPricing {
+                                numberOfSpotsSection
+                            }
+                        }
+                        .animation(.easeInOut(duration: 0.3), value: viewModel.useTieredPricing)
+                    }
+                }
+            }
+            .animation(.easeInOut(duration: 0.3), value: viewModel.showAdvancedOptions)
+        }
+        .padding(.top, 16)
+    }
+    
+    // MARK: - Payment Settings Section
+    private var paymentSettingsSection: some View {
+        VStack(spacing: 12) {
+            Text("Payment Settings")
+                .font(.LibreBodoniBold(size: 16))
+                .foregroundColor(Colors.primaryDark)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            
+            VStack(spacing: 12) {
+                // Payment Handle (always show)
+                paymentHandleSection
+                
+                // Ticket Price (only show when not using tiered pricing)
+                Group {
+                    if !viewModel.useTieredPricing {
+                        ticketPriceSection
+                    }
+                }
+                .animation(.easeInOut(duration: 0.3), value: viewModel.useTieredPricing)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Color.white.opacity(0.4))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(Color.black.opacity(0.08), lineWidth: 1)
+                )
+        )
+    }
+    
+    // MARK: - Tiered Pricing Toggle Section
+    private var tieredPricingToggleSection: some View {
+        Button(action: {
+            viewModel.useTieredPricing.toggle()
+        }) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Tiered Pricing")
+                        .font(.LibreBodoniBold(size: 16))
+                        .foregroundColor(Colors.primaryDark)
+                    
+                    Text("Set different prices for different ticket tiers")
+                        .font(.LibreBodoni(size: 12))
+                        .foregroundColor(Colors.primaryDark.opacity(0.7))
+                }
+                
+                Spacer()
+                
+                Toggle("", isOn: $viewModel.useTieredPricing)
+                    .toggleStyle(SwitchToggleStyle(tint: Colors.primaryDark))
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(Color.white.opacity(0.6))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(Color.black.opacity(0.12), lineWidth: 1)
+                    )
+            )
+        }
+        .buttonStyle(.plain)
+    }
+    
+    // MARK: - Tiered Pricing Section
+    private var tieredPricingSection: some View {
+        VStack(spacing: 16) {
+            // Section Header
+            HStack {
+                Text("Pricing Tiers")
+                    .font(.LibreBodoniBold(size: 16))
+                    .foregroundColor(Colors.primaryDark)
+                
+                Spacer()
+                
+                Text("Configure different pricing levels")
+                    .font(.LibreBodoni(size: 12))
+                    .foregroundColor(Colors.primaryDark.opacity(0.7))
+            }
+            .padding(.horizontal, 16)
+            
+            VStack(spacing: 12) {
+                // Early Bird Tier
+                tieredPricingRow(
+                    title: "Early Bird",
+                    price: $viewModel.earlyBirdPrice,
+                    spots: $viewModel.earlyBirdSpots,
+                    icon: "clock.fill",
+                    color: Colors.primaryDark
+                )
+                
+                // Regular Tier
+                tieredPricingRow(
+                    title: "Regular",
+                    price: $viewModel.regularPrice,
+                    spots: $viewModel.regularSpots,
+                    icon: "person.fill",
+                    color: Colors.primaryDark
+                )
+                
+                // Last Minute Tier
+                tieredPricingRow(
+                    title: "Last Minute",
+                    price: $viewModel.lastMinutePrice,
+                    spots: $viewModel.lastMinuteSpots,
+                    icon: "exclamationmark.triangle.fill",
+                    color: Colors.primaryDark
+                )
+            }
+            .padding(.horizontal, 16)
+        }
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Color.white.opacity(0.4))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(Color.black.opacity(0.08), lineWidth: 1)
+                )
+        )
+    }
+    
+    // MARK: - Tiered Pricing Row
+    private func tieredPricingRow(title: String, price: Binding<String>, spots: Binding<String>, icon: String, color: Color) -> some View {
+        VStack(spacing: 12) {
+            HStack {
+                Image(systemName: icon)
+                    .foregroundColor(color)
+                    .font(.system(size: 16, weight: .medium))
+                
+                Text(title)
+                    .font(.LibreBodoniBold(size: 16))
+                    .foregroundColor(Colors.primaryDark)
+                
+                Spacer()
+            }
+            
+            HStack(spacing: 12) {
+                // Price Input
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Price")
+                        .font(.LibreBodoni(size: 12))
+                        .foregroundColor(Colors.primaryDark.opacity(0.7))
+                    
+                    HStack {
+                        Text("$")
+                            .font(.LibreBodoniBold(size: 16))
+                            .foregroundColor(Colors.primaryDark)
+                        
+                        TextField("0.00", text: price)
+                            .font(.LibreBodoniBold(size: 16))
+                            .foregroundColor(Colors.primaryDark)
+                            .keyboardType(.decimalPad)
+                            .onChange(of: price.wrappedValue) { _, newValue in
+                                price.wrappedValue = viewModel.validateTieredPriceInput(newValue)
+                            }
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.white.opacity(0.9))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(Colors.primaryDark.opacity(0.2), lineWidth: 1)
+                            )
+                    )
+                }
+                
+                // Spots Input
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Spots")
+                        .font(.LibreBodoni(size: 12))
+                        .foregroundColor(Colors.primaryDark.opacity(0.7))
+                    
+                        TextField("0", text: spots)
+                            .font(.LibreBodoniBold(size: 16))
+                            .foregroundColor(Colors.primaryDark)
+                            .keyboardType(.numberPad)
+                            .multilineTextAlignment(.center)
+                            .onChange(of: spots.wrappedValue) { _, newValue in
+                                spots.wrappedValue = viewModel.validateTieredSpotsInput(newValue)
+                            }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 10)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color.white.opacity(0.9))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(Colors.primaryDark.opacity(0.2), lineWidth: 1)
+                                )
+                        )
+                }
+                .frame(maxWidth: 80)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Color.white.opacity(0.4))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(Color.black.opacity(0.08), lineWidth: 1)
+                )
+        )
+    }
+
     // MARK: - Create Button
     private var createButtonView: some View {
         Button {
             viewModel.submitEvent { success in
-                if success {
-                    // Refresh calendar and upcoming feeds to show the new event
-                    appController.refreshFeedsAfterEventCreation()
-                    // If event was created in a specific cove, refresh that cove's data too
-                    if !viewModel.coveId.isEmpty {
-                        appController.refreshCoveAfterEventCreation(coveId: viewModel.coveId)
+                DispatchQueue.main.async {
+                    if success {
+                        print("✅ Event created successfully, refreshing feeds...")
+                        // Refresh calendar and upcoming feeds to show the new event
+                        appController.refreshFeedsAfterEventCreation()
+                        // If event was created in a specific cove, refresh that cove's data too
+                        if !viewModel.coveId.isEmpty {
+                            appController.refreshCoveAfterEventCreation(coveId: viewModel.coveId)
+                        }
+                        
+                        // Call the completion callback first
+                        onEventCreated?()
+                        
+                        // Then dismiss the view
+                        dismiss()
+                    } else {
+                        print("❌ Event creation failed")
                     }
-                    onEventCreated?()
-                    dismiss()
                 }
             }
         } label: {
@@ -597,6 +878,28 @@ extension CreateEventView {
         }
     }
 
+    // MARK: - Number of Spots Section
+    private var numberOfSpotsSection: some View {
+        VStack(spacing: 12) {
+            Text("Event Capacity")
+                .font(.LibreBodoniBold(size: 16))
+                .foregroundColor(Colors.primaryDark)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            
+            numberOfSpotsView
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Color.white.opacity(0.4))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(Color.black.opacity(0.08), lineWidth: 1)
+                )
+        )
+    }
+    
     // MARK: - Number of Spots Input
     private var numberOfSpotsView: some View {
         HStack {

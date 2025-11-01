@@ -21,7 +21,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify the token with the backend
-    const backendResponse = await fetch(`${process.env.BACKEND_API_URL}/profile`, {
+    // Use BACKEND_API_URL for server-side calls, fallback to NEXT_PUBLIC for local dev
+    const BACKEND_URL = process.env.BACKEND_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+    console.log('[Auth Refresh] Using backend URL:', BACKEND_URL);
+    
+    const backendResponse = await fetch(`${BACKEND_URL}/profile`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${idToken}`,
@@ -29,8 +33,17 @@ export async function POST(request: NextRequest) {
     });
 
     if (backendResponse.ok) {
+      // Get user profile data
+      const userData = await backendResponse.json();
+      
       // Token is valid, update the session
-      const response = NextResponse.json({ message: 'Token refreshed successfully' });
+      const response = NextResponse.json({ 
+        message: 'Token refreshed successfully',
+        user: {
+          uid: userData.uid || userData.id,
+          onboarding: userData.onboarding || false
+        }
+      });
       setSecureSession(response, idToken);
       return response;
     } else {

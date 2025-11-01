@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, connectAuthEmulator } from 'firebase/auth';
+import { getAuth, connectAuthEmulator, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { getAnalytics } from 'firebase/analytics';
 
 // Firebase configuration
@@ -19,6 +19,13 @@ const app = initializeApp(firebaseConfig);
 // Initialize Firebase Auth
 export const auth = getAuth(app);
 
+// Set explicit persistence to prevent conflicts
+if (typeof window !== 'undefined') {
+  setPersistence(auth, browserLocalPersistence).catch((error) => {
+    console.warn('Firebase auth persistence setup failed:', error);
+  });
+}
+
 // Initialize Analytics (only in browser)
 let analytics = null;
 if (typeof window !== 'undefined') {
@@ -30,9 +37,9 @@ if (typeof window !== 'undefined') {
 }
 
 // Connect to Firebase Auth emulator in development
-if (process.env.NODE_ENV === 'development') {
-  // Note: Uncomment the line below if you want to use Firebase Auth emulator
-  // connectAuthEmulator(auth, 'http://localhost:9099');
+if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_USE_EMULATOR === 'true') {
+  console.log('🔧 Connecting to Firebase Auth emulator at http://localhost:9099');
+  connectAuthEmulator(auth, 'http://localhost:9099');
 }
 
 export default app; 

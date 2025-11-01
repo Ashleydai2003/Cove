@@ -24,6 +24,8 @@ struct OnboardingFlow: View {
                         BirthdateView()
                     case .almaMater:
                         AlmaMaterView()
+                    case .city:
+                        CityView()
                     case .pluggingIn:
                         PluggingYouIn()
                     }

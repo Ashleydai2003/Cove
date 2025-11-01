@@ -1,0 +1,128 @@
+name: Deploy Batch Matcher
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'Backend/src/workers/**'
+      - 'Backend/src/prisma/**'
+      - 'Backend/package.json'
+      - 'Backend/package-lock.json'
+      - 'Backend/prisma/schema.prisma'
+      - '.github/workflows/deploy-batch-matcher.yml'
+  
+  workflow_dispatch:  # Allow manual trigger
+
+env:
+  AWS_REGION: us-west-1
+  NODE_VERSION: '18'
+
+permissions:
+  id-token: write   # Required for OIDC
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy Batch Matcher Lambda
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Cache node modules
+        uses: actions/cache@v3
+        with:
+          path: Backend/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('Backend/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        working-directory: Backend
+        run: npm install --no-save
+
+      - name: Build matcher Lambda package
+        working-directory: Backend
+        run: npm run build:matcher
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Deploy Lambda function
+        working-directory: Backend
+        run: |
+          # Get Lambda function ARN
+          LAMBDA_NAME="cove-batch-matcher"
+          
+          # Check if Lambda exists
+          if aws lambda get-function --function-name $LAMBDA_NAME &> /dev/null; then
+            echo "✅ Lambda exists, updating code..."
+            
+            # Update function code
+            aws lambda update-function-code \
+              --function-name $LAMBDA_NAME \
+              --zip-file fileb://dist/matcher.zip \
+              --output json
+            
+            # Wait for update to complete
+            aws lambda wait function-updated --function-name $LAMBDA_NAME
+            
+            echo "✅ Lambda code updated successfully!"
+          else
+            echo "❌ Lambda function not found. Please run ./scripts/deploy-matcher.sh first to create it."
+            exit 1
+          fi
+
+      - name: Test Lambda invocation
+        run: |
+          echo "Testing Lambda function..."
+          aws lambda invoke \
+            --function-name cove-batch-matcher \
+            --payload '{}' \
+            --region ${{ env.AWS_REGION }} \
+            response.json
+          
+          cat response.json
+          echo ""
+          
+          # Check if invocation was successful
+          if grep -q "statusCode.*200" response.json; then
+            echo "Lambda test invocation successful"
+          else
+            echo "Lambda invocation returned non-200 status"
+            exit 1
+          fi
+
+      - name: View recent logs
+        if: always()
+        run: |
+          echo "📋 Fetching recent Lambda logs..."
+          aws logs tail /aws/lambda/cove-batch-matcher \
+            --since 5m \
+            --format short || echo "No recent logs available"
+
+      - name: Post-deployment summary
+        run: |
+          echo "## Deployment Summary 🎉" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Lambda Function**: cove-batch-matcher" >> $GITHUB_STEP_SUMMARY
+          echo "**Region**: ${{ env.AWS_REGION }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Next Steps:" >> $GITHUB_STEP_SUMMARY
+          echo "- Monitor CloudWatch Logs: \`aws logs tail /aws/lambda/cove-batch-matcher --follow\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Check EventBridge schedule: Every 3 hours" >> $GITHUB_STEP_SUMMARY
+          echo "- View metrics in AWS Console" >> $GITHUB_STEP_SUMMARY
+

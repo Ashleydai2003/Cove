@@ -5,6 +5,8 @@ const buckets = [
   process.env.USER_IMAGE_BUCKET_NAME || 'cove-user-images-dev',
   process.env.COVE_IMAGE_BUCKET_NAME || 'cove-cove-images-dev',
   process.env.EVENT_IMAGE_BUCKET_NAME || 'cove-event-images-dev',
+  process.env.VENDOR_COVER_IMAGE_BUCKET_NAME || 'vendor-cover-images-dev',
+  process.env.VENDOR_USER_IMAGE_BUCKET_NAME || 'vendor-user-images-dev',
 ];
 
 async function createBucketIfNotExists(bucketName: string) {

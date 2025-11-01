@@ -14,15 +14,16 @@ resource "aws_security_group" "vpce_sg" {
   description = "Allow Lambda SG access"
   vpc_id      = aws_vpc.main_vpc.id
 
-  # Allow inbound HTTPS (443) traffic from Lambda security group
+  # Allow inbound HTTPS (443) traffic from Lambda security groups
   ingress {
     from_port       = 443
     to_port         = 443
     protocol        = "tcp"
     security_groups = [
-      aws_security_group.lambda_sg.id,
-      aws_security_group.migration_sg.id,  # Add EC2 migration security group
-      aws_security_group.socket_sg.id      # Add socket server security group
+      aws_security_group.lambda_sg.id,         # Main API Lambda
+      aws_security_group.migration_sg.id,      # EC2 migration instance
+      aws_security_group.socket_sg.id,         # Socket.io server
+      aws_security_group.lambda_matcher_sg.id  # Batch Matcher Lambda
     ]
   }
 

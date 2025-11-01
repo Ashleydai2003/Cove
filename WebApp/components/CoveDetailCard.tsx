@@ -39,6 +39,21 @@ export default function CoveDetailCard({ cove }: CoveDetailCardProps) {
     coverPhoto: { id: string; url: string } | null;
   }[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
+  
+  // Sort events: upcoming first, then past events
+  const now = new Date();
+  const sortedEvents = [...events].sort((a, b) => {
+    const dateA = new Date(a.date);
+    const dateB = new Date(b.date);
+    
+    // If both are upcoming or both are past, sort by date
+    if ((dateA >= now) === (dateB >= now)) {
+      return dateA.getTime() - dateB.getTime();
+    }
+    
+    // Upcoming events come first
+    return dateA >= now ? -1 : 1;
+  });
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -161,35 +176,6 @@ export default function CoveDetailCard({ cove }: CoveDetailCardProps) {
               )}
             </p>
             
-            {/* Stats Row */}
-            <div className="flex flex-col sm:flex-row justify-center items-center gap-8 sm:gap-16 mb-6 sm:mb-8">
-              <div className="text-center">
-                <div className="font-libre-bodoni text-3xl sm:text-4xl font-bold text-[#5E1C1D]">
-                  {cove.stats.memberCount}
-                </div>
-                <div className="font-libre-bodoni text-xs sm:text-sm text-[#8B8B8B] uppercase tracking-wide">
-                  Members
-                </div>
-              </div>
-              <div className="hidden sm:block w-px h-16 bg-[#E5E5E5]"></div>
-              <div className="text-center">
-                <div className="font-libre-bodoni text-3xl sm:text-4xl font-bold text-[#5E1C1D]">
-                  {cove.stats.eventCount}
-                </div>
-                <div className="font-libre-bodoni text-xs sm:text-sm text-[#8B8B8B] uppercase tracking-wide">
-                  Events
-                </div>
-              </div>
-            </div>
-
-            {/* Description */}
-            {cove.description && (
-              <div className="max-w-3xl mx-auto mb-6 sm:mb-8 px-4">
-                <p className="font-libre-bodoni text-base sm:text-lg text-[#2D2D2D] leading-relaxed text-center">
-                  {cove.description}
-                </p>
-              </div>
-            )}
 
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
@@ -214,59 +200,70 @@ export default function CoveDetailCard({ cove }: CoveDetailCardProps) {
       {/* Events Feed Section */}
       <div className="mt-12 sm:mt-16 lg:mt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="font-libre-bodoni text-2xl sm:text-3xl text-[#5E1C1D] mb-6 sm:mb-8">Upcoming Events</h2>
+          <h2 className="font-libre-bodoni text-2xl sm:text-3xl text-[#5E1C1D] mb-6 sm:mb-8">Events</h2>
           
           {loadingEvents ? (
             <div className="text-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#5E1C1D] mx-auto mb-4"></div>
               <p className="font-libre-bodoni text-[#8B8B8B]">Loading events...</p>
             </div>
-          ) : events.length > 0 ? (
+          ) : sortedEvents.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {events.slice(0, 6).map((event) => (
-                <div 
-                  key={event.id} 
-                  className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow cursor-pointer transform hover:scale-105 transition-transform duration-200"
-                  onClick={() => window.location.href = `/events/${event.id}`}
-                >
-                  {/* Event Image */}
-                  <div className="relative w-full aspect-[4/3]">
-                    {event.coverPhoto?.url ? (
-                      <Image
-                        src={event.coverPhoto.url}
-                        alt={event.name}
-                        fill
-                        className="object-cover"
-                        sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                        <div className="text-6xl">🎉</div>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Event Info */}
-                  <div className="p-6">
-                    <h3 className="font-libre-bodoni text-xl font-semibold text-[#2D2D2D] mb-2 line-clamp-2">
-                      {event.name}
-                    </h3>
-                    <div className="space-y-2 mb-4">
-                      <p className="font-libre-bodoni text-sm text-[#8B8B8B]">
-                        {formatEventDate(event.date)} • {formatEventTime(event.date)}
-                      </p>
-                      <p className="font-libre-bodoni text-sm text-[#2D2D2D]">
-                        👤 {event.hostName}
-                      </p>
+              {sortedEvents.map((event) => {
+                const isPastEvent = new Date(event.date) < now;
+                return (
+                  <div 
+                    key={event.id} 
+                    className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow cursor-pointer transform hover:scale-105 transition-transform duration-200"
+                    onClick={() => window.location.href = `/events/${event.id}`}
+                  >
+                    {/* Event Image */}
+                    <div className="relative w-full aspect-[4/3]">
+                      {event.coverPhoto?.url ? (
+                        <Image
+                          src={event.coverPhoto.url}
+                          alt={event.name}
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                          <div className="text-6xl">🎉</div>
+                        </div>
+                      )}
+                      {/* Past Event Banner */}
+                      {isPastEvent && (
+                        <div className="absolute top-4 left-4">
+                          <span className="bg-[#5E1C1D] text-white px-3 py-1 rounded-full text-sm font-libre-bodoni font-semibold shadow-lg">
+                            Past Event
+                          </span>
+                        </div>
+                      )}
                     </div>
-                    {event.description && (
-                      <p className="font-libre-bodoni text-sm text-[#8B8B8B] line-clamp-2">
-                        {event.description}
-                      </p>
-                    )}
+                    
+                    {/* Event Info */}
+                    <div className="p-6">
+                      <h3 className="font-libre-bodoni text-xl font-semibold text-[#2D2D2D] mb-2 line-clamp-2">
+                        {event.name}
+                      </h3>
+                      <div className="space-y-2 mb-4">
+                        <p className="font-libre-bodoni text-sm text-[#8B8B8B]">
+                          {formatEventDate(event.date)} • {formatEventTime(event.date)}
+                        </p>
+                        <p className="font-libre-bodoni text-sm text-[#2D2D2D]">
+                          👤 {event.hostName}
+                        </p>
+                      </div>
+                      {event.description && (
+                        <p className="font-libre-bodoni text-sm text-[#8B8B8B] line-clamp-2">
+                          {event.description}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="text-center py-12">
@@ -276,14 +273,14 @@ export default function CoveDetailCard({ cove }: CoveDetailCardProps) {
           )}
 
           {/* Join to See More CTA */}
-          {events.length > 0 && (
+          {sortedEvents.length > 0 && (
             <div className="text-center mt-12">
               <div className="bg-white rounded-2xl p-8 shadow-lg max-w-md mx-auto">
                 <h3 className="font-libre-bodoni text-xl font-semibold text-[#5E1C1D] mb-3">
                   Want to see more?
                 </h3>
                 <p className="font-libre-bodoni text-sm text-[#8B8B8B] mb-6">
-                  Join this cove to discover all upcoming events and connect with members.
+                  Join this cove to discover all events and connect with members.
                 </p>
                 <button
                   onClick={handleJoinCove}

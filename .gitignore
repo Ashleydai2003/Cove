@@ -22,6 +22,11 @@
 **/.env
 **/.env.local
 **/.env.*.local
+**/env.development
+**/env.production
+**/dotenv
+**/.env.*
+**/env.*
 
 # Docker
 # Docker-related files and directories
@@ -114,6 +119,8 @@ terraform.tfstate.backup
 **/firebase-data/
 **/firebase-debug.log*
 **/.firebaserc
+**/firebase-export-*/
+**/auth_export/
 
 # Backend specific
 **/build/Release

@@ -16,3 +16,42 @@ export { handleCreateThread, handleSendMessage, handleGetThreads, handleGetThrea
 export { handleCreatePost, handleGetCovePosts, handleGetPost, handleTogglePostLike } from './post';
 export { handleGetFeed } from './feed';
 export { handleGetUniversities } from './universities';
+export { handleSMSWebhook } from './sms-webhook';
+
+// Vendor routes
+export {
+  handleVendorLogin,
+  handleValidateVendorCode,
+  handleCreateVendorOrganization,
+  handleJoinVendorOrganization,
+  handleVendorOnboard,
+  handleGetVendorProfile,
+  handleRotateVendorCode,
+  handleGetVendorMembers,
+  handleCreateVendorEvent,
+  handleGetVendorEvents,
+  handleVendorImageUpload,
+  handleVendorImageUpdate
+} from './vendor';
+
+// AI Matching routes
+export {
+  handleSurveySubmit,
+  handleGetSurvey,
+  handleCreateIntention,
+  handleGetIntentionStatus,
+  handleDeleteIntention,
+  handleGetCurrentMatch,
+  handleAcceptMatch,
+  handleDeclineMatch,
+  handleMatchFeedback
+} from './matching';
+
+// Admin routes (superadmin only)
+export {
+  handleGetAllUsers,
+  handleToggleSuperadmin,
+  handleGetAllMatches,
+  handleGetUserMatchingDetails,
+  handleGetUnmatchedUsers
+} from './admin';
