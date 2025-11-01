@@ -1086,10 +1086,7 @@ private struct UnmatchedUsersPage: View {
         }
         
         // Don't fetch if already loading or no more data
-        guard !isLoading && hasMoreUsers else { 
-            print("⚠️ Skipping fetch - isLoading: \(isLoading), hasMoreUsers: \(hasMoreUsers)")
-            return 
-        }
+        guard !isLoading && hasMoreUsers else { return }
         
         isLoading = true
         errorMessage = nil
@@ -1098,8 +1095,6 @@ private struct UnmatchedUsersPage: View {
             "page": currentPage,
             "limit": pageSize
         ]
-        
-        print("🔄 Fetching unmatched users - page: \(currentPage), limit: \(pageSize)")
         
         NetworkManager.shared.get(
             endpoint: "/admin/unmatched-users",
@@ -1110,21 +1105,15 @@ private struct UnmatchedUsersPage: View {
                 
                 switch result {
                 case .success(let response):
-                    print("✅ Received \(response.users.count) unmatched users from backend")
-                    
                     if refresh {
                         self.unmatchedUsers = response.users
                     } else {
                         self.unmatchedUsers.append(contentsOf: response.users)
                     }
                     
-                    // Check if there are more users to load
                     self.hasMoreUsers = response.users.count == self.pageSize
                     self.currentPage += 1
-                    
-                    print("✅ Total unmatched users: \(self.unmatchedUsers.count), hasMore: \(self.hasMoreUsers)")
                 case .failure(let error):
-                    print("❌ Failed to fetch unmatched users: \(error)")
                     self.errorMessage = "Failed to load unmatched users: \(error.localizedDescription)"
                 }
             }

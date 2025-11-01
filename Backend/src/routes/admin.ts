@@ -542,8 +542,6 @@ export const handleGetUnmatchedUsers = async (event: APIGatewayProxyEvent): Prom
     const skip = page * limit;
 
     console.log(`[Admin] Fetching unmatched users - page: ${page}, limit: ${limit}, skip: ${skip}`);
-
-    console.log(`[Admin] Querying pool entries...`);
     
     // Fetch pool entries with pagination - having a pool entry means they're unmatched
     const poolEntries = await prisma.poolEntry.findMany({
@@ -588,8 +586,6 @@ export const handleGetUnmatchedUsers = async (event: APIGatewayProxyEvent): Prom
       skip,
       take: limit
     });
-
-    console.log(`[Admin] Found ${poolEntries.length} pool entries`);
     
     // Format the response
     const formattedUsers = poolEntries.map(entry => ({
@@ -614,8 +610,6 @@ export const handleGetUnmatchedUsers = async (event: APIGatewayProxyEvent): Prom
         }
       }
     }));
-
-    console.log(`[Admin] Returning ${formattedUsers.length} unmatched users`);
 
     return {
       statusCode: 200,
