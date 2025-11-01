@@ -190,12 +190,72 @@ export async function handleCreateIntention(
     const prisma = await initializeDatabase();
 
     const body = JSON.parse(event.body || '{}');
-    const { text, chips } = body;
+    const { chips } = body;
 
-    if (!text || !chips) {
+    if (!chips) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ message: 'Invalid request: text and chips required' })
+        body: JSON.stringify({ message: 'Invalid request: chips required' })
+      };
+    }
+
+    // Validate current structure: { who: {}, what: { intention, activities }, when: [], where: "", mustHaves: [] }
+    // LEGACY SUPPORT: Also support old structures for backward compatibility
+    let intention: string;
+    let activities: string[];
+    let availability: string[];
+    let location: string;
+
+    if (chips.what && chips.what.intention) {
+      // Current format
+      intention = chips.what.intention;
+      activities = chips.what.activities || [];
+      availability = chips.when || [];
+      location = chips.where || '';
+    } else if (chips.what && chips.what.notes) {
+      // LEGACY SUPPORT: Old format with what.notes
+      // Try to extract intention from notes
+      const notes = chips.what.notes.toLowerCase();
+      intention = notes.includes('dating') || notes.includes('romantic') ? 'romantic' : 'friends';
+      activities = chips.what.activities || [];
+      availability = chips.when || [];
+      location = chips.location || '';
+    } else {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ 
+          message: 'Invalid request: chips must include what.intention, what.activities, when, and where' 
+        })
+      };
+    }
+
+    // Validate intention type
+    if (!['friends', 'romantic'].includes(intention)) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ 
+          message: 'Invalid intention: must be "friends" or "romantic"' 
+        })
+      };
+    }
+
+    // Validate arrays
+    if (!Array.isArray(activities) || !Array.isArray(availability)) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ 
+          message: 'Invalid request: activities and availability must be arrays' 
+        })
+      };
+    }
+
+    // Validate required fields
+    if (activities.length === 0 || availability.length === 0 || !location) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ 
+          message: 'Invalid request: activities, availability, and location are required' 
+        })
       };
     }
 
@@ -227,7 +287,7 @@ export async function handleCreateIntention(
       const intention = await tx.intention.create({
         data: {
           userId,
-          text,
+          text: '', // Deprecated - using parsedJson only
           parsedJson: chips,
           validUntil,
           status: 'active'
@@ -254,16 +314,23 @@ export async function handleCreateIntention(
       nextBatchEta.setUTCHours(nextBatchEta.getUTCHours() + 3);
     }
 
+    // Ensure parsedJson is properly serialized
+    const responseIntention = {
+      id: result.intention.id,
+      text: result.intention.text,
+      parsedJson: result.intention.parsedJson, // This is already a JS object from Prisma
+      validUntil: result.intention.validUntil.toISOString(),
+      status: result.intention.status
+    };
+
+    console.log('📤 [Intention] Response parsedJson type:', typeof result.intention.parsedJson);
+    console.log('📤 [Intention] Response parsedJson value:', JSON.stringify(result.intention.parsedJson));
+
     return {
       statusCode: 201,
       body: JSON.stringify({
         message: 'Intention created successfully',
-        intention: {
-          id: result.intention.id,
-          text: result.intention.text,
-          validUntil: result.intention.validUntil,
-          status: result.intention.status
-        },
+        intention: responseIntention,
         poolEntry: {
           tier: result.poolEntry.tier,
           nextBatchEta: nextBatchEta.toISOString()
@@ -346,15 +413,18 @@ export async function handleGetIntentionStatus(
       }
     });
 
+    console.log('📤 [IntentionStatus] parsedJson type:', typeof intention.parsedJson);
+    console.log('📤 [IntentionStatus] parsedJson value:', JSON.stringify(intention.parsedJson));
+
     return {
       statusCode: 200,
       body: JSON.stringify({
         hasIntention: true,
-        userName: intention.user.profile?.name || intention.user.name || 'there',
+        userName: intention.user.name || 'there',
         intention: {
           id: intention.id,
           text: intention.text,
-          parsedJson: intention.parsedJson,
+          parsedJson: intention.parsedJson, // Already a JS object from Prisma
           validUntil: intention.validUntil.toISOString(),
           status: intention.status
         },

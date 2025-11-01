@@ -429,10 +429,9 @@ struct IntentionComposerView: View {
         
         // Submit to database
         model.submitIntention(
+            intention: connectionType ?? "friends",
             activities: Array(selectedActivities),
-            timeWindows: Array(selectedTimeWindows),
-            vibe: [],
-            notes: intentionText
+            timeWindows: Array(selectedTimeWindows)
         ) { success in
             DispatchQueue.main.async {
                 if success {

@@ -40,6 +40,7 @@ struct ProfileData: Decodable {
     let phone: String
     let onboarding: Bool
     let verified: Bool?
+    let superadmin: Bool?
     let id: String
     let userId: String
     let age: Int?
@@ -70,6 +71,7 @@ class ProfileModel: ObservableObject {
     @Published var phone: String = ""
     @Published var onboarding: Bool = false
     @Published var verified: Bool = false
+    @Published var superadmin: Bool = false
     @Published var id: String = ""
     @Published var userId: String = ""
 
@@ -226,6 +228,9 @@ class ProfileModel: ObservableObject {
         } else {
         // Preserving existing verified status
         }
+        
+        // Update superadmin status
+        superadmin = profileData.superadmin ?? false
 
         id = profileData.id
         // Use Firebase Auth current user ID for consistency and security

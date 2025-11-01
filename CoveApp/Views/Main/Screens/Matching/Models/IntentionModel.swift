@@ -8,37 +8,41 @@
 import Foundation
 
 // MARK: - Intention Data Structures
+// Current intention structure
 struct IntentionChips: Codable {
     var who: WhoChips
     var what: WhatChips
     var when: [String]
-    var location: String
-    var vibe: [String]
+    var `where`: String
     var mustHaves: [String]
-    var dealbreakers: [String]
     
     struct WhoChips: Codable {
-        var network: String?
-        var ageBand: String?
-        var genderPref: String
-        
-        enum CodingKeys: String, CodingKey {
-            case network, ageBand, genderPref
-        }
+        // Empty for now, but kept for future expansion
     }
     
     struct WhatChips: Codable {
+        var intention: String  // "friends" or "romantic"
         var activities: [String]
-        var notes: String
     }
 }
 
-struct Intention: Codable, Identifiable, Equatable {
+struct Intention: Codable, Identifiable {
     let id: String
     let text: String
+    let parsedJson: AnyCodable?
     let validUntil: String
     let status: String
+    
+    // Custom Equatable implementation (AnyCodable doesn't conform to Equatable)
+    static func == (lhs: Intention, rhs: Intention) -> Bool {
+        return lhs.id == rhs.id &&
+               lhs.text == rhs.text &&
+               lhs.validUntil == rhs.validUntil &&
+               lhs.status == rhs.status
+    }
 }
+
+extension Intention: Equatable {}
 
 struct PoolEntry: Codable {
     let tier: Int
@@ -103,6 +107,7 @@ class IntentionModel: ObservableObject {
                             self?.currentIntention = Intention(
                                 id: intentionData.id,
                                 text: intentionData.text,
+                                parsedJson: intentionData.parsedJson,
                                 validUntil: intentionData.validUntil,
                                 status: intentionData.status
                             )
@@ -152,39 +157,28 @@ class IntentionModel: ObservableObject {
     }
     
     // MARK: - Submit intention
-    func submitIntention(activities: [String], timeWindows: [String], vibe: [String], notes: String, completion: @escaping (Bool) -> Void) {
+    func submitIntention(intention: String, activities: [String], timeWindows: [String], completion: @escaping (Bool) -> Void) {
         print("📤 [IntentionModel] submitIntention called")
+        print("   - Intention: \(intention)")
         print("   - Activities: \(activities)")
         print("   - Time windows: \(timeWindows)")
-        print("   - Notes: \(notes)")
         print("   - User city: \(userCity)")
         
         isLoading = true
         
-        // Build chips structure
+        // Build current chips structure
         let chips = IntentionChips(
-            who: IntentionChips.WhoChips(
-                network: nil,
-                ageBand: nil,
-                genderPref: "any"
-            ),
+            who: IntentionChips.WhoChips(),
             what: IntentionChips.WhatChips(
-                activities: activities,
-                notes: notes
+                intention: intention,
+                activities: activities
             ),
             when: timeWindows,
-            location: userCity,
-            vibe: vibe,
-            mustHaves: ["location", "when"],
-            dealbreakers: []
+            where: userCity,
+            mustHaves: ["location", "when"]
         )
         
-        // Generate text from chips
-        let text = generateText(from: chips)
-        print("📝 [IntentionModel] Generated text: \(text)")
-        
         let body: [String: Any] = [
-            "text": text,
             "chips": (try? chips.toDictionary()) ?? [:]
         ]
         
@@ -207,7 +201,8 @@ class IntentionModel: ObservableObject {
                     if let intentionData = data.intention {
                         let newIntention = Intention(
                             id: intentionData.id,
-                            text: text,
+                            text: intentionData.text,
+                            parsedJson: intentionData.parsedJson,
                             validUntil: intentionData.validUntil,
                             status: intentionData.status
                         )
@@ -288,25 +283,6 @@ class IntentionModel: ObservableObject {
     }
     
     // MARK: - Helper: Generate text from chips
-    private func generateText(from chips: IntentionChips) -> String {
-        var parts: [String] = []
-        
-        if !chips.what.activities.isEmpty {
-            parts.append(chips.what.activities.joined(separator: " or "))
-        }
-        
-        if !chips.when.isEmpty {
-            parts.append(chips.when.joined(separator: " or "))
-        }
-        
-        parts.append("in \(chips.location)")
-        
-        if !chips.what.notes.isEmpty {
-            parts.append("(\(chips.what.notes))")
-        }
-        
-        return parts.joined(separator: " ")
-    }
 }
 
 // MARK: - Codable Extension for IntentionChips

@@ -15,18 +15,18 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { text, parsedJson } = body;
+    const { parsedJson } = body;
 
-    console.log('[Intention API] Request body:', { text, parsedJson });
+    console.log('[Intention API] Request body:', { parsedJson });
 
-    if (!text || !parsedJson) {
+    if (!parsedJson) {
       return NextResponse.json(
-        { message: 'invalid request: text and parsedJson required' },
+        { message: 'invalid request: parsedJson required' },
         { status: 400 }
       );
     }
 
-    // Call backend API to submit intention (backend expects "chips" not "parsedJson")
+    // Call backend API to submit intention (backend expects "chips" field)
     const backendResponse = await fetch(`${BACKEND_URL}/intention`, {
       method: 'POST',
       headers: {
@@ -34,7 +34,6 @@ export async function POST(request: NextRequest) {
         'Authorization': `Bearer ${authToken}`,
       },
       body: JSON.stringify({
-        text,
         chips: parsedJson  // Backend expects "chips" field
       }),
     });

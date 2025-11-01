@@ -55,60 +55,46 @@ export default function PoolStatusView({ onMatchFound }: PoolStatusViewProps) {
   };
 
   const parseIntention = () => {
-    // Try to parse from parsedJson first
-    if (intention?.parsedJson) {
-      const chips = typeof intention.parsedJson === 'string' 
-        ? JSON.parse(intention.parsedJson) 
-        : intention.parsedJson;
+        if (intention?.parsedJson) {
+          try {
+            const chips = typeof intention.parsedJson === 'string' 
+              ? JSON.parse(intention.parsedJson) 
+              : intention.parsedJson;
 
-      // Get all activities
-      const activities = chips.what?.activities || [];
-      const activity = activities.join(' or ');
+            let activities: string[] = [];
+            let availability: string[] = [];
+            let location = '';
 
-      // Format time windows
-      const timeWindows = chips.when || [];
-      const formattedTime = timeWindows.join(', ');
+            // CURRENT STRUCTURE: { who: {}, what: { intention, activities }, when: [], where: "" }
+            if (chips.what && chips.what.activities) {
+              activities = chips.what.activities;
+              availability = chips.when || [];
+              location = chips.where || '';
+            } 
+            // LEGACY SUPPORT: Old format with what.notes
+            // { who: {}, what: { notes, activities }, when: [], location: "" }
+            else if (chips.what && chips.what.notes && chips.what.activities) {
+              const notes = chips.what.notes.toLowerCase();
+              // intentionType = notes.includes('dating') || notes.includes('romantic') ? 'romantic' : 'friends';
+              activities = chips.what.activities;
+              availability = chips.when || [];
+              location = chips.location || '';
+            }
 
-      // Get location
-      const location = chips.where || chips.location || '';
+            if (activities.length > 0 || availability.length > 0) {
+              const activity = activities.join(' or ');
+              const formattedTime = availability.map((t: string) => t.toLowerCase()).join(', ');
+              const timeAndLocation = `${formattedTime}${location ? ` near ${location}` : ''}`;
 
-      const timeAndLocation = `${formattedTime}${location ? ` near ${location}` : ''}`;
+              return { activity, timeAndLocation };
+            }
+          } catch (e) {
+            console.log('Failed to parse parsedJson:', e);
+          }
+        }
 
-      return { activity, timeAndLocation };
-    }
-
-    // Fallback: parse from text field
-    if (intention?.text) {
-      const parts = intention.text.split(', ').map((p: string) => p.trim());
-      
-      // Find activities (look for common activity keywords)
-      const activityKeywords = [
-        'sports', 'recreation', 'outdoors', 'music', 'performances', 
-        'cocktails', 'bars', 'food', 'fashion', 'arts', 'crafts'
-      ];
-      
-      const activities = parts.filter((part: string) => 
-        activityKeywords.some(keyword => part.toLowerCase().includes(keyword))
-      );
-      
-      // Find time windows
-      const timeKeywords = ['friday', 'saturday', 'sunday', 'daytime', 'evening'];
-      const timeWindows = parts.filter((part: string) => 
-        timeKeywords.some(keyword => part.toLowerCase().includes(keyword))
-      );
-      
-      // Find location (usually the last part that's not an activity or time)
-      const location = parts[parts.length - 1] || '';
-      
-      const activity = activities.join(' or ');
-      const formattedTime = timeWindows.join(', ');
-      const timeAndLocation = `${formattedTime}${location ? ` near ${location}` : ''}`;
-
-      return { activity, timeAndLocation };
-    }
-
-    return { activity: '', timeAndLocation: '' };
-  };
+        return { activity: '', timeAndLocation: '' };
+      };
 
   const { activity, timeAndLocation } = parseIntention();
 

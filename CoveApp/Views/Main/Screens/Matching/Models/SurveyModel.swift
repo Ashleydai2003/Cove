@@ -29,6 +29,7 @@ struct IntentionAPIResponse: Codable {
 struct IntentionData: Codable {
     let id: String
     let text: String
+    let parsedJson: AnyCodable?
     let validUntil: String
     let status: String
 }
@@ -125,12 +126,16 @@ struct AnyCodable: Codable {
     
     func encode(to encoder: Encoder) throws {
         var container = encoder.singleValueContainer()
-        if let string = value as? String {
+        if let dict = value as? [String: Any] {
+            try container.encode(dict.mapValues { AnyCodable($0) })
+        } else if let string = value as? String {
             try container.encode(string)
         } else if let array = value as? [String] {
             try container.encode(array)
         } else if let int = value as? Int {
             try container.encode(int)
+        } else if let bool = value as? Bool {
+            try container.encode(bool)
         } else {
             try container.encodeNil()
         }
@@ -138,12 +143,18 @@ struct AnyCodable: Codable {
     
     init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
-        if let string = try? container.decode(String.self) {
+        
+        // Try to decode as dictionary first (most common for parsedJson)
+        if let dict = try? container.decode([String: AnyCodable].self) {
+            value = dict.mapValues { $0.value }
+        } else if let string = try? container.decode(String.self) {
             value = string
         } else if let array = try? container.decode([String].self) {
             value = array
         } else if let int = try? container.decode(Int.self) {
             value = int
+        } else if let bool = try? container.decode(Bool.self) {
+            value = bool
         } else {
             value = ""
         }

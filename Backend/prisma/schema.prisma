@@ -21,6 +21,7 @@ model User {
   onboarding             Boolean         @default(true)
   verified               Boolean         @default(false)
   smsOptIn               Boolean         @default(false)
+  superadmin             Boolean         @default(false)
   createdAt              DateTime        @default(now())
   updatedAt              DateTime        @updatedAt
   profilePhotoID         String?         @unique

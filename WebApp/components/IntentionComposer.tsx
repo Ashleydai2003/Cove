@@ -115,28 +115,23 @@ export default function IntentionComposer({ userCity, onComplete }: IntentionCom
 
   const performIntentionSubmission = async () => {
     try {
-      // Build the intention text (max 140 chars)
-      const connectionText = connectionType === 'friends' ? 'friends' : 'dating';
-      const intentionText = `${connectionText}, ${selectedActivities.join(', ')}, ${selectedTimeWindows.join(', ')}, ${userCity}`;
-
-      // Build the parsed JSON structure
+      // Build the current parsed JSON structure
       const parsedJson = {
+        who: {},
         what: {
-          connection: connectionText,
+          intention: connectionType === 'friends' ? 'friends' : 'romantic',
           activities: selectedActivities
         },
         when: selectedTimeWindows,
-        where: userCity
+        where: userCity,
+        mustHaves: ['location', 'when']
       };
 
       const response = await fetch('/api/match/intention', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({
-          text: intentionText,
-          parsedJson
-        })
+        body: JSON.stringify({ parsedJson })
       });
 
       if (response.ok) {

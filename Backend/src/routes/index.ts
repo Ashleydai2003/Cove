@@ -46,3 +46,11 @@ export {
   handleDeclineMatch,
   handleMatchFeedback
 } from './matching';
+
+// Admin routes (superadmin only)
+export {
+  handleGetAllUsers,
+  handleToggleSuperadmin,
+  handleGetAllMatches,
+  handleGetUserMatchingDetails
+} from './admin';

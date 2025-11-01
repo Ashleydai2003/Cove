@@ -77,6 +77,11 @@ import {
   handleAcceptMatch,
   handleDeclineMatch,
   handleMatchFeedback,
+  // Admin routes
+  handleGetAllUsers,
+  handleToggleSuperadmin,
+  handleGetAllMatches,
+  handleGetUserMatchingDetails,
 } from './routes';
 
 export const handler = async (
@@ -244,6 +249,15 @@ export const handler = async (
         return handleGetIntentionStatus(event);
       case '/match/current':
         return handleGetCurrentMatch(event);
+      // Admin routes (superadmin only)
+      case '/admin/users':
+        return handleGetAllUsers(event);
+      case '/admin/toggle-superadmin':
+        return handleToggleSuperadmin(event);
+      case '/admin/matches':
+        return handleGetAllMatches(event);
+      case '/admin/user-details':
+        return handleGetUserMatchingDetails(event);
       default:
         // Handle dynamic AI Matching routes with path parameters
         if (event.path.startsWith('/intention/') && event.httpMethod === 'DELETE') {
