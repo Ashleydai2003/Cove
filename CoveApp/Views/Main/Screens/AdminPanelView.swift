@@ -7,6 +7,16 @@ struct AdminPanelView: View {
     @State private var selectedUserId: String?
     @State private var showingUserDetails = false
     @State private var showingUnmatchedUsersPage = false
+    @State private var isEditMode = false
+    @State private var showingCreateMatchSheet = false
+    @State private var showingAddUserSheet = false
+    @State private var selectedMatchForAddUser: String?
+    @State private var showingMoveUserSheet = false
+    @State private var selectedUserToMove: (userId: String, fromMatchId: String)?
+    @State private var showingDeleteConfirmation = false
+    @State private var matchToDelete: String?
+    @State private var alertMessage: String?
+    @State private var showingAlert = false
     
     enum AdminTab: String, CaseIterable {
         case users = "users"
@@ -35,6 +45,17 @@ struct AdminPanelView: View {
                         .foregroundColor(Colors.primaryDark)
                     
                     Spacer()
+                    
+                    // Edit button (only on matches tab)
+                    if selectedTab == .matches {
+                        Button(action: {
+                            isEditMode.toggle()
+                        }) {
+                            Text(isEditMode ? "done" : "edit")
+                                .font(Fonts.libreBodoni(size: 16))
+                                .foregroundColor(Colors.primaryDark)
+                        }
+                    }
                     
                     Button(action: {
                         if selectedTab == .users {
@@ -91,6 +112,76 @@ struct AdminPanelView: View {
         }
         .fullScreenCover(isPresented: $showingUnmatchedUsersPage) {
             UnmatchedUsersPage(adminModel: adminModel)
+        }
+        .sheet(isPresented: $showingCreateMatchSheet) {
+            CreateMatchSheet(adminModel: adminModel) { message in
+                alertMessage = message
+                showingAlert = true
+            }
+        }
+        .sheet(isPresented: $showingAddUserSheet) {
+            if let matchId = selectedMatchForAddUser {
+                AddUserToMatchSheet(adminModel: adminModel, matchId: matchId) { message in
+                    alertMessage = message
+                    showingAlert = true
+                }
+            }
+        }
+        .sheet(isPresented: $showingMoveUserSheet) {
+            if let userInfo = selectedUserToMove {
+                MoveUserSheet(
+                    adminModel: adminModel,
+                    userId: userInfo.userId,
+                    fromMatchId: userInfo.fromMatchId
+                ) { message in
+                    alertMessage = message
+                    showingAlert = true
+                }
+            }
+        }
+        .confirmationDialog(
+            "Delete Match",
+            isPresented: $showingDeleteConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Delete and return to pool", role: .destructive) {
+                if let matchId = matchToDelete {
+                    adminModel.deleteMatch(matchId: matchId, returnToPool: true) { result in
+                        switch result {
+                        case .success(let message):
+                            alertMessage = message
+                            showingAlert = true
+                        case .failure(let error):
+                            alertMessage = error.localizedDescription
+                            showingAlert = true
+                        }
+                    }
+                }
+            }
+            Button("Delete match only", role: .destructive) {
+                if let matchId = matchToDelete {
+                    adminModel.deleteMatch(matchId: matchId, returnToPool: false) { result in
+                        switch result {
+                        case .success(let message):
+                            alertMessage = message
+                            showingAlert = true
+                        case .failure(let error):
+                            alertMessage = error.localizedDescription
+                            showingAlert = true
+                        }
+                    }
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This action cannot be undone.")
+        }
+        .alert("Message", isPresented: $showingAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            if let message = alertMessage {
+                Text(message)
+            }
         }
         .onAppear {
             adminModel.fetchUsers()
@@ -176,21 +267,43 @@ struct AdminPanelView: View {
     @ViewBuilder
     private var matchesContent: some View {
         VStack(spacing: 0) {
-            // Unmatched Users Button
-            Button(action: {
-                showingUnmatchedUsersPage = true
-            }) {
-                HStack {
-                    Image(systemName: "person.2.slash")
-                        .font(.system(size: 16))
-                    Text("view unmatched users in pool")
-                        .font(Fonts.libreBodoni(size: 14))
+            // Action Buttons
+            HStack(spacing: 12) {
+                // Unmatched Users Button
+                Button(action: {
+                    showingUnmatchedUsersPage = true
+                }) {
+                    HStack {
+                        Image(systemName: "person.2.slash")
+                            .font(.system(size: 14))
+                        Text("unmatched users")
+                            .font(Fonts.libreBodoni(size: 13))
+                    }
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(Colors.primaryDark)
+                    .cornerRadius(10)
                 }
-                .foregroundColor(.white)
-                .padding(.horizontal, 20)
-                .padding(.vertical, 12)
-                .background(Colors.primaryDark)
-                .cornerRadius(12)
+                
+                // Create Match Button (only in edit mode)
+                if isEditMode {
+                    Button(action: {
+                        showingCreateMatchSheet = true
+                    }) {
+                        HStack {
+                            Image(systemName: "plus.circle")
+                                .font(.system(size: 14))
+                            Text("create match")
+                                .font(Fonts.libreBodoni(size: 13))
+                        }
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .background(Color.blue)
+                        .cornerRadius(10)
+                    }
+                }
             }
             .padding(.horizontal, 16)
             .padding(.top, 16)
@@ -252,9 +365,34 @@ struct AdminPanelView: View {
                     ForEach(adminModel.matches) { match in
                         MatchCard(
                             match: match,
+                            isEditMode: isEditMode,
                             onMemberTap: { userId in
                                 selectedUserId = userId
                                 showingUserDetails = true
+                            },
+                            onDeleteMatch: {
+                                matchToDelete = match.id
+                                showingDeleteConfirmation = true
+                            },
+                            onAddUser: {
+                                selectedMatchForAddUser = match.id
+                                showingAddUserSheet = true
+                            },
+                            onRemoveUser: { userId in
+                                adminModel.removeUserFromMatch(matchId: match.id, userId: userId, returnToPool: true) { result in
+                                    switch result {
+                                    case .success(let message):
+                                        alertMessage = message
+                                        showingAlert = true
+                                    case .failure(let error):
+                                        alertMessage = error.localizedDescription
+                                        showingAlert = true
+                                    }
+                                }
+                            },
+                            onMoveUser: { userId in
+                                selectedUserToMove = (userId, match.id)
+                                showingMoveUserSheet = true
                             }
                         )
                         .onAppear {
@@ -287,7 +425,12 @@ struct AdminPanelView: View {
 
 private struct MatchCard: View {
     let match: AdminMatch
+    let isEditMode: Bool
     let onMemberTap: (String) -> Void
+    let onDeleteMatch: () -> Void
+    let onAddUser: () -> Void
+    let onRemoveUser: (String) -> Void
+    let onMoveUser: (String) -> Void
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -298,6 +441,27 @@ private struct MatchCard: View {
                     .foregroundColor(Colors.primaryDark)
                 
                 Spacer()
+                
+                // Edit mode controls
+                if isEditMode {
+                    Button(action: onAddUser) {
+                        Image(systemName: "person.badge.plus")
+                            .font(.system(size: 16))
+                            .foregroundColor(.blue)
+                    }
+                    .padding(8)
+                    .background(Color.blue.opacity(0.1))
+                    .cornerRadius(8)
+                    
+                    Button(action: onDeleteMatch) {
+                        Image(systemName: "trash")
+                            .font(.system(size: 16))
+                            .foregroundColor(.red)
+                    }
+                    .padding(8)
+                    .background(Color.red.opacity(0.1))
+                    .cornerRadius(8)
+                }
                 
                 Text(match.status)
                     .font(.LibreBodoniItalic(size: 12))
@@ -353,32 +517,61 @@ private struct MatchCard: View {
             
             VStack(spacing: 8) {
                 ForEach(match.members) { member in
-                    Button(action: {
-                        onMemberTap(member.userId)
-                    }) {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(member.displayName)
-                                    .font(Fonts.libreBodoni(size: 16))
-                                    .foregroundColor(Colors.primaryDark)
+                    HStack(spacing: 8) {
+                        Button(action: {
+                            onMemberTap(member.userId)
+                        }) {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(member.displayName)
+                                        .font(Fonts.libreBodoni(size: 16))
+                                        .foregroundColor(Colors.primaryDark)
+                                    
+                                    if let city = member.city {
+                                        Text(city)
+                                            .font(Fonts.libreBodoni(size: 12))
+                                            .foregroundColor(Colors.primaryDark.opacity(0.6))
+                                    }
+                                }
                                 
-                                if let city = member.city {
-                                    Text(city)
-                                        .font(Fonts.libreBodoni(size: 12))
-                                        .foregroundColor(Colors.primaryDark.opacity(0.6))
+                                Spacer()
+                                
+                                if !isEditMode {
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 14))
+                                        .foregroundColor(Colors.primaryDark.opacity(0.4))
                                 }
                             }
-                            
-                            Spacer()
-                            
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 14))
-                                .foregroundColor(Colors.primaryDark.opacity(0.4))
+                            .padding(.vertical, 8)
+                            .padding(.horizontal, 12)
+                            .background(Colors.background)
+                            .cornerRadius(8)
                         }
-                        .padding(.vertical, 8)
-                        .padding(.horizontal, 12)
-                        .background(Colors.background)
-                        .cornerRadius(8)
+                        
+                        // Edit controls for each member
+                        if isEditMode {
+                            Button(action: {
+                                onMoveUser(member.userId)
+                            }) {
+                                Image(systemName: "arrow.right.arrow.left")
+                                    .font(.system(size: 12))
+                                    .foregroundColor(.blue)
+                            }
+                            .padding(6)
+                            .background(Color.blue.opacity(0.1))
+                            .cornerRadius(6)
+                            
+                            Button(action: {
+                                onRemoveUser(member.userId)
+                            }) {
+                                Image(systemName: "minus.circle")
+                                    .font(.system(size: 12))
+                                    .foregroundColor(.red)
+                            }
+                            .padding(6)
+                            .background(Color.red.opacity(0.1))
+                            .cornerRadius(6)
+                        }
                     }
                 }
             }
@@ -1270,6 +1463,362 @@ private struct UnmatchedUserCard: View {
         }
         
         return nil
+    }
+}
+
+// MARK: - Create Match Sheet
+
+private struct CreateMatchSheet: View {
+    @ObservedObject var adminModel: AdminModel
+    let onComplete: (String) -> Void
+    @Environment(\.dismiss) var dismiss
+    
+    @State private var unmatchedUsers: [UnmatchedUserInfo] = []
+    @State private var selectedUserIds: Set<String> = []
+    @State private var isLoading = false
+    @State private var errorMessage: String?
+    
+    var body: some View {
+        NavigationView {
+            contentView
+                .navigationTitle("create match")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("cancel") {
+                            dismiss()
+                        }
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("create") {
+                            createMatch()
+                        }
+                        .disabled(selectedUserIds.count < 2)
+                    }
+                }
+        }
+        .onAppear {
+            loadUnmatchedUsers()
+        }
+    }
+    
+    @ViewBuilder
+    private var contentView: some View {
+        ZStack {
+            Colors.background.ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                if isLoading {
+                    ProgressView()
+                        .scaleEffect(1.5)
+                        .frame(maxHeight: .infinity)
+                } else if let errorMessage {
+                    Text(errorMessage)
+                        .foregroundColor(.red)
+                        .frame(maxHeight: .infinity)
+                } else if unmatchedUsers.isEmpty {
+                    Text("no unmatched users available")
+                        .font(Fonts.libreBodoni(size: 16))
+                        .foregroundColor(Colors.primaryDark.opacity(0.6))
+                        .frame(maxHeight: .infinity)
+                } else {
+                    userListView
+                }
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private var userListView: some View {
+        List {
+            ForEach(unmatchedUsers, id: \.user.id) { userInfo in
+                userRowView(for: userInfo)
+            }
+        }
+        .listStyle(.plain)
+    }
+    
+    @ViewBuilder
+    private func userRowView(for userInfo: UnmatchedUserInfo) -> some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(userInfo.user.name)
+                    .font(Fonts.libreBodoni(size: 16))
+                if let city = userInfo.user.city {
+                    Text(city)
+                        .font(Fonts.libreBodoni(size: 12))
+                        .foregroundColor(.gray)
+                }
+            }
+            Spacer()
+            if selectedUserIds.contains(userInfo.user.id) {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundColor(.blue)
+            } else {
+                Image(systemName: "circle")
+                    .foregroundColor(.gray)
+            }
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            if selectedUserIds.contains(userInfo.user.id) {
+                selectedUserIds.remove(userInfo.user.id)
+            } else {
+                selectedUserIds.insert(userInfo.user.id)
+            }
+        }
+    }
+    
+    private func loadUnmatchedUsers() {
+        isLoading = true
+        NetworkManager.shared.get(
+            endpoint: "/admin/unmatched-users",
+            parameters: ["page": 0, "limit": 100]
+        ) { (result: Result<UnmatchedUsersResponse, NetworkError>) in
+            DispatchQueue.main.async {
+                isLoading = false
+                switch result {
+                case .success(let response):
+                    unmatchedUsers = response.users
+                case .failure(let error):
+                    errorMessage = error.localizedDescription
+                }
+            }
+        }
+    }
+    
+    private func createMatch() {
+        adminModel.createMatch(userIds: Array(selectedUserIds)) { result in
+            switch result {
+            case .success:
+                onComplete("Match created successfully")
+                dismiss()
+            case .failure(let error):
+                onComplete("Failed to create match: \(error.localizedDescription)")
+                dismiss()
+            }
+        }
+    }
+}
+
+// MARK: - Add User To Match Sheet
+
+private struct AddUserToMatchSheet: View {
+    @ObservedObject var adminModel: AdminModel
+    let matchId: String
+    let onComplete: (String) -> Void
+    @Environment(\.dismiss) var dismiss
+    
+    @State private var unmatchedUsers: [UnmatchedUserInfo] = []
+    @State private var selectedUserId: String?
+    @State private var isLoading = false
+    @State private var errorMessage: String?
+    
+    var body: some View {
+        NavigationView {
+            contentView
+                .navigationTitle("add user to match")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("cancel") {
+                            dismiss()
+                        }
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("add") {
+                            addUser()
+                        }
+                        .disabled(selectedUserId == nil)
+                    }
+                }
+        }
+        .onAppear {
+            loadUnmatchedUsers()
+        }
+    }
+    
+    @ViewBuilder
+    private var contentView: some View {
+        ZStack {
+            Colors.background.ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                if isLoading {
+                    ProgressView()
+                        .scaleEffect(1.5)
+                        .frame(maxHeight: .infinity)
+                } else if let errorMessage {
+                    Text(errorMessage)
+                        .foregroundColor(.red)
+                        .frame(maxHeight: .infinity)
+                } else if unmatchedUsers.isEmpty {
+                    Text("no unmatched users available")
+                        .font(Fonts.libreBodoni(size: 16))
+                        .foregroundColor(Colors.primaryDark.opacity(0.6))
+                        .frame(maxHeight: .infinity)
+                } else {
+                    userListView
+                }
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private var userListView: some View {
+        List {
+            ForEach(unmatchedUsers, id: \.user.id) { userInfo in
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(userInfo.user.name)
+                            .font(Fonts.libreBodoni(size: 16))
+                        if let city = userInfo.user.city {
+                            Text(city)
+                                .font(Fonts.libreBodoni(size: 12))
+                                .foregroundColor(.gray)
+                        }
+                    }
+                    Spacer()
+                    if selectedUserId == userInfo.user.id {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(.blue)
+                    }
+                }
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    selectedUserId = userInfo.user.id
+                }
+            }
+        }
+        .listStyle(.plain)
+    }
+    
+    private func loadUnmatchedUsers() {
+        isLoading = true
+        NetworkManager.shared.get(
+            endpoint: "/admin/unmatched-users",
+            parameters: ["page": 0, "limit": 100]
+        ) { (result: Result<UnmatchedUsersResponse, NetworkError>) in
+            DispatchQueue.main.async {
+                isLoading = false
+                switch result {
+                case .success(let response):
+                    unmatchedUsers = response.users
+                case .failure(let error):
+                    errorMessage = error.localizedDescription
+                }
+            }
+        }
+    }
+    
+    private func addUser() {
+        guard let userId = selectedUserId else { return }
+        adminModel.addUserToMatch(matchId: matchId, userId: userId) { result in
+            switch result {
+            case .success(let message):
+                onComplete(message)
+                dismiss()
+            case .failure(let error):
+                onComplete("Failed to add user: \(error.localizedDescription)")
+                dismiss()
+            }
+        }
+    }
+}
+
+// MARK: - Move User Sheet
+
+private struct MoveUserSheet: View {
+    @ObservedObject var adminModel: AdminModel
+    let userId: String
+    let fromMatchId: String
+    let onComplete: (String) -> Void
+    @Environment(\.dismiss) var dismiss
+    
+    @State private var selectedMatchId: String?
+    
+    var availableMatches: [AdminMatch] {
+        adminModel.matches.filter { $0.id != fromMatchId }
+    }
+    
+    var body: some View {
+        NavigationView {
+            contentView
+                .navigationTitle("move user to match")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("cancel") {
+                            dismiss()
+                        }
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("move") {
+                            moveUser()
+                        }
+                        .disabled(selectedMatchId == nil)
+                    }
+                }
+        }
+    }
+    
+    @ViewBuilder
+    private var contentView: some View {
+        ZStack {
+            Colors.background.ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                if availableMatches.isEmpty {
+                    Text("no other matches available")
+                        .font(Fonts.libreBodoni(size: 16))
+                        .foregroundColor(Colors.primaryDark.opacity(0.6))
+                        .frame(maxHeight: .infinity)
+                } else {
+                    matchListView
+                }
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private var matchListView: some View {
+        List {
+            ForEach(availableMatches) { match in
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("group of \(match.groupSize)")
+                            .font(Fonts.libreBodoni(size: 16))
+                        Text(match.status)
+                            .font(Fonts.libreBodoni(size: 12))
+                            .foregroundColor(.gray)
+                    }
+                    Spacer()
+                    if selectedMatchId == match.id {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(.blue)
+                    }
+                }
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    selectedMatchId = match.id
+                }
+            }
+        }
+        .listStyle(.plain)
+    }
+    
+    private func moveUser() {
+        guard let toMatchId = selectedMatchId else { return }
+        adminModel.moveUserBetweenMatches(userId: userId, fromMatchId: fromMatchId, toMatchId: toMatchId) { result in
+            switch result {
+            case .success(let message):
+                onComplete(message)
+                dismiss()
+            case .failure(let error):
+                onComplete("Failed to move user: \(error.localizedDescription)")
+                dismiss()
+            }
+        }
     }
 }
 
