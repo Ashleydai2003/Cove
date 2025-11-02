@@ -83,6 +83,11 @@ import {
   handleGetAllMatches,
   handleGetUserMatchingDetails,
   handleGetUnmatchedUsers,
+  handleCreateManualMatch,
+  handleAddMatchMember,
+  handleRemoveMatchMember,
+  handleMoveMatchMember,
+  handleDeleteMatch,
 } from './routes';
 
 export const handler = async (
@@ -261,6 +266,8 @@ export const handler = async (
         return handleGetUserMatchingDetails(event);
       case '/admin/unmatched-users':
         return handleGetUnmatchedUsers(event);
+      case '/admin/matches/create':
+        return handleCreateManualMatch(event);
       default:
         // Handle dynamic AI Matching routes with path parameters
         if (event.path.startsWith('/intention/') && event.httpMethod === 'DELETE') {
@@ -282,6 +289,27 @@ export const handler = async (
           const matchId = event.path.split('/')[2];
           event.pathParameters = { id: matchId };
           return handleMatchFeedback(event);
+        }
+        // Admin match management routes with path parameters
+        if (event.path.startsWith('/admin/matches/') && event.path.endsWith('/add-member')) {
+          const matchId = event.path.split('/')[3];
+          event.pathParameters = { matchId };
+          return handleAddMatchMember(event);
+        }
+        if (event.path.startsWith('/admin/matches/') && event.path.endsWith('/remove-member')) {
+          const matchId = event.path.split('/')[3];
+          event.pathParameters = { matchId };
+          return handleRemoveMatchMember(event);
+        }
+        if (event.path.startsWith('/admin/matches/') && event.path.endsWith('/move-member')) {
+          const fromMatchId = event.path.split('/')[3];
+          event.pathParameters = { fromMatchId };
+          return handleMoveMatchMember(event);
+        }
+        if (event.path.startsWith('/admin/matches/') && event.httpMethod === 'DELETE') {
+          const matchId = event.path.split('/')[3];
+          event.pathParameters = { matchId };
+          return handleDeleteMatch(event);
         }
         
         // Handle common web standard files

@@ -53,5 +53,10 @@ export {
   handleToggleSuperadmin,
   handleGetAllMatches,
   handleGetUserMatchingDetails,
-  handleGetUnmatchedUsers
+  handleGetUnmatchedUsers,
+  handleCreateManualMatch,
+  handleAddMatchMember,
+  handleRemoveMatchMember,
+  handleMoveMatchMember,
+  handleDeleteMatch
 } from './admin';

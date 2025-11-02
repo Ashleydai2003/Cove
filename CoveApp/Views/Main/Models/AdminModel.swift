@@ -150,6 +150,138 @@ class AdminModel: ObservableObject {
             }
         }
     }
+    
+    // MARK: - Match Management Operations
+    
+    /// Create a manual match with selected users (superadmin only)
+    func createMatch(userIds: [String], tierUsed: Int = 0, score: Double = 0.8, completion: @escaping (Result<AdminMatch, NetworkError>) -> Void) {
+        let parameters: [String: Any] = [
+            "userIds": userIds,
+            "tierUsed": tierUsed,
+            "score": score
+        ]
+        
+        NetworkManager.shared.post(
+            endpoint: "/admin/matches/create",
+            parameters: parameters
+        ) { (result: Result<CreateMatchResponse, NetworkError>) in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let response):
+                    // Refresh matches list
+                    self.fetchMatches(refresh: true)
+                    completion(.success(response.match))
+                case .failure(let error):
+                    self.errorMessage = "Failed to create match: \(error.localizedDescription)"
+                    print("❌ Failed to create match: \(error)")
+                    completion(.failure(error))
+                }
+            }
+        }
+    }
+    
+    /// Add a user to an existing match (superadmin only)
+    func addUserToMatch(matchId: String, userId: String, completion: @escaping (Result<String, NetworkError>) -> Void) {
+        let parameters: [String: Any] = [
+            "userId": userId
+        ]
+        
+        NetworkManager.shared.post(
+            endpoint: "/admin/matches/\(matchId)/add-member",
+            parameters: parameters
+        ) { (result: Result<SimpleMessageResponse, NetworkError>) in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let response):
+                    // Refresh matches list
+                    self.fetchMatches(refresh: true)
+                    completion(.success(response.message))
+                case .failure(let error):
+                    self.errorMessage = "Failed to add user to match: \(error.localizedDescription)"
+                    print("❌ Failed to add user to match: \(error)")
+                    completion(.failure(error))
+                }
+            }
+        }
+    }
+    
+    /// Remove a user from a match (superadmin only)
+    func removeUserFromMatch(matchId: String, userId: String, returnToPool: Bool = false, completion: @escaping (Result<String, NetworkError>) -> Void) {
+        let parameters: [String: Any] = [
+            "userId": userId,
+            "returnToPool": returnToPool
+        ]
+        
+        NetworkManager.shared.post(
+            endpoint: "/admin/matches/\(matchId)/remove-member",
+            parameters: parameters
+        ) { (result: Result<SimpleMessageResponse, NetworkError>) in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let response):
+                    // Refresh matches list
+                    self.fetchMatches(refresh: true)
+                    completion(.success(response.message))
+                case .failure(let error):
+                    self.errorMessage = "Failed to remove user from match: \(error.localizedDescription)"
+                    print("❌ Failed to remove user from match: \(error)")
+                    completion(.failure(error))
+                }
+            }
+        }
+    }
+    
+    /// Move a user from one match to another (superadmin only)
+    func moveUserBetweenMatches(userId: String, fromMatchId: String, toMatchId: String, completion: @escaping (Result<String, NetworkError>) -> Void) {
+        let parameters: [String: Any] = [
+            "userId": userId,
+            "toMatchId": toMatchId
+        ]
+        
+        NetworkManager.shared.post(
+            endpoint: "/admin/matches/\(fromMatchId)/move-member",
+            parameters: parameters
+        ) { (result: Result<SimpleMessageResponse, NetworkError>) in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let response):
+                    // Refresh matches list
+                    self.fetchMatches(refresh: true)
+                    completion(.success(response.message))
+                case .failure(let error):
+                    self.errorMessage = "Failed to move user between matches: \(error.localizedDescription)"
+                    print("❌ Failed to move user between matches: \(error)")
+                    completion(.failure(error))
+                }
+            }
+        }
+    }
+    
+    /// Delete a match (superadmin only)
+    func deleteMatch(matchId: String, returnToPool: Bool = false, completion: @escaping (Result<String, NetworkError>) -> Void) {
+        var endpoint = "/admin/matches/\(matchId)"
+        if returnToPool {
+            endpoint += "?returnToPool=true"
+        }
+        
+        NetworkManager.shared.delete(
+            endpoint: endpoint,
+            parameters: [:]
+        ) { (result: Result<SimpleMessageResponse, NetworkError>) in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let response):
+                    // Remove match from local list
+                    self.matches.removeAll { $0.id == matchId }
+                    completion(.success(response.message))
+                case .failure(let error):
+                    self.errorMessage = "Failed to delete match: \(error.localizedDescription)"
+                    print("❌ Failed to delete match: \(error)")
+                    completion(.failure(error))
+                }
+            }
+        }
+    }
 }
 
 // MARK: - Models
@@ -302,4 +434,15 @@ struct AdminIntention: Codable, Identifiable {
 struct AdminPoolEntry: Codable {
     let tier: Int
     let joinedAt: String
+}
+
+// MARK: - API Response Models
+
+struct SimpleMessageResponse: Codable {
+    let message: String
+}
+
+struct CreateMatchResponse: Codable {
+    let message: String
+    let match: AdminMatch
 }
