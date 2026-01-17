@@ -12,7 +12,7 @@ const OnboardingModal = dynamic(() => import('./OnboardingModal'), {
   ssr: false,
   loading: () => <div>Loading...</div>
 });
-// Auth status is now determined from event data, no separate auth check needed
+// Auth is now handled automatically by cookies in API calls
 import { apiClient } from '@/lib/api';
 import GuestListModal from './GuestListModal';
 import RSVPSuccessModal from './RSVPSuccessModal';
@@ -20,17 +20,32 @@ import VenmoConfirmModal from './VenmoConfirmModal';
 
 interface EventDetailCardProps {
   event: Event;
+  onEventUpdate?: (event: Event) => void;
 }
 
 /**
  * API Call Strategy - Only 3 instances:
- * 1. Initial page load (handled in page.tsx)
+ * 1. Initial page load (handled in EventDetailCard useEffect)
  * 2. After user login (handleOnboardingComplete)
  * 3. After user RSVP/RSVP removal (handleRSVP/handleRemoveRSVP)
  */
 
-export function EventDetailCard({ event }: EventDetailCardProps) {
+export function EventDetailCard({ event, onEventUpdate }: EventDetailCardProps) {
   const [showOnboarding, setShowOnboarding] = useState(false);
+  
+  // Helper function to map tier names to display names
+  const getTierDisplayName = (tierType: string) => {
+    switch (tierType.toLowerCase()) {
+      case 'early bird':
+        return 'Early Bird';
+      case 'regular':
+        return 'Tier 1';
+      case 'last minute':
+        return 'Tier 2';
+      default:
+        return tierType;
+    }
+  };
   const [showGuestList, setShowGuestList] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showVenmoConfirm, setShowVenmoConfirm] = useState(false);
@@ -38,53 +53,101 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
   const [rsvpStatus, setRsvpStatus] = useState<string | null>(event.rsvpStatus ?? null);
   const [isRsvpLoading, setIsRsvpLoading] = useState(false);
+  const [pendingRsvpAfterAuth, setPendingRsvpAfterAuth] = useState(false);
 
-  // Initialize auth state based on initial event data (no API call needed)
+  // Initialize auth state from event data on mount
   useEffect(() => {
-    // Use the initial event data to determine auth state
+    // Set initial auth state based on event data
     const isUserAuthenticated = event.rsvpStatus !== null || !!event.isHost;
     setIsAuthenticated(isUserAuthenticated);
     setHasCompletedOnboarding(isUserAuthenticated);
+    setRsvpStatus(event.rsvpStatus ?? null);
     
     console.log('Initial auth state from event data:', {
       rsvpStatus: event.rsvpStatus,
       isHost: event.isHost,
-      isAuthenticated: isUserAuthenticated
+      isAuthenticated: isUserAuthenticated,
+      hasLocation: !!event.location,
+      hasRsvps: !!(event.rsvps && event.rsvps.length > 0)
     });
   }, [event.id, event.rsvpStatus, event.isHost]);
 
   const handleRSVP = async () => {
+    console.log('RSVP clicked - Auth state:', { isAuthenticated, hasCompletedOnboarding, rsvpStatus });
+    
     // Check if user is authenticated and has completed onboarding
     if (!isAuthenticated || !hasCompletedOnboarding) {
+      // Mark that we need to RSVP after authentication
+      console.log('User not authenticated, setting pending RSVP and showing onboarding');
+      setPendingRsvpAfterAuth(true);
       setShowOnboarding(true);
     } else {
       // User is authenticated and has completed onboarding, proceed with RSVP
-      if (rsvpStatus === 'GOING' || rsvpStatus === 'PENDING') {
-        // User is already going or pending, no action needed (button should be disabled)
+      if (rsvpStatus === 'GOING' || rsvpStatus === 'PENDING' || rsvpStatus === 'WAITLIST') {
+        // User is already going, pending, or on waitlist, no action needed (button should be disabled)
+        console.log('User already RSVPed, no action needed');
         return;
       } else {
-        // Check if event has a ticket price - if so, show Venmo confirmation
-        if (event.ticketPrice && event.ticketPrice > 0 && event.paymentHandle) {
+        // Check if event is at capacity (waitlist)
+        let isAtCapacity = false;
+        
+        if (event.useTieredPricing && event.pricingTiers) {
+          // For tiered pricing, check if ALL tiers are sold out
+          const allTiersSoldOut = event.pricingTiers.every(tier => 
+            tier.spotsLeft !== undefined && tier.spotsLeft <= 0
+          );
+          isAtCapacity = allTiersSoldOut && event.pricingTiers.length > 0;
+        } else {
+          // For non-tiered events, check memberCap against total count (going + pending)
+          const totalCount = (event.goingCount || 0) + (event.pendingCount || 0);
+          isAtCapacity = event.memberCap !== null && 
+                         event.memberCap !== undefined && 
+                         totalCount >= event.memberCap;
+        }
+        
+        // Check if event requires payment (single price or any tier has price)
+        // Skip payment modal for waitlist (when at capacity)
+        const hasPayment = !isAtCapacity && (event.useTieredPricing 
+          ? event.pricingTiers?.some(tier => tier.price > 0) && event.paymentHandle
+          : event.ticketPrice && event.ticketPrice > 0 && event.paymentHandle);
+          
+        if (hasPayment) {
+          console.log('Event has payment, showing Venmo confirmation');
           setShowVenmoConfirm(true);
         } else {
-          // No payment required, proceed directly with RSVP
-          await performRSVP();
+          // No payment required or event is at capacity (waitlist), proceed directly with RSVP
+          console.log(isAtCapacity ? 'Event at capacity, joining waitlist' : 'No payment required, proceeding with RSVP');
+          await performRSVP(isAtCapacity);
         }
       }
     }
   };
 
-  // Check if user can see full event details (RSVP'd, pending, or host)
-  const canSeeFullDetails = rsvpStatus === 'GOING' || rsvpStatus === 'PENDING' || event.isHost;
+  // Check if user can see full event details (RSVP'd, pending, waitlist, or host)
+  // Use the most up-to-date rsvpStatus from either local state or event prop
+  const currentRsvpStatus = rsvpStatus || event.rsvpStatus;
+  const canSeeFullDetails = currentRsvpStatus === 'GOING' || currentRsvpStatus === 'PENDING' || currentRsvpStatus === 'WAITLIST' || event.isHost;
+  
+  // Debug logging for UI visibility
+  console.log('UI Visibility Check:', {
+    currentRsvpStatus,
+    isHost: event.isHost,
+    canSeeFullDetails,
+    hasLocation: !!event.location,
+    hasRsvps: !!(event.rsvps && event.rsvps.length > 0),
+    rsvpCount: event.rsvps?.length || 0
+  });
 
   // Check if user can see Venmo handle (authenticated and completed onboarding)
   const canSeeVenmoHandle = isAuthenticated && hasCompletedOnboarding && event.paymentHandle;
 
 
 
-  const performRSVP = async () => {
+  const performRSVP = async (isWaitlist: boolean = false) => {
     setIsRsvpLoading(true);
     try {
+      const status = isWaitlist ? 'WAITLIST' : 'PENDING';
+      
       const response = await fetch('/api/rsvp', {
         method: 'POST',
         headers: {
@@ -93,22 +156,17 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
         credentials: 'include',
         body: JSON.stringify({
           eventId: event.id,
-          status: 'PENDING',
+          status: status,
         }),
       });
 
       if (response.ok) {
-        setRsvpStatus('PENDING');
+        setRsvpStatus(status);
         setShowSuccessModal(true);
         
-        // API Call #3: After user RSVP - fetch fresh event data
-        console.log('Fetching fresh event data after RSVP...');
-        try {
-          const eventData = await apiClient.fetchEvent(event.id);
-          setRsvpStatus(eventData.rsvpStatus ?? null);
-        } catch (refreshError) {
-          console.error('Error refreshing event data after RSVP:', refreshError);
-        }
+        // Reload page to show updated UI with fresh data
+        console.log('RSVP successful, reloading page...');
+        window.location.reload();
       } else {
         const data = await response.json();
         alert(data.message || 'Failed to RSVP');
@@ -137,14 +195,9 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
       if (response.ok) {
         setRsvpStatus(null);
         
-        // API Call #3: After user RSVP removal - fetch fresh event data
-        console.log('Fetching fresh event data after RSVP removal...');
-        try {
-          const eventData = await apiClient.fetchEvent(event.id);
-          setRsvpStatus(eventData.rsvpStatus ?? null);
-        } catch (refreshError) {
-          console.error('Error refreshing event data after RSVP removal:', refreshError);
-        }
+        // Reload page to show updated UI with fresh data
+        console.log('RSVP removal successful, reloading page...');
+        window.location.reload();
       } else {
         const data = await response.json();
         alert(data.message || 'Failed to remove RSVP');
@@ -156,23 +209,56 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
   };
 
   const handleOnboardingComplete = async (userId: string) => {
-    try {
-      // User just completed onboarding, so they're now authenticated
-      setIsAuthenticated(true);
-      setHasCompletedOnboarding(true);
-      
-      // API Call #2: After user login - fetch fresh event data
-      console.log('Fetching fresh event data after login...');
-      const eventData = await apiClient.fetchEvent(event.id);
-      setRsvpStatus(eventData.rsvpStatus ?? null);
-    } catch (error) {
-      console.error('Error refreshing after login:', error);
-      // Fallback: update basic auth state
-      setIsAuthenticated(true);
-      setHasCompletedOnboarding(true);
-    }
+    console.log('Onboarding completed for user:', userId);
     
+    // Update auth state
+    setIsAuthenticated(true);
+    setHasCompletedOnboarding(true);
     setShowOnboarding(false);
+    
+    // If there was a pending RSVP action, execute it now
+    if (pendingRsvpAfterAuth) {
+      console.log('Executing pending RSVP after authentication...');
+      setPendingRsvpAfterAuth(false);
+      
+      // Small delay to ensure state updates are processed
+      setTimeout(async () => {
+        // Check if event is at capacity (waitlist)
+        let isAtCapacity = false;
+        
+        if (event.useTieredPricing && event.pricingTiers) {
+          // For tiered pricing, check if ALL tiers are sold out
+          const allTiersSoldOut = event.pricingTiers.every(tier => 
+            tier.spotsLeft !== undefined && tier.spotsLeft <= 0
+          );
+          isAtCapacity = allTiersSoldOut && event.pricingTiers.length > 0;
+        } else {
+          // For non-tiered events, check memberCap against total count (going + pending)
+          const totalCount = (event.goingCount || 0) + (event.pendingCount || 0);
+          isAtCapacity = event.memberCap !== null && 
+                         event.memberCap !== undefined && 
+                         totalCount >= event.memberCap;
+        }
+        
+        // Check if event requires payment (single price or any tier has price)
+        // Skip payment modal for waitlist (when at capacity)
+        const hasPayment = !isAtCapacity && (event.useTieredPricing 
+          ? event.pricingTiers?.some(tier => tier.price > 0) && event.paymentHandle
+          : event.ticketPrice && event.ticketPrice > 0 && event.paymentHandle);
+          
+        if (hasPayment) {
+          setShowVenmoConfirm(true);
+        } else {
+          // No payment required or event is at capacity (waitlist), proceed directly with RSVP
+          console.log(isAtCapacity ? 'Event at capacity, joining waitlist' : 'No payment required, proceeding with RSVP');
+          await performRSVP(isAtCapacity);
+        }
+      }, 100);
+    } else {
+      // No pending action, just reload to show updated UI
+      console.log('No pending RSVP, reloading page...');
+      window.location.reload();
+    }
   };
 
   const title = event.name || 'Untitled Event';
@@ -180,7 +266,23 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
   const dateStr = formatDate(event.date);
   const timeStr = formatTime(event.date);
   const coveName = event.cove?.name || '';
-  const displayGoingCount = (event.goingCount ?? 0) + 24;
+  // Smart display count logic: show capped count until we have enough total RSVPs
+  const getDisplayGoingCount = () => {
+    const goingCount = event.goingCount ?? 0;
+    const pendingCount = event.pendingCount ?? 0;
+    const totalCount = goingCount + pendingCount; // True going count = approved + pending
+    const cap = 20; // Cap at 20 people going
+    
+    // If we have 20 or more total RSVPs (pending + approved), show true count
+    if (totalCount >= cap) {
+      return totalCount;
+    }
+    
+    // Otherwise, show the capped display count
+    return Math.max(totalCount, cap);
+  };
+  
+  const displayGoingCount = getDisplayGoingCount();
 
   // Create the hosted by text in the format "hosted by [host] @ [cove]"
   const hostedByText = hostName && coveName 
@@ -227,9 +329,81 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
             {/* Divider */}
             <div className="h-px w-full bg-[#E5E5E5]"></div>
 
-            {/* Price and spots - only show if data exists */}
-            {(event.ticketPrice !== null && event.ticketPrice !== undefined) || 
-             (event.memberCap !== null && event.memberCap !== undefined) ? (
+            {/* Image - Show on mobile BEFORE pricing */}
+            <div className="lg:hidden">
+              <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden">
+                {event.coverPhoto?.url ? (
+                  <Image
+                    src={event.coverPhoto.url}
+                    alt={title}
+                    fill
+                    className="object-cover"
+                    sizes="100vw"
+                    priority
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-200" />
+                )}
+              </div>
+            </div>
+
+            {/* Price and spots - tiered or single pricing */}
+            {(event.useTieredPricing && event.pricingTiers && event.pricingTiers.length > 0) ? (
+              <div className="space-y-4">
+                {/* Tiered Pricing Display */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <img src="/ticket.svg" alt="Ticket" className="w-6 h-6" />
+                    <span className="font-libre-bodoni text-lg font-semibold text-[#5E1C1D]">
+                      Pricing
+                    </span>
+                  </div>
+                  
+                  {event.pricingTiers
+                    .sort((a, b) => a.sortOrder - b.sortOrder)
+                    .map((tier) => {
+                      const isSoldOut = tier.spotsLeft === 0;
+                      
+                      return (
+                        <div 
+                          key={tier.id} 
+                          className={`flex items-center justify-between p-4 rounded-lg border ${
+                            isSoldOut 
+                              ? 'bg-gray-100 border-gray-300' 
+                              : 'bg-white/60 border-black/10'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`w-3 h-3 rounded-full ${
+                              isSoldOut ? 'bg-gray-400' : 'bg-[#5E1C1D]'
+                            }`}></div>
+                            <span className={`font-libre-bodoni text-base ${
+                              isSoldOut ? 'text-gray-400' : 'text-[#5E1C1D]'
+                            }`}>
+                              {getTierDisplayName(tier.tierType)}
+                            </span>
+                          </div>
+                          
+                          <div className="text-right">
+                            <div className={`font-libre-bodoni font-semibold text-base ${
+                              isSoldOut ? 'text-gray-400' : 'text-[#5E1C1D]'
+                            }`}>
+                              ${tier.price.toFixed(2)}
+                            </div>
+                            {tier.spotsLeft !== undefined && tier.spotsLeft !== null && (
+                              <div className={`font-libre-bodoni text-sm ${tier.spotsLeft > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                {tier.spotsLeft > 0 ? `${tier.spotsLeft} left` : 'sold out'}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })
+                  }
+                </div>
+              </div>
+            ) : ((event.ticketPrice !== null && event.ticketPrice !== undefined) || 
+             (event.memberCap !== null && event.memberCap !== undefined)) ? (
               <div className="space-y-4">
                 {event.ticketPrice !== null && event.ticketPrice !== undefined && (
                   <div className="flex items-center gap-4">
@@ -278,15 +452,15 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
 
         {/* Right column: image + button */}
         <div className="space-y-6">
-          {/* Image */}
-          <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden">
+          {/* Image - Hide on mobile, show on desktop */}
+          <div className="hidden lg:block relative w-full aspect-[4/3] rounded-2xl overflow-hidden">
             {event.coverPhoto?.url ? (
               <Image
                 src={event.coverPhoto.url}
                 alt={title}
                 fill
                 className="object-cover"
-                sizes="(max-width: 768px) 100vw, 50vw"
+                sizes="50vw"
                 priority
               />
             ) : (
@@ -322,9 +496,11 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full bg-gray-300 flex items-center justify-center">
-                          <User size={14} className="text-gray-500" />
-                        </div>
+                        <img
+                          src="/default_user_pfp.svg"
+                          alt="Default profile"
+                          className="w-full h-full object-cover"
+                        />
                       )}
                     </div>
                   ))}
@@ -359,6 +535,13 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
               >
                 pending approval...
               </button>
+            ) : rsvpStatus === 'WAITLIST' ? (
+              <button
+                disabled
+                className="px-16 py-3 bg-orange-100 text-orange-700 rounded-lg font-libre-bodoni text-lg border border-orange-300 cursor-not-allowed"
+              >
+                on the waitlist
+              </button>
             ) : rsvpStatus === 'GOING' ? (
               <button
                 disabled
@@ -366,22 +549,47 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
               >
                 you're on the list!
               </button>
-            ) : (
+            ) : (() => {
+              // Check if event is at capacity (only for users not already going/pending)
+              let isAtCapacity = false;
+              
+              if (event.useTieredPricing && event.pricingTiers) {
+                // For tiered pricing, check if ALL tiers are sold out
+                const allTiersSoldOut = event.pricingTiers.every(tier => 
+                  tier.spotsLeft !== undefined && tier.spotsLeft <= 0
+                );
+                isAtCapacity = allTiersSoldOut && event.pricingTiers.length > 0;
+              } else {
+                // For non-tiered events, check memberCap against total count (going + pending)
+                const totalCount = (event.goingCount || 0) + (event.pendingCount || 0);
+                isAtCapacity = event.memberCap !== null && 
+                               event.memberCap !== undefined && 
+                               totalCount >= event.memberCap;
+              }
+              
+              const buttonText = isAtCapacity ? 'join the waitlist' : 'rsvp';
+              
+              return (
               <button
                 onClick={handleRSVP}
                 disabled={isRsvpLoading}
                 className="px-24 py-3 bg-[#5E1C1D] text-white rounded-lg font-libre-bodoni text-xl font-medium hover:bg-[#4A1718] transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isRsvpLoading ? 'rsvping...' : 'rsvp'}
+                  {isRsvpLoading ? 'rsvping...' : buttonText}
               </button>
-            )}
+              );
+            })()}
           </div>
 
           {/* Login button - only show when not authenticated */}
           {!isAuthenticated && (
             <div className="flex justify-center mt-4">
               <button
-                onClick={() => setShowOnboarding(true)}
+                onClick={() => {
+                  // Don't set pending RSVP for login button - just login
+                  setPendingRsvpAfterAuth(false);
+                  setShowOnboarding(true);
+                }}
                 className="font-libre-bodoni text-[#5E1C1D] underline underline-offset-4 hover:text-[#4A1718] transition-colors"
               >
                 login
@@ -394,7 +602,11 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
       {/* Onboarding Modal */}
       <OnboardingModal
         isOpen={showOnboarding}
-        onClose={() => setShowOnboarding(false)}
+        onClose={() => {
+          setShowOnboarding(false);
+          // Clear pending RSVP if user closes modal without completing
+          setPendingRsvpAfterAuth(false);
+        }}
         onComplete={handleOnboardingComplete}
         originalAction="RSVP to this event"
       />
@@ -416,6 +628,8 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
         }}
         paymentHandle={event.paymentHandle || ''}
         ticketPrice={event.ticketPrice || 0}
+        pricingTiers={event.pricingTiers}
+        useTieredPricing={event.useTieredPricing}
       />
 
       {/* RSVP Success Modal */}

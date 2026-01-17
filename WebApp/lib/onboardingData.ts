@@ -29,17 +29,31 @@ export const AlmaMaterData = {
   async filteredUniversities(searchQuery: string): Promise<string[]> {
     await this.loadUniversities();
     
-    if (searchQuery.trim() === '') return this.universities.slice(0, 20); // Show first 20 for empty search
+    let results: string[] = [];
     
-    const query = searchQuery.toLowerCase().trim();
-    return this.universities
-      .filter(university => university.toLowerCase().includes(query))
-      .slice(0, 20); // Limit results
+    if (searchQuery.trim() === '') {
+      results = this.universities.slice(0, 19); // Show first 19 for empty search
+    } else {
+      const query = searchQuery.toLowerCase().trim();
+      results = this.universities
+        .filter(university => university.toLowerCase().includes(query))
+        .slice(0, 19); // Limit to 19 results
+    }
+    
+    // Always add "Other" option at the end
+    results.push("Other");
+    
+    return results;
   },
 
   async isValidUniversity(value: string): Promise<boolean> {
     await this.loadUniversities();
     const lc = value.trim().toLowerCase();
+    
+    // "Other" is always valid
+    if (lc === "other") return true;
+    
+    // Check if it's in the universities list
     return this.universities.some(university => university.toLowerCase() === lc);
   }
 };

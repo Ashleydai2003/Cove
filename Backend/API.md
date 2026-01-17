@@ -1120,3 +1120,277 @@ The RSVP system uses an approval-based workflow:
 * **RSVP Flexibility**: Hosts can RSVP as NOT_GOING and still have full access to manage and view their event
 
 Users with GOING status OR event hosts can see full event details including location and guest lists.
+
+---
+
+## AI Matching System
+
+### `POST /survey/submit`
+
+Submits a user's survey responses for the AI matching system. User must be authenticated.
+
+Takes Data Parameters:
+* responses: Array<{
+  * questionId: String (required) - ID of the survey question
+  * value: String | String[] (required) - Single value or array of values for multiselect questions
+}> (required) - Array of question-answer pairs
+
+Returns:
+* message: String - Success message
+* surveyComplete: Boolean - Whether the survey is complete
+
+### `GET /survey`
+
+Retrieves the user's survey completion status and responses. User must be authenticated.
+
+Returns:
+* surveyComplete: Boolean - Whether the user has completed the survey
+* responses: Array<{
+  * questionId: String
+  * value: Any
+  * answeredAt: String - ISO 8601 timestamp
+}> - User's survey responses (if any)
+
+### `POST /intention`
+
+Creates a new matching intention for the user. User must be authenticated and have completed the survey.
+
+Takes Data Parameters:
+* text: String (required) - Raw intention text (max 140 characters)
+* chips: Object (required) - Parsed intention data containing:
+  * intention: String - Primary intention type
+  * activities: String[] - Selected activities
+  * timeWindows: String[] - Available time windows
+  * location: String - User's location
+
+Returns:
+* message: String - Success message
+* intention: {
+  * id: String
+  * text: String
+  * parsedJson: Object
+  * status: "active"
+  * createdAt: String
+  * validUntil: String
+}
+* hasIntention: Boolean - Always true after creation
+
+### `GET /intention/status`
+
+Retrieves the user's current intention status, pool entry, and match status. User must be authenticated.
+
+Returns:
+* hasIntention: Boolean - Whether user has an active intention
+* intention: {
+  * id: String
+  * text: String
+  * parsedJson: Object
+  * status: "active" | "expired" | "matched"
+  * validUntil: String
+} | null
+* poolEntry: {
+  * tier: Number
+  * joinedAt: String
+  * nextBatchEta: String
+} | null
+* hasMatch: Boolean - Whether user has an active match
+
+### `DELETE /intention/:id`
+
+Deletes a user's intention and removes them from the matching pool. User must be authenticated and own the intention.
+
+Returns:
+* message: String - Success message
+
+### `GET /match/current`
+
+Retrieves the user's current active match. User must be authenticated.
+
+Returns:
+* hasMatch: Boolean - Whether user has an active match
+* match: {
+  * id: String
+  * groupSize: Number
+  * status: "active" | "completed" | "expired"
+  * createdAt: String
+  * blurb: String - AI-generated match description
+  * members: Array<{
+    * userId: String
+    * name: String
+    * age: Number | null
+    * city: String | null
+    * almaMater: String | null
+  }>
+  * sharedActivities: String[] - Activities all members are interested in
+  * sharedTimeWindows: String[] - Time windows when all members are available
+  * location: String - Common location
+} | null
+
+### `POST /match/:id/accept`
+
+Accepts a match and marks it as ready for connection. User must be authenticated and be a member of the match.
+
+Returns:
+* message: String - Success message
+
+### `POST /match/:id/decline`
+
+Declines a match and removes the user from it. User must be authenticated and be a member of the match.
+
+Returns:
+* message: String - Success message
+
+### `POST /match/:id/feedback`
+
+Submits feedback about a match. User must be authenticated and be a member of the match.
+
+Takes Data Parameters:
+* rating: Number (optional) - Rating from 1-5
+* feedback: String (optional) - Text feedback
+
+Returns:
+* message: String - Success message
+
+---
+
+## Admin Routes (SUPERADMIN ONLY)
+
+All admin routes require strict superadmin authentication. The requesting user must have `superadmin: true` in their user record. All unauthorized access attempts are logged.
+
+### `GET /admin/users`
+
+Retrieves a list of all users in the system with their basic information. **SUPERADMIN ONLY**.
+
+Returns:
+* users: Array<{
+  * id: String
+  * name: String
+  * phone: String
+  * onboarding: Boolean
+  * verified: Boolean
+  * superadmin: Boolean
+  * createdAt: String - ISO 8601 timestamp
+  * age: Number | null
+  * city: String | null
+  * almaMater: String | null
+}>
+* count: Number - Total number of users
+
+Security:
+* Requires Firebase authentication
+* Database verification of superadmin status
+* Returns 403 Forbidden for non-superadmins
+* All access attempts are logged
+
+### `POST /admin/toggle-superadmin`
+
+Toggles superadmin status for a target user. **SUPERADMIN ONLY**.
+
+Takes Data Parameters:
+* targetUserId: String (required) - ID of the user to modify
+* superadmin: Boolean (required) - New superadmin status
+
+Returns:
+* message: String - Success message
+* targetUserId: String - ID of the modified user
+* superadmin: Boolean - New superadmin status
+
+Security:
+* Requires Firebase authentication
+* Database verification of superadmin status
+* Returns 403 Forbidden for non-superadmins
+* All actions are logged with user IDs
+
+### `GET /admin/matches`
+
+Retrieves all matches in the system with member details. **SUPERADMIN ONLY**.
+
+Returns:
+* matches: Array<{
+  * id: String
+  * groupSize: Number
+  * status: String
+  * createdAt: String - ISO 8601 timestamp
+  * members: Array<{
+    * userId: String
+    * name: String
+    * phone: String
+    * age: Number | null
+    * city: String | null
+    * almaMater: String | null
+  }>
+}>
+* count: Number - Total number of matches
+
+Security:
+* Requires Firebase authentication
+* Database verification of superadmin status
+* Returns 403 Forbidden for non-superadmins
+* All access attempts are logged
+
+### `GET /admin/user-details?userId=X`
+
+Retrieves detailed matching information for a specific user, including survey responses, active intention, and past intentions. **SUPERADMIN ONLY**.
+
+Query Parameters:
+* userId: String (required) - ID of the user to get details for
+
+Returns:
+* user: {
+  * id: String
+  * name: String
+  * phone: String
+  * age: Number | null
+  * city: String | null
+  * almaMater: String | null
+}
+* survey: Array<{
+  * questionId: String
+  * value: Any - Survey response value
+  * answeredAt: String - ISO 8601 timestamp
+}>
+* activeIntention: {
+  * id: String
+  * text: String
+  * parsedJson: Object
+  * status: String
+  * createdAt: String
+  * validUntil: String
+  * poolEntry: {
+    * tier: Number
+    * joinedAt: String
+  } | null
+} | null
+* pastIntentions: Array<{
+  * id: String
+  * text: String
+  * parsedJson: Object
+  * status: String
+  * createdAt: String
+  * validUntil: String
+}> - Last 10 past intentions
+
+Security:
+* Requires Firebase authentication
+* Database verification of superadmin status
+* Returns 403 Forbidden for non-superadmins
+* Returns 404 if user not found
+* All access attempts are logged with requesting user ID and target user ID
+
+---
+
+## Security Notes
+
+### Superadmin Authentication Flow
+1. Request must include valid Firebase authentication token
+2. Token is verified via `authMiddleware`
+3. User's `superadmin` field is queried from database
+4. Access is granted only if `superadmin === true`
+5. All access attempts (successful and failed) are logged to CloudWatch
+
+### Setting Superadmin Status
+Superadmin status can only be set via:
+1. Direct database update (for initial setup)
+2. `/admin/toggle-superadmin` endpoint (by existing superadmin)
+
+See `Backend/SUPERADMIN_SETUP.md` for detailed setup instructions.

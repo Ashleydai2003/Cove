@@ -50,15 +50,13 @@ struct FeedEvent: Decodable, Identifiable {
     let location: String
     let memberCap: Int?
     let ticketPrice: Double?
-    let paymentHandle: String?
-    let coveId: String
+    let coveId: String?
     let coveName: String
     let coveCoverPhoto: CoverPhoto?
-    let hostId: String
+    let hostId: String?
     let hostName: String
     let rsvpStatus: String
     let goingCount: Int
-    let pendingCount: Int?
     let createdAt: String
     let coverPhoto: CoverPhoto?
     

@@ -1,1 +1,0 @@
-self.__REACT_LOADABLE_MANIFEST="{\"components/EventDetailCard.tsx -> ./OnboardingModal\":{\"id\":\"components/EventDetailCard.tsx -> ./OnboardingModal\",\"files\":[\"static/chunks/_app-pages-browser_components_OnboardingModal_tsx.js\"]}}"

@@ -235,16 +235,8 @@ struct AlmaMaterView: View {
 
                 Onboarding.storeAlmaMater(almaMater: trimmedUniversity)
                 Onboarding.storeGradYear(gradYear: trimmedYear)
-                // Complete onboarding directly now that city/profile are removed
-                Onboarding.completeOnboarding { success in
-                    DispatchQueue.main.async {
-                        if success {
-                            appController.path = [.pluggingIn]
-                        } else {
-                            showingError = true
-                        }
-                    }
-                }
+                // Navigate to city selection
+                appController.path.append(.city)
             }
             .disabled(searchUniversity.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
                       gradYear.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)

@@ -113,11 +113,14 @@ class NetworkManager {
                     }
 
                     do {
-                        let decodedResponse = try JSONDecoder().decode(T.self, from: data)
+                        let decoder = JSONDecoder()
+                        decoder.dateDecodingStrategy = .iso8601
+                        let decodedResponse = try decoder.decode(T.self, from: data)
                         Log.network("GET request successful", endpoint: endpoint, method: "GET")
                         completion(.success(decodedResponse))
                     } catch {
                         Log.error("Decoding error: \(error.localizedDescription)", category: "network")
+                        print("🔍 NetworkManager: Raw response data: \(String(data: data, encoding: .utf8) ?? "Unable to convert to string")")
                         CrashlyticsHandler.recordNetworkError(error, endpoint: endpoint, method: "GET")
                         completion(.failure(.decodingError(error)))
                     }
@@ -139,9 +142,12 @@ class NetworkManager {
         completion: @escaping (Result<T, NetworkError>) -> Void
     ) {
         Log.network("POST request started", endpoint: endpoint, method: "POST")
+        print("🔍 [DEBUG] POST request to: \(endpoint)")
+        print("🔍 [DEBUG] Parameters: \(parameters)")
 
         // Get current Firebase token
         Auth.auth().currentUser?.getIDToken { token, error in
+            print("🔍 [DEBUG] Firebase token result - Error: \(error?.localizedDescription ?? "None"), Token: \(token != nil ? "Present" : "Missing")")
             if let error = error {
                 Log.error("Auth error: \(error.localizedDescription) | Error: \(error)", category: "network")
                 CrashlyticsHandler.recordNetworkError(error, endpoint: endpoint, method: "POST")
@@ -169,11 +175,15 @@ class NetworkManager {
             request.httpMethod = "POST"
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            print("🔍 [DEBUG] Request URL: \(url)")
+            print("🔍 [DEBUG] Authorization header: Bearer \(token.prefix(20))...")
 
             // Create request body
             do {
                 request.httpBody = try JSONSerialization.data(withJSONObject: parameters)
+                print("🔍 [DEBUG] Request body created successfully")
             } catch {
+                print("❌ [DEBUG] Encoding error: \(error.localizedDescription)")
                 Log.error("Encoding error: \(error.localizedDescription)", category: "network")
                 CrashlyticsHandler.recordNetworkError(error, endpoint: endpoint, method: "POST")
                 completion(.failure(.encodingError(error)))
@@ -183,7 +193,9 @@ class NetworkManager {
             // Make the request
             let task = URLSession.shared.dataTask(with: request) { data, response, error in
                 DispatchQueue.main.async {
+                    print("🔍 [DEBUG] Network response received")
                     if let error = error {
+                        print("❌ [DEBUG] Network error: \(error.localizedDescription)")
                         Log.error("Network error: \(error.localizedDescription)", category: "network")
                         CrashlyticsHandler.recordNetworkError(error, endpoint: endpoint, method: "POST")
                         completion(.failure(.networkError(error)))
@@ -191,13 +203,19 @@ class NetworkManager {
                     }
 
                     guard let httpResponse = response as? HTTPURLResponse else {
+                        print("❌ [DEBUG] Invalid response (no HTTP)")
                         Log.error("Invalid response (no HTTP)", category: "network")
                         CrashlyticsHandler.recordCustomError(domain: "CoveApp.Network", code: 3, message: "Invalid response (no HTTP)", context: "POST \(endpoint)")
                         completion(.failure(.invalidResponse))
                         return
                     }
 
+                    print("🔍 [DEBUG] HTTP Status: \(httpResponse.statusCode)")
                     guard (200...299).contains(httpResponse.statusCode) else {
+                        print("❌ [DEBUG] Server error \(httpResponse.statusCode)")
+                        if let data = data, let responseString = String(data: data, encoding: .utf8) {
+                            print("❌ [DEBUG] Error response body: \(responseString)")
+                        }
                         Log.error("Server error \(httpResponse.statusCode)", category: "network")
                         CrashlyticsHandler.recordCustomError(domain: "CoveApp.Network", code: httpResponse.statusCode, message: "Server error \(httpResponse.statusCode)", context: "POST \(endpoint)")
                         completion(.failure(.serverError(httpResponse.statusCode)))

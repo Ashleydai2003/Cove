@@ -50,7 +50,7 @@ resource "aws_iam_role" "lambda_role" {
   tags = local.common_tags
 }
 
-# Policy for Secrets Manager access allows Lambda to retrieve database credentials from Secrets Manager
+# Policy for Secrets Manager access allows Lambda to retrieve credentials from Secrets Manager
 resource "aws_iam_role_policy" "lambda_secrets_policy" {
   name = "lambda-secrets-policy"
   role = aws_iam_role.lambda_role.id
@@ -65,7 +65,8 @@ resource "aws_iam_role_policy" "lambda_secrets_policy" {
         Effect   = "Allow"
         Resource = [
           aws_db_instance.postgres.master_user_secret[0].secret_arn,
-          data.aws_secretsmanager_secret.firebase_credentials.arn
+          data.aws_secretsmanager_secret.firebase_credentials.arn,
+          data.aws_secretsmanager_secret.sinch_credentials.arn
         ]
       }
     ]
@@ -291,6 +292,37 @@ resource "aws_iam_role_policy_attachment" "lambda_cove_images_access" {
 resource "aws_iam_role_policy_attachment" "lambda_event_images_access" {
   role       = aws_iam_role.lambda_role.name
   policy_arn = aws_iam_policy.s3_event_images_policy.arn
+}
+
+# IAM policy for vendor images S3 bucket
+resource "aws_iam_policy" "s3_vendor_images_policy" {
+  name        = "cove-s3-vendor-images-policy"
+  description = "Policy for accessing vendor images S3 bucket"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject",
+          "s3:ListBucket"
+        ]
+        Resource = [
+          aws_s3_bucket.vendor_images.arn,
+          "${aws_s3_bucket.vendor_images.arn}/*"
+        ]
+      }
+    ]
+  })
+}
+
+# Attach Vendor images policy to Lambda role
+resource "aws_iam_role_policy_attachment" "lambda_vendor_images_access" {
+  role       = aws_iam_role.lambda_role.name
+  policy_arn = aws_iam_policy.s3_vendor_images_policy.arn
 }
 
 # Retrieves the current AWS account ID for use in constructing ARNs

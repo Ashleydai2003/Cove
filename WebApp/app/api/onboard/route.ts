@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, birthdate, almaMater, gradYear, hobbies } = body;
+    const { name, birthdate, almaMater, gradYear, hobbies, smsOptIn } = body;
 
     // Validate required fields
     const requiredFields = [];
@@ -11,6 +11,7 @@ export async function POST(request: NextRequest) {
     if (!birthdate) requiredFields.push('birthdate');
     if (!almaMater || almaMater.trim() === '') requiredFields.push('almaMater');
     if (!gradYear || gradYear.trim() === '') requiredFields.push('gradYear');
+    if (smsOptIn !== true) requiredFields.push('smsOptIn'); // SMS consent required
 
     if (requiredFields.length > 0) {
       return NextResponse.json(
@@ -42,6 +43,7 @@ export async function POST(request: NextRequest) {
         almaMater: almaMater.trim(),
         gradYear: gradYear.trim(),
         hobbies: hobbies || [],
+        smsOptIn: smsOptIn,
       }),
     });
 

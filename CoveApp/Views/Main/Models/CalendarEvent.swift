@@ -144,14 +144,91 @@ struct Event: Decodable {
     let ticketPrice: Double?
     let paymentHandle: String?
     let coveId: String?
-    let host: Host
-    let cove: Cove
+    let host: Host?
+    let cove: Cove?
     let rsvpStatus: String?
     let goingCount: Int?
     let pendingCount: Int?
     let rsvps: [EventRSVP]?
     let coverPhoto: CoverPhoto?
     let isHost: Bool?
+    let useTieredPricing: Bool?
+    let pricingTiers: [EventPricingTier]?
+    
+    // Custom CodingKeys to handle optional fields
+    enum CodingKeys: String, CodingKey {
+        case id, name, description, date, location, memberCap, ticketPrice, paymentHandle
+        case coveId, host, cove, rsvpStatus, goingCount, pendingCount, rsvps
+        case coverPhoto, isHost, useTieredPricing, pricingTiers
+    }
+    
+    // Memberwise initializer for manual creation
+    init(
+        id: String,
+        name: String,
+        description: String?,
+        date: String,
+        location: String?,
+        memberCap: Int?,
+        ticketPrice: Double?,
+        paymentHandle: String?,
+        coveId: String?,
+        host: Host?,
+        cove: Cove?,
+        rsvpStatus: String?,
+        goingCount: Int?,
+        pendingCount: Int?,
+        rsvps: [EventRSVP]?,
+        coverPhoto: CoverPhoto?,
+        isHost: Bool?,
+        useTieredPricing: Bool?,
+        pricingTiers: [EventPricingTier]?
+    ) {
+        self.id = id
+        self.name = name
+        self.description = description
+        self.date = date
+        self.location = location
+        self.memberCap = memberCap
+        self.ticketPrice = ticketPrice
+        self.paymentHandle = paymentHandle
+        self.coveId = coveId
+        self.host = host
+        self.cove = cove
+        self.rsvpStatus = rsvpStatus
+        self.goingCount = goingCount
+        self.pendingCount = pendingCount
+        self.rsvps = rsvps
+        self.coverPhoto = coverPhoto
+        self.isHost = isHost
+        self.useTieredPricing = useTieredPricing
+        self.pricingTiers = pricingTiers
+    }
+    
+    // Custom decoder to handle optional fields gracefully
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        id = try container.decode(String.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        description = try container.decodeIfPresent(String.self, forKey: .description)
+        date = try container.decode(String.self, forKey: .date)
+        location = try container.decodeIfPresent(String.self, forKey: .location)
+        memberCap = try container.decodeIfPresent(Int.self, forKey: .memberCap)
+        ticketPrice = try container.decodeIfPresent(Double.self, forKey: .ticketPrice)
+        paymentHandle = try container.decodeIfPresent(String.self, forKey: .paymentHandle)
+        coveId = try container.decodeIfPresent(String.self, forKey: .coveId)
+        host = try container.decodeIfPresent(Host.self, forKey: .host)
+        cove = try container.decodeIfPresent(Cove.self, forKey: .cove)
+        rsvpStatus = try container.decodeIfPresent(String.self, forKey: .rsvpStatus)
+        goingCount = try container.decodeIfPresent(Int.self, forKey: .goingCount)
+        pendingCount = try container.decodeIfPresent(Int.self, forKey: .pendingCount)
+        rsvps = try container.decodeIfPresent([EventRSVP].self, forKey: .rsvps)
+        coverPhoto = try container.decodeIfPresent(CoverPhoto.self, forKey: .coverPhoto)
+        isHost = try container.decodeIfPresent(Bool.self, forKey: .isHost)
+        useTieredPricing = try container.decodeIfPresent(Bool.self, forKey: .useTieredPricing)
+        pricingTiers = try container.decodeIfPresent([EventPricingTier].self, forKey: .pricingTiers)
+    }
 
     var eventDate: Date {
         let inputFormatter = DateFormatter()
@@ -191,6 +268,30 @@ struct CoverPhoto: Decodable {
     let url: String
 }
 
+/// EventPricingTier: Represents a pricing tier for events with tiered pricing
+struct EventPricingTier: Decodable {
+    let id: String
+    let tierType: String
+    let price: Double
+    let maxSpots: Int?
+    let currentSpots: Int
+    let sortOrder: Int
+    let spotsLeft: Int?
+    let isSoldOut: Bool?
+}
+
+/// EventRSVP: Represents an RSVP for an event
+struct EventRSVP: Decodable, Identifiable {
+    let id: String
+    let status: String
+    let userId: String
+    let userName: String
+    let profilePhotoUrl: URL?
+    let createdAt: String
+    let pricingTierId: String?
+    let pricePaid: Double?
+}
+
 /// Pagination info for event lists
 struct Pagination: Decodable {
     let hasMore: Bool
@@ -209,12 +310,3 @@ struct CalendarEventsResponse: Decodable {
     let pagination: Pagination?
 }
 
-/// RSVP info for an event
-struct EventRSVP: Decodable {
-    let id: String
-    let status: String
-    let userId: String
-    let userName: String
-    let profilePhotoUrl: URL?
-    let createdAt: String
-}

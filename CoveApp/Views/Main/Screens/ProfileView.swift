@@ -1930,6 +1930,7 @@ struct ProfileView: View {
     @State private var isSaving = false
     @State private var isLoggingOut = false
     @State private var showSettingsMenu = false
+    @State private var showingAdminPanel = false
     
     @State private var showingAlmaMaterSheet = false
     @State private var showingGenderSheet = false
@@ -2118,10 +2119,15 @@ struct ProfileView: View {
         .overlay(alignment: .topTrailing) {
             if showSettingsMenu {
                 ProfileSettingsDropdownMenu(
+                    isSuperAdmin: appController.profileModel.superadmin,
                     onEditProfile: {
                         withAnimation(.easeInOut(duration: 0.18)) { showSettingsMenu = false }
                         isEditing = true
                         initializeEditingState()
+                    },
+                    onAdminPanel: {
+                        withAnimation(.easeInOut(duration: 0.18)) { showSettingsMenu = false }
+                        handleAdminPanel()
                     },
                     onLogout: {
                         withAnimation(.easeInOut(duration: 0.18)) { showSettingsMenu = false }
@@ -2204,6 +2210,9 @@ struct ProfileView: View {
             .presentationDetents([.large])
             .presentationDragIndicator(.hidden)
         }
+        .fullScreenCover(isPresented: $showingAdminPanel) {
+            AdminPanelView()
+        }
         .task {
             // Profile data should already be loaded during login/onboarding
             // No need to fetch again - this was causing redundant network calls
@@ -2216,13 +2225,21 @@ struct ProfileView: View {
 
     // MARK: - Profile Settings Dropdown
     private struct ProfileSettingsDropdownMenu: View {
+        let isSuperAdmin: Bool
         let onEditProfile: () -> Void
+        let onAdminPanel: () -> Void
         let onLogout: () -> Void
         let dismiss: () -> Void
 
         var body: some View {
             VStack(alignment: .leading, spacing: 0) {
                 MenuRow(title: "edit profile", systemImage: "pencil") { onEditProfile() }
+                
+                if isSuperAdmin {
+                    Divider().background(Color.black.opacity(0.08))
+                    MenuRow(title: "admin panel", systemImage: "shield.fill") { onAdminPanel() }
+                }
+                
                 Divider().background(Color.black.opacity(0.08))
                 MenuRow(title: "logout", textColor: .red, systemImage: "rectangle.portrait.and.arrow.right") { onLogout() }
             }
@@ -2372,6 +2389,18 @@ struct ProfileView: View {
         }
     }
 
+    // MARK: - Admin Panel Helper
+    private func handleAdminPanel() {
+        print("🔐 Admin panel tapped")
+        
+        // Add haptic feedback
+        let impact = UIImpactFeedbackGenerator(style: .light)
+        impact.impactOccurred()
+        
+        // Show admin panel sheet
+        showingAdminPanel = true
+    }
+    
     // MARK: - Logout Helper
     private func handleLogout() {
         // Prevent multiple logout attempts

@@ -53,6 +53,41 @@ import {
   handleGetPendingMembers,
   handleApproveDeclineRSVP,
   handleGetUniversities,
+  handleSMSWebhook,
+  // Vendor routes
+  handleVendorLogin,
+  handleValidateVendorCode,
+  handleCreateVendorOrganization,
+  handleVendorOnboard,
+  handleJoinVendorOrganization,
+  handleGetVendorProfile,
+  handleRotateVendorCode,
+  handleGetVendorMembers,
+  handleCreateVendorEvent,
+  handleGetVendorEvents,
+  handleVendorImageUpload,
+  handleVendorImageUpdate,
+  // AI Matching routes
+  handleSurveySubmit,
+  handleGetSurvey,
+  handleCreateIntention,
+  handleGetIntentionStatus,
+  handleDeleteIntention,
+  handleGetCurrentMatch,
+  handleAcceptMatch,
+  handleDeclineMatch,
+  handleMatchFeedback,
+  // Admin routes
+  handleGetAllUsers,
+  handleToggleSuperadmin,
+  handleGetAllMatches,
+  handleGetUserMatchingDetails,
+  handleGetUnmatchedUsers,
+  handleCreateManualMatch,
+  handleAddMatchMember,
+  handleRemoveMatchMember,
+  handleMoveMatchMember,
+  handleDeleteMatch,
 } from './routes';
 
 export const handler = async (
@@ -181,7 +216,102 @@ export const handler = async (
         return handleApproveDeclineRSVP(event);
       case '/universities':
         return handleGetUniversities(event);
+      case '/sms-webhook':
+        return handleSMSWebhook(event);
+      // Vendor routes
+      case '/vendor/login':
+        return handleVendorLogin(event);
+      case '/vendor/validate-code':
+        return handleValidateVendorCode(event);
+      case '/vendor/create-organization':
+        return handleCreateVendorOrganization(event);
+      case '/vendor/onboard':
+        return handleVendorOnboard(event);
+      case '/vendor/join-organization':
+        return handleJoinVendorOrganization(event);
+      case '/vendor/profile':
+        response = await handleGetVendorProfile(event);
+        break;
+      case '/vendor/rotate-code':
+        return handleRotateVendorCode(event);
+      case '/vendor/members':
+        return handleGetVendorMembers(event);
+      case '/vendor/create-event':
+        return handleCreateVendorEvent(event);
+      case '/vendor/events':
+        return handleGetVendorEvents(event);
+      case '/vendor/image':
+        return handleVendorImageUpload(event);
+      case '/vendor/image/update':
+        return handleVendorImageUpdate(event);
+      // AI Matching routes
+      case '/survey/submit':
+        return handleSurveySubmit(event);
+      case '/survey':
+        return handleGetSurvey(event);
+      case '/intention':
+        return handleCreateIntention(event);
+      case '/intention/status':
+        return handleGetIntentionStatus(event);
+      case '/match/current':
+        return handleGetCurrentMatch(event);
+      // Admin routes (superadmin only)
+      case '/admin/users':
+        return handleGetAllUsers(event);
+      case '/admin/toggle-superadmin':
+        return handleToggleSuperadmin(event);
+      case '/admin/matches':
+        return handleGetAllMatches(event);
+      case '/admin/user-details':
+        return handleGetUserMatchingDetails(event);
+      case '/admin/unmatched-users':
+        return handleGetUnmatchedUsers(event);
+      case '/admin/matches/create':
+        return handleCreateManualMatch(event);
       default:
+        // Handle dynamic AI Matching routes with path parameters
+        if (event.path.startsWith('/intention/') && event.httpMethod === 'DELETE') {
+          const intentionId = event.path.split('/')[2];
+          event.pathParameters = { id: intentionId };
+          return handleDeleteIntention(event);
+        }
+        if (event.path.startsWith('/match/') && event.path.endsWith('/accept')) {
+          const matchId = event.path.split('/')[2];
+          event.pathParameters = { id: matchId };
+          return handleAcceptMatch(event);
+        }
+        if (event.path.startsWith('/match/') && event.path.endsWith('/decline')) {
+          const matchId = event.path.split('/')[2];
+          event.pathParameters = { id: matchId };
+          return handleDeclineMatch(event);
+        }
+        if (event.path.startsWith('/match/') && event.path.endsWith('/feedback')) {
+          const matchId = event.path.split('/')[2];
+          event.pathParameters = { id: matchId };
+          return handleMatchFeedback(event);
+        }
+        // Admin match management routes with path parameters
+        if (event.path.startsWith('/admin/matches/') && event.path.endsWith('/add-member')) {
+          const matchId = event.path.split('/')[3];
+          event.pathParameters = { matchId };
+          return handleAddMatchMember(event);
+        }
+        if (event.path.startsWith('/admin/matches/') && event.path.endsWith('/remove-member')) {
+          const matchId = event.path.split('/')[3];
+          event.pathParameters = { matchId };
+          return handleRemoveMatchMember(event);
+        }
+        if (event.path.startsWith('/admin/matches/') && event.path.endsWith('/move-member')) {
+          const fromMatchId = event.path.split('/')[3];
+          event.pathParameters = { fromMatchId };
+          return handleMoveMatchMember(event);
+        }
+        if (event.path.startsWith('/admin/matches/') && event.httpMethod === 'DELETE') {
+          const matchId = event.path.split('/')[3];
+          event.pathParameters = { matchId };
+          return handleDeleteMatch(event);
+        }
+        
         // Handle common web standard files
         switch (event.path) {
           case '/robots.txt':

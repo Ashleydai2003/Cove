@@ -20,6 +20,8 @@ model User {
   phone                  String          @unique
   onboarding             Boolean         @default(true)
   verified               Boolean         @default(false)
+  smsOptIn               Boolean         @default(false)
+  superadmin             Boolean         @default(false)
   createdAt              DateTime        @default(now())
   updatedAt              DateTime        @updatedAt
   profilePhotoID         String?         @unique
@@ -41,6 +43,10 @@ model User {
   profilePhoto           UserImage?      @relation("ProfilePhoto", fields: [profilePhotoID], references: [id])
   photos                 UserImage[]     @relation("UserPhotos")
   profile                UserProfile?
+  surveyResponses        SurveyResponse[] @relation("UserSurveyResponses")
+  intentions             Intention[]     @relation("UserIntention")
+  matchMembers           MatchMember[]   @relation("MatchUser")
+  matchFeedback          MatchFeedback[] @relation("UserMatchFeedback")
 }
 
 model UserProfile {
@@ -51,6 +57,7 @@ model UserProfile {
   interests      String[]
   latitude       Float?
   longitude      Float?
+  city           String?   // City for matching system (e.g., "Palo Alto", "SF", "South Bay", "Peninsula")
   almaMater      String?
   job            String?
   workLocation   String?
@@ -60,6 +67,8 @@ model UserProfile {
   gender         String?
   gradYear       String?
   user           User      @relation(fields: [userId], references: [id])
+
+  @@index([city])
 }
 
 model Friendship {
@@ -123,24 +132,30 @@ model CoveMember {
 }
 
 model Event {
-  id            String      @id @default(cuid())
-  name          String
-  description   String?
-  date          DateTime
-  location      String
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  coveId        String
-  hostId        String
-  coverPhotoID  String?     @unique
-  isPublic      Boolean     @default(false)
-  memberCap     Int?
-  ticketPrice   Float?
-  paymentHandle String?
-  cove          Cove        @relation(fields: [coveId], references: [id])
-  coverPhoto    EventImage? @relation("EventCoverPhoto", fields: [coverPhotoID], references: [id])
-  hostedBy      User        @relation("CreatedEvents", fields: [hostId], references: [id])
-  rsvps         EventRSVP[]
+  id               String             @id @default(cuid())
+  name             String
+  description      String?
+  date             DateTime
+  location         String
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  coveId           String? // Optional for vendor events
+  hostId           String? // Optional when vendorId is present
+  vendorId         String? // Optional - for vendor-created events
+  coverPhotoID     String?            @unique
+  isPublic         Boolean            @default(false)
+  memberCap        Int?
+  ticketPrice      Float?
+  paymentHandle    String?
+  useTieredPricing Boolean            @default(false)
+  cove             Cove?              @relation(fields: [coveId], references: [id])
+  coverPhoto       EventImage?        @relation("EventCoverPhoto", fields: [coverPhotoID], references: [id])
+  hostedBy         User?              @relation("CreatedEvents", fields: [hostId], references: [id])
+  vendor           Vendor?            @relation("VendorCreatedEvents", fields: [vendorId], references: [id])
+  rsvps            EventRSVP[]
+  pricingTiers     EventPricingTier[]
+
+  @@index([vendorId])
 }
 
 model Post {
@@ -169,15 +184,37 @@ model PostLike {
 }
 
 model EventRSVP {
-  id        String     @id @default(cuid())
-  eventId   String
-  userId    String
-  status    RSVPStatus @default(PENDING)
-  createdAt DateTime   @default(now())
-  event     Event      @relation(fields: [eventId], references: [id])
-  user      User       @relation(fields: [userId], references: [id])
+  id            String            @id @default(cuid())
+  eventId       String
+  userId        String
+  status        RSVPStatus        @default(PENDING)
+  pricingTierId String?
+  pricePaid     Float?
+  createdAt     DateTime          @default(now())
+  event         Event             @relation(fields: [eventId], references: [id])
+  user          User              @relation(fields: [userId], references: [id])
+  pricingTier   EventPricingTier? @relation(fields: [pricingTierId], references: [id])
 
   @@unique([eventId, userId])
+  @@index([pricingTierId])
+}
+
+model EventPricingTier {
+  id           String      @id @default(cuid())
+  eventId      String
+  tierType     String
+  price        Float
+  maxSpots     Int?
+  currentSpots Int         @default(0)
+  sortOrder    Int         @default(0)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  event        Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  rsvps        EventRSVP[]
+
+  @@unique([eventId, tierType])
+  @@index([eventId])
+  @@index([tierType])
 }
 
 model CoveImage {
@@ -278,9 +315,172 @@ model MessageRead {
 enum RSVPStatus {
   GOING
   PENDING
+  WAITLIST
 }
 
 enum MemberRole {
+  MEMBER
+  ADMIN
+}
+
+// MARK: - AI Matching System Models
+
+model SurveyResponse {
+  id         String   @id @default(cuid())
+  userId     String
+  questionId String   // e.g., "alumni_network", "age_band", "city", "availability", "activities", "vibe", "dealbreakers"
+  value      Json     // JSON for multi-select answers or single values
+  isMustHave Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  user       User     @relation("UserSurveyResponses", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questionId])
+  @@index([userId])
+  @@index([questionId])
+}
+
+model Intention {
+  id              String          @id @default(cuid())
+  userId          String          // Allow many intentions per user
+  text            String          // Short natural language text (≤140 chars)
+  parsedJson      Json            // Structured chips: { who, what, when, where, vibe, mustHaves, dealbreakers }
+  intentEmbedding Unsupported("vector")? // pgvector embedding for semantic matching
+  validFrom       DateTime        @default(now())
+  validUntil      DateTime        // Expiration time for intention
+  status          IntentionStatus @default(active)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  user            User            @relation("UserIntention", fields: [userId], references: [id], onDelete: Cascade)
+  poolEntry       PoolEntry?
+  matchMembers    MatchMember[]   @relation("MatchIntention")
+
+  @@index([userId])
+  @@index([status])
+  @@index([validUntil])
+}
+
+model PoolEntry {
+  id          String    @id @default(cuid())
+  intentionId String    @unique
+  tier        Int       @default(0) // 0 = strict (0-24h), 1 = relaxed (24-48h), 2 = very relaxed (48-72h)
+  joinedAt    DateTime  @default(now())
+  lastBatchAt DateTime  @default(now())
+  intention   Intention @relation(fields: [intentionId], references: [id], onDelete: Cascade)
+
+  @@index([tier])
+  @@index([lastBatchAt])
+}
+
+model Match {
+  id           String        @id @default(cuid())
+  groupSize    Int           // Number of people in the group (2 for 1-on-1, 3+ for groups)
+  score        Float         // Average compatibility score (0.0-1.0)
+  tierUsed     Int           // Which tier produced this match (0, 1, or 2)
+  createdAt    DateTime      @default(now())
+  expiresAt    DateTime      // 7 days from creation
+  status       MatchStatus   @default(active)
+  threadId     String?       // If match is accepted, links to messaging thread
+  members      MatchMember[]
+  feedback     MatchFeedback[]
+
+  @@index([status])
+  @@index([expiresAt])
+}
+
+model MatchMember {
+  id           String     @id @default(cuid())
+  matchId      String
+  userId       String
+  intentionId  String
+  match        Match      @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  user         User       @relation("MatchUser", fields: [userId], references: [id], onDelete: Cascade)
+  intention    Intention  @relation("MatchIntention", fields: [intentionId], references: [id])
+
+  @@unique([matchId, userId])
+  @@index([matchId])
+  @@index([userId])
+}
+
+model MatchFeedback {
+  id          String   @id @default(cuid())
+  matchId     String
+  userId      String
+  matchedOn   String[] // e.g., ["interests", "alumni", "vibe"]
+  wasAccurate Boolean? // Did the match meet expectations?
+  createdAt   DateTime @default(now())
+  match       Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  user        User     @relation("UserMatchFeedback", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([matchId])
+  @@index([userId])
+}
+
+enum IntentionStatus {
+  active
+  matched
+  expired
+}
+
+enum MatchStatus {
+  active
+  accepted
+  declined
+  expired
+}
+
+// MARK: - Vendor Models
+
+model Vendor {
+  id                  String       @id @default(cuid())
+  organizationName    String
+  website             String?
+  primaryContactEmail String
+  city                String
+  latitude            Float?
+  longitude           Float?
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+  currentCode         String       @unique
+  codeRotatedAt       DateTime     @default(now())
+  createdById         String // The VendorUser who created the vendor (becomes admin)
+  coverPhotoID        String?      @unique
+  vendorUsers         VendorUser[]
+  createdEvents       Event[]      @relation("VendorCreatedEvents")
+  coverPhoto          VendorImage? @relation("VendorCoverPhoto")
+
+  @@index([currentCode])
+}
+
+model VendorUser {
+  id             String       @id
+  name           String?
+  phone          String       @unique
+  vendorId       String? // Nullable - set during onboarding
+  role           VendorRole   @default(MEMBER)
+  onboarding     Boolean      @default(true)
+  verified       Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  profilePhotoID String?      @unique
+  fcmToken       String?
+  vendor         Vendor?      @relation(fields: [vendorId], references: [id])
+  profilePhoto   VendorImage? @relation("VendorProfilePhoto")
+
+  @@index([vendorId])
+  @@index([phone])
+}
+
+model VendorImage {
+  id           String      @id @default(cuid())
+  vendorUserId String?     @unique
+  vendorId     String?     @unique
+  createdAt    DateTime    @default(now())
+  profileUser  VendorUser? @relation("VendorProfilePhoto", fields: [vendorUserId], references: [id])
+  vendor       Vendor?     @relation("VendorCoverPhoto", fields: [vendorId], references: [id])
+}
+
+enum VendorRole {
   MEMBER
   ADMIN
 }

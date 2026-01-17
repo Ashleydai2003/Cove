@@ -65,7 +65,8 @@ export class FeedService {
     
     // Fetch events if requested
     if (types.includes('event')) {
-      const events = await this.prisma.event.findMany({
+      // Fetch cove events (user must be a member)
+      const coveEvents = await this.prisma.event.findMany({
         where: {
           cove: {
             members: {
@@ -77,15 +78,52 @@ export class FeedService {
           rsvps: { where: { userId } },
           hostedBy: { select: { id: true, name: true } },
           cove: { select: { id: true, name: true, coverPhotoID: true } },
+          coverPhoto: { select: { id: true } },
+          vendor: false // Cove events don't have vendors
+        },
+        orderBy: { date: 'asc' }
+      })
+      
+      // Fetch vendor events (visible to all users)
+      const vendorEvents = await this.prisma.event.findMany({
+        where: {
+          vendorId: { not: null }, // Only vendor events
+          isPublic: true // Vendor events are always public
+        },
+        include: {
+          rsvps: { where: { userId } },
+          vendor: { select: { id: true, organizationName: true } },
           coverPhoto: { select: { id: true } }
         },
         orderBy: { date: 'asc' }
       })
       
-      items.push(...events.map(event => ({
+      // Add cove events to items
+      items.push(...coveEvents.map(event => ({
         type: 'event',
         id: event.id,
         data: event,
+        rank: 0.987 // Placeholder rank
+      })))
+      
+      // Add vendor events to items
+      items.push(...vendorEvents.map(event => ({
+        type: 'event',
+        id: event.id,
+        data: {
+          ...event,
+          // For vendor events, use vendor info instead of cove info
+          cove: event.vendor ? {
+            id: event.vendor.id,
+            name: event.vendor.organizationName,
+            coverPhotoID: null
+          } : null,
+          hostedBy: event.vendor ? {
+            id: event.vendor.id,
+            name: event.vendor.organizationName
+          } : null,
+          isVendorEvent: true
+        },
         rank: 0.987 // Placeholder rank
       })))
     }
